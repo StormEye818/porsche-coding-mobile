@@ -1,0 +1,474 @@
+{
+  "schemaVersion": 2,
+  "functions": [
+    {
+      "system": "Tiptronic 变速器控制",
+      "sub": "机油加注",
+      "routineId": "0x0301",
+      "risk": "high",
+      "img": "TIP-OILFILL"
+    },
+    {
+      "system": "乘客侧座椅位置记忆",
+      "sub": "校正座椅电机",
+      "routineId": "0x0203",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "驾驶员侧座椅记忆",
+      "sub": "校正座椅电机",
+      "routineId": "0x0203",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "保时捷主动悬挂管理系统",
+      "sub": "PASM/PADM 调试",
+      "routineId": "0x0204",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "保时捷主动悬挂管理系统",
+      "sub": "校准",
+      "routineId": "0x0300",
+      "risk": "high",
+      "img": "HEIGHT_DIMENSION_01"
+    },
+    {
+      "system": "保时捷主动悬挂管理系统",
+      "sub": "系统测试：单元支座",
+      "routineId": "0x0302",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "保时捷主动悬挂管理系统",
+      "sub": "驱动链接测试：减震器阀",
+      "routineId": "0x0303",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "保时捷稳定管理系统",
+      "sub": "对制动器排气",
+      "routineId": "0x0304",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "保时捷通讯管理系统",
+      "sub": "MOST 系统测试",
+      "routineId": "0x0200",
+      "risk": "low",
+      "img": ""
+    },
+    {
+      "system": "保时捷通讯管理系统",
+      "sub": "确认更新",
+      "routineId": "0x0201",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "保时捷通讯管理系统",
+      "sub": "禁用生产模式",
+      "routineId": "0x0202",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "刮水角度自适应",
+      "routineId": "0x0305",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "前照灯调试",
+      "routineId": "0x0306",
+      "risk": "medium",
+      "img": "HEADLIGHT_ADJUST-01"
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "启动钥匙保持电磁阀",
+      "routineId": "0x0307",
+      "risk": "low",
+      "img": ""
+    },
+    {
+      "system": "发动机",
+      "sub": "节气门匹配",
+      "routineId": "0x0308",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "组合仪表",
+      "sub": "设置总里程",
+      "routineId": "0x0309",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "组合仪表",
+      "sub": "重置保养间隔",
+      "routineId": "0x030A",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "网关",
+      "sub": "电池更换",
+      "routineId": "0x030B",
+      "risk": "low",
+      "img": ""
+    },
+    {
+      "system": "车道变换辅助系统，右侧(主设备)",
+      "sub": "校准",
+      "routineId": "0x030C",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "车道变换辅助系统，左侧(从动设备)",
+      "sub": "校准",
+      "routineId": "0x030C",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "转向盘电子设备",
+      "sub": "功能启动",
+      "routineId": "0x030D",
+      "risk": "low",
+      "img": ""
+    },
+    {
+      "system": "转向盘电子设备",
+      "sub": "标定",
+      "routineId": "0x030E",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "驻车制动器",
+      "sub": "校准",
+      "routineId": "0x0310",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "驻车制动器",
+      "sub": "检查驻车制动器的基本设置",
+      "routineId": "0x0311",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "驻车制动器",
+      "sub": "移至安装位置",
+      "routineId": "0x0312",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "驻车制动器",
+      "sub": "释放驻车制动器",
+      "routineId": "0x0313",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "驻车制动器",
+      "sub": "锁紧驻车制动器",
+      "routineId": "0x0314",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "ECM/DME(发动机控制模块)",
+      "sub": "冷却系统排气",
+      "routineId": "0x0320",
+      "risk": "high",
+      "img": "DME-BLEEDING_COOLING_992"
+    },
+    {
+      "system": "ECM/DME(发动机控制模块)",
+      "sub": "释放卡住的离合器",
+      "routineId": "0x0321",
+      "risk": "high",
+      "img": "DME-RELEASE_STUCK_CLUTCH"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "压缩机测试",
+      "routineId": "0x0322",
+      "risk": "medium",
+      "img": "AC-COMPRESS"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "风门测试",
+      "routineId": "0x0323",
+      "risk": "low",
+      "img": "AC-FLAP"
+    },
+    {
+      "system": "SRS(安全气囊)",
+      "sub": "安全气囊复位",
+      "routineId": "0x0324",
+      "risk": "high",
+      "img": "AIRBAG-1"
+    },
+    {
+      "system": "SRS(安全气囊)",
+      "sub": "RGS 复位",
+      "routineId": "0x0325",
+      "risk": "high",
+      "img": "AIRBAG-RGS"
+    },
+    {
+      "system": "全轮驱动",
+      "sub": "标签配置",
+      "routineId": "0x0326",
+      "risk": "low",
+      "img": "ALLRAD-LABEL_CAJUN"
+    },
+    {
+      "system": "网关",
+      "sub": "钥匙匹配",
+      "routineId": "0x0327",
+      "risk": "high",
+      "img": "BCM2_CONFIG_KEY"
+    },
+    {
+      "system": "网关",
+      "sub": "网关匹配",
+      "routineId": "0x0328",
+      "risk": "medium",
+      "img": "CAYENNE-92A-GATEWAY-TEACH01"
+    },
+    {
+      "system": "网关",
+      "sub": "驾驶员认证",
+      "routineId": "0x0329",
+      "risk": "medium",
+      "img": "SPEC-GATEW-DRIVERCARDS-01"
+    },
+    {
+      "system": "平视显示器",
+      "sub": "HUD 校准",
+      "routineId": "0x032A",
+      "risk": "medium",
+      "img": "9YA_HUD_CALIBRATION_TOOL"
+    },
+    {
+      "system": "水平高度控制/PASM",
+      "sub": "高度校准",
+      "routineId": "0x032B",
+      "risk": "high",
+      "img": "HEIGHT_DIMENSION_01"
+    },
+    {
+      "system": "前照灯",
+      "sub": "前照灯调节",
+      "routineId": "0x032C",
+      "risk": "medium",
+      "img": "HEADLIGHT_ADJUST-01"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "制冷剂清洁",
+      "routineId": "0x032D",
+      "risk": "medium",
+      "img": "TME-CLEAN_REFRIGERANT-01"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "压缩机功能测试",
+      "routineId": "0x032E",
+      "risk": "medium",
+      "img": "TME-COMPRESS-1"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "冷却回路测试",
+      "routineId": "0x032F",
+      "risk": "medium",
+      "img": "TME-COOL_CURCUIT"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "膨胀阀测试",
+      "routineId": "0x0330",
+      "risk": "medium",
+      "img": "TME-EXPANSION-992"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "功能测试",
+      "routineId": "0x0331",
+      "risk": "medium",
+      "img": "TME-FUNTEST"
+    },
+    {
+      "system": "AC(空调系统)",
+      "sub": "温度传感器匹配",
+      "routineId": "0x0332",
+      "risk": "medium",
+      "img": "TME-TEACH_PT_992"
+    },
+    {
+      "system": "Tiptronic 变速器控制",
+      "sub": "PDK/VTG/全轮驱动测试",
+      "routineId": "0x0333",
+      "risk": "medium",
+      "img": "PDK_VTG_ALLRAD"
+    },
+    {
+      "system": "BCM(车身控制)",
+      "sub": "DFM 连接",
+      "routineId": "0x0334",
+      "risk": "low",
+      "img": "SPEC-CONNECT-DFM-01"
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "测量点校准",
+      "routineId": "0x0335",
+      "risk": "medium",
+      "img": "9PA_MEASURINGPOINT_FRONTAXLE"
+    },
+    {
+      "system": "后端电子设备",
+      "sub": "测量点校准",
+      "routineId": "0x0336",
+      "risk": "medium",
+      "img": "9PA_MEASURINGPOINT_REARAXLE"
+    },
+    {
+      "system": "动力机组支承",
+      "sub": "功能测试",
+      "routineId": "0x0337",
+      "risk": "medium",
+      "img": "PANAMERA-971-TME-FTEST-01"
+    },
+    {
+      "system": "动力机组支承",
+      "sub": "膨胀测试",
+      "routineId": "0x0338",
+      "risk": "medium",
+      "img": "PANAMERA-971-TME-EXPANSION01"
+    },
+    {
+      "system": "后端电子设备",
+      "sub": "扰流器标准化",
+      "routineId": "0x0340",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "后端电子设备",
+      "sub": "扰流器去标准化",
+      "routineId": "0x0341",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "后端电子设备",
+      "sub": "后刮水器自适应",
+      "routineId": "0x0342",
+      "risk": "low",
+      "img": ""
+    },
+    {
+      "system": "后端电子设备",
+      "sub": "后盖初始化",
+      "routineId": "0x0343",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "后端电子设备",
+      "sub": "车窗初始化",
+      "routineId": "0x0344",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "前照灯标准化",
+      "routineId": "0x0345",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "刮水器自适应",
+      "routineId": "0x0346",
+      "risk": "low",
+      "img": ""
+    },
+    {
+      "system": "前端电子设备",
+      "sub": "天窗标准化",
+      "routineId": "0x0347",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "可折叠顶篷",
+      "sub": "软顶标准化",
+      "routineId": "0x0348",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "可折叠顶篷",
+      "sub": "滑动车顶标准化",
+      "routineId": "0x0349",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "座椅记忆",
+      "sub": "座椅标准化",
+      "routineId": "0x034A",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "EPS(电动助力转向系统)",
+      "sub": "转向角传感器校准",
+      "routineId": "0x034B",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "ESP/PSM(电控稳定系统)",
+      "sub": "制动系统排气",
+      "routineId": "0x034C",
+      "risk": "high",
+      "img": ""
+    },
+    {
+      "system": "轮胎压力监控",
+      "sub": "TPM 传感器匹配",
+      "routineId": "0x034D",
+      "risk": "medium",
+      "img": ""
+    },
+    {
+      "system": "组合仪表",
+      "sub": "仪表板校准",
+      "routineId": "0x034E",
+      "risk": "medium",
+      "img": ""
+    }
+  ]
+}
