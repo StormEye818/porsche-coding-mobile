@@ -77,6 +77,12 @@ export function validateParam(p) {
  * 从原始值里取该参数的字段值。
  * 位域按 LSB 起、可跨字节（bit + bitsize > 8 时进位到下字节）。
  * 返回 null 表示越界。
+ *
+ * ⚠️ **必须用 BigInt**：JS 的 `1 << i` / `v >> i` 是 32 位运算，i≥32 时按 mod 32 折回。
+ * 数据里有 bitsize 40/48/56/64 共 20 条、bitsize=32 且最高位为 1 的 89 条 ——
+ * 用 32 位运算会把宽字段的字节打乱（复现：48 位字段从 `01 02 03 04 05 06`
+ * 提出 `0x4030605`，应为 `0x060504030201`），且写回时把邻居字节写坏。
+ * 返回值：bitsize ≤ 53 时是 Number（保持向后兼容），更大时是 BigInt。
  */
 export function extractField(rawBytes, p) {
   const bit = p.bit | 0;
@@ -85,19 +91,20 @@ export function extractField(rawBytes, p) {
   const need = p.byte + Math.floor((bit + size - 1) / 8);
   if (p.byte < 0 || need >= rawBytes.length) return null;
 
-  let v = 0;
+  let v = 0n;
   for (let i = 0; i < size; i++) {
     const abs = bit + i;                 // 从字段起点算的绝对位
     const bi = p.byte + (abs >> 3);      // 所在字节
     const bb = abs & 7;                  // 字节内位
-    if ((rawBytes[bi] >> bb) & 1) v |= (1 << i);
+    if ((rawBytes[bi] >> bb) & 1) v |= (1n << BigInt(i));
   }
-  return v;
+  return size <= 53 ? Number(v) : v;
 }
 
 /**
  * 把字段值写回原始值（返回新数组，不改原）。
  * 与 extractField 位序一致（LSB 起，可跨字节）。越界返回 null。
+ * 同样用 BigInt，避免 bitsize≥32 时写坏字节。
  */
 export function injectField(rawBytes, p, value) {
   const bit = p.bit | 0;
@@ -107,14 +114,21 @@ export function injectField(rawBytes, p, value) {
   if (p.byte < 0 || need >= rawBytes.length) return null;
 
   const out = rawBytes.slice();
-  const mask = size >= 32 ? 0xffffffff : (1 << size) - 1;
-  const v = (value >>> 0) & mask;
+  const mask = (1n << BigInt(size)) - 1n;
+  let v;
+  try {
+    v = BigInt(value ?? 0);
+  } catch {
+    return null;
+  }
+  if (v < 0n) v = -v & mask;             // 容错负数（bit32 取负的情况）
+  v &= mask;
   for (let i = 0; i < size; i++) {
     const abs = bit + i;
     const bi = p.byte + (abs >> 3);
     const bb = abs & 7;
     const m = 1 << bb;
-    if ((v >> i) & 1) out[bi] |= m;
+    if ((v >> BigInt(i)) & 1n) out[bi] |= m;
     else out[bi] &= ~m & 0xff;
   }
   return out;
@@ -151,7 +165,7 @@ export function encodeValue(p, text) {
 /**
  * 能否写入。
  *
- * ⚠️ 策略变更（对齐 431）：对照表数据已离线全量核验
+ * ⚠️ 策略变更（对齐参考诊断仪）：对照表数据已离线全量核验
  *   （byte/bit 锚点对照、LID/SID 99.9% 配对、口令算法逐位校验、请求格式实测），
  *   `level` 改为**验证状态标注**，不再作为写入门禁。
  *   真正拦住错误写入的是 coder.js 里的结构性闸门：

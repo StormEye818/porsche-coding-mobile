@@ -1,0 +1,5382 @@
+{
+ "schemaVersion": 2,
+ "note": "导航树（轻量索引）",
+ "platforms": [
+  {
+   "id": "9X1",
+   "label": "9X1",
+   "status": "已提取",
+   "systemCount": 34,
+   "systems": [
+    {
+     "id": "BV_InforContrUnit1UDSDesay",
+     "label": "BV_InforContrUnit1UDSDesay",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1666,
+       "risk": {
+        "low": 1546,
+        "medium": 88,
+        "high": 32
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "BV_InforContrUnit1UDS",
+     "label": "BV_InforContrUnit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1227,
+       "risk": {
+        "low": 1140,
+        "medium": 70,
+        "high": 17
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 15
+      }
+     ]
+    },
+    {
+     "id": "BV_EnginContrModul1UDS",
+     "label": "BV_EnginContrModul1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 253,
+       "risk": {
+        "low": 232,
+        "high": 8,
+        "medium": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 393
+      }
+     ]
+    },
+    {
+     "id": "BCM_vorne",
+     "label": "BCM_vorne",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 408,
+       "risk": {
+        "low": 333,
+        "medium": 49,
+        "high": 26
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 80
+      }
+     ]
+    },
+    {
+     "id": "SWSG",
+     "label": "SWSG",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 394,
+       "risk": {
+        "low": 291,
+        "high": 8,
+        "medium": 95
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 36
+      }
+     ]
+    },
+    {
+     "id": "DME_BDE_Continental",
+     "label": "DME_BDE_Continental",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 39,
+       "risk": {
+        "low": 31,
+        "high": 5,
+        "medium": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 351
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM_UDS",
+     "label": "BV_ECM_UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "medium": 3,
+        "high": 2,
+        "low": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 324
+      }
+     ]
+    },
+    {
+     "id": "Kombiinstrument_MM",
+     "label": "Kombiinstrument_MM",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 325,
+       "risk": {
+        "low": 216,
+        "medium": 43,
+        "high": 66
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "MED17_1_11",
+     "label": "MED17_1_11",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 51,
+       "risk": {
+        "low": 45,
+        "high": 2,
+        "medium": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 179
+      }
+     ]
+    },
+    {
+     "id": "BCM_hinten",
+     "label": "BCM_hinten",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 202,
+       "risk": {
+        "low": 177,
+        "medium": 21,
+        "high": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 20
+      }
+     ]
+    },
+    {
+     "id": "CAN_CAN_Gateway",
+     "label": "CAN_CAN_Gateway",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 128,
+       "risk": {
+        "low": 117,
+        "high": 9,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 84
+      }
+     ]
+    },
+    {
+     "id": "Lift_VA_Gen2",
+     "label": "Lift_VA_Gen2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 189,
+       "risk": {
+        "low": 177,
+        "medium": 9,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Rueckfahrkamera_II",
+     "label": "Rueckfahrkamera_II",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 136,
+       "risk": {
+        "low": 133,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 9
+      }
+     ]
+    },
+    {
+     "id": "Verdeck_Targa",
+     "label": "Verdeck_Targa",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 88,
+       "risk": {
+        "low": 88
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 23
+      }
+     ]
+    },
+    {
+     "id": "BV_SoundSysteUDS",
+     "label": "BV_SoundSysteUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 107,
+       "risk": {
+        "low": 74,
+        "medium": 33
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "Frontkamera",
+     "label": "Frontkamera",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 88,
+       "risk": {
+        "low": 81,
+        "medium": 5,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 11
+      }
+     ]
+    },
+    {
+     "id": "Lift_VA",
+     "label": "Lift_VA",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 84,
+       "risk": {
+        "low": 64,
+        "medium": 15,
+        "high": 5
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "Airbag",
+     "label": "Airbag",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 53,
+       "risk": {
+        "high": 34,
+        "low": 19
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 32
+      }
+     ]
+    },
+    {
+     "id": "BKE",
+     "label": "BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 55,
+       "risk": {
+        "low": 46,
+        "medium": 3,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "TUER_VORNE",
+     "label": "TUER_VORNE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 59,
+       "risk": {
+        "low": 54,
+        "high": 3,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "SCHEINWERFER",
+     "label": "SCHEINWERFER",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 41,
+       "risk": {
+        "low": 36,
+        "medium": 1,
+        "high": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "TUER_HINTEN",
+     "label": "TUER_HINTEN",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 47,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "Sitzsteuergeraet",
+     "label": "Sitzsteuergeraet",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 31,
+       "risk": {
+        "low": 26,
+        "medium": 4,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 21
+      }
+     ]
+    },
+    {
+     "id": "BV_ContrUnitLaneChangAssis2UDS",
+     "label": "BV_ContrUnitLaneChangAssis2UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 22,
+       "risk": {
+        "low": 19,
+        "medium": 1,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 24
+      }
+     ]
+    },
+    {
+     "id": "ACC3",
+     "label": "ACC3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "high": 3,
+        "medium": 25
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "Lenkstockschalter",
+     "label": "Lenkstockschalter",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "low": 23,
+        "medium": 4,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "Zusatzinstrument",
+     "label": "Zusatzinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "RDK3",
+     "label": "RDK3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 15,
+       "risk": {
+        "low": 15
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "TVTuner",
+     "label": "TVTuner",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "Allrad",
+     "label": "Allrad",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "low": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Head_Unit",
+     "label": "Head_Unit",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 5,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 6
+      }
+     ]
+    },
+    {
+     "id": "Hinterachslenkung",
+     "label": "Hinterachslenkung",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 9,
+       "risk": {
+        "low": 8,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "Verdeck_Synchronisation",
+     "label": "Verdeck_Synchronisation",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 3,
+       "risk": {
+        "low": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "Verstaerker",
+     "label": "Verstaerker",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 2,
+       "risk": {
+        "low": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "9X6",
+   "label": "9X6",
+   "status": "待提取",
+   "systemCount": 0,
+   "systems": []
+  },
+  {
+   "id": "9X7",
+   "label": "9X7",
+   "status": "待提取",
+   "systemCount": 0,
+   "systems": []
+  },
+  {
+   "id": "918S",
+   "label": "918S",
+   "status": "已提取",
+   "systemCount": 16,
+   "systems": [
+    {
+     "id": "Kombiinstrument",
+     "label": "Kombiinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1137,
+       "risk": {
+        "low": 927,
+        "medium": 108,
+        "high": 102
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BCM_vorne",
+     "label": "BCM_vorne",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 408,
+       "risk": {
+        "low": 337,
+        "medium": 42,
+        "high": 29
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 76
+      }
+     ]
+    },
+    {
+     "id": "MED17_1_11",
+     "label": "MED17_1_11",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 57,
+       "risk": {
+        "low": 50,
+        "high": 3,
+        "medium": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 172
+      }
+     ]
+    },
+    {
+     "id": "BCM_hinten",
+     "label": "BCM_hinten",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 202,
+       "risk": {
+        "low": 177,
+        "medium": 21,
+        "high": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "CAN_CAN_Gateway",
+     "label": "CAN_CAN_Gateway",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 128,
+       "risk": {
+        "low": 114,
+        "high": 10,
+        "medium": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 83
+      }
+     ]
+    },
+    {
+     "id": "BMS2",
+     "label": "BMS2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 8,
+       "risk": {
+        "low": 8
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 177
+      }
+     ]
+    },
+    {
+     "id": "AnzeigenDomaenenRechner",
+     "label": "AnzeigenDomaenenRechner",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 93,
+       "risk": {
+        "low": 90,
+        "high": 1,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 10
+      }
+     ]
+    },
+    {
+     "id": "Lift_VA",
+     "label": "Lift_VA",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 84,
+       "risk": {
+        "low": 64,
+        "medium": 15,
+        "high": 5
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "Touchbedienfeld",
+     "label": "Touchbedienfeld",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 71,
+       "risk": {
+        "low": 71
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Airbag",
+     "label": "Airbag",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 53,
+       "risk": {
+        "high": 34,
+        "low": 19
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 25
+      }
+     ]
+    },
+    {
+     "id": "BKE",
+     "label": "BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 55,
+       "risk": {
+        "low": 45,
+        "high": 7,
+        "medium": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 18
+      }
+     ]
+    },
+    {
+     "id": "TUER_VORNE",
+     "label": "TUER_VORNE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 59,
+       "risk": {
+        "low": 54,
+        "high": 3,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "SCHEINWERFER",
+     "label": "SCHEINWERFER",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 41,
+       "risk": {
+        "low": 34,
+        "medium": 1,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 14
+      }
+     ]
+    },
+    {
+     "id": "Getriebesteuerung_PDK",
+     "label": "Getriebesteuerung_PDK",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1,
+       "risk": {
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 45
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteChargContrModulUDS",
+     "label": "BV_BatteChargContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 43,
+       "risk": {
+        "low": 43
+       }
+      }
+     ]
+    },
+    {
+     "id": "Lenkstockschalter",
+     "label": "Lenkstockschalter",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "low": 23,
+        "medium": 4,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 10
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "992",
+   "label": "992 911",
+   "status": "已提取",
+   "systemCount": 18,
+   "systems": [
+    {
+     "id": "BV_EnginContrModul1UDS",
+     "label": "BV_EnginContrModul1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 243,
+       "risk": {
+        "low": 231,
+        "medium": 6,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 133
+      }
+     ]
+    },
+    {
+     "id": "BV_AirbaUDS",
+     "label": "BV_AirbaUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 154,
+       "risk": {
+        "low": 70,
+        "high": 77,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 87
+      }
+     ]
+    },
+    {
+     "id": "BV_AerodContrUnitUDS",
+     "label": "BV_AerodContrUnitUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 157,
+       "risk": {
+        "low": 127,
+        "high": 7,
+        "medium": 23
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_Brake1UDS",
+     "label": "BV_Brake1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 105,
+       "risk": {
+        "low": 89,
+        "high": 14,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 35
+      }
+     ]
+    },
+    {
+     "id": "BV_ChassContrUDS",
+     "label": "BV_ChassContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 49,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "BV_BeameModulMatriHeadlLeftUDS",
+     "label": "BV_BeameModulMatriHeadlLeftUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 36,
+       "risk": {
+        "low": 36
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 16
+      }
+     ]
+    },
+    {
+     "id": "BV_BeameModulMatriHeadlRightUDS",
+     "label": "BV_BeameModulMatriHeadlRightUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 36,
+       "risk": {
+        "low": 36
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 16
+      }
+     ]
+    },
+    {
+     "id": "BV_TirePressMonit1UDS",
+     "label": "BV_TirePressMonit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 32,
+       "risk": {
+        "low": 31,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "BV_FrontAxleLiftSysteUDS",
+     "label": "BV_FrontAxleLiftSysteUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "low": 28
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 6
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_vo_MSB",
+     "label": "BV_BedienSG_vo_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_DashBoardUDS",
+     "label": "BV_DashBoardUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 13,
+       "risk": {
+        "low": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_AllWheelContrUDS",
+     "label": "BV_AllWheelContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 14,
+       "risk": {
+        "low": 14
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BV_RearAxleSteerUDS",
+     "label": "BV_RearAxleSteerUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_ThermManagUDS",
+     "label": "BV_ThermManagUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 9,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_SteerColumLockiUDS",
+     "label": "BV_SteerColumLockiUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "high": 1,
+        "low": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_DCDCConveContrModulHVUDS",
+     "label": "BV_DCDCConveContrModulHVUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 5,
+       "risk": {
+        "low": 5
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_ContrUnitLaneChangAssis2UDS",
+     "label": "BV_ContrUnitLaneChangAssis2UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "low": 4
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_DynamAssemMountUDS",
+     "label": "BV_DynamAssemMountUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 3,
+       "risk": {
+        "low": 3
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "CAJUN",
+   "label": "CAJUN",
+   "status": "已提取",
+   "systemCount": 41,
+   "systems": [
+    {
+     "id": "BV_InforContrUnit1PAGUDS",
+     "label": "BV_InforContrUnit1PAGUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1700,
+       "risk": {
+        "low": 1585,
+        "medium": 83,
+        "high": 32
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 10
+      }
+     ]
+    },
+    {
+     "id": "BV_InforContrUnit1UDSDesay",
+     "label": "BV_InforContrUnit1UDSDesay",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1666,
+       "risk": {
+        "low": 1551,
+        "medium": 83,
+        "high": 32
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 6
+      }
+     ]
+    },
+    {
+     "id": "BV_InforContrUnit1UDS",
+     "label": "BV_InforContrUnit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1227,
+       "risk": {
+        "low": 1140,
+        "medium": 70,
+        "high": 17
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 15
+      }
+     ]
+    },
+    {
+     "id": "BCM_vorne",
+     "label": "BCM_vorne",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 408,
+       "risk": {
+        "low": 339,
+        "medium": 43,
+        "high": 26
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 71
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM_UDS",
+     "label": "BV_ECM_UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 17,
+       "risk": {
+        "medium": 3,
+        "low": 13,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 389
+      }
+     ]
+    },
+    {
+     "id": "BV_RealTopView2",
+     "label": "BV_RealTopView2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 338,
+       "risk": {
+        "low": 329,
+        "medium": 7,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "Kombiinstrument_MM",
+     "label": "Kombiinstrument_MM",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 325,
+       "risk": {
+        "low": 216,
+        "medium": 43,
+        "high": 66
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BCM_hinten",
+     "label": "BCM_hinten",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 202,
+       "risk": {
+        "low": 177,
+        "medium": 16,
+        "high": 9
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "CAN_CAN_Gateway",
+     "label": "CAN_CAN_Gateway",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 128,
+       "risk": {
+        "low": 119,
+        "high": 8,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 68
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM30_GEN2_TNF",
+     "label": "BV_ECM30_GEN2_TNF",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 134,
+       "risk": {
+        "low": 123,
+        "high": 4,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 35
+      }
+     ]
+    },
+    {
+     "id": "BV_BKE",
+     "label": "BV_BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 49,
+       "risk": {
+        "low": 46,
+        "high": 1,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 108
+      }
+     ]
+    },
+    {
+     "id": "Rueckfahrkamera_II",
+     "label": "Rueckfahrkamera_II",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 136,
+       "risk": {
+        "low": 133,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "BV_SoundSysteUDS",
+     "label": "BV_SoundSysteUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 107,
+       "risk": {
+        "low": 74,
+        "medium": 33
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "Frontkamera",
+     "label": "Frontkamera",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 88,
+       "risk": {
+        "low": 81,
+        "medium": 5,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 22
+      }
+     ]
+    },
+    {
+     "id": "BKE",
+     "label": "BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 45,
+       "risk": {
+        "low": 38,
+        "medium": 4,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 61
+      }
+     ]
+    },
+    {
+     "id": "Airbag",
+     "label": "Airbag",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 34,
+       "risk": {
+        "low": 17,
+        "high": 17
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 69
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM20_FSI",
+     "label": "BV_ECM20_FSI",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 92,
+       "risk": {
+        "low": 88,
+        "high": 2,
+        "medium": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "ESP_Colorado",
+     "label": "ESP_Colorado",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 78,
+       "risk": {
+        "high": 14,
+        "low": 55,
+        "medium": 9
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "Zusatzheizung",
+     "label": "Zusatzheizung",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 21,
+       "risk": {
+        "low": 17,
+        "medium": 2,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 58
+      }
+     ]
+    },
+    {
+     "id": "TUER_VORNE",
+     "label": "TUER_VORNE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 49,
+       "risk": {
+        "low": 46,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 19
+      }
+     ]
+    },
+    {
+     "id": "Heckklappe",
+     "label": "Heckklappe",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 44,
+       "risk": {
+        "low": 41,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 23
+      }
+     ]
+    },
+    {
+     "id": "SCHEINWERFER",
+     "label": "SCHEINWERFER",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 41,
+       "risk": {
+        "low": 34,
+        "medium": 1,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 26
+      }
+     ]
+    },
+    {
+     "id": "TUER_HINTEN",
+     "label": "TUER_HINTEN",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 49,
+       "risk": {
+        "low": 46,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "Sitzsteuergeraet",
+     "label": "Sitzsteuergeraet",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 31,
+       "risk": {
+        "low": 22,
+        "medium": 9
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "BV_ContrUnitLaneChangAssis2UDS",
+     "label": "BV_ContrUnitLaneChangAssis2UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 22,
+       "risk": {
+        "low": 19,
+        "medium": 1,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 20
+      }
+     ]
+    },
+    {
+     "id": "SWA2",
+     "label": "SWA2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 28,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 13
+      }
+     ]
+    },
+    {
+     "id": "Lenkstockschalter",
+     "label": "Lenkstockschalter",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "low": 23,
+        "medium": 4,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "ACC3",
+     "label": "ACC3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "high": 3,
+        "medium": 25
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "Kompass",
+     "label": "Kompass",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 26,
+       "risk": {
+        "low": 26
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "Zusatzinstrument",
+     "label": "Zusatzinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "Allrad",
+     "label": "Allrad",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 2,
+       "risk": {
+        "high": 1,
+        "low": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 18
+      }
+     ]
+    },
+    {
+     "id": "RDK3",
+     "label": "RDK3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 15,
+       "risk": {
+        "low": 15
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_TrailFunctUDS",
+     "label": "BV_TrailFunctUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 13,
+       "risk": {
+        "low": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "ERA_GLONASS_VFA",
+     "label": "ERA_GLONASS_VFA",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 15,
+       "risk": {
+        "low": 15
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_TransContrModulUDS",
+     "label": "BV_TransContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 16,
+       "risk": {
+        "low": 16
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_ReducContrModulUDS",
+     "label": "BV_ReducContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "low": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 11
+      }
+     ]
+    },
+    {
+     "id": "PASM",
+     "label": "PASM",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 13,
+       "risk": {
+        "low": 11,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "TVTuner",
+     "label": "TVTuner",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "BV_MediaPlayePosit1UDS",
+     "label": "BV_MediaPlayePosit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 3,
+       "risk": {
+        "low": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "Verstaerker",
+     "label": "Verstaerker",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 2,
+       "risk": {
+        "low": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Head_Unit",
+     "label": "Head_Unit",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 5,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "CS1",
+   "label": "CS1",
+   "status": "已提取",
+   "systemCount": 11,
+   "systems": [
+    {
+     "id": "BV_EnginContrModul1UDS",
+     "label": "BV_EnginContrModul1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 253,
+       "risk": {
+        "low": 239,
+        "high": 6,
+        "medium": 8
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 392
+      }
+     ]
+    },
+    {
+     "id": "BCM_vorne",
+     "label": "BCM_vorne",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 408,
+       "risk": {
+        "low": 333,
+        "medium": 49,
+        "high": 26
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 80
+      }
+     ]
+    },
+    {
+     "id": "DME_BDE_Continental",
+     "label": "DME_BDE_Continental",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 39,
+       "risk": {
+        "low": 31,
+        "high": 5,
+        "medium": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 351
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM_UDS",
+     "label": "BV_ECM_UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "medium": 3,
+        "high": 2,
+        "low": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 324
+      }
+     ]
+    },
+    {
+     "id": "Kombiinstrument_MM",
+     "label": "Kombiinstrument_MM",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 325,
+       "risk": {
+        "low": 216,
+        "medium": 43,
+        "high": 66
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BCM_hinten",
+     "label": "BCM_hinten",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 202,
+       "risk": {
+        "low": 177,
+        "medium": 21,
+        "high": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 20
+      }
+     ]
+    },
+    {
+     "id": "CAN_CAN_Gateway",
+     "label": "CAN_CAN_Gateway",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 128,
+       "risk": {
+        "low": 117,
+        "high": 9,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 84
+      }
+     ]
+    },
+    {
+     "id": "Airbag",
+     "label": "Airbag",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 53,
+       "risk": {
+        "high": 34,
+        "low": 19
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 32
+      }
+     ]
+    },
+    {
+     "id": "BKE",
+     "label": "BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 55,
+       "risk": {
+        "low": 46,
+        "medium": 3,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "TUER_VORNE",
+     "label": "TUER_VORNE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 59,
+       "risk": {
+        "low": 54,
+        "high": 3,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Lenkstockschalter",
+     "label": "Lenkstockschalter",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "low": 23,
+        "medium": 4,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "E1",
+   "label": "E1",
+   "status": "待提取",
+   "systemCount": 0,
+   "systems": []
+  },
+  {
+   "id": "E2",
+   "label": "E2",
+   "status": "已提取",
+   "systemCount": 40,
+   "systems": [
+    {
+     "id": "BV_InforContrUnit1UDS",
+     "label": "BV_InforContrUnit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1227,
+       "risk": {
+        "low": 1140,
+        "medium": 70,
+        "high": 17
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 14
+      }
+     ]
+    },
+    {
+     "id": "BCM_vorne",
+     "label": "BCM_vorne",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 408,
+       "risk": {
+        "low": 339,
+        "medium": 43,
+        "high": 26
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 76
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM_UDS",
+     "label": "BV_ECM_UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 17,
+       "risk": {
+        "medium": 3,
+        "low": 13,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 415
+      }
+     ]
+    },
+    {
+     "id": "DME_BDE_Continental",
+     "label": "DME_BDE_Continental",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 39,
+       "risk": {
+        "low": 33,
+        "high": 4,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 314
+      }
+     ]
+    },
+    {
+     "id": "BV_RealTopView2",
+     "label": "BV_RealTopView2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 338,
+       "risk": {
+        "low": 329,
+        "medium": 7,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "CAN_CAN_Gateway",
+     "label": "CAN_CAN_Gateway",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 128,
+       "risk": {
+        "low": 117,
+        "high": 9,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 126
+      }
+     ]
+    },
+    {
+     "id": "BCM_hinten",
+     "label": "BCM_hinten",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 202,
+       "risk": {
+        "low": 177,
+        "medium": 21,
+        "high": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 15
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM30_GEN2_TNF",
+     "label": "BV_ECM30_GEN2_TNF",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 134,
+       "risk": {
+        "low": 123,
+        "high": 4,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 38
+      }
+     ]
+    },
+    {
+     "id": "BMS2",
+     "label": "BMS2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 8,
+       "risk": {
+        "low": 8
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 155
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM42TDI",
+     "label": "BV_ECM42TDI",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 135,
+       "risk": {
+        "low": 124,
+        "high": 4,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "Rueckfahrkamera_II",
+     "label": "Rueckfahrkamera_II",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 136,
+       "risk": {
+        "low": 133,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 10
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM30TFS",
+     "label": "BV_ECM30TFS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 119,
+       "risk": {
+        "low": 109,
+        "high": 3,
+        "medium": 7
+       }
+      }
+     ]
+    },
+    {
+     "id": "SWSG_mit_AFS_ALWR",
+     "label": "SWSG_mit_AFS_ALWR",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 98,
+       "risk": {
+        "low": 91,
+        "high": 1,
+        "medium": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "BV_SoundSysteUDS",
+     "label": "BV_SoundSysteUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 107,
+       "risk": {
+        "low": 74,
+        "medium": 33
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "Frontkamera",
+     "label": "Frontkamera",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 88,
+       "risk": {
+        "low": 81,
+        "medium": 5,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 9
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM30TNF",
+     "label": "BV_ECM30TNF",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 82,
+       "risk": {
+        "low": 73,
+        "high": 3,
+        "medium": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "ESP_Colorado",
+     "label": "ESP_Colorado",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 78,
+       "risk": {
+        "high": 14,
+        "low": 55,
+        "medium": 9
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "TUER_VORNE",
+     "label": "TUER_VORNE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 59,
+       "risk": {
+        "low": 54,
+        "high": 3,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 15
+      }
+     ]
+    },
+    {
+     "id": "BKE",
+     "label": "BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 37,
+       "risk": {
+        "low": 33,
+        "medium": 2,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 36
+      }
+     ]
+    },
+    {
+     "id": "Heckklappe",
+     "label": "Heckklappe",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 44,
+       "risk": {
+        "low": 41,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 23
+      }
+     ]
+    },
+    {
+     "id": "DME_SIMOS_30_TFSI",
+     "label": "DME_SIMOS_30_TFSI",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 49,
+       "risk": {
+        "low": 44,
+        "medium": 3,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 16
+      }
+     ]
+    },
+    {
+     "id": "SCHEINWERFER",
+     "label": "SCHEINWERFER",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 41,
+       "risk": {
+        "low": 34,
+        "medium": 1,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "TUER_HINTEN",
+     "label": "TUER_HINTEN",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 47,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Kombiinstrument",
+     "label": "Kombiinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 44,
+       "risk": {
+        "low": 26,
+        "medium": 10,
+        "high": 8
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Sitzsteuergeraet",
+     "label": "Sitzsteuergeraet",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 31,
+       "risk": {
+        "low": 26,
+        "medium": 5
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 21
+      }
+     ]
+    },
+    {
+     "id": "Zusatzheizung",
+     "label": "Zusatzheizung",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 21,
+       "risk": {
+        "low": 17,
+        "medium": 2,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 29
+      }
+     ]
+    },
+    {
+     "id": "SWA2",
+     "label": "SWA2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 28,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 13
+      }
+     ]
+    },
+    {
+     "id": "ACC3",
+     "label": "ACC3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "high": 3,
+        "medium": 25
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "Lenkstockschalter",
+     "label": "Lenkstockschalter",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "low": 23,
+        "medium": 4,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "Kompass",
+     "label": "Kompass",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 26,
+       "risk": {
+        "low": 26
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "Zusatzinstrument",
+     "label": "Zusatzinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "RDK3",
+     "label": "RDK3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 15,
+       "risk": {
+        "low": 15
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "Allrad",
+     "label": "Allrad",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 2,
+       "risk": {
+        "high": 1,
+        "low": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 16
+      }
+     ]
+    },
+    {
+     "id": "BV_TrailFunctUDS",
+     "label": "BV_TrailFunctUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 13,
+       "risk": {
+        "low": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "TVTuner",
+     "label": "TVTuner",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "Lenkhilfe",
+     "label": "Lenkhilfe",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "low": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 9
+      }
+     ]
+    },
+    {
+     "id": "Anhaenger",
+     "label": "Anhaenger",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 9,
+       "risk": {
+        "low": 8,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_MediaPlayePosit1UDS",
+     "label": "BV_MediaPlayePosit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 3,
+       "risk": {
+        "low": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "Verstaerker",
+     "label": "Verstaerker",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 2,
+       "risk": {
+        "low": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "Head_Unit",
+     "label": "Head_Unit",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 5,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "E3",
+   "label": "E3",
+   "status": "已提取",
+   "systemCount": 17,
+   "systems": [
+    {
+     "id": "BV_AirbaUDS",
+     "label": "BV_AirbaUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 154,
+       "risk": {
+        "low": 62,
+        "high": 85,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 96
+      }
+     ]
+    },
+    {
+     "id": "BV_AerodContrUnitUDS",
+     "label": "BV_AerodContrUnitUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 157,
+       "risk": {
+        "low": 127,
+        "high": 7,
+        "medium": 23
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_InforContrUnit1UDS",
+     "label": "BV_InforContrUnit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 156,
+       "risk": {
+        "low": 154,
+        "high": 1,
+        "medium": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_AirCondiUDS",
+     "label": "BV_AirCondiUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 115,
+       "risk": {
+        "low": 107,
+        "medium": 1,
+        "high": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 31
+      }
+     ]
+    },
+    {
+     "id": "BV_Brake1UDS",
+     "label": "BV_Brake1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 105,
+       "risk": {
+        "low": 89,
+        "high": 14,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 34
+      }
+     ]
+    },
+    {
+     "id": "BV_EnginContrModul1UDS",
+     "label": "BV_EnginContrModul1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 114,
+       "risk": {
+        "low": 106,
+        "high": 4,
+        "medium": 4
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_ChassContrUDS",
+     "label": "BV_ChassContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 47,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "BV_ActuaForExterNoiseUDS",
+     "label": "BV_ActuaForExterNoiseUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 34,
+       "risk": {
+        "low": 31,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_hi_MSB",
+     "label": "BV_BedienSG_hi_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_vo_MSB",
+     "label": "BV_BedienSG_vo_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_LockElectUDS",
+     "label": "BV_LockElectUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 21
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModulUDS",
+     "label": "BV_BatteEnergContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "BV_DashBoardUDS",
+     "label": "BV_DashBoardUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 13,
+       "risk": {
+        "low": 13
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 6
+      }
+     ]
+    },
+    {
+     "id": "BV_AllWheelContrUDS",
+     "label": "BV_AllWheelContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 14,
+       "risk": {
+        "low": 14
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteChargContrModulUDS",
+     "label": "BV_BatteChargContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModul2UDS",
+     "label": "BV_BatteEnergContrModul2UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1,
+       "risk": {
+        "low": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_DCDCConveContrModulHVUDS",
+     "label": "BV_DCDCConveContrModulHVUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 5,
+       "risk": {
+        "low": 5
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "G1",
+   "label": "G1",
+   "status": "已提取",
+   "systemCount": 33,
+   "systems": [
+    {
+     "id": "Kombiinstrument",
+     "label": "Kombiinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1137,
+       "risk": {
+        "low": 940,
+        "medium": 100,
+        "high": 97
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "BCM_vorne",
+     "label": "BCM_vorne",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 408,
+       "risk": {
+        "low": 356,
+        "medium": 22,
+        "high": 30
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 70
+      }
+     ]
+    },
+    {
+     "id": "DME_BDE_Continental",
+     "label": "DME_BDE_Continental",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 38,
+       "risk": {
+        "low": 30,
+        "high": 5,
+        "medium": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 337
+      }
+     ]
+    },
+    {
+     "id": "BCM_hinten",
+     "label": "BCM_hinten",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 202,
+       "risk": {
+        "low": 178,
+        "medium": 19,
+        "high": 5
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 13
+      }
+     ]
+    },
+    {
+     "id": "CAN_CAN_Gateway",
+     "label": "CAN_CAN_Gateway",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 128,
+       "risk": {
+        "low": 119,
+        "high": 8,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 82
+      }
+     ]
+    },
+    {
+     "id": "BV_ECM30_GEN2_TNF",
+     "label": "BV_ECM30_GEN2_TNF",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 134,
+       "risk": {
+        "low": 128,
+        "medium": 5,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 40
+      }
+     ]
+    },
+    {
+     "id": "BMS2",
+     "label": "BMS2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 8,
+       "risk": {
+        "low": 8
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 155
+      }
+     ]
+    },
+    {
+     "id": "Rueckfahrkamera_II",
+     "label": "Rueckfahrkamera_II",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 136,
+       "risk": {
+        "low": 133,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "SWSG_mit_AFS_ALWR",
+     "label": "SWSG_mit_AFS_ALWR",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 98,
+       "risk": {
+        "low": 91,
+        "high": 1,
+        "medium": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 19
+      }
+     ]
+    },
+    {
+     "id": "BKE",
+     "label": "BKE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 45,
+       "risk": {
+        "low": 35,
+        "medium": 7,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 70
+      }
+     ]
+    },
+    {
+     "id": "Frontkamera",
+     "label": "Frontkamera",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 88,
+       "risk": {
+        "low": 81,
+        "medium": 5,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 19
+      }
+     ]
+    },
+    {
+     "id": "Airbag",
+     "label": "Airbag",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 53,
+       "risk": {
+        "high": 35,
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 33
+      }
+     ]
+    },
+    {
+     "id": "TUER_VORNE",
+     "label": "TUER_VORNE",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 49,
+       "risk": {
+        "low": 45,
+        "high": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 28
+      }
+     ]
+    },
+    {
+     "id": "PDC",
+     "label": "PDC",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 62,
+       "risk": {
+        "low": 54,
+        "high": 2,
+        "medium": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "Heckklappe",
+     "label": "Heckklappe",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 44,
+       "risk": {
+        "low": 41,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 19
+      }
+     ]
+    },
+    {
+     "id": "TUER_HINTEN",
+     "label": "TUER_HINTEN",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 49,
+       "risk": {
+        "low": 46,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "SCHEINWERFER",
+     "label": "SCHEINWERFER",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 41,
+       "risk": {
+        "low": 34,
+        "medium": 1,
+        "high": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 17
+      }
+     ]
+    },
+    {
+     "id": "Sitzsteuergeraet",
+     "label": "Sitzsteuergeraet",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 31,
+       "risk": {
+        "low": 26,
+        "medium": 5
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 23
+      }
+     ]
+    },
+    {
+     "id": "Getriebesteuerung_PDK",
+     "label": "Getriebesteuerung_PDK",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1,
+       "risk": {
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 52
+      }
+     ]
+    },
+    {
+     "id": "Zusatzheizung",
+     "label": "Zusatzheizung",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 19,
+       "risk": {
+        "low": 16,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 28
+      }
+     ]
+    },
+    {
+     "id": "SWA2",
+     "label": "SWA2",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 28,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 11
+      }
+     ]
+    },
+    {
+     "id": "Lenkstockschalter",
+     "label": "Lenkstockschalter",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 31,
+       "risk": {
+        "low": 25,
+        "medium": 4,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "RealTopview",
+     "label": "RealTopview",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 24
+      }
+     ]
+    },
+    {
+     "id": "ACC3",
+     "label": "ACC3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 28,
+       "risk": {
+        "high": 3,
+        "medium": 25
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "PSM",
+     "label": "PSM",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 8,
+       "risk": {
+        "low": 5,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 15
+      }
+     ]
+    },
+    {
+     "id": "Zusatzinstrument",
+     "label": "Zusatzinstrument",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "RDK3",
+     "label": "RDK3",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 15,
+       "risk": {
+        "low": 15
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "Head_Unit",
+     "label": "Head_Unit",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 5,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "Anhaenger",
+     "label": "Anhaenger",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 9,
+       "risk": {
+        "low": 9
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "Lenkhilfe",
+     "label": "Lenkhilfe",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "low": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 9
+      }
+     ]
+    },
+    {
+     "id": "TVTuner",
+     "label": "TVTuner",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "Verstaerker",
+     "label": "Verstaerker",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 2,
+       "risk": {
+        "low": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 7
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModulUDS",
+     "label": "BV_BatteEnergContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 7,
+       "risk": {
+        "low": 7
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "G2",
+   "label": "G2",
+   "status": "已提取",
+   "systemCount": 14,
+   "systems": [
+    {
+     "id": "BV_AirbaUDS",
+     "label": "BV_AirbaUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 154,
+       "risk": {
+        "low": 70,
+        "high": 77,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 97
+      }
+     ]
+    },
+    {
+     "id": "BV_AerodContrUnitUDS",
+     "label": "BV_AerodContrUnitUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 157,
+       "risk": {
+        "low": 127,
+        "high": 7,
+        "medium": 23
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_TransContrModulUDS",
+     "label": "BV_TransContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 138
+      }
+     ]
+    },
+    {
+     "id": "BV_AirCondiUDS",
+     "label": "BV_AirCondiUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 115,
+       "risk": {
+        "low": 111,
+        "medium": 2,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 27
+      }
+     ]
+    },
+    {
+     "id": "BV_Brake1UDS",
+     "label": "BV_Brake1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 105,
+       "risk": {
+        "low": 89,
+        "high": 14,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 26
+      }
+     ]
+    },
+    {
+     "id": "BV_EnginContrModul1UDS",
+     "label": "BV_EnginContrModul1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 114,
+       "risk": {
+        "low": 106,
+        "high": 4,
+        "medium": 4
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 10
+      }
+     ]
+    },
+    {
+     "id": "BV_ChassContrUDS",
+     "label": "BV_ChassContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 49,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 12
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModulUDS",
+     "label": "BV_BatteEnergContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 44,
+       "risk": {
+        "low": 44
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_ActuaForExterNoiseUDS",
+     "label": "BV_ActuaForExterNoiseUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 34,
+       "risk": {
+        "low": 31,
+        "medium": 2,
+        "high": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_vo_MSB",
+     "label": "BV_BedienSG_vo_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_hi_MSB",
+     "label": "BV_BedienSG_hi_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_ContrModul2ForSunroUDS",
+     "label": "BV_ContrModul2ForSunroUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 27,
+       "risk": {
+        "low": 27
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_LockElectUDS",
+     "label": "BV_LockElectUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 19
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModul2UDS",
+     "label": "BV_BatteEnergContrModul2UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 1,
+       "risk": {
+        "low": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "G3",
+   "label": "G3",
+   "status": "已提取",
+   "systemCount": 15,
+   "systems": [
+    {
+     "id": "BV_AirbaUDS",
+     "label": "BV_AirbaUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 154,
+       "risk": {
+        "low": 62,
+        "high": 85,
+        "medium": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 96
+      }
+     ]
+    },
+    {
+     "id": "BV_AerodContrUnitUDS",
+     "label": "BV_AerodContrUnitUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 157,
+       "risk": {
+        "low": 127,
+        "high": 7,
+        "medium": 23
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_AirCondiUDS",
+     "label": "BV_AirCondiUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 115,
+       "risk": {
+        "low": 107,
+        "medium": 1,
+        "high": 7
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 28
+      }
+     ]
+    },
+    {
+     "id": "BV_Brake1UDS",
+     "label": "BV_Brake1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 105,
+       "risk": {
+        "low": 89,
+        "high": 14,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 34
+      }
+     ]
+    },
+    {
+     "id": "BV_ChassContrUDS",
+     "label": "BV_ChassContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 47,
+        "high": 3
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 11
+      }
+     ]
+    },
+    {
+     "id": "BV_TransContrModulUDS",
+     "label": "BV_TransContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 38
+      }
+     ]
+    },
+    {
+     "id": "BV_BeameModulMatriHeadlLeftUDS",
+     "label": "BV_BeameModulMatriHeadlLeftUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 36,
+       "risk": {
+        "low": 36
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_BeameModulMatriHeadlRightUDS",
+     "label": "BV_BeameModulMatriHeadlRightUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 36,
+       "risk": {
+        "low": 36
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_TirePressMonit1UDS",
+     "label": "BV_TirePressMonit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 32,
+       "risk": {
+        "low": 31,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 5
+      }
+     ]
+    },
+    {
+     "id": "BV_ActuaForExterNoiseUDS",
+     "label": "BV_ActuaForExterNoiseUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 34,
+       "risk": {
+        "low": 31,
+        "medium": 2,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_hi_MSB",
+     "label": "BV_BedienSG_hi_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_vo_MSB",
+     "label": "BV_BedienSG_vo_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_LockElectUDS",
+     "label": "BV_LockElectUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 21
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModulUDS",
+     "label": "BV_BatteEnergContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 18,
+       "risk": {
+        "low": 18
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_DCDCConveContrModulHVUDS",
+     "label": "BV_DCDCConveContrModulHVUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 5,
+       "risk": {
+        "low": 5
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "J1",
+   "label": "J1",
+   "status": "已提取",
+   "systemCount": 16,
+   "systems": [
+    {
+     "id": "BV_AerodContrUnitUDS",
+     "label": "BV_AerodContrUnitUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 157,
+       "risk": {
+        "low": 127,
+        "high": 7,
+        "medium": 23
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 4
+      }
+     ]
+    },
+    {
+     "id": "BV_AirbaUDS",
+     "label": "BV_AirbaUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 154,
+       "risk": {
+        "low": 70,
+        "high": 77,
+        "medium": 7
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_Brake1UDS",
+     "label": "BV_Brake1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 105,
+       "risk": {
+        "low": 89,
+        "high": 14,
+        "medium": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 14
+      }
+     ]
+    },
+    {
+     "id": "BV_AirCondiUDS",
+     "label": "BV_AirCondiUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 115,
+       "risk": {
+        "low": 112,
+        "medium": 1,
+        "high": 2
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BV_BatteEnergContrModulUDS",
+     "label": "BV_BatteEnergContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 19,
+       "risk": {
+        "low": 19
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 57
+      }
+     ]
+    },
+    {
+     "id": "BV_ChassContrUDS",
+     "label": "BV_ChassContrUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 50,
+       "risk": {
+        "low": 49,
+        "high": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 6
+      }
+     ]
+    },
+    {
+     "id": "BV_BeameModulMatriHeadlLeftUDS",
+     "label": "BV_BeameModulMatriHeadlLeftUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 36,
+       "risk": {
+        "low": 36
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_BeameModulMatriHeadlRightUDS",
+     "label": "BV_BeameModulMatriHeadlRightUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 36,
+       "risk": {
+        "low": 36
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_TirePressMonit1UDS",
+     "label": "BV_TirePressMonit1UDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 32,
+       "risk": {
+        "low": 31,
+        "medium": 1
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_ActuaForExterNoiseUDS",
+     "label": "BV_ActuaForExterNoiseUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 34,
+       "risk": {
+        "low": 31,
+        "medium": 2,
+        "high": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "BV_BedienSG_hi_MSB",
+     "label": "BV_BedienSG_hi_MSB",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 29,
+       "risk": {
+        "low": 29
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 3
+      }
+     ]
+    },
+    {
+     "id": "BV_LockElectUDS",
+     "label": "BV_LockElectUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 6,
+       "risk": {
+        "low": 6
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 19
+      }
+     ]
+    },
+    {
+     "id": "BV_DCDCConveContrModulHVUDS",
+     "label": "BV_DCDCConveContrModulHVUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 14,
+       "risk": {
+        "low": 14
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 8
+      }
+     ]
+    },
+    {
+     "id": "BV_DriveMotorContrModulUDS",
+     "label": "BV_DriveMotorContrModulUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 9,
+       "risk": {
+        "low": 9
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 2
+      }
+     ]
+    },
+    {
+     "id": "BV_OverTheAirFunctContrUnitUDS",
+     "label": "BV_OverTheAirFunctContrUnitUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 10,
+       "risk": {
+        "low": 10
+       }
+      },
+      {
+       "id": "measure",
+       "label": "数据流",
+       "count": 1
+      }
+     ]
+    },
+    {
+     "id": "BV_RollContrSysteUDS",
+     "label": "BV_RollContrSysteUDS",
+     "ecuId": null,
+     "functions": [
+      {
+       "id": "coding",
+       "label": "编码",
+       "count": 4,
+       "risk": {
+        "low": 4
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

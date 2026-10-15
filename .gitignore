@@ -51,3 +51,21 @@ DEPLOY-AI.md
 # Temp
 *.log
 *.tmp
+
+# Android build output (Capacitor)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+
+# iOS Capacitor generated
+ios/App/CapApp-SPM/
+ios/capacitor-cordova-ios-plugins/
+ios/App/App/public/
+
+# 内部研究资料（只留本地）
+ref/
+analysis/
+*.so
+*.BIN

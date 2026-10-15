@@ -104,6 +104,31 @@ export function algoB(r0) {
  * @param {number} level     访问等级（0x01 / 0x03 …）
  * @param {string} variant   可选：ECU 变体名（决定用 A 还是 B）
  */
+/**
+ * ECU 家族 → seed/key 变体。
+ *
+ * ⚠️ 算法按 **ECU 家族**选，不是全局一个（FINDINGS.md：143 密钥符号 / 93 类函数体指纹，
+ *    最大簇 10 个同构 = 同一算法的不同 ECU 封装；家族分布 E3(20)/G2(7)/918(5)/PDK(2)…)。
+ *    对非该家族的 ECU 算出的 key 是错的 → NRC 0x35 → 反复重试 → **0x36 锁死**。
+ *
+ * 目前只确认了 `9x7GW`（`CServiceSeedAndKeyPag_SK_9x7GW` @两个 16 位位运算例程。
+ * 其余家族的映射**尚未逐一确认**，不要瞎填。
+ */
+export const VARIANT_BY_ECU = {
+  // 已确认
+  '9x7GW': { algo: 'A', seedBytes: 2 },
+  // 待补：E3 / G2 / 918 / PDK / 9x1 / 9x6 / 9x7 … 见 FINDINGS.md §seedkey
+};
+
+/** 按 ECU 名/家族挑变体；不认识返回 null（调用方必须拒绝写入，不要回退默认） */
+export function pickVariant(ecuName = '') {
+  const n = String(ecuName).toUpperCase();
+  for (const [k, v] of Object.entries(VARIANT_BY_ECU)) {
+    if (n.includes(k.toUpperCase())) return { variant: k, ...v };
+  }
+  return null;
+}
+
 export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2 } = {}) {
   const fn = algo === 'B' ? algoB : algoA;
   return {
@@ -111,12 +136,13 @@ export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2 } = 
     verified: true,           // ✅ 离线逐位校验（离线校验）
     calc(seed /* Uint8Array */, level /* number */) {
       // seedBytes 决定取几字节 seed 做 16 位输入。
-      // ⚠️ 若 ECU 实发 4 字节 seed，必须显式声明 seedBytes=4 并约定取哪 16 位，
-      //    绝不静默丢高 16 位——那会算出错 key 然后吃满尝试次数锁死（NRC 0x36）。
-      if (seed.length < seedBytes) {
+      // ⚠️ **长度必须严格相等**，多给少给都要拒绝。
+      //    此前只拒"过短"，4 字节 seed 配 seedBytes=2 会**静默取低 16 位**，
+      //    算出错 key → NRC 0x35 → 反复重试 → 0x36 锁死（2026-10-16 复查 P7）。
+      if (seed.length !== seedBytes) {
         throw new Error(
-          `seed 长度 ${seed.length} < 期望 ${seedBytes}（variant=${variant}），拒绝计算。` +
-          `请核对该 ECU 的 seed 长度后显式配置 seedBytes。`);
+          `seed 长度 ${seed.length} ≠ 期望 ${seedBytes}（variant=${variant}），拒绝计算。` +
+          `请核对该 ECU 的 seed 长度后显式配置 seedBytes —— 绝不静默截断/补零。`);
       }
       // 默认取低 16 位（小端）。4 字节 seed 的取法需按 ECU 确认后调整此处。
       const v = (seed[0] | (seed[1] << 8)) & 0xffff;

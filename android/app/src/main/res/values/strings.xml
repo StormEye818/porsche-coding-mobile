@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Porsche Coder</string>
+    <string name="title_activity_main">Porsche Coder</string>
+    <string name="package_name">cn.bigmiao.porschecoder</string>
+    <string name="custom_url_scheme">cn.bigmiao.porschecoder</string>
+</resources>

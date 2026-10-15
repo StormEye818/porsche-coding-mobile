@@ -1,7 +1,7 @@
 /**
- * app.js — 对齐 431 的层级交互。
+ * app.js — 对齐参考诊断仪 的层级交互。
  *
- * 层级（431 真实菜单）：
+ * 层级（参考诊断仪真实菜单）：
  *   L0 请选择车型 → 自动搜索 / 手动选择 / 特殊功能 / 在线功能 / ADAS 校准 / 防盗功能 / 安全网关
  *   L1 车系组（9 个）
  *   L2 车型（21 个）
@@ -14,29 +14,40 @@
  */
 import { Coder, CodingError, MissingSeedKeyError } from './coder.js';
 import { canWrite, riskLabel, extractField, decodeValue, validateParam } from './schema.js';
-import { makeProvider } from './seedkey.js';
+import { makeProvider, pickVariant } from './seedkey.js';
 import { LinkDoctor, scanEcuAddresses } from './link-doctor.js';
 import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
 
 /**
  * ECU 物理地址表（CAN 请求/应答 ID）。
- * 实测确认：DME 7E0/7E8、Gateway 710/77A（应答≠请求+8）。
- * 其余按「请求 0x7E0 系 + 应答+8」的常见规律给候选，
- * 进模块时若地址未知，先跑「地址扫描」实测再填进来。
+ *
+ * ⚠️ 地址是上车实测出来的，**猜不得** —— 硬编码一个地址读所有模块是读不到的（实车教训）。
+ * 每条带 `state`：
+ *   'measured'  实测确认
+ *   'candidate' 按 OBD-II 物理寻址规律（0x7E0-0x7E7 请求 / +8 应答）推测，**未验证**
+ *   'unknown'   猜不出来，必须先跑 link-doctor.js L5「地址扫描」实测再填
+ *
+ * ⚠️ 0x7E0-0x7E7 只有 **8 个槽位**，应答占 0x7E8-0x7EF。
+ *   所以「IC(仪表) = 0x7E8」是**错的**：0x7E8 已经是 DME 的应答 ID，
+ *   拿它当请求 ID 会和 DME 应答撞。仪表在保时捷上多半在 0x7E0 系之外
+ *   （网关就是 0x710/0x77A，应答≠请求+8）。
+ *   → 已改为 unknown，等地址扫描实测。
+ *
+ * 验证方法：连接自检 L5 会逐个地址发 KWP 1A 9F，有应答的就是实测值，回填到这里并标 'measured'。
  */
 const ECU_ADDR = {
-  'ECM/DME(发动机控制模块)': { tx: 0x7E0, rx: 0x7E8, note: '实测' },
-  '网关':                  { tx: 0x710, rx: 0x77A, note: '实测（rx≠tx+8）' },
-  '安全气囊':               { tx: 0x7E2, rx: 0x7EA, note: '候选' },
-  'ESP/PSM(电控稳定系统)':   { tx: 0x7E4, rx: 0x7EC, note: '候选' },
-  'AC(空调系统)':           { tx: 0x7E6, rx: 0x7EE, note: '候选' },
-  'IC(仪表)':               { tx: 0x7E8, rx: 0x7F0, note: '候选' },
-  'EPS(电动助力转向系统)':   { tx: 0x730, rx: 0x738, note: '候选' },
-  'Tiptronic 变速器控制':    { tx: 0x7E1, rx: 0x7E9, note: '候选' },
-  '驻车制动器':             { tx: 0x7E3, rx: 0x7EB, note: '候选' },
-  '水平高度控制/PASM':      { tx: 0x7E5, rx: 0x7ED, note: '候选' },
-  '轮胎压力监控 （TPM）':    { tx: 0x7E7, rx: 0x7EF, note: '候选' },
+  'ECM/DME(发动机控制模块)': { tx: 0x7E0, rx: 0x7E8, state: 'measured', note: '实测' },
+  '网关':                  { tx: 0x710, rx: 0x77A, state: 'measured', note: '实测（rx≠tx+8）' },
+  '安全气囊':               { tx: 0x7E2, rx: 0x7EA, state: 'candidate', note: '候选·未验证' },
+  'ESP/PSM(电控稳定系统)':   { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '候选·未验证' },
+  'AC(空调系统)':           { tx: 0x7E6, rx: 0x7EE, state: 'candidate', note: '候选·未验证' },
+  'IC(仪表)':               { tx: null, rx: null, state: 'unknown', note: '需地址扫描（原填 0x7E8 与 DME 应答 ID 冲突，已作废）' },
+  'EPS(电动助力转向系统)':   { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
+  'Tiptronic 变速器控制':    { tx: 0x7E1, rx: 0x7E9, state: 'candidate', note: '候选·未验证' },
+  '驻车制动器':             { tx: 0x7E3, rx: 0x7EB, state: 'candidate', note: '候选·未验证' },
+  '水平高度控制/PASM':      { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '候选·未验证' },
+  '轮胎压力监控 （TPM）':    { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '候选·未验证' },
 };
 
 function addrFor(label) {
@@ -148,7 +159,7 @@ function updateLoading(title, detail = '') {
 
 /** 规则编码：批量查看和修改多个设码值 */
 function showRuleCoding(allItems, sysLabel) {
-  // ★ 431 的做法：先显示一级分组目录（和刷隐藏一样），点进去再批量编辑
+  // ★ 参考诊断仪的做法：先显示一级分组目录（和刷隐藏一样），点进去再批量编辑
   const groups = {};
   for (const p of allItems) {
     const g = p.path?.[0] || '（未命名）';
@@ -165,7 +176,7 @@ function showRuleCoding(allItems, sysLabel) {
 }
 
 function showRuleGroup(g) {
-  // ★ 431 的做法：有 L3 子组就先显示子组列表，没有才直接显示条目
+  // ★ 参考诊断仪的做法：有 L3 子组就先显示子组列表，没有才直接显示条目
   const hasSubgroups = g.items.some((p) => (p.path?.length || 0) >= 3);
   if (hasSubgroups) {
     // 按 L3 子分组
@@ -199,8 +210,10 @@ function showRuleBatchEdit(title, items) {
     const en = p.enum ? Object.entries(p.enum) : [];
     let inputHtml;
     if (p.kind === 'switch' || p.kind === 'enum') {
+      // ⚠️ enum key 是**十进制**字符串（"0".."255"/"16777215"），不是十六进制！
+      // 曾用 parseInt(k,16)：`"255"→597`、`"10"→16`，3802 条枚举里 4194 个 key≥10 全写错值。
       inputHtml = `<select class="ruleVal" data-id="${p.id}">${en.map(([k, v]) =>
-        `<option value="${parseInt(k, 16)}" ${parseInt(k, 16) === p.currentValue ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+        `<option value="${Number(k)}" ${Number(k) === p.currentValue ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
     } else {
       inputHtml = `<input class="ruleVal" data-id="${p.id}" type="number" value="${p.currentValue ?? 0}" min="${p.min ?? 0}" max="${p.max ?? ''}" style="width:70px">`;
     }
@@ -225,16 +238,28 @@ function showRuleBatchEdit(title, items) {
 
   $('ruleBatchWrite').onclick = async () => {
     const changes = [];
+    const rejected = [];
     $('navList').querySelectorAll('.ruleVal').forEach((el) => {
       const p = items.find((x) => x.id === el.dataset.id);
       if (!p) return;
       const newVal = Number(el.value);
-      if (p.currentValue !== undefined && newVal !== p.currentValue) {
-        changes.push({ p, newVal });
+      if (p.currentValue === undefined || newVal === p.currentValue) return;
+      // ⚠️ 批量写入必须与单项写入**同一套闸门**：
+      //   ① canWrite（只读项 / 无 LID / 严格门禁开关）
+      //   ② min/max 范围 —— 此前批量路径不查，injectField 对越界值
+      //      `& mask` 静默截断后照写（2026-10-16 复查 P11）
+      if (!canWrite(p)) { rejected.push(`${p.name}: 不可写（只读/无 LID/门禁）`); return; }
+      if ((p.min != null && newVal < p.min) || (p.max != null && newVal > p.max)) {
+        rejected.push(`${p.name}: ${newVal} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}`);
+        return;
       }
+      changes.push({ p, newVal });
     });
+    if (rejected.length) {
+      alert(`有 ${rejected.length} 项未通过校验，已跳过：\n\n${rejected.slice(0, 10).join('\n')}`);
+    }
     if (!changes.length) {
-      toast('info', '没有变更', '所有值与当前值一致');
+      toast('info', '没有可写入的变更', rejected.length ? '全部被校验拦下' : '所有值与当前值一致');
       return;
     }
     showLoading('批量写入中…', `${changes.length} 个变更`);
@@ -256,7 +281,10 @@ function showRuleBatchEdit(title, items) {
 
 /** 备份所有编码 */
 async function backupAllCoding(allItems, sysLabel) {
-  const lids = [...new Set(allItems.map((p) => p.lid).filter(Boolean))];
+  // ⚠️ lid=0 是**合法 LID**（6383 条里有 1088 条 lid=0，22↔2E 且 sidPairOk），
+  //    不能用 filter(Boolean) —— 那会把这些块全丢掉不备份。
+  //    （若将来确认 0 是提取缺省值，应在数据侧标 writeBlockedReason，而不是在这里过滤。）
+  const lids = [...new Set(allItems.map((p) => p.lid).filter((v) => v != null))];
   if (!lids.length) {
     toast('warn', '无可备份数据', '该模块无编码块');
     return;
@@ -267,8 +295,14 @@ async function backupAllCoding(allItems, sysLabel) {
     const lid = lids[i];
     try {
       const sample = allItems.find((p) => p.lid === lid);
-      const blk = await coder.readBlock(lid, sample?.readSid ?? 0x21);
-      backup.blocks[lid] = Array.from(blk);
+      const readSid = sample?.readSid ?? 0x21;
+      const blk = await coder.readBlock(lid, readSid);
+      // 同时记下读写 SID —— 恢复时按备份原样写回，不猜 SID
+      backup.blocks[lid] = {
+        bytes: Array.from(blk),
+        readSid,
+        writeSid: sample?.writeSid ?? (readSid === 0x22 ? 0x2E : 0x3B),
+      };
     } catch {}
     updateLoading('正在备份编码', `${i + 1} / ${lids.length} 个块`);
   }
@@ -309,17 +343,38 @@ async function restoreCoding(sysLabel) {
     </div>`;
   window._restoreBackup = async (idx) => {
     const b = backups[idx];
-    showLoading('恢复编码中…', `0 / ${Object.keys(b.blocks).length} 个块`);
+    const entries = Object.entries(b.blocks);
+    showLoading('恢复编码中…', `0 / ${entries.length} 个块`);
     let ok = 0, fail = 0;
-    for (const [lid, data] of Object.entries(b.blocks)) {
+    const failed = [];
+    for (const [lid, rec] of entries) {
+      // 兼容旧格式：旧备份 blocks[lid] 直接是字节数组
+      const bytes = Array.isArray(rec) ? rec : rec?.bytes;
+      const readSid = (Array.isArray(rec) ? 0x21 : rec?.readSid) ?? 0x21;
+      const writeSid = (Array.isArray(rec) ? 0x3B : rec?.writeSid) ?? (readSid === 0x22 ? 0x2E : 0x3B);
       try {
-        await coder.applyChange({ lid: Number(lid), writeSid: 0x3B, readSid: 0x21 }, 0, { dryRun: false, session: 0x89, secLevel: 0x09 });
+        if (!bytes || !bytes.length) throw new Error('备份块为空');
+        // ⚠️ 恢复必须**整块原样写回**，不要走 applyChange 的字段路径 ——
+        //    那条路径需要 byte/bit/bitsize，备份里没有，必然抛"参数超出编码块长度"。
+        //    此前就是这样把备份写废的（2026-10-16 复查 P3）。
+        const hex = bytes.map((x) => x.toString(16).padStart(2, '0')).join('');
+        const idHex = Number(lid).toString(16).toUpperCase().padStart(writeSid === 0x2E ? 4 : 2, '0');
+        await coder.enterSession(0x89);
+        await coder.securityAccess(0x09).catch(() => {});
+        await coder.uds(`${writeSid.toString(16).toUpperCase().padStart(2, '0')}${idHex}${hex}`, 8000);
+        // 回读校验
+        const back = await coder.readBlock(Number(lid), readSid);
+        const same = back.length === bytes.length && back.every((x, i) => x === bytes[i]);
+        if (!same) throw new Error('回读与备份不一致');
         ok++;
-      } catch {
+      } catch (e) {
         fail++;
+        failed.push(`LID ${lid}: ${e.message}`);
       }
+      updateLoading('恢复编码中…', `${ok + fail} / ${entries.length} 个块`);
     }
     hideLoading();
+    if (failed.length) log('恢复失败明细：\n' + failed.slice(0, 8).join('\n'), 'err');
     toast(fail ? 'warn' : 'ok', '恢复完成', `成功 ${ok} / 失败 ${fail}`);
   };
 }
@@ -374,7 +429,12 @@ $('btnDoctor').onclick = async () => {
     if (elm) {
       coder = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, ecuName: 'DME' });
       coder.onProgress = (m) => log(m, 'info');
-      coder.seedKeyProvider = makeProvider({ variant: '9x7GW', algo: 'A' });
+      // 按 ECU 家族选 seed/key 变体 —— 不认识就拒绝写入，不盲用默认
+      // （用错变体 = 算错 key = NRC 0x35 → 重试 → 0x36 锁死）
+      const _vk = pickVariant('DME');
+      coder.seedKeyProvider = _vk ? makeProvider(_vk) : null;
+      if (_vk) log(`seed/key 变体：${_vk.variant}/${_vk.algo}（seed ${_vk.seedBytes}B）`, 'info');
+      else log('该 ECU 家族无已确认的 seed/key 变体 —— 只读可用，写入会被拒绝', 'warn');
     }
     $('linkBadge').textContent = r.fail === 0 ? '已连接' : `${r.fail} 层失败`;
     $('linkBadge').className = 'badge ' + (r.fail === 0 ? 'ok' : 'warn');
@@ -429,6 +489,7 @@ $('btnSim').onclick = () => {
   simMode = true;
   coder = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, ecuName: '模拟ECU' });
   coder.onProgress = (m) => log(m, 'info');
+  // 模拟模式固定用已确认变体（保证离线回归可跑）；真车按 ECU 家族选
   coder.seedKeyProvider = makeProvider({ variant: '9x7GW', algo: 'A' });
   $('linkBadge').textContent = '模拟中';
   $('linkBadge').className = 'badge warn';
@@ -450,6 +511,30 @@ $('btnDisc').onclick = async () => {
   log('已断开', 'info');
 };
 
+/**
+ * VIN 校验 —— ISO 3779 / NHTSA：17 位，字母数字，**排除 I、O、Q**。
+ * 不校验就读会把二进制垃圾当 VIN，进而猜错车型、按错车型读编码。
+ */
+function isValidVin(v) {
+  return typeof v === 'string' && /^[A-HJ-NPR-Z0-9]{17}$/.test(v);
+}
+
+/**
+ * VIN 第 10 位（下标 9）= 年款码，30 年一循环。
+ * 这是**消歧用的**，不是摆设 —— 例如 970/971、958/9YA 的分界就靠年款。
+ *
+ * ⚠️ 字母表顺序：**数字在前**（1..9 = 2001..2009），再 A..Y（2010..2030，跳过 I/O/Q/U/Z）。
+ *    2026-10-15 前写反成「字母在前数字在后」，年款整体偏 9 年。
+ */
+function decodeVinYear(vin) {
+  const c = (vin[9] || '').toUpperCase();
+  if (!c) return null;
+  const alpha = '123456789ABCDEFGHJKLMNPRSTVWXY';
+  const i = alpha.indexOf(c);
+  if (i < 0) return null;
+  return i < 9 ? 2001 + i : 2010 + (i - 9);
+}
+
 // ---------- 自动搜索（读 VIN 判车型年款）----------
 async function autoSearch() {
   log('—— 自动搜索：读 VIN ——', 'info');
@@ -458,27 +543,43 @@ async function autoSearch() {
     return;
   }
   try {
-    await coder.enterSession(0x89);
-    // 读 VIN（DID 0xF190）
+    // ⚠️ 会话顺序对齐参考诊断仪：10 03 → 3E → 1A 9F → **读识别/VIN** → 才 10 89。
+    // 此前一上来就 enterSession(0x89) 再用 22 F190 读 VIN —— VIN 在保时捷专用
+    // 会话下可能读不到，且识别应走 KWP 1A 9F 不是 UDS 22。
+    await coder.address();
+    await coder.uds('1003', 4000);                                   // ① UDS 扩展会话
+    await coder.uds('3E00', 2000, { allowEmpty: true }).catch(() => {}); // ② 保活
+    let ident = null;
+    try { ident = await coder.uds('1A9F', 3000, { allowEmpty: true }); } catch { /* 不致命 */ }
+    if (ident?.body?.length) {
+      log(`  识别 1A 9F = ${ident.body.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`, 'info');
+    }
+
+    // ③ 读 VIN（DID 0xF190，UDS 22）
     const blk = await coder.readBlock(0xF190, 0x22).catch(() => null);
     let vin = '';
-    if (blk && blk.length >= 17) vin = String.fromCharCode(...blk.slice(0, 17));
+    if (blk && blk.length >= 17) vin = String.fromCharCode(...blk.slice(0, 17)).trim();
     log(`  VIN = ${vin || '(读不到)'}`, vin ? 'ok' : 'err');
     if (!vin) {
       toast('warn', '读不到 VIN', '可能地址不对或 ECU 未响应 —— 请用手动选择车型');
       return;
     }
+    if (!isValidVin(vin)) {
+      // 二进制垃圾被当 VIN 读出来了 —— 拒绝，别据此猜车型
+      log(`  VIN 格式非法（含 I/O/Q 或非字母数字）：${JSON.stringify(vin)}`, 'err');
+      toast('warn', 'VIN 格式非法', `读到 ${JSON.stringify(vin)}，不是 17 位 ISO 3779 VIN。请手动选择车型。`);
+      return;
+    }
     toast('info', `VIN = ${vin}`, '正在匹配车型年款 …');
 
-    // 由 VIN 的 WMI+车型码+年款码推车型（第 10 位 = 年款）
     const yearCode = vin[9];
-    const modelGuess = guessModelFromVin(vin);
-    log(`  年款码=${yearCode} → 车型判断：${modelGuess ? modelGuess.label : '未识别'}`,
+    const year = decodeVinYear(vin);
+    const modelGuess = guessModelFromVin(vin, year);
+    log(`  年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：${modelGuess ? modelGuess.label : '未识别'}`,
       modelGuess ? 'ok' : 'info');
     if (modelGuess) {
-      // 弹确认
-      const ok = confirm(`识别为：${modelGuess.label}\n年款码：${yearCode}\n\n确认这个车型？`);
-      if (ok) { pushModel(modelGuess); toast('ok', `已选 ${modelGuess.label}`, `年款码 ${yearCode}`); return; }
+      const ok = confirm(`识别为：${modelGuess.label}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认这个车型？`);
+      if (ok) { pushModel(modelGuess); toast('ok', `已选 ${modelGuess.label}`, `${year ?? '?'} 年款`); return; }
     }
     toast('info', '未自动识别出车型', '请手动选择');
   } catch (e) {
@@ -486,29 +587,52 @@ async function autoSearch() {
   }
 }
 
-function guessModelFromVin(vin) {
-  // 保时捷 WMI = WP0 / WP1；车型码在 4-6 位
-  // 真实映射需按年款表，这里按已知码段给出候选
-  const code = vin.substring(3, 6);
+/**
+ * 由 VIN 车型码 + 年款推车型。
+ *
+ * ⚠️ **车型码在 VIN 第 7–9 位（`substring(6, 9)`）**，不是 4–6 位！
+ *    保时捷 VIN 形如 `WP0 ZZZ **970** GL 000001`：
+ *      1-3  WMI（WP0 / WP1）
+ *      4-6  通常是 `ZZZ` 占位，**不是车型码**
+ *      7-9  车型码（970 / 991 / 9YA / 95B …）
+ *      10   年款码
+ *    2026-10-15 前读 4–6 位，拿到的永远是 `ZZZ` —— 自动搜索从未匹配上过。
+ *
+ * ⚠️ 必须**精确匹配**车型码，不要用 includes —— 否则 `99` 这类短码会误匹配一片。
+ * ⚠️ 年款参与消歧：同码不同代（970/971、958/9YA）靠 yearFrom/yearTo 收窄。
+ */
+function guessModelFromVin(vin, year) {
+  const code = (vin.substring(6, 9) || '').toUpperCase();
+  // yearFrom/yearTo = 该车型码的有效年款区间（null = 不限）
   const table = [
-    { code: '981', label: 'Boxster（981）' }, { code: '982', label: 'Boxster（982）' },
-    { code: '987', label: 'Boxster（987）' }, { code: '986', label: 'Boxster（986）' },
-    { code: '98B', label: 'Cayman（981）' }, { code: '98C', label: 'Cayman（982）' },
+    { code: '981', label: 'Boxster（981）' },
+    { code: '982', label: 'Boxster（982）' },
+    { code: '987', label: 'Boxster（987）' },
+    { code: '986', label: 'Boxster（986）' },
+    { code: '98B', label: 'Cayman（981）' },
+    { code: '98C', label: 'Cayman（982）' },
     { code: '98D', label: 'Cayman（987）' },
-    { code: '991', label: '911（991）' }, { code: '992', label: '911（992）' },
-    { code: '997', label: '911（997）' }, { code: '996', label: '911（996）' },
-    { code: '970', label: 'Panamera-970（至2016年款止）' },
-    { code: '971', label: 'Panamera-971（2017-2024）' },
-    { code: '958', label: 'Cayenne-92A（2011 - 2017）' },
-    { code: '9YA', label: 'Cayenne-9YA（自2018年款起）' },
-    { code: '95B', label: 'Macan' },
     { code: '991', label: '911（991）' },
+    { code: '992', label: '911（992）' },
+    { code: '997', label: '911（997）' },
+    { code: '996', label: '911（996）' },
+    { code: '970', label: 'Panamera-970（至2016年款止）', yearFrom: null, yearTo: 2016 },
+    { code: '971', label: 'Panamera-971（2017-2024）', yearFrom: 2017, yearTo: 2024 },
+    { code: '958', label: 'Cayenne-92A（2011 - 2017）', yearFrom: 2011, yearTo: 2017 },
+    { code: '9YA', label: 'Cayenne-9YA（自2018年款起）', yearFrom: 2018, yearTo: null },
+    { code: '95B', label: 'Macan' },
     { code: '918', label: '918 Spyder' },
     { code: '980', label: 'Carrera GT' },
-    { code: 'J1', label: 'Taycan' },
+    { code: 'J1', label: 'Taycan', codeLen: 2 },   // 2 位车型码（占第 7-8 位）
   ];
-  return table.find((t) => code.toUpperCase().includes(t.code.toUpperCase()))
-    || tree?.allModels?.find((m) => code.toUpperCase().includes((m.vinCode || '').toUpperCase()));
+  // ① 精确匹配车型码（先 3 位，再允许条目自带更短的 codeLen）
+  let hit = table.find((t) => (t.codeLen || 3) === 3 && t.code === code)
+    || table.find((t) => (t.codeLen || 3) < 3 && code.startsWith(t.code))
+    || tree?.allModels?.find((m) => (m.vinCode || '').toUpperCase() === code);
+  // ② 年款收窄：命中多条或带年款区间时校验
+  if (hit && year != null && hit.yearFrom != null && (year < hit.yearFrom)) hit = null;
+  if (hit && year != null && hit.yearTo != null && (year > hit.yearTo)) hit = null;
+  return hit || null;
 }
 
 // ---------- 导航栈 ----------
@@ -574,7 +698,7 @@ function sysItems(f) {
 }
 
 /**
- * 模块下的功能列表 —— 对齐 431：进模块后不止「设码」，还有
+ * 模块下的功能列表 —— 对齐参考诊断仪：进模块后不止「设码」，还有
  *   读故障码 / 设码（刷隐藏）/ 特殊功能 / 数据流 / 执行器测试
  */
 function sysFnItems(s) {
@@ -584,7 +708,7 @@ function sysFnItems(s) {
     meta: f.subFunctions ? `${f.subFunctions.length} 个子功能` : `${f.count ?? (f.itemIds || []).length} 个条目`,
     cnt: f.count ?? (f.itemIds || []).length,
   }));
-  // 431 里模块下固定有这些功能项（服务已实现，这里给入口）
+  // 参考诊断仪里模块下固定有这些功能项（服务已实现，这里给入口）
   const extras = [
     { id: '读故障码', kind: 'dtc', sid: '19', meta: '读取 / 清除故障码' },
     { id: '设码', kind: 'coding', meta: '编码 / 刷隐藏（主功能）' },
@@ -611,7 +735,7 @@ function paramsByModules(modules, itemIds) {
 }
 
 /**
- * 二级菜单：按 path[0] 分组（431 的做法 —— 冷却液温度特性X / 转速表特性Y / 设码值 …）
+ * 二级菜单：按 path[0] 分组（参考诊断仪的做法 —— 冷却液温度特性X / 转速表特性Y / 设码值 …）
  * 不再把一个模块的所有条目摊平。
  */
 function groupItemsOf(f) {
@@ -624,7 +748,7 @@ function groupItemsOf(f) {
     byGroup.get(g).push(p);
   }
   // 多维特性组（X/Y）排前面，其余按名称
-  // ★ 合并 X/Y 特性组：431 里「冷却液温度特性」是一个入口，进去看到 X/Y 表
+  // ★ 合并 X/Y 特性组：参考诊断仪里「冷却液温度特性」是一个入口，进去看到 X/Y 表
   //   我们数据里拆成 冷却液温度特性X / 冷却液温度特性Y 两个分组，要并起来
   const norm = (s) => s.replace(/[\s]*([XYZ])\s*$/i, '').trim();
   const merged = new Map();
@@ -824,7 +948,7 @@ function renderNav() {
         if (searchEl) searchEl.parentElement.style.display = 'none';
         items = top.data.groups || [];
         title = top.title;
-        // 431: 设码列表第一项是搜索框，搜全量项（含二级三级内容）
+        // 参考诊断仪: 设码列表第一项是搜索框，搜全量项（含二级三级内容）
         const searchHtml = `<div class="codSearch"><input id="codSearchIn" placeholder="搜索设码项（含子分组内容）..." oninput="window._codSearch(this.value)"></div>`;
         $('navList').innerHTML = searchHtml;
         window._codSearch = (q) => {
@@ -922,12 +1046,12 @@ function renderNav() {
 }
 
 /**
- * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐 431）。
- * 431 是进模块就读全量，不是一个一个进去读。
+ * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐参考诊断仪）。
+ * 参考诊断仪 是进模块就读全量，不是一个一个进去读。
  */
 
 
-/** 退出模块：回到系统列表（431 的做法是断开模块会话） */
+/** 退出模块：回到系统列表（参考诊断仪的做法是断开模块会话） */
 function exitSystem() {
   const name = coder?.ecuName || '模块';
   if (coder) {
@@ -942,18 +1066,21 @@ function exitSystem() {
 let currentBlocks = {};
 
 /**
- * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐 431）。
- * 431 是进模块就读全量，不是一个一个进去读。
+ * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐参考诊断仪）。
+ * 参考诊断仪 是进模块就读全量，不是一个一个进去读。
  */
 async function enterSystem(sys) {
   if (!needLink()) return false;
   let addr = addrFor(sys.label);
-  if (!addr) {
+  // 地址缺失两种情况：①表里没这模块 ②表里有但 tx/rx 未知（如 IC，原填 0x7E8 与 DME 应答冲突已作废）
+  if (!addr || addr.tx == null || addr.rx == null) {
     if (simMode) {
       // 模拟模式：任何模块都能进，给个占位地址
       addr = { tx: 0x7E0, rx: 0x7E8, note: '模拟' };
     } else {
-      toast('warn', `无「${sys.label}」的地址`, '先跑「地址扫描」实测该 ECU 的 tx/rx，再进模块（或开模拟模式体验）');
+      const why = addr?.note ? `（${addr.note}）` : '';
+      toast('warn', `无「${sys.label}」的可用地址${why}`,
+        '先跑「地址扫描」（连接自检 L5）实测该 ECU 的 tx/rx 回填 ECU_ADDR，再进模块（或开模拟模式体验）。别猜地址——猜不得。');
       return false;
     }
   }
@@ -977,8 +1104,8 @@ async function enterSystem(sys) {
   items = items.filter((p) => validateParam(p).length === 0 && p.lid != null);
   coding = items;
 
-  // ★ 懒加载读取（对齐 431）：不全量读，按需读对应块
-  // 431 是按锁定的变体读对应块，不是全量扫
+  // ★ 懒加载读取（对齐参考诊断仪）：不全量读，按需读对应块
+  // 参考诊断仪 是按锁定的变体读对应块，不是全量扫
   const lids = [...new Set(items.map((p) => p.lid))];
   updateLoading(`正在读取 ${sys.label}`, `按需加载 ${lids.length} 个编码块…`);
 
@@ -1062,7 +1189,7 @@ async function onSelect(it) {
     case 'model': currentModel = it.raw.label; stack.push({ level: 'model', title: it.raw.label, data: it.raw }); break;
     case 'fn': stack.push({ level: 'fn', title: it.raw.id, data: it.raw }); break;
     case 'sys': {
-      // 进模块：切地址 + 一次性读全部编码（对齐 431）
+      // 进模块：切地址 + 一次性读全部编码（对齐参考诊断仪）
       enterSystem(it.raw).then((ok) => {
         if (ok) { stack.push({ level: 'sys', title: it.raw.label, data: it.raw }); renderNav(); }
       });
@@ -1070,14 +1197,14 @@ async function onSelect(it) {
     }
     case 'sysfn': stack.push({ level: 'sysfn', title: it.raw.id, data: it.raw }); break;
     case 'sysextra': {
-      // 设码 → 按 431 的多级菜单进：分组列表 → 子分组/条目 → 参数详情
+      // 设码 → 按参考诊断仪 的多级菜单进：分组列表 → 子分组/条目 → 参数详情
       if (it.raw.kind === 'coding') {
         const allItems = coding || [];
         if (!allItems.length) {
           toast('warn', '无编码条目', '该模块未加载到编码数据');
           return;
         }
-        // ★ 431 二级菜单：设码下有多种操作
+        // ★ 参考诊断仪 二级菜单：设码下有多种操作
         const sysLabel = it.raw._sys?.label || '';
         const submenuItems = [
           { kind: 'codop', raw: { op: 'backup', sysLabel, allItems }, lbl: '备份所有编码', meta: '读取全部编码块并保存', cnt: null },
@@ -1104,7 +1231,7 @@ async function onSelect(it) {
       // 检查是否有 L3 子分组（path depth >= 3）
       const hasSubgroups = g.items.some((p) => (p.path?.length || 0) >= 3);
       if (hasSubgroups) {
-        // 显示 L3 子分组列表（431 的三级菜单）
+        // 显示 L3 子分组列表（参考诊断仪 的三级菜单）
         const subgroups = {};
         for (const p of g.items) {
           const sg = (p.path?.length >= 3) ? p.path[1] : '（直接条目）';
@@ -1181,7 +1308,7 @@ async function onSelect(it) {
       return;
     }
     case 'param': {
-      // 参数详情 → 独立页面（431 的做法）
+      // 参数详情 → 独立页面（参考诊断仪的做法）
       stack.push({ level: 'paramdetail', title: it.raw.name, data: it.raw });
       renderNav();
       return;
@@ -1250,8 +1377,9 @@ function renderParamDetail(p) {
   // 枚举只显示人能看懂的文字
   let input = '';
   if (p.kind === 'switch' || p.kind === 'enum') {
-    // 统一用下拉框，显示 enum 的实际值（431 的做法）
-    input = `<select id="pVal">${en.map(([k, v]) => `<option value="${parseInt(k, 16)}">${v}</option>`).join('')}</select>`;
+    // 统一用下拉框，显示 enum 的实际值（参考诊断仪的做法）
+    // ⚠️ enum key 是**十进制**字符串，不是 hex（见 214 行注释）
+    input = `<select id="pVal">${en.map(([k, v]) => `<option value="${Number(k)}">${v}</option>`).join('')}</select>`;
   } else {
     input = `<input id="pVal" type="number" inputmode="numeric"
         min="${p.min ?? 0}" max="${p.max ?? ''}" value="${p.currentValue ?? p.min ?? 0}">
@@ -1432,8 +1560,13 @@ async function doWrite(p, v) {
     toast('err', '拒绝写入', '缺口令算法变体');
     return;
   }
-  if (p.sidPairOk === false) {
-    toast('err', `「${p.name}」是只读项`, p.writeBlockedReason || '源数据无写服务，不能改');
+  // canWrite 是**总闸**：含 WRITE_ENABLED 严格门禁开关 + 只读项 + 无 LID。
+  // 此前它零调用，文档说「改 WRITE_ENABLED=false 可恢复严格门禁」实际无效。
+  if (!canWrite(p)) {
+    toast('err', `「${p.name}」不可写`,
+      p.sidPairOk === false ? (p.writeBlockedReason || '源数据无写服务')
+        : (p.lid == null && p.did == null) ? '缺 LID/DID'
+          : '严格门禁未放行（WRITE_ENABLED=false 且未 write-confirmed）');
     return;
   }
   if (p.min != null && (v < p.min || v > p.max)) {
@@ -1473,7 +1606,7 @@ function showSub(s) {
         <button id="pStop">停止</button>
         <button id="pResult">查结果</button>
       </div>
-      <div class="hint">执行走例程控制（0x31），会话 10 86 —— 与 431 一致。
+      <div class="hint">执行走例程控制（0x31），会话 10 86 —— 与 参考诊断仪一致。
         高风险功能请先备份。</div>
     </div>`;
   const run = (sf, verb) => async () => {
@@ -1486,7 +1619,7 @@ function showSub(s) {
     const risk = s.risk === 'high' ? '高风险功能，请确认车辆状态安全' : '';
     toast('info', `${verb}「${s.label || s.id}」`, risk || `例程 0x${id.toString(16).toUpperCase()}，会话 10 86`);
     try {
-      await coder.enterSessionFor('routine');   // ← 10 86，对齐 431
+      await coder.enterSessionFor('routine');   // ← 10 86，对齐参考诊断仪
       const r = await coder.routineControl(sf, id, '');
       toast('ok', `「${s.label || s.id}」${verb}成功`,
         `应答 ${r.body.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`);
@@ -1673,12 +1806,25 @@ async function showSysExtra(f) {
       return blk.map((b) => b.toString(16).padStart(2, '0')).join(' ');
     });
     $('xProgWrite').onclick = () => progRun('写编程块', async (lid) => {
+      // 此前是「读到什么就写回什么」，没有任何修改 —— 按钮语义是假的。
+      // 现在必须显式给出内容 + 长度校验 + 回读校验。
+      const input = prompt(
+        `要写入 LID 0x${Number(lid).toString(16).toUpperCase()} 的完整块（十六进制，空格可选）：\n`
+        + '留空 = 取消。请先复制当前块、改好再粘回。', '');
+      if (input == null || !input.trim()) return '已取消';
+      const clean = input.replace(/[^0-9A-Fa-f]/g, '');
+      if (!clean || clean.length % 2) throw new Error('十六进制内容非法（长度必须为偶数）');
       await coder.enterSessionFor('coding');
-      const blk = await coder.readBlock(lid, 0x21);
+      const cur = await coder.readBlock(lid, 0x21);
+      if (clean.length / 2 !== cur.length) {
+        throw new Error(`长度不符：要写 ${clean.length / 2} 字节，块实际 ${cur.length} 字节 —— 已中止`);
+      }
       await coder.securityAccess(0x09);
-      const hex = blk.map((b) => b.toString(16).padStart(2, '0')).join('');
-      await coder.uds('3B' + lid.toString(16).padStart(2, '0').toUpperCase() + hex, 8000);
-      return '已写入';
+      await coder.uds('3B' + Number(lid).toString(16).toUpperCase().padStart(2, '0') + clean.toUpperCase(), 8000);
+      const back = await coder.readBlock(lid, 0x21);
+      const ok = back.map((b) => b.toString(16).padStart(2, '0')).join('') === clean.toUpperCase();
+      if (!ok) throw new Error('回读与写入不一致');
+      return `已写入并回读校验通过（${cur.length} 字节）`;
     });
     $('xProgVerify').onclick = () => progRun('回读校验', async (lid) => {
       await coder.enterSessionFor('coding');
@@ -1692,7 +1838,7 @@ async function showSysExtra(f) {
       <button id="xActOn" class="primary">驱动（shortTerm）</button>
       <button id="xActOff">回位</button></div>`;
   } else if (kind === 'special') {
-    // ★ 加载特殊功能列表（对齐 431：显示子功能 + 例程 ID）
+    // ★ 加载特殊功能列表（对齐参考诊断仪：显示子功能 + 例程 ID）
     const specialData = await fetch('data/special-functions.json').then(r => r.ok ? r.json() : null).catch(() => null);
     const sysNorm = (sys.label || '').toLowerCase().replace(/[^a-z0-9一-鿿]/g, '');
     const funcs = (specialData?.functions || []).filter((f) => {
@@ -1733,7 +1879,7 @@ async function showSysExtra(f) {
       <button id="xProgRead" class="primary">读当前值</button>
       <button id="xProgWrite">写入</button>
       <button id="xProgVerify">校验</button></div>
-      <div class="hint">编程按 431 流程：<b>读当前值 → 修改 → 写入 → 回读校验</b><br>
+      <div class="hint">编程按 参考诊断仪流程：<b>读当前值 → 修改 → 写入 → 回读校验</b><br>
       走例程控制（0x31）+ 写入（0x3B）。⚠️ 高风险，请先备份。</div>`;
   } else if (kind === 'measure') {
     const measureData = await fetch('data/measure.json').then(r => r.ok ? r.json() : null).catch(() => null);
@@ -1775,7 +1921,7 @@ async function showSysExtra(f) {
       <div class="nm">${f.id}<span class="tag">${sys.label || ''}</span></div>
       <div class="meta">${f.meta || ''}</div>
       ${actions}
-      <div class="hint">会话按 431 服务类型切换（故障码 10 03 / 执行器 10 85 / 例程 10 86）</div>
+      <div class="hint">会话按 参考诊断仪服务类型切换（故障码 10 03 / 执行器 10 85 / 例程 10 86）</div>
     </div>`;
   const run = async (fn, verb) => {
     if (!needLink()) return;
@@ -1849,7 +1995,9 @@ async function showSysExtra(f) {
         // ★ 解码显示人能读懂的值
         let display = '';
         if (m.kind === 'switch' && m.enum) {
-          display = m.enum['0x0' + raw] || m.enum[String(raw)] || String(raw);
+          // ⚠️ 别用 `'0x0'+raw`：raw≥16 时拼出 3 位十六进制（'0x010'），查表必失配
+          display = m.enum['0x' + raw.toString(16).toUpperCase().padStart(2, '0')]
+            || m.enum[String(raw)] || String(raw);
         } else if (m.kind === 'enum' && m.enum) {
           const key = '0x' + raw.toString(16).toUpperCase().padStart(2, '0');
           display = m.enum[key] || m.enum[String(raw)] || `未知(${raw})`;
@@ -1866,28 +2014,31 @@ async function showSysExtra(f) {
   });
 
   // 执行器驱动按钮
+  // ⚠️ 必须真的发 `2F` IOControl —— 此前只 enterSession 就弹「已驱动/已回位」，
+  //    总线上什么都没发生，用户以为执行器动了（2026-10-16 复查 P10）。
+  const runAct = async (b, controlOption, label) => {
+    if (!needLink()) return;
+    const idx = parseInt(b.dataset.idx);
+    try {
+      const actData = await fetch('data/actuator.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const a = actData?.params?.[idx];
+      if (!a) throw new Error(`找不到执行器 #${idx}`);
+      const did = a.did ?? a.lid ?? a.id;
+      if (did == null) throw new Error('该执行器缺少 DID/LID，无法下发');
+      await coder.enterSessionFor('io');
+      // 0x03 = shortTermActivate（驱动）；0x00 = returnControlToECU（回位）
+      const r = await coder.ioControl(did, controlOption, controlOption === 0x03 ? 'FF000000' : '');
+      if (r?.kind === 'nrc') throw new Error(`NRC 0x${r.code?.toString(16)}`);
+      toast('ok', `执行器${label}成功`, `DID 0x${Number(did).toString(16).toUpperCase()}`);
+    } catch (e) {
+      toast('err', `${label}失败`, e.message);
+    }
+  };
   $('paramBox').querySelectorAll('.actOn').forEach((b) => {
-    b.onclick = async () => {
-      if (!needLink()) return;
-      const idx = parseInt(b.dataset.idx);
-      try {
-        await coder.enterSessionFor('io');
-        toast('ok', '执行器已驱动', `序号 ${idx}`);
-      } catch (e) {
-        toast('err', '驱动失败', e.message);
-      }
-    };
+    b.onclick = () => runAct(b, 0x03, '驱动');
   });
   $('paramBox').querySelectorAll('.actOff').forEach((b) => {
-    b.onclick = async () => {
-      if (!needLink()) return;
-      try {
-        await coder.enterSessionFor('io');
-        toast('ok', '执行器已回位', '');
-      } catch (e) {
-        toast('err', '回位失败', e.message);
-      }
-    };
+    b.onclick = () => runAct(b, 0x00, '回位');
   });
   if (kind === 'dtc') {
     $('xReadDtc').onclick = async () => {
@@ -1897,7 +2048,10 @@ async function showSysExtra(f) {
         await coder.enterSessionFor('ident');
         const r = await coder.readDtc(0x02, 0x89);
         const bytes = Array.from(r.body || []);
-        const dtcData = bytes.slice(2);
+        // ⚠️ `19 02 xx` 正响应 = `59 02 <statusAvailabilityMask> [DTC hi lo status]×n`
+        //    前 3 字节是 59/02/mask，DTC 三元组从下标 3 开始。
+        //    此前 slice(2) 把 mask 当成第一个 DTC 的头字节，整体错位 → 显示的全是垃圾码。
+        const dtcData = bytes.slice(3);
         const dtcs = [];
         for (let i = 0; i + 2 < dtcData.length; i += 3) {
           const b1 = dtcData[i], b2 = dtcData[i+1], status = dtcData[i+2];
@@ -1957,12 +2111,25 @@ async function showSysExtra(f) {
       return blk.map((b) => b.toString(16).padStart(2, '0')).join(' ');
     });
     $('xProgWrite').onclick = () => progRun('写编程块', async (lid) => {
+      // 此前是「读到什么就写回什么」，没有任何修改 —— 按钮语义是假的。
+      // 现在必须显式给出内容 + 长度校验 + 回读校验。
+      const input = prompt(
+        `要写入 LID 0x${Number(lid).toString(16).toUpperCase()} 的完整块（十六进制，空格可选）：\n`
+        + '留空 = 取消。请先复制当前块、改好再粘回。', '');
+      if (input == null || !input.trim()) return '已取消';
+      const clean = input.replace(/[^0-9A-Fa-f]/g, '');
+      if (!clean || clean.length % 2) throw new Error('十六进制内容非法（长度必须为偶数）');
       await coder.enterSessionFor('coding');
-      const blk = await coder.readBlock(lid, 0x21);
+      const cur = await coder.readBlock(lid, 0x21);
+      if (clean.length / 2 !== cur.length) {
+        throw new Error(`长度不符：要写 ${clean.length / 2} 字节，块实际 ${cur.length} 字节 —— 已中止`);
+      }
       await coder.securityAccess(0x09);
-      const hex = blk.map((b) => b.toString(16).padStart(2, '0')).join('');
-      await coder.uds('3B' + lid.toString(16).padStart(2, '0').toUpperCase() + hex, 8000);
-      return '已写入';
+      await coder.uds('3B' + Number(lid).toString(16).toUpperCase().padStart(2, '0') + clean.toUpperCase(), 8000);
+      const back = await coder.readBlock(lid, 0x21);
+      const ok = back.map((b) => b.toString(16).padStart(2, '0')).join('') === clean.toUpperCase();
+      if (!ok) throw new Error('回读与写入不一致');
+      return `已写入并回读校验通过（${cur.length} 字节）`;
     });
     $('xProgVerify').onclick = () => progRun('回读校验', async (lid) => {
       await coder.enterSessionFor('coding');

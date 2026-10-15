@@ -101,15 +101,6 @@ export class CodingError extends Error {
  *      连续帧 PCI 0x2N       → 取本帧 7 字节，按序号拼
  *    CAN 头按 11 位（3 hex）或 29 位（8 hex）剥离。
  */
-function stripCanHeader(line) {
-  // 一行形如 "7E8 06 62 20 20 ..." 或 "18DAF110 06 62 ..."
-  const t = line.trim().split(/\s+/);
-  if (!t.length) return [];
-  // 若首段是 CAN ID（3 或 8 位 hex），去掉
-  if (/^[0-9A-Fa-f]{3}$/.test(t[0]) || /^[0-9A-Fa-f]{8}$/.test(t[0])) t.shift();
-  return t.filter((x) => /^[0-9A-Fa-f]{2}$/.test(x)).map((x) => parseInt(x, 16));
-}
-
 export function parseResp(hexStr) {
   // ELM327 cmd() 已把 \r 去掉、末尾 trim；这里按空白切帧，
   // 兼容「一行多帧」和「多行多帧」两种输出。
@@ -133,6 +124,7 @@ export function parseResp(hexStr) {
   // ISO-TP 重组
   let body = [];
   let expected = 0;
+  let sawFirstFrame = false;
   for (const f of frames) {
     const pci = f[0];
     const type = pci & 0xf0;
@@ -147,6 +139,7 @@ export function parseResp(hexStr) {
     } else if (type === 0x10) {                // 首帧
       expected = ((pci & 0x0f) << 8) | f[1];
       body = f.slice(2);
+      sawFirstFrame = true;
     } else if (type === 0x20) {                // 连续帧
       body = body.concat(f.slice(1));
     } else {
@@ -155,6 +148,13 @@ export function parseResp(hexStr) {
     }
   }
   if (expected && body.length > expected) body = body.slice(0, expected);
+
+  // ⚠️ 多帧截断必须报错，不能当成功返回。
+  // 此前不校验 `body.length === expected`，大块读到半包照样 kind:'ok'，
+  // 上层用短块算 after 再写回 ECU —— 会把截断块写进车里，且回读比对同样截断故"成功"。
+  if (sawFirstFrame && expected && body.length < expected) {
+    return { kind: 'truncated', body, expected, received: body.length };
+  }
 
   if (!body.length) return { kind: 'empty', body };
   if (body[0] === 0x7f) {
@@ -188,12 +188,15 @@ export class Coder {
   async address() {
     await this.elm.cmd(`ATSH${this.tx.toString(16).toUpperCase()}`, 2000);
     await this.elm.cmd(`ATCRA${this.rx.toString(16).toUpperCase()}`, 2000);
+    // 流控头随模块地址走：多帧读写时适配器内建 FC 要用**当前模块的请求 ID**。
+    // （只在 init 里设一次不够 —— 换模块后 FC 头是上一个模块的）
+    await this.elm.cmd(`ATFCSH${this.tx.toString(16).toUpperCase()}`, 1500).catch(() => {});
   }
 
   /**
-   * 进诊断会话 —— 按 431 对保时捷的标准序列，不照搬其他车系。
+   * 进诊断会话 —— 按 参考诊断仪对保时捷的标准序列，不照搬其他车系。
    *
-   * 431 实测编排（抓包 3,139 条请求）：
+   * 参考诊断仪实测编排（抓包 3,139 条请求）：
    *   10 03   →  进 UDS 扩展会话
    *   3E      →  TesterPresent
    *   1A 9F   →  读 ECU 识别（确认在正确模块上）
@@ -251,6 +254,12 @@ export class Coder {
     if (p.kind === 'nrc') {
       throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒`, p.code);
     }
+    // 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU）
+    if (p.kind === 'truncated') {
+      throw new CodingError(
+        `服务 ${payloadHex} 多帧应答被截断：声明 ${p.expected} 字节，实收 ${p.received} 字节。` +
+        `可能是超时 / 假提示符 / 流控异常 —— 不能拿短块继续，更不能写回。`);
+    }
     if (p.kind === 'empty' && !allowEmpty) {
       throw new CodingError(
         `服务 ${payloadHex} 无应答 —— ECU 未响应。` +
@@ -265,7 +274,7 @@ export class Coder {
   }
 
   /**
-   * 读编码块 —— 与 431 请求格式 1:1 对齐。
+   * 读编码块 —— 与参考诊断仪 请求格式 1:1 对齐。
    *
    * ⚠️ 标识符位宽因 SID 而异（抓包实测，COMMAND.GAG 3139 条）：
    *   `21 <1字节 LID>`   KWP ReadDataByLocalIdentifier    ← len=2
@@ -340,9 +349,9 @@ export class Coder {
    */
   async applyChange(p, value, opts = {}) {
     const {
-      session = 0x89,        // 保时捷专用会话（431 实测 10 89）
+      session = 0x89,        // 保时捷专用会话（参考诊断仪实测 10 89）
       dryRun = true,
-      secLevel = 0x09,       // 431 实测 SecurityAccess level
+      secLevel = 0x09,       // 参考诊断仪实测 SecurityAccess level
     } = opts;
 
     // ★ LID 来自参数条目，绝不硬编码 —— 猜错 DID 会写坏别的块。
@@ -412,14 +421,17 @@ export class Coder {
       return { dryRun: true, before, after, diffs };
     }
 
-    // 4. 进会话（431 序列：10 03 → 3E → 1A 9F → 10 89）
+    // 4. 进会话（参考诊断仪序列：10 03 → 3E → 1A 9F → 10 89）
     this._say(`  进会话 …`);
     await this.enterSession(session);
 
-    // 5. 安全访问（431 实测 UDS 用 27 09 / 27 0A）
+    // 5. 安全访问（参考诊断仪实测 UDS 用 27 09 / 27 0A）
     //    ⚠️ level 是 0x09，不是 0x01。发错会 NRC 0x12/0x7F，或吃满尝试次数锁死（0x36）
-    //    ⚠️ KWP 类 ECU 用 0x17 而非 0x27 —— secLevel 可传，SID 见 securityAccess()
-    await this.securityAccess(secLevel);
+    //    ⚠️ **SID 要跟协议族走**：UDS 用 `27`，KWP 用 `17`。
+    //       判据 = 读 SID：`22`→UDS、`21`/`1A`→KWP（55 条 21↔3B 项是 KWP 设备）。
+    //       此前写死 27，KWP 项会 NRC 或吃满尝试计数（2026-10-16 复查 P6）。
+    const isKwp = (p.readSid ?? 0x22) !== 0x22;
+    await this.securityAccessEx({ level: secLevel, kwp: isKwp });
 
     // 6. 写入（SID 与读成对，不再写死 3B）
     const hex = after.map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -466,12 +478,12 @@ export class Coder {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  特殊功能 / 例程 / 执行器 / 故障码 —— 与 431 服务集 1:1
+//  特殊功能 / 例程 / 执行器 / 故障码 —— 与参考诊断仪 服务集 1:1
 //  服务形态全部来自 COMMAND.GAG 3,139 条实测请求
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * 例程控制 0x31 —— 特殊功能的主力（431 用了 252 次）。
+ * 例程控制 0x31 —— 特殊功能的主力（参考诊断仪用了 252 次）。
  *
  * 形态：`31 <subFunc> <routineId 2B> <params>`
  *   subFunc: 01=startRoutine 02=stopRoutine 03=requestRoutineResults
@@ -487,7 +499,7 @@ async function routineControl(subFunc, routineId, params = '', timeoutMs = 15000
 }
 
 /**
- * IOControl 0x2F —— 执行器测试 / 短时调节（431 用了 154 次）。
+ * IOControl 0x2F —— 执行器测试 / 短时调节（参考诊断仪用了 154 次）。
  *
  * 形态：`2F <DID 2B> <controlOption> <controlState>`
  *   controlOption: 00=returnControlToECU 01=resetToDefault
@@ -567,6 +579,9 @@ export const SESSION_FOR_SERVICE = {
   routine: 0x86,    // 例程 / 特殊功能
   io: 0x85,         // IOControl / 执行器
   ident: 0x03,      // 识别 / 读
+  // 数据流/测量属于「读」，走扩展会话 10 03，不是 10 89。
+  // 此前无 measure 键，静默落 0x89（2026-10-16 复查 P13）
+  measure: 0x03,    // 数据流 / 测量
   reset: 0x81,      // ECUReset
 };
 
@@ -646,9 +661,33 @@ Coder.prototype.runWritePrologue = async function (mode = 'ident') {
  * 按安全配置表试解锁（哪个 level 成功就用哪个）。
  * 实测不同 ECU 用不同 level，这里按表逐个试，不猜。
  */
-Coder.prototype.securityAccessAuto = async function (tryKwp = false) {
-  const list = SEC_PROFILES.filter((p) => (tryKwp ? p.kwp : !p.kwp));
+/**
+ * ⛔ 已禁用逐级试错。
+ *
+ * 原实现按 SEC_PROFILES 连试 7 个 level（0x09→0x04→0x02…）。每个错误 level
+ * 会计入 ECU 的**安全尝试计数**，试满即 NRC 0x36 锁死 —— 与项目红线
+ * 「不猜测、不穷举」直接抵触（2026-10-16 复查 P12）。
+ *
+ * 现在：只接受**显式指定**的 profile；不传就报错，绝不自己试。
+ * 真要恢复试错（例如在台架上对已知 ECU），必须显式传 `allowBrute: true`
+ * 并自行承担锁死风险。
+ */
+Coder.prototype.securityAccessAuto = async function ({ profile = null, kwp = false, allowBrute = false } = {}) {
+  if (profile) {
+    await this.securityAccessEx(profile);
+    return profile;
+  }
+  if (!allowBrute) {
+    throw new CodingError(
+      '安全访问需要显式指定 profile（level/keyBytes/kwp）。' +
+      '自动试错已禁用：错误 level 会计入 ECU 安全尝试计数，试满即 0x36 锁死。');
+  }
+  const list = SEC_PROFILES.filter((p) => (kwp ? p.kwp : !p.kwp));
+  let tries = 0;
   for (const prof of list) {
+    if (++tries > 2) {
+      throw new CodingError('安全访问尝试次数已达上限 2 —— 继续试会锁死 ECU，中止');
+    }
     try {
       this._say(`  尝试安全访问 ${prof.name} …`);
       await this.securityAccessEx({
