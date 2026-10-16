@@ -71,7 +71,7 @@ if (!process.argv.includes('--refill')) {
 
   // ★ data/ → www/data/ 必须每次同步。
   //   早先靠手动 cp，改了 data/ 忘了同步就发旧数据（2026-10-12 实测踩过：
-  //   清洗了 data/measure.json 的逆向格式描述，www/data/ 里还是旧的，差点发出去）。
+  //   清洗了 data/measure.json 的内部格式描述，www/data/ 里还是旧的，差点打包出去去）。
   const DATA_SRC = path.join(MOBILE, 'data');
   const DATA_DST = path.join(WWW, 'data');
   fs.mkdirSync(DATA_DST, { recursive: true });
