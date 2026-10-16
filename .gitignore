@@ -69,3 +69,7 @@ ref/
 analysis/
 *.so
 *.BIN
+
+# .so 导出符号目录（研究产物，只留本地）
+data/so-exports.json
+extract-identity.py

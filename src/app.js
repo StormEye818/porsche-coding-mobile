@@ -636,6 +636,121 @@ function guessModelFromVin(vin, year) {
 }
 
 // ---------- 导航栈 ----------
+/**
+ * 版本信息（读 ECU 识别）—— 对应每个模块的「读版本信息」。
+ *
+ * 数据源 data/identity.json：KWP `1A xx` 识别项 + ASAM ODX 标识链，已按模块/变体归属。
+ * 标签映射（实测：命令 ID+4 = 显示标签）：
+ *   1A 9F ECU 识别 · 1A 87 ECU 序列号 · 1A 84 ECU 零件号 · 1A 91 零件图号
+ *   1A 92 硬件号 · 1A 93 硬件版本 · 1A 94 软件号 · 1A 95 软件版本
+ *   1A 96 认证号 · 1A 97 ECU ISO 码 · 1A 9A 系统供应商标识
+ *
+ * ⚠️ 全部**只读**，不做任何写入。
+ */
+async function renderIdentity(sys) {
+  const box = $('paramBox');
+  showLoading('正在读取版本信息…', sys.label || '');
+  let ident = null;
+  try {
+    ident = await fetch('data/identity.json').then((r) => (r.ok ? r.json() : null));
+  } catch (e) { /* ignore */ }
+  hideLoading();
+  if (!ident) {
+    box.innerHTML = '<div class="hint">版本信息数据缺失（data/identity.json）</div>';
+    return;
+  }
+  // 按模块名归属（identity.json 的 module 是内部名，如 DME_BDE_Continental / _9x7_kombi）
+  const sysNorm = (sys.label || '').toLowerCase().replace(/[^a-z0-9一-鿿]/g, '');
+  const modNames = (sys.modules || []).map((m) => String(m));
+  const hit = (ident.items || []).filter((it) => {
+    const ms = (it.modules || []).map((x) => String(x));
+    if (ms.some((m) => modNames.includes(m))) return true;
+    return ms.some((m) => {
+      const mn = m.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return mn && sysNorm && (mn.includes(sysNorm) || sysNorm.includes(mn));
+    });
+  });
+  // 同标签去重，保留一条
+  const byLabel = new Map();
+  for (const it of hit) { if (!byLabel.has(it.label)) byLabel.set(it.label, it); }
+  const rows = [...byLabel.values()];
+
+  box.innerHTML = `
+    <div class="paramDetail">
+      <div class="pdHeader"><div class="pdName">版本信息</div>
+        <div class="hint">KWP 1A xx 识别 · 只读 · 命中 ${rows.length} 项${hit.length !== rows.length ? `（去重前 ${hit.length} 条）` : ''}</div></div>
+      <div id="idList"></div>
+      <div class="acts" style="margin-top:12px"><button id="idReadAll" class="primary">全部读取</button></div>
+      <div class="hint" style="margin-top:8px">
+        命令族：KWP <b>1A xx</b>（ReadECUIdentification）。
+        未列出的项表示该模块在源数据里没有对应标识链，可点「全部读取」按标准全套试探。
+      </div>
+    </div>`;
+
+  const list = $('idList');
+  if (!rows.length) {
+    list.innerHTML = '<div class="hint">该模块在源数据里没有版本信息条目 —— 点「全部读取」按标准 1A xx 全套试探。</div>';
+  } else {
+    list.innerHTML = rows.map((it, i) => `
+      <div class="ruleRow" data-i="${i}">
+        <div class="lbl">${it.labelZh || it.label}<span class="hint" style="margin-left:6px">${it.kwpId}</span></div>
+        <div class="meta" style="opacity:.6;font-size:11px">${it.odxId}</div>
+        <div class="val" id="idv${i}" style="font-family:monospace">—</div>
+        <button class="idRead" data-i="${i}" data-kwp="${it.kwpId}">读取</button>
+      </div>`).join('');
+  }
+
+  /** 发 KWP 1A xx / UDS 22 F1xx，返回 ASCII 正文 */
+  async function readIdent(kwpHex) {
+    const id = parseInt(String(kwpHex).replace(/^0x/i, ''), 16);
+    const r = await coder.uds('1A' + id.toString(16).toUpperCase().padStart(2, '0'), 4000, { allowEmpty: true });
+    const b = Array.from(r.body || []);
+    if (b[0] === 0x7f) return 'NRC 0x' + (b[2] || 0).toString(16).toUpperCase();
+    // 5A <id> <ascii...>  或  62 F1 xx <ascii...>
+    let payload = b;
+    if (b[0] === 0x5a) payload = b.slice(2);
+    else if (b[0] === 0x62) payload = b.slice(3);
+    const txt = payload.map((c) => (c >= 0x20 && c < 0x7f ? String.fromCharCode(c) : '')).join('').trim();
+    return txt || payload.map((c) => c.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+  }
+
+  async function doRead(i, kwpHex) {
+    const el = document.getElementById('idv' + i);
+    try {
+      await coder.enterSessionFor('ident');
+      const v = await readIdent(kwpHex);
+      if (el) { el.textContent = v; el.style.color = /^NRC/.test(v) ? '#c0392b' : ''; }
+      return v;
+    } catch (e) {
+      if (el) { el.textContent = '✗ ' + e.message; el.style.color = '#c0392b'; }
+      return null;
+    }
+  }
+
+  list.querySelectorAll('.idRead').forEach((b) => {
+    b.onclick = () => doRead(Number(b.dataset.i), b.dataset.kwp);
+  });
+  $('idReadAll').onclick = async () => {
+    const std = ['0x9F', '0x87', '0x84', '0x91', '0x92', '0x93', '0x94', '0x95', '0x96', '0x97', '0x9A'];
+    $('idReadAll').disabled = true;
+    try {
+      if (!rows.length) {
+        await coder.enterSessionFor('ident');
+        for (const k of std) {
+          try {
+            const v = await readIdent(k);
+            log('1A ' + k.replace('0x', '') + ' → ' + v, /^NRC/.test(v) ? 'warn' : 'ok');
+          } catch (e) { log('1A ' + k.replace('0x', '') + ' → ' + e.message, 'err'); }
+        }
+        return;
+      }
+      for (let i = 0; i < rows.length; i++) await doRead(i, rows[i].kwpId);
+    } finally {
+      $('idReadAll').disabled = false;
+    }
+  };
+}
+
 function topLevelItems() {
   const t = tree?.topLevel || [];
   // ★ 只显示可离线的功能，移除需在线的（在线编程/编码/ADAS/防盗/安全网关）
@@ -714,6 +829,7 @@ function sysFnItems(s) {
     { id: '设码', kind: 'coding', meta: '编码 / 刷隐藏（主功能）' },
     { id: '数据流', kind: 'measure', meta: '实时测量值' },
     { id: '执行器测试', kind: 'actuator', meta: 'IOControl 驱动执行器' },
+    { id: '版本信息', kind: 'identity', meta: 'ECU 识别 / 硬件号 / 软件版本 …' },
     { id: '特殊功能', kind: 'special', meta: '例程控制（校准/匹配/初始化等）' },
   ];
   for (const e of extras) {
@@ -1838,40 +1954,158 @@ async function showSysExtra(f) {
       <button id="xActOn" class="primary">驱动（shortTerm）</button>
       <button id="xActOff">回位</button></div>`;
   } else if (kind === 'special') {
-    // ★ 加载特殊功能列表（对齐参考诊断仪：显示子功能 + 例程 ID）
-    const specialData = await fetch('data/special-functions.json').then(r => r.ok ? r.json() : null).catch(() => null);
+    // ★ 特殊功能 —— 按参考诊断仪的路径：选车型 → 选模块 → 只显示**该车型变体 × 该模块**的项。
+    //
+    // 两份数据源：
+    //   special-functions.json      67 条，带 routineId（可执行：执行/停止/查结果）
+    //   special-functions-ext.json  548 条，来自 libPORSCHE_SPECF.so 导出名（车型×模块×动作目录）
+    // 过滤口径：先按车型（currentModel → platform），再按模块（sys.label → module）。
+    const [specialData, extData] = await Promise.all([
+      fetch('data/special-functions.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('data/special-functions-ext.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+
+    // —— 车型 → 平台代号（ext 数据的 platform 字段）——
+    const modelLabel = String(currentModel || '').toLowerCase();
+    const PLAT_KEYS = [
+      ['cayenne-92a', 'Cayenne-92A'], ['cayenne-9pa', 'Cayenne-9PA'], ['cayenne-9ya', 'Cayenne-9YA'],
+      ['cayenne', 'Cayenne'], ['panamera-970', 'Panamera-970'], ['panamera-971', 'Panamera-971'],
+      ['panamera', 'Panamera'], ['macan', 'Macan'], ['taycan', 'Taycan'],
+      ['911（992', '911 (992)'], ['911（991', '911 (991)'], ['911（997', '911 (997)'],
+      ['911', '911 (992)'], ['boxster', '（通用）'], ['cayman', '（通用）'],
+      ['918', '918 Spyder'], ['carrera gt', '（通用）'],
+    ];
+    let plat = null;
+    for (const [k, v] of PLAT_KEYS) { if (modelLabel.includes(k)) { plat = v; break; } }
+    // E1/E2/E3/G1/G2/G3/J1 是内部平台代号，车型名里可能直接带
+    if (!plat) {
+      for (const k of ['E1', 'E2', 'E3', 'G1', 'G2', 'G3', 'J1', 'PJ1']) {
+        if (modelLabel.includes(k.toLowerCase())) { plat = k; break; }
+      }
+    }
+
+    // —— 模块匹配（两边都用同一套归一化 + 关键字表）——
     const sysNorm = (sys.label || '').toLowerCase().replace(/[^a-z0-9一-鿿]/g, '');
-    const funcs = (specialData?.functions || []).filter((f) => {
-      const fNorm = (f.system || '').toLowerCase().replace(/[^a-z0-9一-鿿]/g, '');
-      return fNorm === sysNorm || fNorm.includes(sysNorm) || sysNorm.includes(fNorm) ||
-             // 模糊匹配关键字
-             (fNorm.includes('组合仪表') && sysNorm.includes('ic')) ||
-             (fNorm.includes('发动机') && (sysNorm.includes('ecm') || sysNorm.includes('dme'))) ||
-             (fNorm.includes('变速器') && (sysNorm.includes('tiptronic') || sysNorm.includes('tcM') || sysNorm.includes('pdk'))) ||
-             (fNorm.includes('驻车制动') && sysNorm.includes('epb')) ||
-             (fNorm.includes('转向盘') && sysNorm.includes('转向盘')) ||
-             (fNorm.includes('前端电子') && sysNorm.includes('bcm')) ||
-             (fNorm.includes('保时捷稳定') && (sysNorm.includes('psm') || sysNorm.includes('esp'))) ||
-             (fNorm.includes('保时捷主动悬挂') && sysNorm.includes('pasm')) ||
-             (fNorm.includes('保时捷通讯') && sysNorm.includes('pcm')) ||
-             (fNorm.includes('网关') && sysNorm.includes('gateway')) ||
-             (fNorm.includes('座椅') && sysNorm.includes('seat')) ||
-             (fNorm.includes('车道变换') && sysNorm.includes('lane'));
+    const KEYMAP = [
+      ['组合仪表', ['ic', 'kombi', 'instr']], ['发动机', ['ecm', 'dme', 'motor']],
+      ['变速器', ['tiptronic', 'pdk', 'getriebe', 'tcM', 'tcM', 'tc']],
+      ['驻车制动', ['epb', 'bremse']], ['转向盘', ['lenkrad', 'steering', 'swh']],
+      ['前端电子', ['bcm', 'front']], ['保时捷稳定', ['psm', 'esp']],
+      ['保时捷主动悬挂', ['pasm']], ['保时捷通讯', ['pcm', 'cdr', 'head']],
+      ['网关', ['gateway', 'gatew']], ['座椅', ['seat', 'sitz']],
+      ['车道变换', ['lane', 'spur']], ['灯光电子', ['lec', 'lhb', 'rhb', 'fhba', 'scheinwerfer', 'headlight']],
+      ['通讯连接系统', ['connect', 'dfm']], ['轮胎压力', ['tpm', 'tpms', 'reifendruck']],
+      ['安全气囊', ['srs', 'airbag', 'pab']], ['全轮驱动', ['allrad', 'awd']],
+      ['空调', ['ac', 'klima']], ['水平高度', ['hcl', 'niveau']], ['尾门', ['tag', 'heck']],
+      ['ACC 自适应巡航', ['acc', 'adaptive']], ['空气悬挂', ['aws', 'luftfeder']],
+      ['蓄电池管理', ['bmc', 'batterie']], ['高压电气箱', ['hv', 'high']],
+    ];
+    const modMatch = (modName) => {
+      const mn = String(modName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!mn) return false;
+      if (mn === sysNorm || mn.includes(sysNorm) || sysNorm.includes(mn)) return true;
+      for (const [zh, keys] of KEYMAP) {
+        const hit = (s2) => s2.includes(zh.toLowerCase().replace(/[^a-z0-9一-鿿]/g, ''));
+        if (hit(sysNorm) && keys.some((k) => mn.includes(k))) return true;
+        if (keys.some((k) => sysNorm.includes(k)) && hit(mn)) return true;
+      }
+      return false;
+    };
+
+    // —— A. 可执行项（带 routineId）——
+    const funcs = (specialData?.functions || []).filter((f) => modMatch(f.system));
+    // —— B. .so 目录项（车型 × 模块）——
+    const ext = (extData?.items || []).filter((r) => {
+      const platOk = !plat || r.platform === '（通用）' || r.platform === plat;
+      return platOk && modMatch(r.module);
     });
+
+    const esc = (x) => String(x ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+    let html = '';
+    html += `<div class="hint" style="margin-bottom:8px">
+      车型 <b>${esc(currentModel || '（未选）')}</b> → 平台 <b>${esc(plat || '全部')}</b> ·
+      系统 <b>${esc(sys.label)}</b><br>
+      可执行 <b>${funcs.length}</b> 项 · 参考目录 <b>${ext.length}</b> 项
+      ${plat ? '' : '（未识别平台，目录按全部显示）'}
+    </div>`;
+
     if (funcs.length) {
-      actions = `<div class="specialList">${funcs.map((f, i) => `
+      html += `<div class="specialList">${funcs.map((f, i) => `
         <div class="specialItem" data-idx="${i}">
-          <div class="siName">${f.sub}</div>
-          <div class="siMeta">例程 0x${f.routineId?.replace('0x', '')} · 风险：${f.risk === 'high' ? '高' : f.risk === 'medium' ? '中' : '低'}</div>
+          <div class="siName">${esc(f.sub)}</div>
+          <div class="siMeta">例程 ${esc(f.routineId)} · 风险：${f.risk === 'high' ? '高' : f.risk === 'medium' ? '中' : '低'}</div>
           <div class="siActs">
-            <button class="spRun" data-rid="${f.routineId}">执行</button>
-            <button class="spStop" data-rid="${f.routineId}">停止</button>
-            <button class="spResult" data-rid="${f.routineId}">查结果</button>
+            <button class="spRun" data-rid="${esc(f.routineId)}">执行</button>
+            <button class="spStop" data-rid="${esc(f.routineId)}">停止</button>
+            <button class="spResult" data-rid="${esc(f.routineId)}">查结果</button>
           </div>
         </div>`).join('')}</div>`;
-    } else {
-      actions = `<div class="hint">该系统暂无特殊功能定义</div>`;
     }
+    if (ext.length) {
+      html += `<div class="hint" style="margin:12px 0 6px">参考目录（来自诊断程序内置例程名，仅供对照）</div>`;
+      html += `<div class="specialList">${ext.slice(0, 80).map((r) => `
+        <div class="specialItem">
+          <div class="siName">${esc(r.label)}</div>
+          <div class="siMeta">${esc(r.platform)} · ${esc(r.module || '—')} · ${esc(r.action)}</div>
+        </div>`).join('')}</div>`;
+      if (ext.length > 80) html += `<div class="hint">…另有 ${ext.length - 80} 项未列出</div>`;
+    }
+    if (!funcs.length && !ext.length) {
+      html += `<div class="hint">该车型 × 该模块在源数据里没有特殊功能定义。<br>
+        可能是：车型未识别、模块名未匹配、或该模块确实无特殊功能。</div>`;
+    }
+    actions = html;
+  } else if (kind === 'program') {
+    const progRun = async (verb, fn) => {
+      if (!needLink()) return;
+      const lid = parseInt($('xProgLid').value || '', 16);
+      if (Number.isNaN(lid)) { toast('err', 'LID 无效', '请输入十六进制 LID'); return; }
+      toast('info', `${verb} …`, `LID 0x${lid.toString(16).toUpperCase()}`);
+      try {
+        const r = await fn(lid);
+        toast('ok', `${verb}成功`, r || '');
+      } catch (e) {
+        const nrc = e instanceof CodingError ? e.nrc : null;
+        toast('err', `${verb}失败`, e.message + (nrc ? `（NRC 0x${nrc.toString(16)}）` : ''));
+      }
+    };
+    $('xProgRead').onclick = () => progRun('读编程块', async (lid) => {
+      await coder.enterSessionFor('coding');
+      const blk = await coder.readBlock(lid, 0x21);
+      return blk.map((b) => b.toString(16).padStart(2, '0')).join(' ');
+    });
+    $('xProgWrite').onclick = () => progRun('写编程块', async (lid) => {
+      // 此前是「读到什么就写回什么」，没有任何修改 —— 按钮语义是假的。
+      // 现在必须显式给出内容 + 长度校验 + 回读校验。
+      const input = prompt(
+        `要写入 LID 0x${Number(lid).toString(16).toUpperCase()} 的完整块（十六进制，空格可选）：\n`
+        + '留空 = 取消。请先复制当前块、改好再粘回。', '');
+      if (input == null || !input.trim()) return '已取消';
+      const clean = input.replace(/[^0-9A-Fa-f]/g, '');
+      if (!clean || clean.length % 2) throw new Error('十六进制内容非法（长度必须为偶数）');
+      await coder.enterSessionFor('coding');
+      const cur = await coder.readBlock(lid, 0x21);
+      if (clean.length / 2 !== cur.length) {
+        throw new Error(`长度不符：要写 ${clean.length / 2} 字节，块实际 ${cur.length} 字节 —— 已中止`);
+      }
+      await coder.securityAccess(0x09);
+      await coder.uds('3B' + Number(lid).toString(16).toUpperCase().padStart(2, '0') + clean.toUpperCase(), 8000);
+      const back = await coder.readBlock(lid, 0x21);
+      const ok = back.map((b) => b.toString(16).padStart(2, '0')).join('') === clean.toUpperCase();
+      if (!ok) throw new Error('回读与写入不一致');
+      return `已写入并回读校验通过（${cur.length} 字节）`;
+    });
+    $('xProgVerify').onclick = () => progRun('回读校验', async (lid) => {
+      await coder.enterSessionFor('coding');
+      const blk = await coder.readBlock(lid, 0x21);
+      return `块 ${blk.length} 字节已回读`;
+    });
+  } else if (kind === 'actuator') {
+    actions = `<label>执行器 DID（十六进制）</label>
+      <input id="xDid" value="045B" placeholder="如 045B">
+      <div class="acts">
+      <button id="xActOn" class="primary">驱动（shortTerm）</button>
+      <button id="xActOff">回位</button></div>`;
   } else if (kind === 'program') {
     actions = `<label>编程块 LID（十六进制）</label>
       <input id="xProgLid" placeholder="如 9A">
@@ -2040,6 +2274,10 @@ async function showSysExtra(f) {
   $('paramBox').querySelectorAll('.actOff').forEach((b) => {
     b.onclick = () => runAct(b, 0x00, '回位');
   });
+  if (kind === 'identity') {
+    await renderIdentity(sys);
+    return;
+  }
   if (kind === 'dtc') {
     $('xReadDtc').onclick = async () => {
       if (!needLink()) return;

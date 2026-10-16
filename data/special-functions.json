@@ -387,27 +387,19 @@
       "imgDir": "SPECFUNPIC/"
     },
     {
-      "system": "前照灯",
+      "system": "灯光电子",
       "sub": "前照灯调节",
       "routineId": "0x032C",
       "risk": "medium",
       "img": "HEADLIGHT_ADJUST-01",
-      "needsReview": {
-        "reason": "系统名 '前照灯' 不在 systemCatalog，候选需人工确认",
-        "candidates": [
-          "中央前照灯",
-          "大灯控制单元-左",
-          "大灯控制单元-右",
-          "左前照灯",
-          "右前照灯"
-        ]
-      },
       "imgSteps": [
         "HEADLIGHT_ADJUST-01",
         "HEADLIGHT_ADJUST-02",
         "HEADLIGHT_ADJUST-03"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "systemId": 0,
+      "resolvedFrom": "LEC（灯光电子）—— 内置例程名实证：CAY92A_FHBA_Calibration / MACAN_LEC_Calibration / PAN970_LEC_Height_Sensor_System_Calibration"
     },
     {
       "system": "AC(空调系统)",
@@ -507,23 +499,18 @@
       "imgDir": "SPECFUNPIC/"
     },
     {
-      "system": "BCM(车身控制)",
+      "system": "通讯连接系统",
       "sub": "DFM 连接",
       "routineId": "0x0334",
       "risk": "low",
       "img": "SPEC-CONNECT-DFM-01",
-      "needsReview": {
-        "reason": "系统名 'BCM(车身控制)' 不在 systemCatalog，候选需人工确认",
-        "candidates": [
-          "车辆电气系统",
-          "网关"
-        ]
-      },
       "imgSteps": [
         "SPEC-CONNECT-DFM-01",
         "SPEC-CONNECT-DFM-02"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "systemId": 0,
+      "resolvedFrom": "Connect System —— 内置例程名实证：E3/G3/J1_Connect_System_Deactivate_Flight_Mode（图片 SPEC-CONNECT-DFM 即 Connect System）"
     },
     {
       "system": "前端电子设备",
@@ -697,8 +684,8 @@
     }
   ],
   "source": {
-    "note": "手工整理 + systemId 回填。权威源应为 特殊功能配置文件 的 [系统特殊功能]节 节（见 build-special-functions.py 顶部注释）",
-    "authoritativeSource": "特殊功能配置文件 [系统特殊功能]节",
+    "note": "手工整理 + systemId 回填。权威源应为 特殊功能配置文件 的 [SYS_SPEC] 节（见 build-special-functions.py 顶部注释）",
+    "authoritativeSource": "特殊功能配置文件 [SYS_SPEC]",
     "verifiedAgainstSource": false,
     "picDir": "SPECFUNPIC（研究目录，不进发版包）",
     "picModel": "imgSteps = 同一功能的分步图序列（按序号）；img 保留为首步"

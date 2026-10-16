@@ -1,0 +1,3914 @@
+{
+ "schemaVersion": 1,
+ "kind": "special-functions-ext",
+ "note": "从诊断程序内置例程名提取的特殊功能目录。例程名本身即「车型_模块_动作」命名。",
+ "count": 548,
+ "byPlatform": {
+  "（通用）": 106,
+  "Cayenne-92A": 27,
+  "Cayenne-9PA": 17,
+  "Cayenne": 47,
+  "E1": 19,
+  "Macan": 69,
+  "911 (997)": 27,
+  "911 (9x1)": 41,
+  "Panamera-970": 26,
+  "Panamera": 20,
+  "G2": 25,
+  "Taycan": 7,
+  "911 (992)": 25,
+  "G3": 31,
+  "E3": 35,
+  "Cayenne-9YA": 11,
+  "Taycan (PJ1)": 7,
+  "G1": 1,
+  "E2": 7
+ },
+ "byModule": {
+  "": 175,
+  "ECM/DME(发动机控制模块)": 166,
+  "座椅": 1,
+  "灯光电子": 16,
+  "防盗/无钥匙进入": 4,
+  "组合仪表": 22,
+  "安全气囊": 5,
+  "ESP/PSM(电控稳定系统)": 35,
+  "ACC 自适应巡航": 10,
+  "空气悬挂": 8,
+  "水平高度控制": 8,
+  "尾门": 1,
+  "Tiptronic 变速器控制": 11,
+  "轮胎压力监控 (TPMS)": 8,
+  "保时捷通讯管理系统": 24,
+  "网关": 32,
+  "PASM(水平高度控制)": 10,
+  "蓄电池管理": 4,
+  "SRS(安全气囊)": 3,
+  "通讯连接系统": 5
+ },
+ "byAction": {
+  "判定": 6,
+  "匹配": 32,
+  "排气": 23,
+  "标准化": 1,
+  "校准": 89,
+  "功能": 2,
+  "读钥匙版本": 2,
+  "（未分类）": 227,
+  "加注": 13,
+  "复位": 34,
+  "示教": 57,
+  "排气/加注": 1,
+  "复位匹配": 1,
+  "更换": 23,
+  "识别": 1,
+  "部件测试": 1,
+  "充电": 4,
+  "功能测试": 4,
+  "网络监控": 2,
+  "初始化": 1,
+  "学习": 1,
+  "再生": 8,
+  "关闭飞行模式": 8,
+  "续航重算": 4,
+  "序列号编码": 3
+ },
+ "items": [
+  {
+   "raw": "Adas613HJudge",
+   "platform": "（通用）",
+   "module": "",
+   "action": "判定",
+   "label": "Adas613HJudge"
+  },
+  {
+   "raw": "CAY92A_DME_Adaptation_IMA_ISA_0161",
+   "platform": "Cayenne-92A",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_Adaptation_IMA_ISA_0161"
+  },
+  {
+   "raw": "CAY92A_DME_Adaptation_Kickdown_Switch_0161",
+   "platform": "Cayenne-92A",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_Adaptation_Kickdown_Switch_0161"
+  },
+  {
+   "raw": "CAY92A_DME_Adaptation_While_Engine_Running_0161",
+   "platform": "Cayenne-92A",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_Adaptation_While_Engine_Running_0161"
+  },
+  {
+   "raw": "CAY92A_DME_Bleed_Fuel_System_0161",
+   "platform": "Cayenne-92A",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "DME_Bleed_Fuel_System_0161"
+  },
+  {
+   "raw": "CAY92A_DME_EV_ECM42TDI_Master_A1_Adaptation_IMA_ISA",
+   "platform": "Cayenne-92A",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_EV_ECM42TDI_Master_A1_Adaptation_IMA_ISA"
+  },
+  {
+   "raw": "CAY92A_DSM_Normalise_Seat_Motors",
+   "platform": "Cayenne-92A",
+   "module": "座椅",
+   "action": "标准化",
+   "label": "DSM_Normalise_Seat_Motors"
+  },
+  {
+   "raw": "CAY92A_FHBA_Calibration",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "校准",
+   "label": "FHBA_Calibration"
+  },
+  {
+   "raw": "CAY92A_FRONT_Kessy_Functions_Kessy_Antenna_Path",
+   "platform": "Cayenne-92A",
+   "module": "防盗/无钥匙进入",
+   "action": "功能",
+   "label": "FRONT_Kessy_Functions_Kessy_Antenna_Path"
+  },
+  {
+   "raw": "CAY92A_FRONT_Kessy_Functions_Radio_Central_Locking_Antenna_Path",
+   "platform": "Cayenne-92A",
+   "module": "防盗/无钥匙进入",
+   "action": "功能",
+   "label": "FRONT_Kessy_Functions_Radio_Central_Locking_Antenna_Path"
+  },
+  {
+   "raw": "CAY92A_FRONT_Kessy_Functions_Version_Of_The_Key",
+   "platform": "Cayenne-92A",
+   "module": "防盗/无钥匙进入",
+   "action": "读钥匙版本",
+   "label": "FRONT_Kessy_Functions_Version_Of_The_Key"
+  },
+  {
+   "raw": "CAY92A_ICM_Read_Warning_Memory",
+   "platform": "Cayenne-92A",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Read_Warning_Memory"
+  },
+  {
+   "raw": "CAY92A_LEC_Replacement_Air_Spring_Bleed",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "排气",
+   "label": "LEC_Replacement_Air_Spring_Bleed"
+  },
+  {
+   "raw": "CAY92A_LEC_Replacement_Air_Spring_Filling",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "加注",
+   "label": "LEC_Replacement_Air_Spring_Filling"
+  },
+  {
+   "raw": "CAY92A_LEC_SPE1",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "（未分类）",
+   "label": "LEC_SPE1"
+  },
+  {
+   "raw": "CAY92A_LEC_SPE2",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "（未分类）",
+   "label": "LEC_SPE2"
+  },
+  {
+   "raw": "CAY92A_LEC_SPE3",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "（未分类）",
+   "label": "LEC_SPE3"
+  },
+  {
+   "raw": "CAY92A_LEC_SPE4",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "（未分类）",
+   "label": "LEC_SPE4"
+  },
+  {
+   "raw": "CAY92A_LEC_SPE5",
+   "platform": "Cayenne-92A",
+   "module": "灯光电子",
+   "action": "（未分类）",
+   "label": "LEC_SPE5"
+  },
+  {
+   "raw": "CAY92A_Left_Headlight_Calibration",
+   "platform": "Cayenne-92A",
+   "module": "",
+   "action": "校准",
+   "label": "Left_Headlight_Calibration"
+  },
+  {
+   "raw": "CAY92A_PAB_Calibration",
+   "platform": "Cayenne-92A",
+   "module": "安全气囊",
+   "action": "校准",
+   "label": "PAB_Calibration"
+  },
+  {
+   "raw": "CAY92A_PAB_Check_Basic_Setting",
+   "platform": "Cayenne-92A",
+   "module": "安全气囊",
+   "action": "（未分类）",
+   "label": "PAB_Check_Basic_Setting"
+  },
+  {
+   "raw": "CAY92A_PAB_Grinding_In",
+   "platform": "Cayenne-92A",
+   "module": "安全气囊",
+   "action": "（未分类）",
+   "label": "PAB_Grinding_In"
+  },
+  {
+   "raw": "CAY92A_PAB_Put_Hand_Brake",
+   "platform": "Cayenne-92A",
+   "module": "安全气囊",
+   "action": "（未分类）",
+   "label": "PAB_Put_Hand_Brake"
+  },
+  {
+   "raw": "CAY92A_PSM_Bleed_the_Brakes",
+   "platform": "Cayenne-92A",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "PSM_Bleed_the_Brakes"
+  },
+  {
+   "raw": "CAY92A_PSM_Sensor_Calibration",
+   "platform": "Cayenne-92A",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "校准",
+   "label": "PSM_Sensor_Calibration"
+  },
+  {
+   "raw": "CAY9PA_ACC_Calibration",
+   "platform": "Cayenne-9PA",
+   "module": "ACC 自适应巡航",
+   "action": "校准",
+   "label": "ACC_Calibration"
+  },
+  {
+   "raw": "CAY9PA_ACC_Service_Position",
+   "platform": "Cayenne-9PA",
+   "module": "ACC 自适应巡航",
+   "action": "（未分类）",
+   "label": "ACC_Service_Position"
+  },
+  {
+   "raw": "CAY9PA_AWS_Calibration",
+   "platform": "Cayenne-9PA",
+   "module": "空气悬挂",
+   "action": "校准",
+   "label": "AWS_Calibration"
+  },
+  {
+   "raw": "CAY9PA_AWS_Reset",
+   "platform": "Cayenne-9PA",
+   "module": "空气悬挂",
+   "action": "复位",
+   "label": "AWS_Reset"
+  },
+  {
+   "raw": "CAY9PA_AWS_Teach_Sensors",
+   "platform": "Cayenne-9PA",
+   "module": "空气悬挂",
+   "action": "示教",
+   "label": "AWS_Teach_Sensors"
+  },
+  {
+   "raw": "CAY9PA_DME_SDI41_CtrlUnitProgram",
+   "platform": "Cayenne-9PA",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_SDI41_CtrlUnitProgram"
+  },
+  {
+   "raw": "CAY9PA_HCL_Calibration",
+   "platform": "Cayenne-9PA",
+   "module": "水平高度控制",
+   "action": "校准",
+   "label": "HCL_Calibration"
+  },
+  {
+   "raw": "CAY9PA_HCL_Reset",
+   "platform": "Cayenne-9PA",
+   "module": "水平高度控制",
+   "action": "复位",
+   "label": "HCL_Reset"
+  },
+  {
+   "raw": "CAY9PA_LEC_BleedOrFill",
+   "platform": "Cayenne-9PA",
+   "module": "灯光电子",
+   "action": "排气/加注",
+   "label": "LEC_BleedOrFill"
+  },
+  {
+   "raw": "CAY9PA_LHB_Calibration",
+   "platform": "Cayenne-9PA",
+   "module": "灯光电子",
+   "action": "校准",
+   "label": "LHB_Calibration"
+  },
+  {
+   "raw": "CAY9PA_PSM_Calibration",
+   "platform": "Cayenne-9PA",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "校准",
+   "label": "PSM_Calibration"
+  },
+  {
+   "raw": "CAY9PA_PSM_SysAdaption",
+   "platform": "Cayenne-9PA",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_SysAdaption"
+  },
+  {
+   "raw": "CAY9PA_TAG_Calibration",
+   "platform": "Cayenne-9PA",
+   "module": "尾门",
+   "action": "校准",
+   "label": "TAG_Calibration"
+  },
+  {
+   "raw": "CAY9PA_TIP_ResetAdaption",
+   "platform": "Cayenne-9PA",
+   "module": "Tiptronic 变速器控制",
+   "action": "复位匹配",
+   "label": "TIP_ResetAdaption"
+  },
+  {
+   "raw": "CAY9PA_TPM_1921_WriteWheel",
+   "platform": "Cayenne-9PA",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "（未分类）",
+   "label": "TPM_1921_WriteWheel"
+  },
+  {
+   "raw": "CAY9PA_TPM_1922_WriteWheel",
+   "platform": "Cayenne-9PA",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "（未分类）",
+   "label": "TPM_1922_WriteWheel"
+  },
+  {
+   "raw": "CAY9PA_TPM_SysAdaptation",
+   "platform": "Cayenne-9PA",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "匹配",
+   "label": "TPM_SysAdaptation"
+  },
+  {
+   "raw": "Cayenne2011_Air_conditioner_Teach_in_LIN_automatic_addressing",
+   "platform": "（通用）",
+   "module": "",
+   "action": "示教",
+   "label": "Cayenne2011_Air_conditioner_Teach_in_LIN_automatic_addressing"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adaptation_017E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "2011_DME_Adaptation_017E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adaptation_Radiator_Shutter_0187",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "2011_DME_Adaptation_Radiator_Shutter_0187"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adaptation_While_Engine_Running_016E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "2011_DME_Adaptation_While_Engine_Running_016E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adaption_Kickdown_Adaption_0160",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Adaption_Kickdown_Adaption_0160"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adaption_Kickdown_Adaption_016E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Adaption_Kickdown_Adaption_016E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adaption_Throttle_Adaption_0160",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Adaption_Throttle_Adaption_0160"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Adopt_Bank2_particle_filter_mileage_in_the_DME_017A",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Adopt_Bank2_particle_filter_mileage_in_the_DME_017A"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Clutch_Actuator_And_Separating_Clutch_0185",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Clutch_Actuator_And_Separating_Clutch_0185"
+  },
+  {
+   "raw": "Cayenne_2011_DME_DPF_016E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_DPF_016E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_DPF_0172",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_DPF_0172"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Delete_Adaption_Data_0160",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Delete_Adaption_Data_0160"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Radiator_Shutter_0174",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Radiator_Shutter_0174"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Read_Out_Ready_Status_0173",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Read_Out_Ready_Status_0173"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Ready_Status_0160",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Ready_Status_0160"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Ready_Status_017E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Ready_Status_017E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Set_Ready_Status_0173",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Set_Ready_Status_0173"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_0160",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_0160"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_016E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_016E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_0172",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_0172"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_0173",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_0173"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_017A",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_017A"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_017E",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_017E"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_0181",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_0181"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_0184",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_0184"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Short_tests_0185",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Short_tests_0185"
+  },
+  {
+   "raw": "Cayenne_2011_DME_Tank_leakage_0187",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "2011_DME_Tank_leakage_0187"
+  },
+  {
+   "raw": "Cayenne_2011_PDCC_Pressure_Sensor_Calibration_2B60",
+   "platform": "Cayenne",
+   "module": "",
+   "action": "校准",
+   "label": "2011_PDCC_Pressure_Sensor_Calibration_2B60"
+  },
+  {
+   "raw": "Cayenne_2011_PSM_Hydraulic_Swap_Test_0561",
+   "platform": "Cayenne",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "2011_PSM_Hydraulic_Swap_Test_0561"
+  },
+  {
+   "raw": "Cayenne_2011_PSM_Pump_Test_0561",
+   "platform": "Cayenne",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "2011_PSM_Pump_Test_0561"
+  },
+  {
+   "raw": "Cayenne_2011_PSM_Rolling_Test_Mode_0561",
+   "platform": "Cayenne",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "2011_PSM_Rolling_Test_Mode_0561"
+  },
+  {
+   "raw": "Cayenne_2011_TPM_Teach_wheel_sensors",
+   "platform": "Cayenne",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "示教",
+   "label": "2011_TPM_Teach_wheel_sensors"
+  },
+  {
+   "raw": "Cayenne_PCM_Function_Activation_windows",
+   "platform": "Cayenne",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Function_Activation_windows"
+  },
+  {
+   "raw": "DME_Operate1",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Operate1"
+  },
+  {
+   "raw": "E1_PDCC_Calibration",
+   "platform": "E1",
+   "module": "",
+   "action": "校准",
+   "label": "PDCC_Calibration"
+  },
+  {
+   "raw": "E1_PDCC_Reset",
+   "platform": "E1",
+   "module": "",
+   "action": "复位",
+   "label": "PDCC_Reset"
+  },
+  {
+   "raw": "ICM_Calibrate_Fuel_Level_Sensor",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "校准",
+   "label": "ICM_Calibrate_Fuel_Level_Sensor"
+  },
+  {
+   "raw": "ICM_Reset_Maintenance_Interval",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "复位",
+   "label": "ICM_Reset_Maintenance_Interval"
+  },
+  {
+   "raw": "ICM_Save_Fuel_Level_Sensor_To_REAR",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Save_Fuel_Level_Sensor_To_REAR"
+  },
+  {
+   "raw": "ICM_Set_Total_Mileage",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Set_Total_Mileage"
+  },
+  {
+   "raw": "JudgeSetDiagFuncInfoStartOrFend",
+   "platform": "（通用）",
+   "module": "",
+   "action": "判定",
+   "label": "JudgeSetDiagFuncInfoStartOrFend"
+  },
+  {
+   "raw": "JudgeStringIsNumber",
+   "platform": "（通用）",
+   "module": "",
+   "action": "判定",
+   "label": "JudgeStringIsNumber"
+  },
+  {
+   "raw": "LEC_Calibration_1307",
+   "platform": "（通用）",
+   "module": "灯光电子",
+   "action": "校准",
+   "label": "LEC_Calibration_1307"
+  },
+  {
+   "raw": "MACAN_Air_conditioner_Teach_in_LIN_automatic_addressing",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "Air_conditioner_Teach_in_LIN_automatic_addressing"
+  },
+  {
+   "raw": "MACAN_Calibrate_EPT_0F45",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Calibrate_EPT_0F45"
+  },
+  {
+   "raw": "MACAN_GAT_Battery_replacement_windows",
+   "platform": "Macan",
+   "module": "",
+   "action": "更换",
+   "label": "GAT_Battery_replacement_windows"
+  },
+  {
+   "raw": "MACAN_Instrument_cluster_Tank_calibration",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Instrument_cluster_Tank_calibration"
+  },
+  {
+   "raw": "MACAN_LEC_Calibration",
+   "platform": "Macan",
+   "module": "灯光电子",
+   "action": "校准",
+   "label": "LEC_Calibration"
+  },
+  {
+   "raw": "MACAN_Rear_lid_Calibrate_rear_lid",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Rear_lid_Calibrate_rear_lid"
+  },
+  {
+   "raw": "Macan_DEM_Adaptations",
+   "platform": "Macan",
+   "module": "",
+   "action": "匹配",
+   "label": "DEM_Adaptations"
+  },
+  {
+   "raw": "Macan_DEM_Delete_adaptation_data",
+   "platform": "Macan",
+   "module": "",
+   "action": "匹配",
+   "label": "DEM_Delete_adaptation_data"
+  },
+  {
+   "raw": "Macan_DME_01DA_Adaptations",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_01DA_Adaptations"
+  },
+  {
+   "raw": "Macan_DME_01DA_Adaptations_New",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_01DA_Adaptations_New"
+  },
+  {
+   "raw": "Macan_DME_01DA_Adaptations_while_engine_is_running",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_01DA_Adaptations_while_engine_is_running"
+  },
+  {
+   "raw": "Macan_DME_01DA_Ready_status",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_Ready_status"
+  },
+  {
+   "raw": "Macan_DME_01DA_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_Short_tests"
+  },
+  {
+   "raw": "Macan_DME_01DA_Short_tests_New",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_Short_tests_New"
+  },
+  {
+   "raw": "Macan_DME_01DA_System_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_System_tests"
+  },
+  {
+   "raw": "Macan_DME_01DA_System_tests_New",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_System_tests_New"
+  },
+  {
+   "raw": "Macan_DME_0508_Adaptations",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_0508_Adaptations"
+  },
+  {
+   "raw": "Macan_DME_0508_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0508_Short_tests"
+  },
+  {
+   "raw": "Macan_DME_Short_Tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Short_Tests"
+  },
+  {
+   "raw": "Macan_PCM_AM_field_strength_windows",
+   "platform": "Macan",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_AM_field_strength_windows"
+  },
+  {
+   "raw": "Macan_PCM_Current_FM_field_strength_windows",
+   "platform": "Macan",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Current_FM_field_strength_windows"
+  },
+  {
+   "raw": "Macan_PCM_FM_field_strength_windows",
+   "platform": "Macan",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_FM_field_strength_windows"
+  },
+  {
+   "raw": "Macan_PCM_MOST_system_test_windows",
+   "platform": "Macan",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_MOST_system_test_windows"
+  },
+  {
+   "raw": "Macan_Rueckfahrkamera2_Calibration",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Rueckfahrkamera2_Calibration"
+  },
+  {
+   "raw": "Macan_SWA2_Calibration",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "SWA2_Calibration"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate1",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate1"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate2",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate2"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate3",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate3"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate4",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate4"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate_Result",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate_Result"
+  },
+  {
+   "raw": "Macan_Transmission_control_Calibrate_windows",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "Transmission_control_Calibrate_windows"
+  },
+  {
+   "raw": "P997_ACC_System_check_0740",
+   "platform": "911 (997)",
+   "module": "ACC 自适应巡航",
+   "action": "（未分类）",
+   "label": "ACC_System_check_0740"
+  },
+  {
+   "raw": "P997_AWS_Calibration_1B40",
+   "platform": "911 (997)",
+   "module": "空气悬挂",
+   "action": "校准",
+   "label": "AWS_Calibration_1B40"
+  },
+  {
+   "raw": "P997_AWS_Teaching_sensors_1B40",
+   "platform": "911 (997)",
+   "module": "空气悬挂",
+   "action": "示教",
+   "label": "AWS_Teaching_sensors_1B40"
+  },
+  {
+   "raw": "P997_DME_Erase_adaptation_0146",
+   "platform": "911 (997)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_Erase_adaptation_0146"
+  },
+  {
+   "raw": "P997_DME_Short_test_0146",
+   "platform": "911 (997)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Short_test_0146"
+  },
+  {
+   "raw": "P997_DME_System_adaption_0146",
+   "platform": "911 (997)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_System_adaption_0146"
+  },
+  {
+   "raw": "P997_DME_system_check_0140",
+   "platform": "911 (997)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_system_check_0140"
+  },
+  {
+   "raw": "P997_FRO_AHBA_Calibration_2040",
+   "platform": "911 (997)",
+   "module": "",
+   "action": "校准",
+   "label": "FRO_AHBA_Calibration_2040"
+  },
+  {
+   "raw": "P997_GATEWAY_Single_wire_0940",
+   "platform": "911 (997)",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GATEWAY_Single_wire_0940"
+  },
+  {
+   "raw": "P997_GATEWAY_Sleep_mode_0940",
+   "platform": "911 (997)",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GATEWAY_Sleep_mode_0940"
+  },
+  {
+   "raw": "P997_GATEWAY_Wake_up_0940",
+   "platform": "911 (997)",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GATEWAY_Wake_up_0940"
+  },
+  {
+   "raw": "P997_GATEWAY_installed_components_0940",
+   "platform": "911 (997)",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GATEWAY_installed_components_0940"
+  },
+  {
+   "raw": "P997_ICM_Advance_total_0840",
+   "platform": "911 (997)",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Advance_total_0840"
+  },
+  {
+   "raw": "P997_ICM_Set_service_0840",
+   "platform": "911 (997)",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Set_service_0840"
+  },
+  {
+   "raw": "P997_ICM_Tank_calibration_0840",
+   "platform": "911 (997)",
+   "module": "组合仪表",
+   "action": "校准",
+   "label": "ICM_Tank_calibration_0840"
+  },
+  {
+   "raw": "P997_ICM_Voltage_difference_0840",
+   "platform": "911 (997)",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Voltage_difference_0840"
+  },
+  {
+   "raw": "P997_PAS_ELV_identification_2140",
+   "platform": "911 (997)",
+   "module": "",
+   "action": "识别",
+   "label": "PAS_ELV_identification_2140"
+  },
+  {
+   "raw": "P997_PAS_Teach_electronic_2140",
+   "platform": "911 (997)",
+   "module": "",
+   "action": "示教",
+   "label": "PAS_Teach_electronic_2140"
+  },
+  {
+   "raw": "P997_PSM_Bleed_0540",
+   "platform": "911 (997)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "PSM_Bleed_0540"
+  },
+  {
+   "raw": "P997_PSM_Calibrate_0540",
+   "platform": "911 (997)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "校准",
+   "label": "PSM_Calibrate_0540"
+  },
+  {
+   "raw": "P997_PSM_Speed_sensor_0540",
+   "platform": "911 (997)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Speed_sensor_0540"
+  },
+  {
+   "raw": "P997_PSM_Static_test_0540",
+   "platform": "911 (997)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Static_test_0540"
+  },
+  {
+   "raw": "P997_PSM_Swap_test_0540",
+   "platform": "911 (997)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Swap_test_0540"
+  },
+  {
+   "raw": "P997_TIP_Fluid_fill_0240",
+   "platform": "911 (997)",
+   "module": "Tiptronic 变速器控制",
+   "action": "（未分类）",
+   "label": "TIP_Fluid_fill_0240"
+  },
+  {
+   "raw": "P997_TPM_System_adaption_1941",
+   "platform": "911 (997)",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "（未分类）",
+   "label": "TPM_System_adaption_1941"
+  },
+  {
+   "raw": "P9X1_DEM_01E3_Adaptations_windows",
+   "platform": "（通用）",
+   "module": "",
+   "action": "匹配",
+   "label": "P9X1_DEM_01E3_Adaptations_windows"
+  },
+  {
+   "raw": "P9X1_DEM_Delete_adaptation_data_windows",
+   "platform": "（通用）",
+   "module": "",
+   "action": "匹配",
+   "label": "P9X1_DEM_Delete_adaptation_data_windows"
+  },
+  {
+   "raw": "P9X1_DEM_Oil_filling_windows",
+   "platform": "（通用）",
+   "module": "",
+   "action": "加注",
+   "label": "P9X1_DEM_Oil_filling_windows"
+  },
+  {
+   "raw": "P9x1_Airconditioning_Servo_motor_teaching",
+   "platform": "911 (9x1)",
+   "module": "",
+   "action": "示教",
+   "label": "Airconditioning_Servo_motor_teaching"
+  },
+  {
+   "raw": "P9x1_DME_Adaptations",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_Adaptations"
+  },
+  {
+   "raw": "P9x1_FRONT_Wiping_Angle_Adaptation",
+   "platform": "911 (9x1)",
+   "module": "",
+   "action": "匹配",
+   "label": "FRONT_Wiping_Angle_Adaptation"
+  },
+  {
+   "raw": "P9x1_Gateway_specified_configuration_0982",
+   "platform": "911 (9x1)",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "Gateway_specified_configuration_0982"
+  },
+  {
+   "raw": "P9x1_Gateway_specified_configuration_0986",
+   "platform": "911 (9x1)",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "Gateway_specified_configuration_0986"
+  },
+  {
+   "raw": "P9x1_ICM_Displaytestimages",
+   "platform": "911 (9x1)",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_Displaytestimages"
+  },
+  {
+   "raw": "P9x1_PASM_Calibration",
+   "platform": "911 (9x1)",
+   "module": "PASM(水平高度控制)",
+   "action": "校准",
+   "label": "PASM_Calibration"
+  },
+  {
+   "raw": "P9x1_PASM_dampervalves",
+   "platform": "911 (9x1)",
+   "module": "PASM(水平高度控制)",
+   "action": "（未分类）",
+   "label": "PASM_dampervalves"
+  },
+  {
+   "raw": "P9x1_PCM_Multimedia_interface_test",
+   "platform": "911 (9x1)",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Multimedia_interface_test"
+  },
+  {
+   "raw": "P9x1_PSM_Bleed_The_Brakes",
+   "platform": "911 (9x1)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "PSM_Bleed_The_Brakes"
+  },
+  {
+   "raw": "P9x1_PSM_Rolling_test_mode",
+   "platform": "911 (9x1)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Rolling_test_mode"
+  },
+  {
+   "raw": "P9x1_PSM_Sensor_cluster_compensation",
+   "platform": "911 (9x1)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Sensor_cluster_compensation"
+  },
+  {
+   "raw": "P9x1_PSM_Speed_sensor_test",
+   "platform": "911 (9x1)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Speed_sensor_test"
+  },
+  {
+   "raw": "P9x1_PSM_Static_test",
+   "platform": "911 (9x1)",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Static_test"
+  },
+  {
+   "raw": "P9x1_TIP_Oil_Filling",
+   "platform": "911 (9x1)",
+   "module": "Tiptronic 变速器控制",
+   "action": "加注",
+   "label": "TIP_Oil_Filling"
+  },
+  {
+   "raw": "P9x6_DME_Control_unittype",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P9x6_DME_Control_unittype"
+  },
+  {
+   "raw": "P9x6_DME_Program_immobilizercode_0101",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P9x6_DME_Program_immobilizercode_0101"
+  },
+  {
+   "raw": "P9x6_DME_Short_test_0102",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P9x6_DME_Short_test_0102"
+  },
+  {
+   "raw": "P9x6_ICM_Activate_instrument_cluster_0809",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "P9x6_ICM_Activate_instrument_cluster_0809"
+  },
+  {
+   "raw": "P9x6_ICM_Erase_event_memory_0809",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "P9x6_ICM_Erase_event_memory_0809"
+  },
+  {
+   "raw": "P9x6_ICM_Events_0809",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "P9x6_ICM_Events_0809"
+  },
+  {
+   "raw": "P9x6_ICM_Reset_tank_calibration_value_0809",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "校准",
+   "label": "P9x6_ICM_Reset_tank_calibration_value_0809"
+  },
+  {
+   "raw": "P9x6_ICM_Tank_calibration_0809",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "校准",
+   "label": "P9x6_ICM_Tank_calibration_0809"
+  },
+  {
+   "raw": "P9x6_ICM_Total_distance_0809",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "P9x6_ICM_Total_distance_0809"
+  },
+  {
+   "raw": "PAN970_DME_Emachine_calibration_01A9",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "校准",
+   "label": "DME_Emachine_calibration_01A9"
+  },
+  {
+   "raw": "PAN970_DME_Getvalue",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Getvalue"
+  },
+  {
+   "raw": "PAN970_DME_System_test_018A",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_System_test_018A"
+  },
+  {
+   "raw": "PAN970_DME_System_test_018D",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_System_test_018D"
+  },
+  {
+   "raw": "PAN970_DME_Tank_leakage_01A9",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Tank_leakage_01A9"
+  },
+  {
+   "raw": "PAN970_DME_oil_filling_018A",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "加注",
+   "label": "DME_oil_filling_018A"
+  },
+  {
+   "raw": "PAN970_DME_short_test_018A",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_short_test_018A"
+  },
+  {
+   "raw": "PAN970_DME_short_test_018D",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_short_test_018D"
+  },
+  {
+   "raw": "PAN970_DME_short_test_01A9",
+   "platform": "Panamera-970",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_short_test_01A9"
+  },
+  {
+   "raw": "PAN970_FRONT_HBA_Calibration",
+   "platform": "Panamera-970",
+   "module": "",
+   "action": "校准",
+   "label": "FRONT_HBA_Calibration"
+  },
+  {
+   "raw": "PAN970_LEC_Height_Sensor_System_Calibration",
+   "platform": "Panamera-970",
+   "module": "灯光电子",
+   "action": "校准",
+   "label": "LEC_Height_Sensor_System_Calibration"
+  },
+  {
+   "raw": "PAN970_LEC_Height_Sensor_System_Component_Test",
+   "platform": "Panamera-970",
+   "module": "灯光电子",
+   "action": "部件测试",
+   "label": "LEC_Height_Sensor_System_Component_Test"
+  },
+  {
+   "raw": "PAN970_LEC_Replacement_Air_Spring_Charge",
+   "platform": "Panamera-970",
+   "module": "灯光电子",
+   "action": "充电",
+   "label": "LEC_Replacement_Air_Spring_Charge"
+  },
+  {
+   "raw": "PAN970_LEC_Replacement_Air_Spring_Ventilation",
+   "platform": "Panamera-970",
+   "module": "灯光电子",
+   "action": "更换",
+   "label": "LEC_Replacement_Air_Spring_Ventilation"
+  },
+  {
+   "raw": "PAN970_PAB_Grinding_In",
+   "platform": "Panamera-970",
+   "module": "安全气囊",
+   "action": "（未分类）",
+   "label": "PAB_Grinding_In"
+  },
+  {
+   "raw": "PAN970_PDO_Pressure_Sensor_Calibration",
+   "platform": "Panamera-970",
+   "module": "",
+   "action": "校准",
+   "label": "PDO_Pressure_Sensor_Calibration"
+  },
+  {
+   "raw": "PAN970_PSM_Bleed_The_Brakes",
+   "platform": "Panamera-970",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "PSM_Bleed_The_Brakes"
+  },
+  {
+   "raw": "PAN970_PSM_Calibration_Of_Combination_Sensor",
+   "platform": "Panamera-970",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "校准",
+   "label": "PSM_Calibration_Of_Combination_Sensor"
+  },
+  {
+   "raw": "PAN970_PSM_Hydraulic_Swap_Test_0566",
+   "platform": "Panamera-970",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Hydraulic_Swap_Test_0566"
+  },
+  {
+   "raw": "PAN970_PSM_Rolling_Test_Mode_0566",
+   "platform": "Panamera-970",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Rolling_Test_Mode_0566"
+  },
+  {
+   "raw": "PAN970_PSM_Speed_sensor_test_0566",
+   "platform": "Panamera-970",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Speed_sensor_test_0566"
+  },
+  {
+   "raw": "PAN970_PSM_Static_test_0566",
+   "platform": "Panamera-970",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Static_test_0566"
+  },
+  {
+   "raw": "PAN970_TPM_SysAdaptation",
+   "platform": "Panamera-970",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "匹配",
+   "label": "TPM_SysAdaptation"
+  },
+  {
+   "raw": "PAN970_TPM_Teach_WheelIDs",
+   "platform": "Panamera-970",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "示教",
+   "label": "TPM_Teach_WheelIDs"
+  },
+  {
+   "raw": "Panamera_Air_conditioner_Teach_in_LIN_automatic_addressing",
+   "platform": "Panamera",
+   "module": "",
+   "action": "示教",
+   "label": "Air_conditioner_Teach_in_LIN_automatic_addressing"
+  },
+  {
+   "raw": "Panamera_Level_control_PASM_Replacement_of_several_components",
+   "platform": "Panamera",
+   "module": "PASM(水平高度控制)",
+   "action": "更换",
+   "label": "Level_control_PASM_Replacement_of_several_components"
+  },
+  {
+   "raw": "Panamera_PCM_MOST_system_reserve_windows",
+   "platform": "Panamera",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_MOST_system_reserve_windows"
+  },
+  {
+   "raw": "Panamera_PCM_MOST_system_test_windows",
+   "platform": "Panamera",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_MOST_system_test_windows"
+  },
+  {
+   "raw": "Panamera_PCM_Multimedia_Interface_Test_windows",
+   "platform": "Panamera",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Multimedia_Interface_Test_windows"
+  },
+  {
+   "raw": "Panamera_PCM_Self_test_windows",
+   "platform": "Panamera",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Self_test_windows"
+  },
+  {
+   "raw": "STW_Calibration_3661",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "STW_Calibration_3661"
+  },
+  {
+   "raw": "Teach_WheelIDs_Func1",
+   "platform": "（通用）",
+   "module": "",
+   "action": "示教",
+   "label": "Teach_WheelIDs_Func1"
+  },
+  {
+   "raw": "Teach_WheelIDs_Func2",
+   "platform": "（通用）",
+   "module": "",
+   "action": "示教",
+   "label": "Teach_WheelIDs_Func2"
+  },
+  {
+   "raw": "G2_BMC_SOH",
+   "platform": "G2",
+   "module": "蓄电池管理",
+   "action": "（未分类）",
+   "label": "BMC_SOH"
+  },
+  {
+   "raw": "J1_BMC_SOH",
+   "platform": "Taycan",
+   "module": "蓄电池管理",
+   "action": "（未分类）",
+   "label": "BMC_SOH"
+  },
+  {
+   "raw": "P992_BMC_SOH",
+   "platform": "911 (992)",
+   "module": "蓄电池管理",
+   "action": "（未分类）",
+   "label": "BMC_SOH"
+  },
+  {
+   "raw": "E1_GateWay_Reset",
+   "platform": "E1",
+   "module": "网关",
+   "action": "复位",
+   "label": "GateWay_Reset"
+  },
+  {
+   "raw": "G3_PSM_Swap_Test",
+   "platform": "G3",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_Swap_Test"
+  },
+  {
+   "raw": "P9x1_DME_UDS_DPF",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_DPF"
+  },
+  {
+   "raw": "DME_0B04_SPE_Lock",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B04_SPE_Lock"
+  },
+  {
+   "raw": "J1_Reset_ORU_Warn",
+   "platform": "Taycan",
+   "module": "",
+   "action": "复位",
+   "label": "Reset_ORU_Warn"
+  },
+  {
+   "raw": "PSM_Bleeding_Show",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "PSM_Bleeding_Show"
+  },
+  {
+   "raw": "E3_DME_Measure_Oil",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Measure_Oil"
+  },
+  {
+   "raw": "EBKV_Bleeding_Show",
+   "platform": "（通用）",
+   "module": "",
+   "action": "排气",
+   "label": "EBKV_Bleeding_Show"
+  },
+  {
+   "raw": "G3_TIP_PDK_OilFill",
+   "platform": "G3",
+   "module": "Tiptronic 变速器控制",
+   "action": "（未分类）",
+   "label": "TIP_PDK_OilFill"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Adapt",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_Adapt"
+  },
+  {
+   "raw": "getOperate_DME_992",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "getOperate_DME_992"
+  },
+  {
+   "raw": "E3G2_PSM_BrakeReset",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "复位",
+   "label": "E3G2_PSM_BrakeReset"
+  },
+  {
+   "raw": "G3_BCM2_ClientReset",
+   "platform": "G3",
+   "module": "",
+   "action": "复位",
+   "label": "BCM2_ClientReset"
+  },
+  {
+   "raw": "G3_DME_Tank_Leakage",
+   "platform": "G3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Tank_Leakage"
+  },
+  {
+   "raw": "E1_GateWay_SleepMode",
+   "platform": "E1",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_SleepMode"
+  },
+  {
+   "raw": "E1_PCM_GW_AudioTests",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_GW_AudioTests"
+  },
+  {
+   "raw": "E3_SRS_ReadCollision",
+   "platform": "E3",
+   "module": "SRS(安全气囊)",
+   "action": "（未分类）",
+   "label": "SRS_ReadCollision"
+  },
+  {
+   "raw": "P918_DME_Adaptations",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "P918_DME_Adaptations"
+  },
+  {
+   "raw": "P918_DME_Short_tests",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P918_DME_Short_tests"
+  },
+  {
+   "raw": "P9X1_PDK_Calibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "P9X1_PDK_Calibration"
+  },
+  {
+   "raw": "P9x6_COT_Calibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "P9x6_COT_Calibration"
+  },
+  {
+   "raw": "P9x7_TOP_Calibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "P9x7_TOP_Calibration"
+  },
+  {
+   "raw": "E1_GateWay_WakeUpLine",
+   "platform": "E1",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_WakeUpLine"
+  },
+  {
+   "raw": "G2_PVTS_Function_Test",
+   "platform": "G2",
+   "module": "",
+   "action": "功能测试",
+   "label": "PVTS_Function_Test"
+  },
+  {
+   "raw": "G3_Gateway_NetMonitor",
+   "platform": "G3",
+   "module": "网关",
+   "action": "网络监控",
+   "label": "Gateway_NetMonitor"
+  },
+  {
+   "raw": "Macan_DEM_Oil_Filling",
+   "platform": "Macan",
+   "module": "",
+   "action": "加注",
+   "label": "DEM_Oil_Filling"
+  },
+  {
+   "raw": "P918_DME_Ready_status",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P918_DME_Ready_status"
+  },
+  {
+   "raw": "P918_DME_Tank_leakage",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P918_DME_Tank_leakage"
+  },
+  {
+   "raw": "P918_PASM_Calibration",
+   "platform": "（通用）",
+   "module": "PASM(水平高度控制)",
+   "action": "校准",
+   "label": "P918_PASM_Calibration"
+  },
+  {
+   "raw": "P970_SRS_Crash_record",
+   "platform": "（通用）",
+   "module": "SRS(安全气囊)",
+   "action": "（未分类）",
+   "label": "P970_SRS_Crash_record"
+  },
+  {
+   "raw": "P9x1_DME_UDS_AdaptSec",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_AdaptSec"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Bleeding",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "DME_UDS_Bleeding"
+  },
+  {
+   "raw": "P9x1_SWA3_Calibration",
+   "platform": "911 (9x1)",
+   "module": "",
+   "action": "校准",
+   "label": "SWA3_Calibration"
+  },
+  {
+   "raw": "Cayenne_2010_PASM_Fill",
+   "platform": "Cayenne",
+   "module": "PASM(水平高度控制)",
+   "action": "（未分类）",
+   "label": "2010_PASM_Fill"
+  },
+  {
+   "raw": "G3_TIP_PDK_Calibration",
+   "platform": "G3",
+   "module": "Tiptronic 变速器控制",
+   "action": "校准",
+   "label": "TIP_PDK_Calibration"
+  },
+  {
+   "raw": "Macan_AC_Teach_AC_Unit",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "AC_Teach_AC_Unit"
+  },
+  {
+   "raw": "Macan_SWA3_Calibration",
+   "platform": "Macan",
+   "module": "",
+   "action": "校准",
+   "label": "SWA3_Calibration"
+  },
+  {
+   "raw": "P9x1_DME_UDS_DPF_Step1",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_DPF_Step1"
+  },
+  {
+   "raw": "P9x1_DME_UDS_DPF_Step2",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_DPF_Step2"
+  },
+  {
+   "raw": "P9x1_DME_UDS_ShortTest",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_ShortTest"
+  },
+  {
+   "raw": "PAN970_TIP_Calibration",
+   "platform": "Panamera-970",
+   "module": "Tiptronic 变速器控制",
+   "action": "校准",
+   "label": "TIP_Calibration"
+  },
+  {
+   "raw": "Cayenne_2010_PASM_Bleed",
+   "platform": "Cayenne",
+   "module": "PASM(水平高度控制)",
+   "action": "排气",
+   "label": "2010_PASM_Bleed"
+  },
+  {
+   "raw": "DME_0B01_SPE_FirstStart",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_FirstStart"
+  },
+  {
+   "raw": "DME_0B01_SPE_OilFilling",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "加注",
+   "label": "DME_0B01_SPE_OilFilling"
+  },
+  {
+   "raw": "DME_0B01_SPE_ShortTests",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_ShortTests"
+  },
+  {
+   "raw": "E3_DME_Reset_Wheel_Adap",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_Reset_Wheel_Adap"
+  },
+  {
+   "raw": "E3_PCM_Most_System_Test",
+   "platform": "E3",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Most_System_Test"
+  },
+  {
+   "raw": "G3_PSM_Service_Bleeding",
+   "platform": "G3",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "PSM_Service_Bleeding"
+  },
+  {
+   "raw": "P992_Gateway_NetMonitor",
+   "platform": "911 (992)",
+   "module": "网关",
+   "action": "网络监控",
+   "label": "Gateway_NetMonitor"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Add_Spe_Ds",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_Add_Spe_Ds"
+  },
+  {
+   "raw": "P9x1_DME_UDS_SysTestSec",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_SysTestSec"
+  },
+  {
+   "raw": "DME_0B01_SPE_Adaptations",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_0B01_SPE_Adaptations"
+  },
+  {
+   "raw": "DME_0B01_SPE_EmachineCal",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_EmachineCal"
+  },
+  {
+   "raw": "DME_0B01_SPE_ReadyStatus",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_ReadyStatus"
+  },
+  {
+   "raw": "DME_0B01_SPE_SystemTests",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_SystemTests"
+  },
+  {
+   "raw": "E1_GateWay_ReadFaultBits",
+   "platform": "E1",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_ReadFaultBits"
+  },
+  {
+   "raw": "G3_DME_PHEV_Tank_Leakage",
+   "platform": "G3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_PHEV_Tank_Leakage"
+  },
+  {
+   "raw": "P918_DME_Clutch_Actuator",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P918_DME_Clutch_Actuator"
+  },
+  {
+   "raw": "P992_TIP_PDK_Calibration",
+   "platform": "911 (992)",
+   "module": "Tiptronic 变速器控制",
+   "action": "校准",
+   "label": "TIP_PDK_Calibration"
+  },
+  {
+   "raw": "P9x1_DME_UDS_First_start",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_First_start"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Oil_Filling",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "加注",
+   "label": "DME_UDS_Oil_Filling"
+  },
+  {
+   "raw": "SYS_128D_SPE_Calibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "SYS_128D_SPE_Calibration"
+  },
+  {
+   "raw": "E1_GateWay_SingleWireTest",
+   "platform": "E1",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_SingleWireTest"
+  },
+  {
+   "raw": "E1_GateWay_WakeUpGuardian",
+   "platform": "E1",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_WakeUpGuardian"
+  },
+  {
+   "raw": "E1_PCM_GW_MOST_SystemTest",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_GW_MOST_SystemTest"
+  },
+  {
+   "raw": "J1_Aerod_TeachRearSpoiler",
+   "platform": "Taycan",
+   "module": "",
+   "action": "示教",
+   "label": "Aerod_TeachRearSpoiler"
+  },
+  {
+   "raw": "Macan_DME_Short_Tests_New",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Short_Tests_New"
+  },
+  {
+   "raw": "P997_DME_Frist_start_0146",
+   "platform": "911 (997)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Frist_start_0146"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Ready_status",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_Ready_status"
+  },
+  {
+   "raw": "P9x1_DME_UDS_ShortTestSec",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_ShortTestSec"
+  },
+  {
+   "raw": "P9x7_TIP_1400_Calibration",
+   "platform": "（通用）",
+   "module": "Tiptronic 变速器控制",
+   "action": "校准",
+   "label": "P9x7_TIP_1400_Calibration"
+  },
+  {
+   "raw": "ADAS_Calibration_SWA_G1_E2",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_SWA_G1_E2"
+  },
+  {
+   "raw": "CAY9YA_1137_Teach_Wheel_Id",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "示教",
+   "label": "1137_Teach_Wheel_Id"
+  },
+  {
+   "raw": "Cayenne_2010_GATEWAY_Reset",
+   "platform": "Cayenne",
+   "module": "网关",
+   "action": "复位",
+   "label": "2010_GATEWAY_Reset"
+  },
+  {
+   "raw": "E1_PCM_MMI_SetSoftwareList",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_MMI_SetSoftwareList"
+  },
+  {
+   "raw": "E3G2_PSM_BrakeReset_Adjust",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "复位",
+   "label": "E3G2_PSM_BrakeReset_Adjust"
+  },
+  {
+   "raw": "E3G2_PSM_Break_GetStatusId",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "E3G2_PSM_Break_GetStatusId"
+  },
+  {
+   "raw": "G3_Replacement__Air_Spring",
+   "platform": "G3",
+   "module": "",
+   "action": "更换",
+   "label": "Replacement__Air_Spring"
+  },
+  {
+   "raw": "J1_EBKV_Shakedown_Bleeding",
+   "platform": "Taycan",
+   "module": "",
+   "action": "排气",
+   "label": "EBKV_Shakedown_Bleeding"
+  },
+  {
+   "raw": "Macan_EPB_Initial_Start_Up",
+   "platform": "Macan",
+   "module": "",
+   "action": "初始化",
+   "label": "EPB_Initial_Start_Up"
+  },
+  {
+   "raw": "P918_ICM_Set_Total_Mileage",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "P918_ICM_Set_Total_Mileage"
+  },
+  {
+   "raw": "P992_DME_30TFS_First_Start",
+   "platform": "911 (992)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_30TFS_First_Start"
+  },
+  {
+   "raw": "P992_DME_30TFS_Measure_Oil",
+   "platform": "911 (992)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_30TFS_Measure_Oil"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Bleeding_Step",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "DME_UDS_Bleeding_Step"
+  },
+  {
+   "raw": "P9x1_DME_UDS_DPF_Interface",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_DPF_Interface"
+  },
+  {
+   "raw": "P9x1_DME_UDS_DPF_Step1_Son",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_DPF_Step1_Son"
+  },
+  {
+   "raw": "P9x1_DME_UDS_DPF_Step2_Son",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_UDS_DPF_Step2_Son"
+  },
+  {
+   "raw": "P9x6_ALM_LearningFunctions",
+   "platform": "（通用）",
+   "module": "",
+   "action": "学习",
+   "label": "P9x6_ALM_LearningFunctions"
+  },
+  {
+   "raw": "Panamera_971_PSM_Swap_Test",
+   "platform": "Panamera",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "971_PSM_Swap_Test"
+  },
+  {
+   "raw": "SRS_0E04_SPE_ReadCrashData",
+   "platform": "（通用）",
+   "module": "SRS(安全气囊)",
+   "action": "（未分类）",
+   "label": "SRS_0E04_SPE_ReadCrashData"
+  },
+  {
+   "raw": "Cayenne_9YA_ACC_Calibration",
+   "platform": "Cayenne",
+   "module": "ACC 自适应巡航",
+   "action": "校准",
+   "label": "9YA_ACC_Calibration"
+  },
+  {
+   "raw": "E3_DME_Release_Stuck_Clutch",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Release_Stuck_Clutch"
+  },
+  {
+   "raw": "G2_FrontCame_CalibrationLed",
+   "platform": "G2",
+   "module": "",
+   "action": "校准",
+   "label": "FrontCame_CalibrationLed"
+  },
+  {
+   "raw": "G3_Gateway_ResetNoIPV6Count",
+   "platform": "G3",
+   "module": "网关",
+   "action": "复位",
+   "label": "Gateway_ResetNoIPV6Count"
+  },
+  {
+   "raw": "G3_Replacement__Air_Spring1",
+   "platform": "G3",
+   "module": "",
+   "action": "更换",
+   "label": "Replacement__Air_Spring1"
+  },
+  {
+   "raw": "G3_Replacement__Air_Spring2",
+   "platform": "G3",
+   "module": "",
+   "action": "更换",
+   "label": "Replacement__Air_Spring2"
+  },
+  {
+   "raw": "G3_Replacement__Air_Spring3",
+   "platform": "G3",
+   "module": "",
+   "action": "更换",
+   "label": "Replacement__Air_Spring3"
+  },
+  {
+   "raw": "Macan_DME_30TDI_Adaptations",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_30TDI_Adaptations"
+  },
+  {
+   "raw": "Macan_DME_30TDI_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_30TDI_Short_tests"
+  },
+  {
+   "raw": "P918_GATEWAY_Battery_change",
+   "platform": "（通用）",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "P918_GATEWAY_Battery_change"
+  },
+  {
+   "raw": "AWS_System_tests_sendcommand",
+   "platform": "（通用）",
+   "module": "空气悬挂",
+   "action": "（未分类）",
+   "label": "AWS_System_tests_sendcommand"
+  },
+  {
+   "raw": "DME_0B01_SPE_TankLeakageDiag",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_TankLeakageDiag"
+  },
+  {
+   "raw": "E1_HCL_PorscheEcuReplaceFunc",
+   "platform": "E1",
+   "module": "水平高度控制",
+   "action": "（未分类）",
+   "label": "HCL_PorscheEcuReplaceFunc"
+  },
+  {
+   "raw": "G3_Calibration_RearView_RVRV",
+   "platform": "G3",
+   "module": "",
+   "action": "校准",
+   "label": "Calibration_RearView_RVRV"
+  },
+  {
+   "raw": "P997_DME_Empty_the_tank_0146",
+   "platform": "911 (997)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Empty_the_tank_0146"
+  },
+  {
+   "raw": "Panamera_971_PDK_Oil_Filling",
+   "platform": "Panamera",
+   "module": "",
+   "action": "加注",
+   "label": "971_PDK_Oil_Filling"
+  },
+  {
+   "raw": "CAYENNE_2010_AWS_System_tests",
+   "platform": "（通用）",
+   "module": "空气悬挂",
+   "action": "（未分类）",
+   "label": "CAYENNE_2010_AWS_System_tests"
+  },
+  {
+   "raw": "CAYENNE_2010_TPM_System_check",
+   "platform": "（通用）",
+   "module": "轮胎压力监控 (TPMS)",
+   "action": "（未分类）",
+   "label": "CAYENNE_2010_TPM_System_check"
+  },
+  {
+   "raw": "DME_0B01_SPE_ShortTests_Sub01",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_ShortTests_Sub01"
+  },
+  {
+   "raw": "E3_AC_Ventpotentiometer_Reset",
+   "platform": "E3",
+   "module": "",
+   "action": "复位",
+   "label": "AC_Ventpotentiometer_Reset"
+  },
+  {
+   "raw": "E3_GateWay_PVTS_Function_Test",
+   "platform": "E3",
+   "module": "网关",
+   "action": "功能测试",
+   "label": "GateWay_PVTS_Function_Test"
+  },
+  {
+   "raw": "E3_Sunro_Teach_Panoramic_Roof",
+   "platform": "E3",
+   "module": "",
+   "action": "示教",
+   "label": "Sunro_Teach_Panoramic_Roof"
+  },
+  {
+   "raw": "G2_BV_LaneChangAssisUDS_Teach",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "BV_LaneChangAssisUDS_Teach"
+  },
+  {
+   "raw": "G2_Bleeding_Air_Spring_System",
+   "platform": "G2",
+   "module": "",
+   "action": "排气",
+   "label": "Bleeding_Air_Spring_System"
+  },
+  {
+   "raw": "G2_PVTS_Teaching_Driver_Cards",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "PVTS_Teaching_Driver_Cards"
+  },
+  {
+   "raw": "G3_Bleeding_Air_Spring_System",
+   "platform": "G3",
+   "module": "",
+   "action": "排气",
+   "label": "Bleeding_Air_Spring_System"
+  },
+  {
+   "raw": "SYS_1242_SPE_TeachCellModules",
+   "platform": "（通用）",
+   "module": "",
+   "action": "示教",
+   "label": "SYS_1242_SPE_TeachCellModules"
+  },
+  {
+   "raw": "SYS_1293_SPE_TeachRearSpoiler",
+   "platform": "（通用）",
+   "module": "",
+   "action": "示教",
+   "label": "SYS_1293_SPE_TeachRearSpoiler"
+  },
+  {
+   "raw": "ADAS_Calibration_RearView_RVRV",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_RearView_RVRV"
+  },
+  {
+   "raw": "CAY9YA_1113_Dryer_Regeneration",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "再生",
+   "label": "1113_Dryer_Regeneration"
+  },
+  {
+   "raw": "CAYENNE_2010_AWS_Actual_values",
+   "platform": "（通用）",
+   "module": "空气悬挂",
+   "action": "（未分类）",
+   "label": "CAYENNE_2010_AWS_Actual_values"
+  },
+  {
+   "raw": "DME_0B01_SPE_Adaptations_Sub01",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_0B01_SPE_Adaptations_Sub01"
+  },
+  {
+   "raw": "DME_0B01_SPE_SystemTests_Sub01",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_SystemTests_Sub01"
+  },
+  {
+   "raw": "E1_Kessy_PorscheEcuReplaceFunc",
+   "platform": "E1",
+   "module": "防盗/无钥匙进入",
+   "action": "（未分类）",
+   "label": "Kessy_PorscheEcuReplaceFunc"
+  },
+  {
+   "raw": "E1_PCM_GW_AntennaDiversityTest",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_GW_AntennaDiversityTest"
+  },
+  {
+   "raw": "E3G2_PSM_BrakeReset_GrindingIn",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "复位",
+   "label": "E3G2_PSM_BrakeReset_GrindingIn"
+  },
+  {
+   "raw": "E3G2_PS_BrakeReset_Calibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "E3G2_PS_BrakeReset_Calibration"
+  },
+  {
+   "raw": "E3_DME_Reset_Sensor_Wheel_Adap",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_Reset_Sensor_Wheel_Adap"
+  },
+  {
+   "raw": "J1_BV_Brake1UDS_CalibrateBrake",
+   "platform": "Taycan",
+   "module": "",
+   "action": "校准",
+   "label": "BV_Brake1UDS_CalibrateBrake"
+  },
+  {
+   "raw": "Macan_DME_20TFS_259_Reset_Adap",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_20TFS_259_Reset_Adap"
+  },
+  {
+   "raw": "PSM_0E05_SPE_HydraulicSwapTest",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "PSM_0E05_SPE_HydraulicSwapTest"
+  },
+  {
+   "raw": "ADAS_Calibration_RearTopView_G1",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_RearTopView_G1"
+  },
+  {
+   "raw": "Cayenne_2010_GATEWAY_Sleep_mode",
+   "platform": "Cayenne",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "2010_GATEWAY_Sleep_mode"
+  },
+  {
+   "raw": "DME_0B20_SPE_Kessy_Antenna_Path",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B20_SPE_Kessy_Antenna_Path"
+  },
+  {
+   "raw": "DME_0B20_SPE_Version_Of_The_Key",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "读钥匙版本",
+   "label": "DME_0B20_SPE_Version_Of_The_Key"
+  },
+  {
+   "raw": "G2_1213_Replacement__Air_Spring",
+   "platform": "G2",
+   "module": "",
+   "action": "更换",
+   "label": "1213_Replacement__Air_Spring"
+  },
+  {
+   "raw": "Macan_DME_20TFS_259E_Reset_Adap",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_20TFS_259E_Reset_Adap"
+  },
+  {
+   "raw": "P992_BCM2_Central_Locking_Teach",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "示教",
+   "label": "BCM2_Central_Locking_Teach"
+  },
+  {
+   "raw": "P992_Brake1UDS_Service_Bleeding",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "排气",
+   "label": "Brake1UDS_Service_Bleeding"
+  },
+  {
+   "raw": "P9x1_PCM31_CDR_Most_System_Test",
+   "platform": "911 (9x1)",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM31_CDR_Most_System_Test"
+  },
+  {
+   "raw": "P9x1_PCM_CDR31_Most_System_Test",
+   "platform": "911 (9x1)",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_CDR31_Most_System_Test"
+  },
+  {
+   "raw": "CAY9YA_1137_Teach_WheelIDs_Func1",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "示教",
+   "label": "1137_Teach_WheelIDs_Func1"
+  },
+  {
+   "raw": "CAY9YA_1137_Teach_WheelIDs_Func2",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "示教",
+   "label": "1137_Teach_WheelIDs_Func2"
+  },
+  {
+   "raw": "CAYENNE_2010_HCL_System_exchange",
+   "platform": "（通用）",
+   "module": "水平高度控制",
+   "action": "（未分类）",
+   "label": "CAYENNE_2010_HCL_System_exchange"
+  },
+  {
+   "raw": "E3G2_PSM_BreakRest_GrindingIn_No",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "E3G2_PSM_BreakRest_GrindingIn_No"
+  },
+  {
+   "raw": "E3_DME_High_Temp_Coolant_Circuit",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_High_Temp_Coolant_Circuit"
+  },
+  {
+   "raw": "E3_PCM_Reset_To_Factory_Settings",
+   "platform": "E3",
+   "module": "保时捷通讯管理系统",
+   "action": "复位",
+   "label": "PCM_Reset_To_Factory_Settings"
+  },
+  {
+   "raw": "G2_1213_Replacement__Air_Spring1",
+   "platform": "G2",
+   "module": "",
+   "action": "更换",
+   "label": "1213_Replacement__Air_Spring1"
+  },
+  {
+   "raw": "G2_1213_Replacement__Air_Spring2",
+   "platform": "G2",
+   "module": "",
+   "action": "更换",
+   "label": "1213_Replacement__Air_Spring2"
+  },
+  {
+   "raw": "G2_1213_Replacement__Air_Spring3",
+   "platform": "G2",
+   "module": "",
+   "action": "更换",
+   "label": "1213_Replacement__Air_Spring3"
+  },
+  {
+   "raw": "G2_Air_Suspension_System_Filling",
+   "platform": "G2",
+   "module": "",
+   "action": "加注",
+   "label": "Air_Suspension_System_Filling"
+  },
+  {
+   "raw": "G2_BMC_Reset_Of_Crash_Switch_Off",
+   "platform": "G2",
+   "module": "蓄电池管理",
+   "action": "复位",
+   "label": "BMC_Reset_Of_Crash_Switch_Off"
+  },
+  {
+   "raw": "G3_Air_Suspension_System_Filling",
+   "platform": "G3",
+   "module": "",
+   "action": "加注",
+   "label": "Air_Suspension_System_Filling"
+  },
+  {
+   "raw": "G3_DME_High_Temp_Coolant_Circuit",
+   "platform": "G3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_High_Temp_Coolant_Circuit"
+  },
+  {
+   "raw": "Macan_AC_Teach_Flap_Servo_Motors",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "AC_Teach_Flap_Servo_Motors"
+  },
+  {
+   "raw": "Macan_DME_29TFS551CG_Adaptations",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_29TFS551CG_Adaptations"
+  },
+  {
+   "raw": "Macan_DME_29TFS551CG_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_29TFS551CG_Short_tests"
+  },
+  {
+   "raw": "Macan_DME_29TFS551DJ_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_29TFS551DJ_Short_tests"
+  },
+  {
+   "raw": "P918_DME_Bleeding_Cooling_System",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "P918_DME_Bleeding_Cooling_System"
+  },
+  {
+   "raw": "PJ1_1513_For_Filling_Air_Springs",
+   "platform": "Taycan (PJ1)",
+   "module": "",
+   "action": "加注",
+   "label": "1513_For_Filling_Air_Springs"
+  },
+  {
+   "raw": "CAYENNE_2010_HCL_AHBA_calibration",
+   "platform": "（通用）",
+   "module": "水平高度控制",
+   "action": "校准",
+   "label": "CAYENNE_2010_HCL_AHBA_calibration"
+  },
+  {
+   "raw": "Cayenne_2010_GATEWAY_Wake_up_line",
+   "platform": "Cayenne",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "2010_GATEWAY_Wake_up_line"
+  },
+  {
+   "raw": "DME_0B01_SPE_DeleteAdaptationData",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_0B01_SPE_DeleteAdaptationData"
+  },
+  {
+   "raw": "DME_0B01_SPE_ShortTests_LockItems",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B01_SPE_ShortTests_LockItems"
+  },
+  {
+   "raw": "E3G2_PSM_BreakRest_GrindingIn_YES",
+   "platform": "（通用）",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "（未分类）",
+   "label": "E3G2_PSM_BreakRest_GrindingIn_YES"
+  },
+  {
+   "raw": "E3_GateWay_Deactivate_Flight_Mode",
+   "platform": "E3",
+   "module": "网关",
+   "action": "关闭飞行模式",
+   "label": "GateWay_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "E3_PCM_Deactivate_Production_Mode",
+   "platform": "E3",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_Deactivate_Production_Mode"
+  },
+  {
+   "raw": "Macan_DME_20TFS_259E_Tank_Leakage",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_20TFS_259E_Tank_Leakage"
+  },
+  {
+   "raw": "Macan_DME_29TFS551DJ_Tank_Leakage",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_29TFS551DJ_Tank_Leakage"
+  },
+  {
+   "raw": "P992_BV_NightVisioUDS_Calibration",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "校准",
+   "label": "BV_NightVisioUDS_Calibration"
+  },
+  {
+   "raw": "P9x1_PASM_PASM_PADM_Commissioning",
+   "platform": "911 (9x1)",
+   "module": "PASM(水平高度控制)",
+   "action": "（未分类）",
+   "label": "PASM_PASM_PADM_Commissioning"
+  },
+  {
+   "raw": "P9x6_ICM_ResetMaintenanceInterval",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "复位",
+   "label": "P9x6_ICM_ResetMaintenanceInterval"
+  },
+  {
+   "raw": "PAN970_TIP_Parmanent_Fault_Memory",
+   "platform": "Panamera-970",
+   "module": "Tiptronic 变速器控制",
+   "action": "（未分类）",
+   "label": "TIP_Parmanent_Fault_Memory"
+  },
+  {
+   "raw": "Panamera_971_PSM_Service_Bleeding",
+   "platform": "Panamera",
+   "module": "ESP/PSM(电控稳定系统)",
+   "action": "排气",
+   "label": "971_PSM_Service_Bleeding"
+  },
+  {
+   "raw": "CS1_GT4_TIP_Parmanent_Fault_Memory",
+   "platform": "（通用）",
+   "module": "Tiptronic 变速器控制",
+   "action": "（未分类）",
+   "label": "CS1_GT4_TIP_Parmanent_Fault_Memory"
+  },
+  {
+   "raw": "Cayenne_DME_0160_016C_System_tests",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0160_016C_System_tests"
+  },
+  {
+   "raw": "DME_0B01_SPE_ShortTests_OrderJudge",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "判定",
+   "label": "DME_0B01_SPE_ShortTests_OrderJudge"
+  },
+  {
+   "raw": "E1_PCM_GW_AntennaFieldStrengthTest",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_GW_AntennaFieldStrengthTest"
+  },
+  {
+   "raw": "E3_GateWay_Teach_PVTS_Driver_Cards",
+   "platform": "E3",
+   "module": "网关",
+   "action": "示教",
+   "label": "GateWay_Teach_PVTS_Driver_Cards"
+  },
+  {
+   "raw": "E3_ICM_MaintenanceHistoryWriteCode",
+   "platform": "E3",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "ICM_MaintenanceHistoryWriteCode"
+  },
+  {
+   "raw": "E3_Night_Vision_System_Calibration",
+   "platform": "E3",
+   "module": "",
+   "action": "校准",
+   "label": "Night_Vision_System_Calibration"
+  },
+  {
+   "raw": "E3_Rear_Spoiler_Teach_Rear_Spoiler",
+   "platform": "E3",
+   "module": "",
+   "action": "示教",
+   "label": "Rear_Spoiler_Teach_Rear_Spoiler"
+  },
+  {
+   "raw": "PJ1_1513_Height_Sensor_Calibration",
+   "platform": "Taycan (PJ1)",
+   "module": "",
+   "action": "校准",
+   "label": "1513_Height_Sensor_Calibration"
+  },
+  {
+   "raw": "PTM_0E52_SPE_ComponentReplacement1",
+   "platform": "（通用）",
+   "module": "",
+   "action": "更换",
+   "label": "PTM_0E52_SPE_ComponentReplacement1"
+  },
+  {
+   "raw": "PTM_0E52_SPE_ComponentReplacement2",
+   "platform": "（通用）",
+   "module": "",
+   "action": "更换",
+   "label": "PTM_0E52_SPE_ComponentReplacement2"
+  },
+  {
+   "raw": "ADAS_Calibration_Rueckfahrkamera_E2",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_Rueckfahrkamera_E2"
+  },
+  {
+   "raw": "ADAS_Calibration_Rueckfahrkamera_G1",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_Rueckfahrkamera_G1"
+  },
+  {
+   "raw": "CAY9YA_1113_For_Filling_Air_Springs",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "加注",
+   "label": "1113_For_Filling_Air_Springs"
+  },
+  {
+   "raw": "CAY9YA_1113_Replacement__Air_Spring",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "更换",
+   "label": "1113_Replacement__Air_Spring"
+  },
+  {
+   "raw": "Cayenne_9PA_Erase_Adaptation_Values",
+   "platform": "Cayenne",
+   "module": "",
+   "action": "匹配",
+   "label": "9PA_Erase_Adaptation_Values"
+  },
+  {
+   "raw": "E3_DME_Crankshaft_Sensor_Wheel_Tech",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_Crankshaft_Sensor_Wheel_Tech"
+  },
+  {
+   "raw": "E3_Surround_View_Camera_Calibration",
+   "platform": "E3",
+   "module": "",
+   "action": "校准",
+   "label": "Surround_View_Camera_Calibration"
+  },
+  {
+   "raw": "G1_DME_EV_ECM30TDI_TurbochargerTest",
+   "platform": "G1",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "充电",
+   "label": "DME_EV_ECM30TDI_TurbochargerTest"
+  },
+  {
+   "raw": "G3_BV_ThermManagUDS_Teach_Expansion",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Expansion"
+  },
+  {
+   "raw": "P918_ICM_Reset_maintenance_interval",
+   "platform": "（通用）",
+   "module": "组合仪表",
+   "action": "复位",
+   "label": "P918_ICM_Reset_maintenance_interval"
+  },
+  {
+   "raw": "P992_1413_Height_Sensor_Calibration",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "校准",
+   "label": "1413_Height_Sensor_Calibration"
+  },
+  {
+   "raw": "P9x1_PASM_System_Test_Unit_Mounting",
+   "platform": "911 (9x1)",
+   "module": "PASM(水平高度控制)",
+   "action": "（未分类）",
+   "label": "PASM_System_Test_Unit_Mounting"
+  },
+  {
+   "raw": "CAY9YA_1113_Replacement__Air_Spring1",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "更换",
+   "label": "1113_Replacement__Air_Spring1"
+  },
+  {
+   "raw": "CAY9YA_1113_Replacement__Air_Spring2",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "更换",
+   "label": "1113_Replacement__Air_Spring2"
+  },
+  {
+   "raw": "CAY9YA_1113_Replacement__Air_Spring3",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "更换",
+   "label": "1113_Replacement__Air_Spring3"
+  },
+  {
+   "raw": "Cayenne_2010_GATEWAY_Read_fault_bits",
+   "platform": "Cayenne",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "2010_GATEWAY_Read_fault_bits"
+  },
+  {
+   "raw": "Cayenne_9YA_Gate_Battery_Replacement",
+   "platform": "Cayenne",
+   "module": "",
+   "action": "更换",
+   "label": "9YA_Gate_Battery_Replacement"
+  },
+  {
+   "raw": "E1_PCM_GW_MOST_ActualControlUnitList",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_GW_MOST_ActualControlUnitList"
+  },
+  {
+   "raw": "E3_Connect_System_PVTS_Function_Test",
+   "platform": "E3",
+   "module": "通讯连接系统",
+   "action": "功能测试",
+   "label": "Connect_System_PVTS_Function_Test"
+  },
+  {
+   "raw": "E3_DME_EVO_High_Temp_Coolant_Circuit",
+   "platform": "E3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_EVO_High_Temp_Coolant_Circuit"
+  },
+  {
+   "raw": "E3_G2_ICM_Reset_Maintenance_Interval",
+   "platform": "E3",
+   "module": "组合仪表",
+   "action": "复位",
+   "label": "G2_ICM_Reset_Maintenance_Interval"
+  },
+  {
+   "raw": "G2_TME_Teach_In_Expansion_Valve_EXV1",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "TME_Teach_In_Expansion_Valve_EXV1"
+  },
+  {
+   "raw": "G3_DME_EVO_High_Temp_Coolant_Circuit",
+   "platform": "G3",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_EVO_High_Temp_Coolant_Circuit"
+  },
+  {
+   "raw": "Macan_DME_01DA_Reducing_agent_system",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_Reducing_agent_system"
+  },
+  {
+   "raw": "Macan_DME_29TFS551CG_HighTempCoolant",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_29TFS551CG_HighTempCoolant"
+  },
+  {
+   "raw": "P918_TIP_Read_permanent_fault_memory",
+   "platform": "（通用）",
+   "module": "Tiptronic 变速器控制",
+   "action": "（未分类）",
+   "label": "P918_TIP_Read_permanent_fault_memory"
+  },
+  {
+   "raw": "P9x1_DME_GT3_Tank_Leakage_Short_Test",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_GT3_Tank_Leakage_Short_Test"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Reset_adaptation_values",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_UDS_Reset_adaptation_values"
+  },
+  {
+   "raw": "PJ1_BV_ThermManagUDS_Teach_Expansion",
+   "platform": "Taycan (PJ1)",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Expansion"
+  },
+  {
+   "raw": "CAY9YA_1113_Height_Sensor_Calibration",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "校准",
+   "label": "1113_Height_Sensor_Calibration"
+  },
+  {
+   "raw": "Cayenne_2010_GATEWAY_Single_wire_test",
+   "platform": "Cayenne",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "2010_GATEWAY_Single_wire_test"
+  },
+  {
+   "raw": "Cayenne_9YA_ACC_Reset_Personalization",
+   "platform": "Cayenne",
+   "module": "ACC 自适应巡航",
+   "action": "复位",
+   "label": "9YA_ACC_Reset_Personalization"
+  },
+  {
+   "raw": "E1_PCM_MMI_MOST_ActualControlUnitList",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_MMI_MOST_ActualControlUnitList"
+  },
+  {
+   "raw": "E2_BV_ECM30_GEN2_TNF_TurbochargerTest",
+   "platform": "E2",
+   "module": "",
+   "action": "充电",
+   "label": "BV_ECM30_GEN2_TNF_TurbochargerTest"
+  },
+  {
+   "raw": "E2_DME_EV_ECM42TDI_Master_Adaptations",
+   "platform": "E2",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_EV_ECM42TDI_Master_Adaptations"
+  },
+  {
+   "raw": "G2_BV_ThermManagUDS_Teach_Refrigerant",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Refrigerant"
+  },
+  {
+   "raw": "G2_PCM_MUTI_Reset_To_Factory_Settings",
+   "platform": "G2",
+   "module": "保时捷通讯管理系统",
+   "action": "复位",
+   "label": "PCM_MUTI_Reset_To_Factory_Settings"
+  },
+  {
+   "raw": "G3_BV_ThermManagUDS_Teach_Refrigerant",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Refrigerant"
+  },
+  {
+   "raw": "P992_BV_ThermManagUDS_Teach_Expansion",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Expansion"
+  },
+  {
+   "raw": "Panamera_971_Gate_Battery_Replacement",
+   "platform": "Panamera",
+   "module": "",
+   "action": "更换",
+   "label": "971_Gate_Battery_Replacement"
+  },
+  {
+   "raw": "ADAS_Calibration_RealTopView2_E2_MACAN",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_RealTopView2_E2_MACAN"
+  },
+  {
+   "raw": "CAY9YA_1113_Bleeding_Air_Spring_System",
+   "platform": "Cayenne-9YA",
+   "module": "",
+   "action": "排气",
+   "label": "1113_Bleeding_Air_Spring_System"
+  },
+  {
+   "raw": "CS1_GT4_Occupant_Detection_Replacement",
+   "platform": "（通用）",
+   "module": "",
+   "action": "更换",
+   "label": "CS1_GT4_Occupant_Detection_Replacement"
+  },
+  {
+   "raw": "DME_0B01_SPE_ShortTests_ShortTestJudge",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "判定",
+   "label": "DME_0B01_SPE_ShortTests_ShortTestJudge"
+  },
+  {
+   "raw": "G3_AC_Teachand_Check_Flap_Servo_Motors",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "AC_Teachand_Check_Flap_Servo_Motors"
+  },
+  {
+   "raw": "G3_Airbag_Calibrate_Combination_Sensor",
+   "platform": "G3",
+   "module": "",
+   "action": "校准",
+   "label": "Airbag_Calibrate_Combination_Sensor"
+  },
+  {
+   "raw": "P992_BV_TransContrModulUDS_Oil_Filling",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "加注",
+   "label": "BV_TransContrModulUDS_Oil_Filling"
+  },
+  {
+   "raw": "P992_DME_30TFS_Bleeding_Cooling_System",
+   "platform": "911 (992)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "DME_30TFS_Bleeding_Cooling_System"
+  },
+  {
+   "raw": "P992_DME_36TFS_Bleeding_Cooling_System",
+   "platform": "911 (992)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "DME_36TFS_Bleeding_Cooling_System"
+  },
+  {
+   "raw": "PJ1_BV_ThermManagUDS_Teach_Refrigerant",
+   "platform": "Taycan (PJ1)",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Refrigerant"
+  },
+  {
+   "raw": "CAYENNE_2010_HCL_Reset_high_beam_values",
+   "platform": "（通用）",
+   "module": "水平高度控制",
+   "action": "复位",
+   "label": "CAYENNE_2010_HCL_Reset_high_beam_values"
+  },
+  {
+   "raw": "G2_BV_CamerSysteRearViewUDS_Calibration",
+   "platform": "G2",
+   "module": "",
+   "action": "校准",
+   "label": "BV_CamerSysteRearViewUDS_Calibration"
+  },
+  {
+   "raw": "G2_TME_Thermal_Management_Function_Test",
+   "platform": "G2",
+   "module": "",
+   "action": "功能测试",
+   "label": "TME_Thermal_Management_Function_Test"
+  },
+  {
+   "raw": "Macan_DME_20TFS02095B906259Q_Reset_Adap",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_20TFS02095B906259Q_Reset_Adap"
+  },
+  {
+   "raw": "Macan_DME_29TFS01195B907551L_Reset_Adap",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_29TFS01195B907551L_Reset_Adap"
+  },
+  {
+   "raw": "P992_BV_ThermManagUDS_Teach_Refrigerant",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_Teach_Refrigerant"
+  },
+  {
+   "raw": "P9x1_ACC_Adjust_Adaptive_Cruise_Control",
+   "platform": "911 (9x1)",
+   "module": "ACC 自适应巡航",
+   "action": "（未分类）",
+   "label": "ACC_Adjust_Adaptive_Cruise_Control"
+  },
+  {
+   "raw": "P9x1_DME_UDS_Reset_adaptation_valuesSec",
+   "platform": "911 (9x1)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_UDS_Reset_adaptation_valuesSec"
+  },
+  {
+   "raw": "Cayenne_9YA_DME_Tank_Leakage_Diagnostics",
+   "platform": "Cayenne",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "9YA_DME_Tank_Leakage_Diagnostics"
+  },
+  {
+   "raw": "E1_GateWay_NominalAndActualConfiguration",
+   "platform": "E1",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_NominalAndActualConfiguration"
+  },
+  {
+   "raw": "E3_BV_ThermManagUDS_TeachCoolingAirFlaps",
+   "platform": "E3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_TeachCoolingAirFlaps"
+  },
+  {
+   "raw": "E3_Connect_System_Deactivate_Flight_Mode",
+   "platform": "E3",
+   "module": "通讯连接系统",
+   "action": "关闭飞行模式",
+   "label": "Connect_System_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "G2_BV_AdaptCruisContrUDS_ACC_Calibration",
+   "platform": "G2",
+   "module": "ACC 自适应巡航",
+   "action": "校准",
+   "label": "BV_AdaptCruisContrUDS_ACC_Calibration"
+  },
+  {
+   "raw": "G2_Replacement_Work_On_Air_Spring_System",
+   "platform": "G2",
+   "module": "",
+   "action": "更换",
+   "label": "Replacement_Work_On_Air_Spring_System"
+  },
+  {
+   "raw": "G3_BV_ThermManagUDS_TeachCoolingAirFlaps",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ThermManagUDS_TeachCoolingAirFlaps"
+  },
+  {
+   "raw": "G3_Connect_System_Deactivate_Flight_Mode",
+   "platform": "G3",
+   "module": "通讯连接系统",
+   "action": "关闭飞行模式",
+   "label": "Connect_System_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "G3_Replacement_Work_On_Air_Spring_System",
+   "platform": "G3",
+   "module": "",
+   "action": "更换",
+   "label": "Replacement_Work_On_Air_Spring_System"
+  },
+  {
+   "raw": "J1_BV_AdaptCruisContrUDS_ACC_Calibration",
+   "platform": "Taycan",
+   "module": "ACC 自适应巡航",
+   "action": "校准",
+   "label": "BV_AdaptCruisContrUDS_ACC_Calibration"
+  },
+  {
+   "raw": "J1_Connect_System_Deactivate_Flight_Mode",
+   "platform": "Taycan",
+   "module": "通讯连接系统",
+   "action": "关闭飞行模式",
+   "label": "Connect_System_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "Macan_DME_20TFS02095B906259P_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_20TFS02095B906259P_Short_tests"
+  },
+  {
+   "raw": "Macan_DME_20TFS02095B906259Q_Adaptations",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "匹配",
+   "label": "DME_20TFS02095B906259Q_Adaptations"
+  },
+  {
+   "raw": "Macan_DME_20TFS02095B906259Q_Short_tests",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_20TFS02095B906259Q_Short_tests"
+  },
+  {
+   "raw": "CAY92A_ACC_Adjust_Adaptive_Cruise_Control",
+   "platform": "Cayenne-92A",
+   "module": "ACC 自适应巡航",
+   "action": "（未分类）",
+   "label": "ACC_Adjust_Adaptive_Cruise_Control"
+  },
+  {
+   "raw": "CAYENNE_2010_HCL_Reset_dipped_beam_values",
+   "platform": "（通用）",
+   "module": "水平高度控制",
+   "action": "复位",
+   "label": "CAYENNE_2010_HCL_Reset_dipped_beam_values"
+  },
+  {
+   "raw": "CS1_GT4_Steering_Angle_Sensor_Calibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "CS1_GT4_Steering_Angle_Sensor_Calibration"
+  },
+  {
+   "raw": "DME_0B01_SPE_ShortTests_ShortTestJudge002",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "判定",
+   "label": "DME_0B01_SPE_ShortTests_ShortTestJudge002"
+  },
+  {
+   "raw": "Macan_DME_20TFS02095B906259Q_Tank_Leakage",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_20TFS02095B906259Q_Tank_Leakage"
+  },
+  {
+   "raw": "Macan_HBA_Teach_Headlight_Beam_Adjustment",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "HBA_Teach_Headlight_Beam_Adjustment"
+  },
+  {
+   "raw": "Macan_Teach_Headlight_Beam_Adjustment_HBA",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "Teach_Headlight_Beam_Adjustment_HBA"
+  },
+  {
+   "raw": "P9x6_PSM57_SteeringAngleSensorCalibration",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "P9x6_PSM57_SteeringAngleSensorCalibration"
+  },
+  {
+   "raw": "Panamera_971_Calibrate_Combination_Sensor",
+   "platform": "Panamera",
+   "module": "",
+   "action": "校准",
+   "label": "971_Calibrate_Combination_Sensor"
+  },
+  {
+   "raw": "E1_PCM_MMI_Nominal_And_ActualConfiguration",
+   "platform": "E1",
+   "module": "保时捷通讯管理系统",
+   "action": "（未分类）",
+   "label": "PCM_MMI_Nominal_And_ActualConfiguration"
+  },
+  {
+   "raw": "E3_GateWay_Resetting_The_Range_Calculation",
+   "platform": "E3",
+   "module": "网关",
+   "action": "续航重算",
+   "label": "GateWay_Resetting_The_Range_Calculation"
+  },
+  {
+   "raw": "E3_High_Voltage_Battery_Teach_Cell_Modules",
+   "platform": "E3",
+   "module": "",
+   "action": "示教",
+   "label": "High_Voltage_Battery_Teach_Cell_Modules"
+  },
+  {
+   "raw": "G3_Airbag_Teach_Reversible_Belt_Tensioners",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "Airbag_Teach_Reversible_Belt_Tensioners"
+  },
+  {
+   "raw": "G3_GateWay_Resetting_The_Range_Calculation",
+   "platform": "G3",
+   "module": "网关",
+   "action": "续航重算",
+   "label": "GateWay_Resetting_The_Range_Calculation"
+  },
+  {
+   "raw": "Macan_BCM1_Teach_Headlight_Beam_Adjustment",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "BCM1_Teach_Headlight_Beam_Adjustment"
+  },
+  {
+   "raw": "Macan_Teach_Headlight_Beam_Adjustment_BCM1",
+   "platform": "Macan",
+   "module": "",
+   "action": "示教",
+   "label": "Teach_Headlight_Beam_Adjustment_BCM1"
+  },
+  {
+   "raw": "Macan_Teach_Headlight_Beam_Adjustment_PASM",
+   "platform": "Macan",
+   "module": "PASM(水平高度控制)",
+   "action": "示教",
+   "label": "Teach_Headlight_Beam_Adjustment_PASM"
+  },
+  {
+   "raw": "Cayenne_2010_PASM_Height_Sensor_Calibration",
+   "platform": "Cayenne",
+   "module": "PASM(水平高度控制)",
+   "action": "校准",
+   "label": "2010_PASM_Height_Sensor_Calibration"
+  },
+  {
+   "raw": "E3_AC_Teachand_Check_Flap_Servo_Motors_LIN2",
+   "platform": "E3",
+   "module": "",
+   "action": "示教",
+   "label": "AC_Teachand_Check_Flap_Servo_Motors_LIN2"
+  },
+  {
+   "raw": "G3_AuxilParkiHeateUDS_AuxiliaryHeatingTeach",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "AuxilParkiHeateUDS_AuxiliaryHeatingTeach"
+  },
+  {
+   "raw": "Macan_DME_01DA_Particle_filter_regeneration",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "DME_01DA_Particle_filter_regeneration"
+  },
+  {
+   "raw": "Macan_DME_20TFS_259E_Chain_Elongation_Reset",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "DME_20TFS_259E_Chain_Elongation_Reset"
+  },
+  {
+   "raw": "P918_GATEWAY_Actual_specified_configuration",
+   "platform": "（通用）",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "P918_GATEWAY_Actual_specified_configuration"
+  },
+  {
+   "raw": "P9X1_9x1_dme_DME_BDE_Continental_short_test",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "P9X1_9x1_dme_DME_BDE_Continental_short_test"
+  },
+  {
+   "raw": "PJ1_GateWay_Resetting_The_Range_Calculation",
+   "platform": "Taycan (PJ1)",
+   "module": "网关",
+   "action": "续航重算",
+   "label": "GateWay_Resetting_The_Range_Calculation"
+  },
+  {
+   "raw": "Panamera_971_Teach_Seat_Occupsncy_Detection",
+   "platform": "Panamera",
+   "module": "",
+   "action": "示教",
+   "label": "971_Teach_Seat_Occupsncy_Detection"
+  },
+  {
+   "raw": "ADAS_Calibration_Static_ChangAssis_E3_J1_992",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_Static_ChangAssis_E3_J1_992"
+  },
+  {
+   "raw": "ADAS_Calibration_Dynamic_ChangAssis_E3_J1_992",
+   "platform": "（通用）",
+   "module": "",
+   "action": "校准",
+   "label": "ADAS_Calibration_Dynamic_ChangAssis_E3_J1_992"
+  },
+  {
+   "raw": "E2_EV_ECM_42TDI_Master_A2_ReducingAgentSystem",
+   "platform": "E2",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "EV_ECM_42TDI_Master_A2_ReducingAgentSystem"
+  },
+  {
+   "raw": "P992_BV_AirbaUDS_Calibrate_Combination_Sensor",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "校准",
+   "label": "BV_AirbaUDS_Calibrate_Combination_Sensor"
+  },
+  {
+   "raw": "P992_BV_CentrElectUDS_Teach_Flap_Servo_Motors",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "示教",
+   "label": "BV_CentrElectUDS_Teach_Flap_Servo_Motors"
+  },
+  {
+   "raw": "Panamera_971_SteeringAngle_Sensor_Calibration",
+   "platform": "Panamera",
+   "module": "",
+   "action": "校准",
+   "label": "971_SteeringAngle_Sensor_Calibration"
+  },
+  {
+   "raw": "Panamera_971_Teach_Reversible_Belt_Tensioners",
+   "platform": "Panamera",
+   "module": "",
+   "action": "示教",
+   "label": "971_Teach_Reversible_Belt_Tensioners"
+  },
+  {
+   "raw": "E3_AssistSys_Front_Camera_Download_Calibration",
+   "platform": "E3",
+   "module": "",
+   "action": "校准",
+   "label": "AssistSys_Front_Camera_Download_Calibration"
+  },
+  {
+   "raw": "E3_Connect_System_Deactivate_Flight_Mode_AU49X",
+   "platform": "E3",
+   "module": "通讯连接系统",
+   "action": "关闭飞行模式",
+   "label": "Connect_System_Deactivate_Flight_Mode_AU49X"
+  },
+  {
+   "raw": "E3_G2_ICM_EV_InstrClustVistePO623_005_Interval",
+   "platform": "E3",
+   "module": "组合仪表",
+   "action": "（未分类）",
+   "label": "G2_ICM_EV_InstrClustVistePO623_005_Interval"
+  },
+  {
+   "raw": "G2_BV_AirCondiUDS_TeachAndCheckFlapServoMotors",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "BV_AirCondiUDS_TeachAndCheckFlapServoMotors"
+  },
+  {
+   "raw": "G3_BV_AirCondiUDS_TeachAndCheckFlapServoMotors",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_AirCondiUDS_TeachAndCheckFlapServoMotors"
+  },
+  {
+   "raw": "P918_GATEWAY_Actual_specified_configuration_A5",
+   "platform": "（通用）",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "P918_GATEWAY_Actual_specified_configuration_A5"
+  },
+  {
+   "raw": "P992_DME_30TFS_Particulate_filter_regeneration",
+   "platform": "911 (992)",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "DME_30TFS_Particulate_filter_regeneration"
+  },
+  {
+   "raw": "P992_EV_ConBoxHighAU49X_Deactivate_Flight_Mode",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "关闭飞行模式",
+   "label": "EV_ConBoxHighAU49X_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "DME_0B20_SPE_Radio_Central_Locking_Antenna_Path",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_0B20_SPE_Radio_Central_Locking_Antenna_Path"
+  },
+  {
+   "raw": "P992_EV_ConBoxChinaAU58X_Deactivate_Flight_Mode",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "关闭飞行模式",
+   "label": "EV_ConBoxChinaAU58X_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "E3_BV_AirCondiUDS_TeachAirConditioningCompressor",
+   "platform": "E3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_AirCondiUDS_TeachAirConditioningCompressor"
+  },
+  {
+   "raw": "G2_BV_AirCondiUDS_TeachAirConditioningCompressor",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "BV_AirCondiUDS_TeachAirConditioningCompressor"
+  },
+  {
+   "raw": "G3_BV_AirCondiUDS_TeachAirConditioningCompressor",
+   "platform": "G3",
+   "module": "",
+   "action": "示教",
+   "label": "BV_AirCondiUDS_TeachAirConditioningCompressor"
+  },
+  {
+   "raw": "Macan_DME_20TFS_259E_Reset_Turbocharger_Learning",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "充电",
+   "label": "DME_20TFS_259E_Reset_Turbocharger_Learning"
+  },
+  {
+   "raw": "P992_BV_AdaptCruisContrUDS_Reset_Personalization",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "复位",
+   "label": "BV_AdaptCruisContrUDS_Reset_Personalization"
+  },
+  {
+   "raw": "P992_BV_TelemCommuUnitUDS_Deactivate_Flight_Mode",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "关闭飞行模式",
+   "label": "BV_TelemCommuUnitUDS_Deactivate_Flight_Mode"
+  },
+  {
+   "raw": "P9x7_dme_me781_AdaptationOfBoostPressureActuator",
+   "platform": "（通用）",
+   "module": "",
+   "action": "匹配",
+   "label": "P9x7_dme_me781_AdaptationOfBoostPressureActuator"
+  },
+  {
+   "raw": "Panamera_971_BCM_Teach_Headlight_Beam_Adjustment",
+   "platform": "Panamera",
+   "module": "",
+   "action": "示教",
+   "label": "971_BCM_Teach_Headlight_Beam_Adjustment"
+  },
+  {
+   "raw": "Panamera_971_DME_Particulate_Filter_Regeneration",
+   "platform": "Panamera",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "971_DME_Particulate_Filter_Regeneration"
+  },
+  {
+   "raw": "Cayenne_2010_GATEWAY_Nominal_Actual_configuration",
+   "platform": "Cayenne",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "2010_GATEWAY_Nominal_Actual_configuration"
+  },
+  {
+   "raw": "P992_BV_InforContrUnit1UDS_Reset_Factory_Settings",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "复位",
+   "label": "BV_InforContrUnit1UDS_Reset_Factory_Settings"
+  },
+  {
+   "raw": "Panamera_970_STW_SteeringAngle_Sensor_Calibration",
+   "platform": "Panamera",
+   "module": "",
+   "action": "校准",
+   "label": "970_STW_SteeringAngle_Sensor_Calibration"
+  },
+  {
+   "raw": "Panamera_971_BCM_Teach_Steering_Column_Adjustment",
+   "platform": "Panamera",
+   "module": "",
+   "action": "示教",
+   "label": "971_BCM_Teach_Steering_Column_Adjustment"
+  },
+  {
+   "raw": "Panamera_971_Gate_Resetting_The_Range_Calculation",
+   "platform": "Panamera",
+   "module": "",
+   "action": "续航重算",
+   "label": "971_Gate_Resetting_The_Range_Calculation"
+  },
+  {
+   "raw": "G2_Instrument_Cluster_FuelLevel_Sensor_Calibration",
+   "platform": "G2",
+   "module": "",
+   "action": "校准",
+   "label": "Instrument_Cluster_FuelLevel_Sensor_Calibration"
+  },
+  {
+   "raw": "P992_BV_DashBoardUDS_Fuel_Level_Sensor_Calibration",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "校准",
+   "label": "BV_DashBoardUDS_Fuel_Level_Sensor_Calibration"
+  },
+  {
+   "raw": "CAY92A_ACC_Adjust_Adaptive_Cruise_Control_GetStatus",
+   "platform": "Cayenne-92A",
+   "module": "ACC 自适应巡航",
+   "action": "（未分类）",
+   "label": "ACC_Adjust_Adaptive_Cruise_Control_GetStatus"
+  },
+  {
+   "raw": "E3_Front_Corner_Radar_Sensor_Right_Left_Calibration",
+   "platform": "E3",
+   "module": "",
+   "action": "校准",
+   "label": "Front_Corner_Radar_Sensor_Right_Left_Calibration"
+  },
+  {
+   "raw": "CAYENNE_2010_HCL_Reset_static_cornering_light_values",
+   "platform": "（通用）",
+   "module": "水平高度控制",
+   "action": "复位",
+   "label": "CAYENNE_2010_HCL_Reset_static_cornering_light_values"
+  },
+  {
+   "raw": "E2_EV_ECM_42TDI_Master_A2_TestOfInjectorSprayPattern",
+   "platform": "E2",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "EV_ECM_42TDI_Master_A2_TestOfInjectorSprayPattern"
+  },
+  {
+   "raw": "Macan_DME_20TFS_259E_Particulate_filter_regeneration",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "DME_20TFS_259E_Particulate_filter_regeneration"
+  },
+  {
+   "raw": "Macan_DME_29TFS551FK_Particulate_filter_regeneration",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "DME_29TFS551FK_Particulate_filter_regeneration"
+  },
+  {
+   "raw": "Macan_DME_30TFS_559F_Particulate_filter_regeneration",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "DME_30TFS_559F_Particulate_filter_regeneration"
+  },
+  {
+   "raw": "P9X1_9x1_dme_DME_BDE_Continental_Bleed_cooling_system",
+   "platform": "（通用）",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "P9X1_9x1_dme_DME_BDE_Continental_Bleed_cooling_system"
+  },
+  {
+   "raw": "E2_EV_ECM_42TDI_Master_A2_InjectionQuantityAgentSystem",
+   "platform": "E2",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "EV_ECM_42TDI_Master_A2_InjectionQuantityAgentSystem"
+  },
+  {
+   "raw": "P992_BV_CentrElectUDS_Teach_Steering_Column_Adjustment",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "示教",
+   "label": "BV_CentrElectUDS_Teach_Steering_Column_Adjustment"
+  },
+  {
+   "raw": "Macan_DME_01DA_Adopt_particle_filter_mileage_in_the_DME",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_01DA_Adopt_particle_filter_mileage_in_the_DME"
+  },
+  {
+   "raw": "E2_EV_ECM_42TDI_Master_A2_ResetReducingAgentTankFillLevel",
+   "platform": "E2",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "复位",
+   "label": "EV_ECM_42TDI_Master_A2_ResetReducingAgentTankFillLevel"
+  },
+  {
+   "raw": "P992_BV_FrontSensoDriveAssisSysteUDS_Surround_Calibration",
+   "platform": "911 (992)",
+   "module": "",
+   "action": "校准",
+   "label": "BV_FrontSensoDriveAssisSysteUDS_Surround_Calibration"
+  },
+  {
+   "raw": "Panamera_971_DME_Bleeding_HighTemperature_Coolant_Circuit",
+   "platform": "Panamera",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "排气",
+   "label": "971_DME_Bleeding_HighTemperature_Coolant_Circuit"
+  },
+  {
+   "raw": "E3_Coding_of_the_serial_number_of_the_high_voltage_battery",
+   "platform": "E3",
+   "module": "",
+   "action": "序列号编码",
+   "label": "Coding_of_the_serial_number_of_the_high_voltage_battery"
+  },
+  {
+   "raw": "E3_ENG_Timing_Chain_Elongation_Reset_After_Replacing_Chain",
+   "platform": "E3",
+   "module": "",
+   "action": "复位",
+   "label": "ENG_Timing_Chain_Elongation_Reset_After_Replacing_Chain"
+  },
+  {
+   "raw": "G3_Coding_of_the_serial_number_of_the_high_voltage_battery",
+   "platform": "G3",
+   "module": "",
+   "action": "序列号编码",
+   "label": "Coding_of_the_serial_number_of_the_high_voltage_battery"
+  },
+  {
+   "raw": "E2_EV_ECM_42TDI_Master_A2_TightnessReducingPressureIncrease",
+   "platform": "E2",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "EV_ECM_42TDI_Master_A2_TightnessReducingPressureIncrease"
+  },
+  {
+   "raw": "G2_BV_ContrModul2ForSunroUDS_Teach_Panoramic_Roof_Sun_Blind",
+   "platform": "G2",
+   "module": "",
+   "action": "示教",
+   "label": "BV_ContrModul2ForSunroUDS_Teach_Panoramic_Roof_Sun_Blind"
+  },
+  {
+   "raw": "PJ1_Coding_of_the_serial_number_of_the_high_voltage_battery",
+   "platform": "Taycan (PJ1)",
+   "module": "",
+   "action": "序列号编码",
+   "label": "Coding_of_the_serial_number_of_the_high_voltage_battery"
+  },
+  {
+   "raw": "E3_GateWay_Deactivate_Activate_48V_Vehicle_Electrical_System",
+   "platform": "E3",
+   "module": "网关",
+   "action": "（未分类）",
+   "label": "GateWay_Deactivate_Activate_48V_Vehicle_Electrical_System"
+  },
+  {
+   "raw": "Macan_DME_20TFS02095B906259Q_Particulate_filter_regeneration",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "再生",
+   "label": "DME_20TFS02095B906259Q_Particulate_filter_regeneration"
+  },
+  {
+   "raw": "PJ1_BV_Chassis_Control_Replacement_Work_On_Air_Spring_System",
+   "platform": "Taycan (PJ1)",
+   "module": "",
+   "action": "更换",
+   "label": "BV_Chassis_Control_Replacement_Work_On_Air_Spring_System"
+  },
+  {
+   "raw": "G2_Instrument_Cluster_Restore_Fuel_Level_Sensor_Calibration_Values",
+   "platform": "G2",
+   "module": "",
+   "action": "校准",
+   "label": "Instrument_Cluster_Restore_Fuel_Level_Sensor_Calibration_Values"
+  },
+  {
+   "raw": "Macan_DME_BV_ECM30_GEN2_TNF_Adopt_particle_filter_mileage_in_the_DME",
+   "platform": "Macan",
+   "module": "ECM/DME(发动机控制模块)",
+   "action": "（未分类）",
+   "label": "DME_BV_ECM30_GEN2_TNF_Adopt_particle_filter_mileage_in_the_DME"
+  },
+  {
+   "raw": "G2_Instrument_Cluster_Backing_Up_The_Fuel_Level_Sensor_Calibration_Values",
+   "platform": "G2",
+   "module": "",
+   "action": "校准",
+   "label": "Instrument_Cluster_Backing_Up_The_Fuel_Level_Sensor_Calibration_Values"
+  }
+ ]
+}
