@@ -1,0 +1,2057 @@
+{
+ "schemaVersion": 1,
+ "kind": "verified-routine-ids",
+ "source": "COMMAND.GAG（431 实测请求序列）0x31 全集",
+ "caveat": "只保证这些例程 ID 在 431 真机通信中出现过（即 ID 合法），不保证「哪个 ID 对应哪个功能」—— 语义仍需真车确认。与 special-functions.json 的手工索引（0x200-0x34E）交集仅 1 个，两者不可混用。",
+ "count": 79,
+ "requestCount": 252,
+ "noRidCount": 16,
+ "items": [
+  {
+   "routineId": "0x0000",
+   "ridInt": 0,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0xB9",
+     "name": "厂商扩展B9",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0001",
+   "ridInt": 1,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0xB8",
+     "name": "厂商扩展B8",
+     "n": 1
+    },
+    {
+     "sub": "0xBA",
+     "name": "厂商扩展BA",
+     "n": 1
+    },
+    {
+     "sub": "0xB9",
+     "name": "厂商扩展B9",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0005",
+   "ridInt": 5,
+   "hits": 4,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 4
+    }
+   ],
+   "params": [
+    {
+     "hex": "01 00",
+     "n": 1
+    },
+    {
+     "hex": "02 00",
+     "n": 1
+    },
+    {
+     "hex": "03 05",
+     "n": 1
+    },
+    {
+     "hex": "04 05",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0016",
+   "ridInt": 22,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x0B",
+     "name": "厂商扩展0B",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF 06",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0102",
+   "ridInt": 258,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0xB9",
+     "name": "厂商扩展B9",
+     "n": 1
+    },
+    {
+     "sub": "0xB8",
+     "name": "厂商扩展B8",
+     "n": 1
+    },
+    {
+     "sub": "0xBA",
+     "name": "厂商扩展BA",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0103",
+   "ridInt": 259,
+   "hits": 35,
+   "subFuncs": [
+    {
+     "sub": "0xB9",
+     "name": "厂商扩展B9",
+     "n": 21
+    },
+    {
+     "sub": "0xBB",
+     "name": "厂商扩展BB",
+     "n": 10
+    },
+    {
+     "sub": "0xB8",
+     "name": "厂商扩展B8",
+     "n": 2
+    },
+    {
+     "sub": "0xBA",
+     "name": "厂商扩展BA",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00 00",
+     "n": 3
+    },
+    {
+     "hex": "00 00 00 00 06 59 00 03",
+     "n": 3
+    },
+    {
+     "hex": "01",
+     "n": 2
+    },
+    {
+     "hex": "00",
+     "n": 1
+    },
+    {
+     "hex": "00 13",
+     "n": 1
+    },
+    {
+     "hex": "00 13 00 00 06 59 00 03",
+     "n": 1
+    },
+    {
+     "hex": "00 19",
+     "n": 1
+    },
+    {
+     "hex": "00 1E",
+     "n": 1
+    },
+    {
+     "hex": "00 1E 00 00 06 59 00 03",
+     "n": 1
+    },
+    {
+     "hex": "00 20 00 00 00 00 20 00",
+     "n": 1
+    },
+    {
+     "hex": "00 64",
+     "n": 1
+    },
+    {
+     "hex": "00 64 00 00 07 00 00 03",
+     "n": 1
+    },
+    {
+     "hex": "01 6D",
+     "n": 1
+    },
+    {
+     "hex": "01 6D 00 00 06 59 00 03",
+     "n": 1
+    },
+    {
+     "hex": "02",
+     "n": 1
+    },
+    {
+     "hex": "02 DA",
+     "n": 1
+    },
+    {
+     "hex": "02 DA 00 00 06 59 00 03",
+     "n": 1
+    },
+    {
+     "hex": "03",
+     "n": 1
+    },
+    {
+     "hex": "09",
+     "n": 1
+    },
+    {
+     "hex": "14",
+     "n": 1
+    },
+    {
+     "hex": "28",
+     "n": 1
+    },
+    {
+     "hex": "29",
+     "n": 1
+    },
+    {
+     "hex": "2B",
+     "n": 1
+    },
+    {
+     "hex": "2C",
+     "n": 1
+    },
+    {
+     "hex": "38",
+     "n": 1
+    },
+    {
+     "hex": "3C",
+     "n": 1
+    }
+   ],
+   "note": "实测出现 35 次"
+  },
+  {
+   "routineId": "0x0107",
+   "ridInt": 263,
+   "hits": 69,
+   "subFuncs": [
+    {
+     "sub": "0xB8",
+     "name": "厂商扩展B8",
+     "n": 63
+    },
+    {
+     "sub": "0xBA",
+     "name": "厂商扩展BA",
+     "n": 3
+    },
+    {
+     "sub": "0xB9",
+     "name": "厂商扩展B9",
+     "n": 3
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 80",
+     "n": 2
+    },
+    {
+     "hex": "04 81",
+     "n": 2
+    },
+    {
+     "hex": "00 3D",
+     "n": 1
+    },
+    {
+     "hex": "00 3E",
+     "n": 1
+    },
+    {
+     "hex": "00 9C",
+     "n": 1
+    },
+    {
+     "hex": "01 55",
+     "n": 1
+    },
+    {
+     "hex": "01 56",
+     "n": 1
+    },
+    {
+     "hex": "02 30",
+     "n": 1
+    },
+    {
+     "hex": "03 8A",
+     "n": 1
+    },
+    {
+     "hex": "03 8E",
+     "n": 1
+    },
+    {
+     "hex": "03 9C",
+     "n": 1
+    },
+    {
+     "hex": "03 DF",
+     "n": 1
+    },
+    {
+     "hex": "04 45",
+     "n": 1
+    },
+    {
+     "hex": "04 58",
+     "n": 1
+    },
+    {
+     "hex": "04 EB",
+     "n": 1
+    },
+    {
+     "hex": "05 D5",
+     "n": 1
+    },
+    {
+     "hex": "05 D6",
+     "n": 1
+    },
+    {
+     "hex": "05 D8",
+     "n": 1
+    },
+    {
+     "hex": "05 D9",
+     "n": 1
+    },
+    {
+     "hex": "05 DA",
+     "n": 1
+    },
+    {
+     "hex": "05 DC",
+     "n": 1
+    },
+    {
+     "hex": "05 DD",
+     "n": 1
+    },
+    {
+     "hex": "05 E1",
+     "n": 1
+    },
+    {
+     "hex": "06 28",
+     "n": 1
+    },
+    {
+     "hex": "06 61",
+     "n": 1
+    },
+    {
+     "hex": "06 A8",
+     "n": 1
+    },
+    {
+     "hex": "07 2A",
+     "n": 1
+    },
+    {
+     "hex": "07 2B",
+     "n": 1
+    },
+    {
+     "hex": "08 2C",
+     "n": 1
+    },
+    {
+     "hex": "09 46",
+     "n": 1
+    },
+    {
+     "hex": "09 47",
+     "n": 1
+    },
+    {
+     "hex": "09 48",
+     "n": 1
+    },
+    {
+     "hex": "09 5E",
+     "n": 1
+    },
+    {
+     "hex": "09 C2",
+     "n": 1
+    },
+    {
+     "hex": "09 C3",
+     "n": 1
+    },
+    {
+     "hex": "0A 1D",
+     "n": 1
+    },
+    {
+     "hex": "0A 1E",
+     "n": 1
+    },
+    {
+     "hex": "0B 5F",
+     "n": 1
+    },
+    {
+     "hex": "0B 60",
+     "n": 1
+    },
+    {
+     "hex": "19 16",
+     "n": 1
+    },
+    {
+     "hex": "20 88",
+     "n": 1
+    },
+    {
+     "hex": "20 90",
+     "n": 1
+    },
+    {
+     "hex": "22 57",
+     "n": 1
+    },
+    {
+     "hex": "22 59",
+     "n": 1
+    },
+    {
+     "hex": "22 95",
+     "n": 1
+    },
+    {
+     "hex": "26 32",
+     "n": 1
+    },
+    {
+     "hex": "26 33",
+     "n": 1
+    },
+    {
+     "hex": "40 02",
+     "n": 1
+    },
+    {
+     "hex": "40 03",
+     "n": 1
+    },
+    {
+     "hex": "40 E6",
+     "n": 1
+    },
+    {
+     "hex": "41 BD",
+     "n": 1
+    },
+    {
+     "hex": "41 E0",
+     "n": 1
+    },
+    {
+     "hex": "41 E1",
+     "n": 1
+    },
+    {
+     "hex": "42 95",
+     "n": 1
+    },
+    {
+     "hex": "42 AD",
+     "n": 1
+    },
+    {
+     "hex": "48 58",
+     "n": 1
+    },
+    {
+     "hex": "48 5C",
+     "n": 1
+    },
+    {
+     "hex": "49 91",
+     "n": 1
+    },
+    {
+     "hex": "4A 78",
+     "n": 1
+    },
+    {
+     "hex": "4C 13",
+     "n": 1
+    },
+    {
+     "hex": "4C 57",
+     "n": 1
+    }
+   ],
+   "note": "实测出现 69 次（最高频），431 用作例程主力"
+  },
+  {
+   "routineId": "0x0214",
+   "ridInt": 532,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0276",
+   "ridInt": 630,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 2
+    },
+    {
+     "sub": "0x04",
+     "name": "厂商扩展04",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "06 F6 01 01",
+     "n": 1
+    },
+    {
+     "hex": "06 F6 01 01 0D D4 06 EA 01 01",
+     "n": 1
+    },
+    {
+     "hex": "0B 76 01 02",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x030F",
+   "ridInt": 783,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0315",
+   "ridInt": 789,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0318",
+   "ridInt": 792,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0319",
+   "ridInt": 793,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x032E",
+   "ridInt": 814,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0357",
+   "ridInt": 855,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0400",
+   "ridInt": 1024,
+   "hits": 4,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 2
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x03",
+     "name": "requestRoutineResults",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0401",
+   "ridInt": 1025,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0404",
+   "ridInt": 1028,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0405",
+   "ridInt": 1029,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x040A",
+   "ridInt": 1034,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0412",
+   "ridInt": 1042,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0414",
+   "ridInt": 1044,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "03 14 12 28",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0420",
+   "ridInt": 1056,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0434",
+   "ridInt": 1076,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0440",
+   "ridInt": 1088,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0x0442",
+   "ridInt": 1090,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "DD 04 05",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0450",
+   "ridInt": 1104,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "03 14 12 28",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x045B",
+   "ridInt": 1115,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "04 00 00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0464",
+   "ridInt": 1124,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 3
+    }
+   ],
+   "params": [
+    {
+     "hex": "01",
+     "n": 1
+    },
+    {
+     "hex": "02",
+     "n": 1
+    },
+    {
+     "hex": "03",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0465",
+   "ridInt": 1125,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 3
+    }
+   ],
+   "params": [
+    {
+     "hex": "01",
+     "n": 1
+    },
+    {
+     "hex": "02",
+     "n": 1
+    },
+    {
+     "hex": "03",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0466",
+   "ridInt": 1126,
+   "hits": 5,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 5
+    }
+   ],
+   "params": [
+    {
+     "hex": "01 13 24",
+     "n": 1
+    },
+    {
+     "hex": "01 13 56",
+     "n": 1
+    },
+    {
+     "hex": "02 12 F2",
+     "n": 1
+    },
+    {
+     "hex": "02 13 56",
+     "n": 1
+    },
+    {
+     "hex": "03 13 56",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0600",
+   "ridInt": 1536,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "03 08 04 05 03",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x06EA",
+   "ridInt": 1770,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x03",
+     "name": "requestRoutineResults",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "0D D4 01 01",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x06F6",
+   "ridInt": 1782,
+   "hits": 4,
+   "subFuncs": [
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 2
+    },
+    {
+     "sub": "0x04",
+     "name": "厂商扩展04",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "02 76 01 01",
+     "n": 1
+    },
+    {
+     "hex": "02 76 01 01 0D D4 14 BE 01 01",
+     "n": 1
+    },
+    {
+     "hex": "0B 76 01 01",
+     "n": 1
+    },
+    {
+     "hex": "0B 76 01 01 0D D4 06 EA 01 01",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0714",
+   "ridInt": 1812,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0814",
+   "ridInt": 2068,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0914",
+   "ridInt": 2324,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0B76",
+   "ridInt": 2934,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0x02",
+     "name": "stopRoutine",
+     "n": 2
+    },
+    {
+     "sub": "0x04",
+     "name": "厂商扩展04",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "02 76 01 02",
+     "n": 1
+    },
+    {
+     "hex": "06 F6 01 01",
+     "n": 1
+    },
+    {
+     "hex": "06 F6 01 01 0D D4 14 BE 01 01",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x0DD4",
+   "ridInt": 3540,
+   "hits": 4,
+   "subFuncs": [
+    {
+     "sub": "0x03",
+     "name": "requestRoutineResults",
+     "n": 4
+    }
+   ],
+   "params": [
+    {
+     "hex": "00 00 01 01",
+     "n": 2
+    },
+    {
+     "hex": "06 EA 01 01",
+     "n": 1
+    },
+    {
+     "hex": "14 BE 01 01",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x14BE",
+   "ridInt": 5310,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x03",
+     "name": "requestRoutineResults",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "0D D4 01 01",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x1BA8",
+   "ridInt": 7080,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x03",
+     "name": "requestRoutineResults",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "0D D4 01 01",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x2314",
+   "ridInt": 8980,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x2414",
+   "ridInt": 9236,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x2501",
+   "ridInt": 9473,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x2614",
+   "ridInt": 9748,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x2814",
+   "ridInt": 10260,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x3B14",
+   "ridInt": 15124,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x3D14",
+   "ridInt": 15636,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x3E14",
+   "ridInt": 15892,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x3F14",
+   "ridInt": 16148,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x4101",
+   "ridInt": 16641,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x5002",
+   "ridInt": 20482,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "80",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x6514",
+   "ridInt": 25876,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x6600",
+   "ridInt": 26112,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x6714",
+   "ridInt": 26388,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x6814",
+   "ridInt": 26644,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x6F14",
+   "ridInt": 28436,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x7214",
+   "ridInt": 29204,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x7300",
+   "ridInt": 29440,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x7F00",
+   "ridInt": 32512,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x8000",
+   "ridInt": 32768,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x8214",
+   "ridInt": 33300,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x8C00",
+   "ridInt": 35840,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x8D00",
+   "ridInt": 36096,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0x9814",
+   "ridInt": 38932,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xA414",
+   "ridInt": 42004,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xAA14",
+   "ridInt": 43540,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xB214",
+   "ridInt": 45588,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xB414",
+   "ridInt": 46100,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xB914",
+   "ridInt": 47380,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "FF",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xBB14",
+   "ridInt": 47892,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xBE14",
+   "ridInt": 48660,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 2
+    }
+   ],
+   "params": [
+    {
+     "hex": "7F",
+     "n": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xC900",
+   "ridInt": 51456,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xCB00",
+   "ridInt": 51968,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xCF00",
+   "ridInt": 52992,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xD000",
+   "ridInt": 53248,
+   "hits": 3,
+   "subFuncs": [
+    {
+     "sub": "0x10",
+     "name": "厂商扩展10",
+     "n": 1
+    },
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    },
+    {
+     "sub": "0x03",
+     "name": "requestRoutineResults",
+     "n": 1
+    }
+   ],
+   "params": [
+    {
+     "hex": "00",
+     "n": 1
+    },
+    {
+     "hex": "00 02 11 11 11 11 11 11 11 11",
+     "n": 1
+    }
+   ],
+   "note": ""
+  },
+  {
+   "routineId": "0xD001",
+   "ridInt": 53249,
+   "hits": 2,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 2
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0xF000",
+   "ridInt": 61440,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  },
+  {
+   "routineId": "0xF021",
+   "ridInt": 61473,
+   "hits": 1,
+   "subFuncs": [
+    {
+     "sub": "0x01",
+     "name": "startRoutine",
+     "n": 1
+    }
+   ],
+   "params": [],
+   "note": ""
+  }
+ ],
+ "noRidRequests": [
+  {
+   "subFunc": 12,
+   "raw": "01 02 31 0c"
+  },
+  {
+   "subFunc": 13,
+   "raw": "01 02 31 0d"
+  },
+  {
+   "subFunc": 6,
+   "raw": "01 02 31 06"
+  },
+  {
+   "subFunc": 22,
+   "raw": "01 02 31 16"
+  },
+  {
+   "subFunc": 98,
+   "raw": "01 02 31 62"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 03"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 04"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 05"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 20"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 21"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 1f"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 34"
+  },
+  {
+   "subFunc": 16,
+   "raw": "01 03 31 10 19"
+  },
+  {
+   "subFunc": 1,
+   "raw": "01 03 31 01 00"
+  },
+  {
+   "subFunc": 1,
+   "raw": "01 03 31 01 01"
+  },
+  {
+   "subFunc": 60,
+   "raw": "01 02 31 3c"
+  }
+ ]
+}

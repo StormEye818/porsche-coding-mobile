@@ -9,9 +9,13 @@
  *   设码定义：chain + byteOffset + bitOffset + TEXTTABLE 枚举
  *
  * 验证等级（决定 app 能不能写）：
- *   source-defined   —— 只有静态定义，无实车证据 → **只读显示，禁止写**
- *   read-confirmed   —— 实车读回验证过 → 允许读，写需二次确认
- *   write-confirmed  —— 实车写入+回读验证过 → 允许写
+ *   source-defined   —— 只有静态定义，无逐项实车证据
+ *   read-confirmed   —— 实车读回验证过
+ *   write-confirmed  —— 实车写入+回读验证过
+ *
+ * ⚠️ 当前政策（2026-10-18）：`WRITE_ENABLED=true`，`level` 是**验证状态标注**而不是硬门禁；
+ *    `source-defined` 仍允许写，但 UI 会显示“仅源定义”，且必须走 canWrite/值域/回读校验。
+ *    想恢复“只有 write-confirmed 才能写”的严格模式，把 `WRITE_ENABLED` 改 false。
  */
 
 export const LEVELS = ['source-defined', 'read-confirmed', 'write-confirmed'];
@@ -137,15 +141,18 @@ export function injectField(rawBytes, p, value) {
 /** 枚举值 → 显示文本 */
 export function decodeValue(p, raw) {
   if (p.enum) {
-    // enum key 可能是 "0x00" 或 "0"，raw 是数字
+    // enum key 可能是 "0x00" 或 "0"，raw 是数字（宽字段可能是 BigInt）
     const rawStr = String(raw);
-    const rawHex = '0x' + Number(raw).toString(16).toUpperCase().padStart(2, '0');
-    const rawHexLower = '0x' + Number(raw).toString(16).padStart(2, '0');
+    let hex;
+    try { hex = (typeof raw === 'bigint' ? raw : BigInt(raw)).toString(16).toUpperCase(); }
+    catch { hex = Number(raw).toString(16).toUpperCase(); }
+    const rawHex = '0x' + hex.padStart(2, '0');
+    const rawHexLower = '0x' + hex.toLowerCase().padStart(2, '0');
     return p.enum[rawStr] ?? p.enum[rawHex] ?? p.enum[rawHexLower] ?? String(raw);
   }
   // switch 类型
   if (p.kind === 'switch') {
-    return raw === 0 || raw === '0' ? '关' : '开';
+    return raw === 0 || raw === '0' || raw === 0n ? '关' : '开';
   }
   return String(raw);
 }
@@ -159,6 +166,35 @@ export function encodeValue(p, text) {
   }
   const n = Number(text);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * 输入框文本 → 字段值。
+ *
+ * ⚠️ bitsize > 53 必须用 BigInt（2026-10-18 审计）：`extractField` 对 40/48/56/64 位
+ *    字段返回 BigInt，但 UI 一直用 `Number(input.value)` —— 超过 2^53 会被舍入，
+ *    写回时 `injectField` 拿到的就是错值（大字段会写坏相邻位）。
+ *    这里按 bitsize 选 Number/BigInt，解析失败返回 null（调用方拒绝写入）。
+ */
+export function parseFieldInput(p, text) {
+  const s = String(text ?? '').trim();
+  if (!s) return null;
+  if ((p.bitsize | 0) > 53) {
+    try { return BigInt(s); } catch { return null; }
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** 字段值是否在 min/max 内（兼容 BigInt 与 Number 混用） */
+export function fieldInRange(p, v) {
+  if (v == null) return false;
+  const big = typeof v === 'bigint';
+  const lo = p.min == null ? null : (big ? BigInt(p.min) : p.min);
+  const hi = p.max == null ? null : (big ? BigInt(p.max) : p.max);
+  if (lo != null && v < lo) return false;
+  if (hi != null && v > hi) return false;
+  return true;
 }
 
 /** 能否写入（等级 + 风险） */

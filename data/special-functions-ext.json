@@ -77,7 +77,7 @@
   {
    "raw": "Adas613HJudge",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "判定",
    "label": "Adas613HJudge"
   },
@@ -210,7 +210,7 @@
   {
    "raw": "CAY92A_Left_Headlight_Calibration",
    "platform": "Cayenne-92A",
-   "module": "",
+   "module": "灯光电子",
    "action": "校准",
    "label": "Left_Headlight_Calibration"
   },
@@ -378,7 +378,7 @@
   {
    "raw": "Cayenne2011_Air_conditioner_Teach_in_LIN_automatic_addressing",
    "platform": "（通用）",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "Cayenne2011_Air_conditioner_Teach_in_LIN_automatic_addressing"
   },
@@ -567,7 +567,7 @@
   {
    "raw": "Cayenne_2011_PDCC_Pressure_Sensor_Calibration_2B60",
    "platform": "Cayenne",
-   "module": "",
+   "module": "保时捷动态底盘控制",
    "action": "校准",
    "label": "2011_PDCC_Pressure_Sensor_Calibration_2B60"
   },
@@ -616,14 +616,14 @@
   {
    "raw": "E1_PDCC_Calibration",
    "platform": "E1",
-   "module": "",
+   "module": "保时捷动态底盘控制",
    "action": "校准",
    "label": "PDCC_Calibration"
   },
   {
    "raw": "E1_PDCC_Reset",
    "platform": "E1",
-   "module": "",
+   "module": "保时捷动态底盘控制",
    "action": "复位",
    "label": "PDCC_Reset"
   },
@@ -679,7 +679,7 @@
   {
    "raw": "MACAN_Air_conditioner_Teach_in_LIN_automatic_addressing",
    "platform": "Macan",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "Air_conditioner_Teach_in_LIN_automatic_addressing"
   },
@@ -1022,7 +1022,7 @@
   {
    "raw": "P997_PAS_Teach_electronic_2140",
    "platform": "911 (997)",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "PAS_Teach_electronic_2140"
   },
@@ -1435,7 +1435,7 @@
   {
    "raw": "Panamera_Air_conditioner_Teach_in_LIN_automatic_addressing",
    "platform": "Panamera",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "Air_conditioner_Teach_in_LIN_automatic_addressing"
   },
@@ -1652,7 +1652,7 @@
   {
    "raw": "P9X1_PDK_Calibration",
    "platform": "（通用）",
-   "module": "",
+   "module": "TCM/PDK(自动变速箱控制模块)",
    "action": "校准",
    "label": "P9X1_PDK_Calibration"
   },
@@ -1764,7 +1764,7 @@
   {
    "raw": "Macan_AC_Teach_AC_Unit",
    "platform": "Macan",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "AC_Teach_AC_Unit"
   },
@@ -1974,7 +1974,7 @@
   {
    "raw": "J1_Aerod_TeachRearSpoiler",
    "platform": "Taycan",
-   "module": "",
+   "module": "后部扰流板",
    "action": "示教",
    "label": "Aerod_TeachRearSpoiler"
   },
@@ -2016,7 +2016,7 @@
   {
    "raw": "ADAS_Calibration_SWA_G1_E2",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_SWA_G1_E2"
   },
@@ -2254,7 +2254,7 @@
   {
    "raw": "Panamera_971_PDK_Oil_Filling",
    "platform": "Panamera",
-   "module": "",
+   "module": "TCM/PDK(自动变速箱控制模块)",
    "action": "加注",
    "label": "971_PDK_Oil_Filling"
   },
@@ -2282,7 +2282,7 @@
   {
    "raw": "E3_AC_Ventpotentiometer_Reset",
    "platform": "E3",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "复位",
    "label": "AC_Ventpotentiometer_Reset"
   },
@@ -2338,14 +2338,14 @@
   {
    "raw": "SYS_1293_SPE_TeachRearSpoiler",
    "platform": "（通用）",
-   "module": "",
+   "module": "后部扰流板",
    "action": "示教",
    "label": "SYS_1293_SPE_TeachRearSpoiler"
   },
   {
    "raw": "ADAS_Calibration_RearView_RVRV",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_RearView_RVRV"
   },
@@ -2436,7 +2436,7 @@
   {
    "raw": "ADAS_Calibration_RearTopView_G1",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_RearTopView_G1"
   },
@@ -2597,7 +2597,7 @@
   {
    "raw": "Macan_AC_Teach_Flap_Servo_Motors",
    "platform": "Macan",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "AC_Teach_Flap_Servo_Motors"
   },
@@ -2786,7 +2786,7 @@
   {
    "raw": "E3_Rear_Spoiler_Teach_Rear_Spoiler",
    "platform": "E3",
-   "module": "",
+   "module": "后部扰流板",
    "action": "示教",
    "label": "Rear_Spoiler_Teach_Rear_Spoiler"
   },
@@ -2814,14 +2814,14 @@
   {
    "raw": "ADAS_Calibration_Rueckfahrkamera_E2",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_Rueckfahrkamera_E2"
   },
   {
    "raw": "ADAS_Calibration_Rueckfahrkamera_G1",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_Rueckfahrkamera_G1"
   },
@@ -2856,7 +2856,7 @@
   {
    "raw": "E3_Surround_View_Camera_Calibration",
    "platform": "E3",
-   "module": "",
+   "module": "倒车摄像头",
    "action": "校准",
    "label": "Surround_View_Camera_Calibration"
   },
@@ -3045,7 +3045,7 @@
   {
    "raw": "E2_BV_ECM30_GEN2_TNF_TurbochargerTest",
    "platform": "E2",
-   "module": "",
+   "module": "ECM/DME(发动机控制模块)",
    "action": "充电",
    "label": "BV_ECM30_GEN2_TNF_TurbochargerTest"
   },
@@ -3094,7 +3094,7 @@
   {
    "raw": "ADAS_Calibration_RealTopView2_E2_MACAN",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_RealTopView2_E2_MACAN"
   },
@@ -3122,14 +3122,14 @@
   {
    "raw": "G3_AC_Teachand_Check_Flap_Servo_Motors",
    "platform": "G3",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "AC_Teachand_Check_Flap_Servo_Motors"
   },
   {
    "raw": "G3_Airbag_Calibrate_Combination_Sensor",
    "platform": "G3",
-   "module": "",
+   "module": "SRS(安全气囊)",
    "action": "校准",
    "label": "Airbag_Calibrate_Combination_Sensor"
   },
@@ -3353,21 +3353,21 @@
   {
    "raw": "Macan_HBA_Teach_Headlight_Beam_Adjustment",
    "platform": "Macan",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "HBA_Teach_Headlight_Beam_Adjustment"
   },
   {
    "raw": "Macan_Teach_Headlight_Beam_Adjustment_HBA",
    "platform": "Macan",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "Teach_Headlight_Beam_Adjustment_HBA"
   },
   {
    "raw": "P9x6_PSM57_SteeringAngleSensorCalibration",
    "platform": "（通用）",
-   "module": "",
+   "module": "ESP/PSM(电控稳定系统)",
    "action": "校准",
    "label": "P9x6_PSM57_SteeringAngleSensorCalibration"
   },
@@ -3402,7 +3402,7 @@
   {
    "raw": "G3_Airbag_Teach_Reversible_Belt_Tensioners",
    "platform": "G3",
-   "module": "",
+   "module": "SRS(安全气囊)",
    "action": "示教",
    "label": "Airbag_Teach_Reversible_Belt_Tensioners"
   },
@@ -3416,14 +3416,14 @@
   {
    "raw": "Macan_BCM1_Teach_Headlight_Beam_Adjustment",
    "platform": "Macan",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "BCM1_Teach_Headlight_Beam_Adjustment"
   },
   {
    "raw": "Macan_Teach_Headlight_Beam_Adjustment_BCM1",
    "platform": "Macan",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "Teach_Headlight_Beam_Adjustment_BCM1"
   },
@@ -3444,7 +3444,7 @@
   {
    "raw": "E3_AC_Teachand_Check_Flap_Servo_Motors_LIN2",
    "platform": "E3",
-   "module": "",
+   "module": "AC(空调系统)",
    "action": "示教",
    "label": "AC_Teachand_Check_Flap_Servo_Motors_LIN2"
   },
@@ -3493,21 +3493,21 @@
   {
    "raw": "Panamera_971_Teach_Seat_Occupsncy_Detection",
    "platform": "Panamera",
-   "module": "",
+   "module": "座椅",
    "action": "示教",
    "label": "971_Teach_Seat_Occupsncy_Detection"
   },
   {
    "raw": "ADAS_Calibration_Static_ChangAssis_E3_J1_992",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_Static_ChangAssis_E3_J1_992"
   },
   {
    "raw": "ADAS_Calibration_Dynamic_ChangAssis_E3_J1_992",
    "platform": "（通用）",
-   "module": "",
+   "module": "驾驶辅助",
    "action": "校准",
    "label": "ADAS_Calibration_Dynamic_ChangAssis_E3_J1_992"
   },
@@ -3528,7 +3528,7 @@
   {
    "raw": "P992_BV_CentrElectUDS_Teach_Flap_Servo_Motors",
    "platform": "911 (992)",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "BV_CentrElectUDS_Teach_Flap_Servo_Motors"
   },
@@ -3549,7 +3549,7 @@
   {
    "raw": "E3_AssistSys_Front_Camera_Download_Calibration",
    "platform": "E3",
-   "module": "",
+   "module": "倒车摄像头",
    "action": "校准",
    "label": "AssistSys_Front_Camera_Download_Calibration"
   },
@@ -3661,14 +3661,14 @@
   {
    "raw": "P9x7_dme_me781_AdaptationOfBoostPressureActuator",
    "platform": "（通用）",
-   "module": "",
+   "module": "ECM/DME(发动机控制模块)",
    "action": "匹配",
    "label": "P9x7_dme_me781_AdaptationOfBoostPressureActuator"
   },
   {
    "raw": "Panamera_971_BCM_Teach_Headlight_Beam_Adjustment",
    "platform": "Panamera",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "971_BCM_Teach_Headlight_Beam_Adjustment"
   },
@@ -3794,7 +3794,7 @@
   {
    "raw": "P992_BV_CentrElectUDS_Teach_Steering_Column_Adjustment",
    "platform": "911 (992)",
-   "module": "",
+   "module": "灯光电子",
    "action": "示教",
    "label": "BV_CentrElectUDS_Teach_Steering_Column_Adjustment"
   },

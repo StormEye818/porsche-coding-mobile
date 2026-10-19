@@ -73,3 +73,44 @@ analysis/
 # .so 导出符号目录（研究产物，只留本地）
 data/so-exports.json
 extract-identity.py
+
+# ── 逆向过程资料（按公开面铁律：绝不进仓库）──
+TAKEOVER*.md
+REVERSE-*.md
+PLAN-*.md
+PLAN-*.md
+BLOCKER-AUDIT*.md
+ECU-ADDRESSING*.md
+CODE-LEVEL-REPLICATION.md
+PROJECT-MEMORY.md
+SA2WORD-BYTEPROG.json
+
+# RE 工具链（ghidra/反汇编/oracle/拟合，只留本地）
+tools/ghidra-*
+tools/*-decompile*
+tools/disasm-*
+tools/*oracle*
+tools/lib-oracle*
+tools/lib_oracle*
+tools/reverse-*
+tools/extract-*
+tools/native-*
+tools/objdump-*
+tools/fit-*
+tools/gen-rc*
+tools/gen-seedkey*
+tools/sa2-*
+tools/asap1a-*
+tools/probe-address.py
+tools/resolve-ecu-address.py
+tools/x431-address-port.py
+tools/decode-*
+tools/analyze-data-files.py
+tools/build-routines-verified.py
+tools/gfs-names.py
+tools/inventory-package.py
+tools/probe-rc.mjs
+tools/sample-modes.py
+tools/step-a-status.py
+tools/vectors/
+tools/__pycache__/

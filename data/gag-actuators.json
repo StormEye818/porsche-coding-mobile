@@ -1,0 +1,1434 @@
+{
+ "note": "431 COMMAND.GAG 实测的 2F IOControl DID 全集（3139 条请求里 154 条 2F）。drive=ctrl 0x03 + 状态；release=ctrl 0x00 + 空。⚠️ name 目前是占位（chain↔DID 映射在 ODX 里，未解），需按模块人工对应。",
+ "count": 71,
+ "items": [
+  {
+   "did": 257,
+   "didHex": "0x0101",
+   "name": "执行器 0x0101",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 258,
+   "didHex": "0x0102",
+   "name": "执行器 0x0102",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 259,
+   "didHex": "0x0103",
+   "name": "执行器 0x0103",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 260,
+   "didHex": "0x0104",
+   "name": "执行器 0x0104",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 261,
+   "didHex": "0x0105",
+   "name": "执行器 0x0105",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 262,
+   "didHex": "0x0106",
+   "name": "执行器 0x0106",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 269,
+   "didHex": "0x010D",
+   "name": "执行器 0x010D",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x02": 1,
+    "0x03": 2,
+    "0x00": 1
+   },
+   "observedStates": [
+    "00 00",
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 270,
+   "didHex": "0x010E",
+   "name": "执行器 0x010E",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 271,
+   "didHex": "0x010F",
+   "name": "执行器 0x010F",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 272,
+   "didHex": "0x0110",
+   "name": "执行器 0x0110",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x04": 1,
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 273,
+   "didHex": "0x0111",
+   "name": "执行器 0x0111",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 274,
+   "didHex": "0x0112",
+   "name": "执行器 0x0112",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 275,
+   "didHex": "0x0113",
+   "name": "执行器 0x0113",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 276,
+   "didHex": "0x0114",
+   "name": "执行器 0x0114",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 278,
+   "didHex": "0x0116",
+   "name": "执行器 0x0116",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 279,
+   "didHex": "0x0117",
+   "name": "执行器 0x0117",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 280,
+   "didHex": "0x0118",
+   "name": "执行器 0x0118",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 281,
+   "didHex": "0x0119",
+   "name": "执行器 0x0119",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 282,
+   "didHex": "0x011A",
+   "name": "执行器 0x011A",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 283,
+   "didHex": "0x011B",
+   "name": "执行器 0x011B",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 284,
+   "didHex": "0x011C",
+   "name": "执行器 0x011C",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x01": 1,
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 285,
+   "didHex": "0x011D",
+   "name": "执行器 0x011D",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 287,
+   "didHex": "0x011F",
+   "name": "执行器 0x011F",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 288,
+   "didHex": "0x0120",
+   "name": "执行器 0x0120",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 291,
+   "didHex": "0x0123",
+   "name": "执行器 0x0123",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x05": 1,
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 292,
+   "didHex": "0x0124",
+   "name": "执行器 0x0124",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 297,
+   "didHex": "0x0129",
+   "name": "执行器 0x0129",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 298,
+   "didHex": "0x012A",
+   "name": "执行器 0x012A",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 299,
+   "didHex": "0x012B",
+   "name": "执行器 0x012B",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 300,
+   "didHex": "0x012C",
+   "name": "执行器 0x012C",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 301,
+   "didHex": "0x012D",
+   "name": "执行器 0x012D",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 302,
+   "didHex": "0x012E",
+   "name": "执行器 0x012E",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 303,
+   "didHex": "0x012F",
+   "name": "执行器 0x012F",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 304,
+   "didHex": "0x0130",
+   "name": "执行器 0x0130",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 305,
+   "didHex": "0x0131",
+   "name": "执行器 0x0131",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1,
+    "0x06": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 306,
+   "didHex": "0x0132",
+   "name": "执行器 0x0132",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 307,
+   "didHex": "0x0133",
+   "name": "执行器 0x0133",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 308,
+   "didHex": "0x0134",
+   "name": "执行器 0x0134",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 309,
+   "didHex": "0x0135",
+   "name": "执行器 0x0135",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 310,
+   "didHex": "0x0136",
+   "name": "执行器 0x0136",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 311,
+   "didHex": "0x0137",
+   "name": "执行器 0x0137",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 334,
+   "didHex": "0x014E",
+   "name": "执行器 0x014E",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 342,
+   "didHex": "0x0156",
+   "name": "执行器 0x0156",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 344,
+   "didHex": "0x0158",
+   "name": "执行器 0x0158",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 470,
+   "didHex": "0x01D6",
+   "name": "执行器 0x01D6",
+   "drive": {
+    "controlOption": 3,
+    "state": "14 FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "14 FF FF FF"
+   ]
+  },
+  {
+   "did": 473,
+   "didHex": "0x01D9",
+   "name": "执行器 0x01D9",
+   "drive": {
+    "controlOption": 3,
+    "state": "05 FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "05 FF FF FF"
+   ]
+  },
+  {
+   "did": 474,
+   "didHex": "0x01DA",
+   "name": "执行器 0x01DA",
+   "drive": {
+    "controlOption": 3,
+    "state": "05 FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "05 FF FF FF"
+   ]
+  },
+  {
+   "did": 475,
+   "didHex": "0x01DB",
+   "name": "执行器 0x01DB",
+   "drive": {
+    "controlOption": 3,
+    "state": "0A FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "0A FF FF FF"
+   ]
+  },
+  {
+   "did": 525,
+   "didHex": "0x020D",
+   "name": "执行器 0x020D",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 527,
+   "didHex": "0x020F",
+   "name": "执行器 0x020F",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 528,
+   "didHex": "0x0210",
+   "name": "执行器 0x0210",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 592,
+   "didHex": "0x0250",
+   "name": "执行器 0x0250",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 2,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 598,
+   "didHex": "0x0256",
+   "name": "执行器 0x0256",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 720,
+   "didHex": "0x02D0",
+   "name": "执行器 0x02D0",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF FF FF FF"
+   ]
+  },
+  {
+   "did": 736,
+   "didHex": "0x02E0",
+   "name": "执行器 0x02E0",
+   "drive": {
+    "controlOption": 3,
+    "state": "0A FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "0A FF FF FF"
+   ]
+  },
+  {
+   "did": 739,
+   "didHex": "0x02E3",
+   "name": "执行器 0x02E3",
+   "drive": {
+    "controlOption": 3,
+    "state": "0A FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "0A FF FF FF"
+   ]
+  },
+  {
+   "did": 743,
+   "didHex": "0x02E7",
+   "name": "执行器 0x02E7",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 757,
+   "didHex": "0x02F5",
+   "name": "执行器 0x02F5",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 758,
+   "didHex": "0x02F6",
+   "name": "执行器 0x02F6",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 759,
+   "didHex": "0x02F7",
+   "name": "执行器 0x02F7",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 763,
+   "didHex": "0x02FB",
+   "name": "执行器 0x02FB",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 764,
+   "didHex": "0x02FC",
+   "name": "执行器 0x02FC",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 1025,
+   "didHex": "0x0401",
+   "name": "执行器 0x0401",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF D8 F0 75 30"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x02": 1,
+    "0x03": 2
+   },
+   "observedStates": [
+    "FF 27 10 75 30",
+    "FF D8 F0 75 30"
+   ]
+  },
+  {
+   "did": 1026,
+   "didHex": "0x0402",
+   "name": "执行器 0x0402",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 64 00 00 09 C4 02"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1
+   },
+   "observedStates": [
+    "FF 64 00 00 09 C4 02"
+   ]
+  },
+  {
+   "did": 1115,
+   "didHex": "0x045B",
+   "name": "执行器 0x045B",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 2,
+    "0x00": 2
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 1283,
+   "didHex": "0x0503",
+   "name": "执行器 0x0503",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 1328,
+   "didHex": "0x0530",
+   "name": "执行器 0x0530",
+   "drive": {
+    "controlOption": 3,
+    "state": "01 FF FF FF"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x00": 1,
+    "0x03": 1
+   },
+   "observedStates": [
+    "01 FF FF FF"
+   ]
+  },
+  {
+   "did": 2470,
+   "didHex": "0x09A6",
+   "name": "执行器 0x09A6",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 32769,
+   "didHex": "0x8001",
+   "name": "执行器 0x8001",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 2,
+    "0x00": 2
+   },
+   "observedStates": [
+    "FF 00 00 00",
+    "FF FF FF FF"
+   ]
+  },
+  {
+   "did": 32878,
+   "didHex": "0x806E",
+   "name": "执行器 0x806E",
+   "drive": {
+    "controlOption": 3,
+    "state": "FF 00 00 00"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x03": 1,
+    "0x00": 1
+   },
+   "observedStates": [
+    "FF 00 00 00"
+   ]
+  },
+  {
+   "did": 49152,
+   "didHex": "0xC000",
+   "name": "执行器 0xC000",
+   "drive": {
+    "controlOption": 3,
+    "state": "0A 03 01"
+   },
+   "release": {
+    "controlOption": 0,
+    "state": ""
+   },
+   "observedCtrls": {
+    "0x10": 3
+   },
+   "observedStates": [
+    "00 03 01",
+    "01 03 01",
+    "0A 03 01"
+   ]
+  }
+ ]
+}

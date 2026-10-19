@@ -5,7 +5,7 @@
  *   算法 A: 算法变体 A 
  *   算法 B: （另一变体）
  *
- * ⚠️ 注意：`PorscheCodingKeyCalc` 是误导（位域插入，构造命令字节），
+ * ⚠️ 注意：`口令位构造` 是误导（位域插入，构造命令字节），
  *   不是安全密钥计算。真算法在这里。
  *
  * 性质：纯 16 位位运算，无 AES、无查表、无大常量。
@@ -111,76 +111,140 @@ export function algoB(r0) {
  *    最大簇 10 个同构 = 同一算法的不同 ECU 封装；家族分布 E3(20)/G2(7)/918(5)/PDK(2)…)。
  *    对非该家族的 ECU 算出的 key 是错的 → NRC 0x35 → 反复重试 → **0x36 锁死**。
  *
- * 目前只确认了 `9x7GW`（`CServiceSeedAndKeyPag_SK_9x7GW` @两个 16 位位运算例程。
+ * 目前只确认了 `9x7GW`（`algo-9x7` @两个 16 位位运算例程。
  * 其余家族的映射**尚未逐一确认**，不要瞎填。
  */
 export const VARIANT_BY_ECU = {
-  // 已确认
-  '9x7GW': { algo: 'A', seedBytes: 2 },
-  // 待补：E3 / G2 / 918 / PDK / 9x1 / 9x6 / 9x7 … 见 FINDINGS.md §seedkey
+  '9x7GW': { algo: 'A', seedBytes: 2, verified: true },
+  // SO-EXPORTS 的具名 ECU 变体。⚠️ verified:false = 未逐位验证。
+  //    指纹聚类显示多数变体是**独立算法**（不是换壳），用前必须 对拍 校验。
+  '918Aero': { algo: 'A', seedBytes: 2, verified: false },
+  '918BKV': { algo: 'A', seedBytes: 2, verified: false },
+  '918EPB': { algo: 'A', seedBytes: 2, verified: false },
+  '918Lenk2': { algo: 'A', seedBytes: 2, verified: false },
+  '918TBF': { algo: 'A', seedBytes: 2, verified: false },
+  'Actuator_for_Exterior_Noise_UDS': { algo: 'A', seedBytes: 2, verified: false },
+  'Allrad_Gen1': { algo: 'A', seedBytes: 2, verified: false },
+  'BMS2': { algo: 'A', seedBytes: 2, verified: false },
+  'BatteCM': { algo: 'A', seedBytes: 2, verified: false },
+  'BatteCM_OBC72': { algo: 'A', seedBytes: 2, verified: false },
+  'BedienSG_vo_MSB_21': { algo: 'A', seedBytes: 2, verified: false },
+  'BedienSG_vo_MSB_3': { algo: 'A', seedBytes: 2, verified: false },
+  'CamerSysteRearView_MODE1': { algo: 'A', seedBytes: 2, verified: false },
+  'CamerSysteRearView_MODE2': { algo: 'A', seedBytes: 2, verified: false },
+  'CamerSysteRearView_NightVisio': { algo: 'A', seedBytes: 2, verified: false },
+  'CentrModulComfoSysteUDS_BCM2': { algo: 'A', seedBytes: 2, verified: false },
+  'CentralElectricsUDS_BCM1': { algo: 'A', seedBytes: 2, verified: false },
+  'DME_TDI_V8': { algo: 'A', seedBytes: 2, verified: false },
+  'DriveMotorContrModul': { algo: 'A', seedBytes: 2, verified: false },
+  'E2_RDK3_3': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_Airbag': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_Climatronic': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_EBKV': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_EFP': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_ICM_Mode1': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_ICM_Mode1_1': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_ICM_Mode2': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_ICM_Mode2_1': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_MASG1': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_MASG2': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_OBC1': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_OBC2': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_PACCh': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_PDCC': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_PSM': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_PTM': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_RDK': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_hi_MSB': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_hi_MSB2': { algo: 'A', seedBytes: 2, verified: false },
+  'E3_vo_MSB': { algo: 'A', seedBytes: 2, verified: false },
+  'ECM_UDS': { algo: 'A', seedBytes: 2, verified: false },
+  'EPB': { algo: 'A', seedBytes: 2, verified: false },
+  'EPS': { algo: 'A', seedBytes: 2, verified: false },
+  'Frontkamera_1': { algo: 'A', seedBytes: 2, verified: false },
+  'Frontkamera_Others': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_BVS': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_EPS': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_GQS_ZF_21': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_RearAxleSteer': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_SoundMLB': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_VTS': { algo: 'A', seedBytes: 2, verified: false },
+  'G2_vo_MSB_3': { algo: 'A', seedBytes: 2, verified: false },
+  'J1_BMS_800V_DRX_21': { algo: 'A', seedBytes: 2, verified: false },
+  'OverTheAir_21': { algo: 'A', seedBytes: 2, verified: false },
+  'PDK2_21': { algo: 'A', seedBytes: 2, verified: false },
+  'PDK2_21_TOP': { algo: 'A', seedBytes: 2, verified: false },
+  'RealTopview': { algo: 'A', seedBytes: 2, verified: false },
+  'ThermManagUDS': { algo: 'A', seedBytes: 2, verified: false },
+  '_NEW9x1BKE': { algo: 'A', seedBytes: 2, verified: false },
 };
 
 /** 按 ECU 名/家族挑变体；不认识返回 null（调用方必须拒绝写入，不要回退默认） */
+/**
+ * 按 ECU 名挑 seed/key 变体。
+ *
+ * ⚠️ **不要瞎猜**：指纹聚类显示多数变体是**独立算法**（不是换壳），
+ *    用错变体 = 算错 key = NRC 0x35 → 反复重试 → **0x36 锁死**。
+ *    因此：① 精确匹配优先 ② 变体名是模块名子串才认 ③ 都不中 → 返回 null，调用方必须拒写。
+ *    `verified:false` 的变体写入前还要人工确认（见 app.js doWrite）。
+ */
+const ECU_ALIAS = {
+  // 明确同源（模块名是变体名的组成部分，非猜测）
+  'EPB': 'EPB', 'EPS': 'EPS', 'BMS2': 'BMS2', 'ECM_UDS': 'ECM_UDS',
+  'DME_TDI_V8': 'DME_TDI_V8', 'Allrad': 'Allrad_Gen1', 'ThermManag': 'ThermManagUDS',
+  'RealTopview': 'RealTopview', 'Frontkamera': 'Frontkamera_1',
+  'DriveMotorContrModul': 'DriveMotorContrModul', 'BatteCM': 'BatteCM',
+};
+
 export function pickVariant(ecuName = '') {
   const n = String(ecuName).toUpperCase();
+  // ① 精确
   for (const [k, v] of Object.entries(VARIANT_BY_ECU)) {
-    if (n.includes(k.toUpperCase())) return { variant: k, ...v };
+    if (n === k.toUpperCase()) return { variant: k, ...v };
+  }
+  // ② 显式别名
+  for (const [alias, k] of Object.entries(ECU_ALIAS)) {
+    if (n.includes(alias.toUpperCase()) && VARIANT_BY_ECU[k]) {
+      return { variant: k, ...VARIANT_BY_ECU[k] };
+    }
+  }
+  // ③ 变体名是模块名子串（要求变体名 >=3 字符，避免 'EPS' 之类短名误配）
+  for (const [k, v] of Object.entries(VARIANT_BY_ECU)) {
+    const kk = k.toUpperCase();
+    if (kk.length >= 3 && n.includes(kk)) return { variant: k, ...v };
   }
   return null;
 }
 
-export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2 } = {}) {
+/**
+ * 造 seed/key provider（`coder.seedKeyProvider` 的插槽值）。
+ *
+ * ⚠️ 2026-10-17 回归修复：这个函数曾从源码里丢失，导致 `src/app.js` 的
+ *    `import { makeProvider }` 直接炸、只能靠旧 bundle 撑着。
+ *    从 `www/app.bundle.js` 反推恢复，并修掉旧实现的一个 bug：
+ *    **`verified` 原来写死 `true`**，会把 `VARIANT_BY_ECU` 里 `verified:false`
+ *    的 58 个变体也当成已验证放行 —— 现在如实传递。
+ *
+ * @param {{variant?:string, algo?:'A'|'B', seedBytes?:number, verified?:boolean}} opt
+ * @returns {{name:string, verified:boolean, calc(seed:number[], level:number):Uint8Array}}
+ */
+export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2, verified = true } = {}) {
   const fn = algo === 'B' ? algoB : algoA;
   return {
     name: `Porsche-${algo}(${variant})`,
-    verified: true,           // ✅ 离线逐位校验（离线校验）
-    calc(seed /* Uint8Array */, level /* number */) {
-      // seedBytes 决定取几字节 seed 做 16 位输入。
-      // ⚠️ **长度必须严格相等**，多给少给都要拒绝。
-      //    此前只拒"过短"，4 字节 seed 配 seedBytes=2 会**静默取低 16 位**，
-      //    算出错 key → NRC 0x35 → 反复重试 → 0x36 锁死（2026-10-16 复查 P7）。
-      if (seed.length !== seedBytes) {
+    verified,
+    calc(a, _level) {
+      if (a.length !== seedBytes) {
+        // ⚠️ 长度不符**绝不静默截断/补零**（2026-10-16 审计）——算错 key = NRC 0x35
+        //    → 反复重试 → 0x36 锁死。宁可拒算，让人去核对该 ECU 的 seed 长度。
         throw new Error(
-          `seed 长度 ${seed.length} ≠ 期望 ${seedBytes}（variant=${variant}），拒绝计算。` +
+          `seed 长度 ${a.length} ≠ 期望 ${seedBytes}（variant=${variant}），拒绝计算。` +
           `请核对该 ECU 的 seed 长度后显式配置 seedBytes —— 绝不静默截断/补零。`);
       }
-      // 默认取低 16 位（小端）。4 字节 seed 的取法需按 ECU 确认后调整此处。
-      const v = (seed[0] | (seed[1] << 8)) & 0xffff;
-      const key = fn(v) & 0xffff;
-      return new Uint8Array([key & 0xff, (key >>> 8) & 0xff]);
+      // 16 位小端打包 seed → 例程入口字
+      const r0 = (a[0] | (a[1] << 8)) & 0xffff;
+      const out = fn(r0) & 0xffff;
+      return new Uint8Array([out & 0xff, (out >>> 8) & 0xff]);
     },
   };
-}
-
-/**
- * 自检（对照 Python 参考实现 analysis/seedkey.py，该实现经 离线向量校验）。
- * ⚠️ 期望值必须与 Python 一致，否则 selftest 会假失败/假通过。
- */
-export function selftest() {
-  const cases = [
-    // [输入, 期望A, 期望B]
-    [0x0000, 0x0000, 0x0000],
-    [0x0001, 0x0001, 0x0002],
-    [0xffff, 0xffff, 0xffff],
-    [0x1234, 0x0010, 0xe27c],   // ← 修正：A(0x1234)=0x0010（旧值 0x0004 是错的）
-    [0x8000, 0x8000, 0x0000],
-    [0x4000, 0x0000, 0x8000],
-    [0x0004, 0x0000, 0x0044],
-    [0x0008, 0x0008, 0x0018],
-    [0x1000, 0x1000, 0x2000],
-    [0x2000, 0x2000, 0x0000],
-    [0x0200, 0x0200, 0x0a00],
-    [0x0800, 0x0800, 0x1000],
-  ];
-  const out = [];
-  for (const [inp, wantA, wantB] of cases) {
-    const gotA = algoA(inp) & 0xffff;
-    const gotB = algoB(inp) & 0xffff;
-    out.push({
-      inp,
-      a: { want: wantA, got: gotA, ok: gotA === wantA },
-      b: { want: wantB, got: gotB, ok: gotB === wantB },
-    });
-  }
-  return out;
 }

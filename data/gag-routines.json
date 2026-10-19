@@ -1,0 +1,1357 @@
+{
+ "note": "431 COMMAND.GAG 实测例程表（3139 条请求里的 0x31 全集）。子功能语义因例程而异，不是统一的 1/2/3。",
+ "subFuncMeaning": {
+  "0x01": "startRoutine",
+  "0x02": "stopRoutine",
+  "0x03": "requestRoutineResults",
+  "0x04": "?0x04",
+  "0x06": "?0x06",
+  "0x0B": "?0x0B",
+  "0x10": "?0x10",
+  "0xB8": "厂商扩展B8",
+  "0xB9": "厂商扩展B9",
+  "0xBA": "厂商扩展BA",
+  "0xBB": "厂商扩展BB"
+ },
+ "count": 79,
+ "routines": {
+  "0x0000": [
+   {
+    "sub": "0xB9",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0001": [
+   {
+    "sub": "0xB8",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0005": [
+   {
+    "sub": "0x01",
+    "paramsLen": 2,
+    "params": "01 00"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 2,
+    "params": "02 00"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 2,
+    "params": "03 05"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 2,
+    "params": "04 05"
+   }
+  ],
+  "0x0016": [
+   {
+    "sub": "0x0B",
+    "paramsLen": 2,
+    "params": "FF 06"
+   }
+  ],
+  "0x0102": [
+   {
+    "sub": "0xB9",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0103": [
+   {
+    "sub": "0xB8",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 2,
+    "params": "00 00"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 1E 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "02 DA 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "00 19"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "3C"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "00 13"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "01 6D"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "03"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "09"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "02"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "00 00"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "2B"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "00 1E"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "2C"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "02 DA"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "29"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "01"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 00 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 13 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "01 6D 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 20 00 00 00 00 20 00"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 00 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "14"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "38"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "28"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "00 00"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 00 00 00 06 59 00 03"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 1,
+    "params": "01"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 2,
+    "params": "00 64"
+   },
+   {
+    "sub": "0xBB",
+    "paramsLen": 8,
+    "params": "00 64 00 00 07 00 00 03"
+   }
+  ],
+  "0x0107": [
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "01 55"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "03 9C"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 EB"
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "01 56"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "09 5E"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "00 3E"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "08 2C"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 DD"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "07 2A"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "07 2B"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "0B 60"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "06 A8"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "0A 1D"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 DC"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 D9"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "0B 5F"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 D6"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "03 8E"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "03 8A"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 DA"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "09 48"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "09 C2"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 D8"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "00 3D"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "03 DF"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "09 C3"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "09 46"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "0A 1E"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "00 9C"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "09 47"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 D5"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "05 E1"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "41 BD"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "49 91"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "4C 57"
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "42 95"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "48 58"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "48 5C"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "40 02"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "40 03"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "4C 13"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "41 E0"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "41 E1"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "22 59"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 80"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 81"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "02 30"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "26 32"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "42 AD"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "40 E6"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "4A 78"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 81"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "06 28"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "26 33"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "19 16"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "20 90"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "20 88"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 45"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "22 57"
+   },
+   {
+    "sub": "0xB9",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xBA",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 58"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "22 95"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "06 61"
+   },
+   {
+    "sub": "0xB8",
+    "paramsLen": 2,
+    "params": "04 80"
+   }
+  ],
+  "0x0214": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x0276": [
+   {
+    "sub": "0x02",
+    "paramsLen": 4,
+    "params": "06 F6 01 01"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 4,
+    "params": "0B 76 01 02"
+   },
+   {
+    "sub": "0x04",
+    "paramsLen": 10,
+    "params": "06 F6 01 01 0D D4 06 EA 01 01"
+   }
+  ],
+  "0x030F": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0315": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0318": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0319": [
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   }
+  ],
+  "0x032E": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0357": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0400": [
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x03",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0401": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0404": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0405": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x040A": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0412": [
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "04"
+   }
+  ],
+  "0x0414": [
+   {
+    "sub": "0x01",
+    "paramsLen": 4,
+    "params": "03 14 12 28"
+   }
+  ],
+  "0x0420": [
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0434": [
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0440": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0442": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "DD 04 05"
+   }
+  ],
+  "0x0450": [
+   {
+    "sub": "0x01",
+    "paramsLen": 4,
+    "params": "03 14 12 28"
+   }
+  ],
+  "0x045B": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "04 00 00"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0x0464": [
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "02"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "03"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "01"
+   }
+  ],
+  "0x0465": [
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "03"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "01"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 1,
+    "params": "02"
+   }
+  ],
+  "0x0466": [
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "01 13 24"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "02 12 F2"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "03 13 56"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "01 13 56"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 3,
+    "params": "02 13 56"
+   }
+  ],
+  "0x0600": [
+   {
+    "sub": "0x01",
+    "paramsLen": 5,
+    "params": "03 08 04 05 03"
+   }
+  ],
+  "0x06EA": [
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "0D D4 01 01"
+   }
+  ],
+  "0x06F6": [
+   {
+    "sub": "0x02",
+    "paramsLen": 4,
+    "params": "02 76 01 01"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 4,
+    "params": "0B 76 01 01"
+   },
+   {
+    "sub": "0x04",
+    "paramsLen": 10,
+    "params": "0B 76 01 01 0D D4 06 EA 01 01"
+   },
+   {
+    "sub": "0x04",
+    "paramsLen": 10,
+    "params": "02 76 01 01 0D D4 14 BE 01 01"
+   }
+  ],
+  "0x0714": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x0814": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x0914": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x0B76": [
+   {
+    "sub": "0x02",
+    "paramsLen": 4,
+    "params": "02 76 01 02"
+   },
+   {
+    "sub": "0x02",
+    "paramsLen": 4,
+    "params": "06 F6 01 01"
+   },
+   {
+    "sub": "0x04",
+    "paramsLen": 10,
+    "params": "06 F6 01 01 0D D4 14 BE 01 01"
+   }
+  ],
+  "0x0DD4": [
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "00 00 01 01"
+   },
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "00 00 01 01"
+   },
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "06 EA 01 01"
+   },
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "14 BE 01 01"
+   }
+  ],
+  "0x14BE": [
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "0D D4 01 01"
+   }
+  ],
+  "0x1BA8": [
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "0D D4 01 01"
+   },
+   {
+    "sub": "0x03",
+    "paramsLen": 4,
+    "params": "0D D4 01 01"
+   }
+  ],
+  "0x2314": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x2414": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x2501": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x2614": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0x2814": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x3B14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x3D14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x3E14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x3F14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x4101": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x5002": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "80"
+   }
+  ],
+  "0x6514": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0x6600": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0x6714": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0x6814": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0x6F14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0x7214": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0x7300": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0x7F00": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0x8000": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0x8214": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0x8C00": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0x8D00": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0x9814": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0xA414": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0xAA14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0xB214": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0xB414": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0xB914": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "FF"
+   }
+  ],
+  "0xBB14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0xBE14": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   },
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "7F"
+   }
+  ],
+  "0xC900": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0xCB00": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0xCF00": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   }
+  ],
+  "0xD000": [
+   {
+    "sub": "0x10",
+    "paramsLen": 1,
+    "params": "00"
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 10,
+    "params": "00 02 11 11 11 11 11 11 11 11"
+   },
+   {
+    "sub": "0x03",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0xD001": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   },
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0xF000": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ],
+  "0xF021": [
+   {
+    "sub": "0x01",
+    "paramsLen": 0,
+    "params": ""
+   }
+  ]
+ }
+}

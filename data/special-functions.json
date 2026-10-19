@@ -11,7 +11,8 @@
       "imgSteps": [
         "TIP-OILFILL"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "乘客侧座椅位置记忆",
@@ -19,7 +20,8 @@
       "routineId": "0x0203",
       "risk": "medium",
       "img": "",
-      "systemId": 78
+      "systemId": 78,
+      "routineIdVerified": false
     },
     {
       "system": "驾驶员侧座椅记忆",
@@ -27,7 +29,8 @@
       "routineId": "0x0203",
       "risk": "medium",
       "img": "",
-      "systemId": 76
+      "systemId": 76,
+      "routineIdVerified": false
     },
     {
       "system": "PASM（保时捷主动悬架管理系统）",
@@ -36,7 +39,8 @@
       "risk": "high",
       "img": "",
       "systemAliasFrom": "保时捷主动悬挂管理系统",
-      "systemId": 34
+      "systemId": 34,
+      "routineIdVerified": false
     },
     {
       "system": "PASM（保时捷主动悬架管理系统）",
@@ -49,7 +53,8 @@
       "imgSteps": [
         "HEIGHT_DIMENSION_01"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "PASM（保时捷主动悬架管理系统）",
@@ -58,7 +63,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "保时捷主动悬挂管理系统",
-      "systemId": 34
+      "systemId": 34,
+      "routineIdVerified": false
     },
     {
       "system": "PASM（保时捷主动悬架管理系统）",
@@ -67,7 +73,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "保时捷主动悬挂管理系统",
-      "systemId": 34
+      "systemId": 34,
+      "routineIdVerified": false
     },
     {
       "system": "ESP/PSM(电控稳定系统)",
@@ -76,7 +83,8 @@
       "risk": "high",
       "img": "",
       "systemAliasFrom": "保时捷稳定管理系统",
-      "systemId": 5
+      "systemId": 5,
+      "routineIdVerified": false
     },
     {
       "system": "PCM（保时捷通信管理系统）",
@@ -85,7 +93,8 @@
       "risk": "low",
       "img": "",
       "systemAliasFrom": "保时捷通讯管理系统",
-      "systemId": 10
+      "systemId": 10,
+      "routineIdVerified": false
     },
     {
       "system": "PCM（保时捷通信管理系统）",
@@ -94,7 +103,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "保时捷通讯管理系统",
-      "systemId": 10
+      "systemId": 10,
+      "routineIdVerified": false
     },
     {
       "system": "PCM（保时捷通信管理系统）",
@@ -103,7 +113,8 @@
       "risk": "high",
       "img": "",
       "systemAliasFrom": "保时捷通讯管理系统",
-      "systemId": 10
+      "systemId": 10,
+      "routineIdVerified": false
     },
     {
       "system": "前端电子设备",
@@ -111,7 +122,8 @@
       "routineId": "0x0305",
       "risk": "medium",
       "img": "",
-      "systemId": 32
+      "systemId": 32,
+      "routineIdVerified": false
     },
     {
       "system": "前端电子设备",
@@ -125,7 +137,8 @@
         "HEADLIGHT_ADJUST-02",
         "HEADLIGHT_ADJUST-03"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "前端电子设备",
@@ -133,7 +146,8 @@
       "routineId": "0x0307",
       "risk": "low",
       "img": "",
-      "systemId": 32
+      "systemId": 32,
+      "routineIdVerified": false
     },
     {
       "system": "ECM/DME(发动机控制模块)",
@@ -142,7 +156,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "发动机",
-      "systemId": 1
+      "systemId": 1,
+      "routineIdVerified": false
     },
     {
       "system": "组合仪表",
@@ -150,7 +165,8 @@
       "routineId": "0x0309",
       "risk": "high",
       "img": "",
-      "systemId": 8
+      "systemId": 8,
+      "routineIdVerified": false
     },
     {
       "system": "组合仪表",
@@ -158,7 +174,8 @@
       "routineId": "0x030A",
       "risk": "medium",
       "img": "",
-      "systemId": 8
+      "systemId": 8,
+      "routineIdVerified": false
     },
     {
       "system": "网关",
@@ -166,7 +183,8 @@
       "routineId": "0x030B",
       "risk": "low",
       "img": "",
-      "systemId": 9
+      "systemId": 9,
+      "routineIdVerified": false
     },
     {
       "system": "车道变换辅助系统，右侧（主设备）",
@@ -175,7 +193,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "车道变换辅助系统，右侧(主设备)",
-      "systemId": 95
+      "systemId": 95,
+      "routineIdVerified": false
     },
     {
       "system": "车道变换辅助系统，左侧（从动设备）",
@@ -184,7 +203,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "车道变换辅助系统，左侧(从动设备)",
-      "systemId": 96
+      "systemId": 96,
+      "routineIdVerified": false
     },
     {
       "system": "转向盘电子设备",
@@ -192,7 +212,8 @@
       "routineId": "0x030D",
       "risk": "low",
       "img": "",
-      "systemId": 54
+      "systemId": 54,
+      "routineIdVerified": false
     },
     {
       "system": "转向盘电子设备",
@@ -200,7 +221,8 @@
       "routineId": "0x030E",
       "risk": "medium",
       "img": "",
-      "systemId": 54
+      "systemId": 54,
+      "routineIdVerified": false
     },
     {
       "system": "驻车制动器",
@@ -208,7 +230,8 @@
       "routineId": "0x0310",
       "risk": "high",
       "img": "",
-      "systemId": 50
+      "systemId": 50,
+      "routineIdVerified": false
     },
     {
       "system": "驻车制动器",
@@ -216,7 +239,8 @@
       "routineId": "0x0311",
       "risk": "medium",
       "img": "",
-      "systemId": 50
+      "systemId": 50,
+      "routineIdVerified": false
     },
     {
       "system": "驻车制动器",
@@ -224,7 +248,8 @@
       "routineId": "0x0312",
       "risk": "medium",
       "img": "",
-      "systemId": 50
+      "systemId": 50,
+      "routineIdVerified": false
     },
     {
       "system": "驻车制动器",
@@ -232,7 +257,8 @@
       "routineId": "0x0313",
       "risk": "high",
       "img": "",
-      "systemId": 50
+      "systemId": 50,
+      "routineIdVerified": false
     },
     {
       "system": "驻车制动器",
@@ -240,7 +266,8 @@
       "routineId": "0x0314",
       "risk": "high",
       "img": "",
-      "systemId": 50
+      "systemId": 50,
+      "routineIdVerified": false
     },
     {
       "system": "ECM/DME(发动机控制模块)",
@@ -252,7 +279,8 @@
       "imgSteps": [
         "DME-BLEEDING_COOLING_992"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "ECM/DME(发动机控制模块)",
@@ -264,7 +292,8 @@
       "imgSteps": [
         "DME-RELEASE_STUCK_CLUTCH"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -276,7 +305,8 @@
       "imgSteps": [
         "AC-COMPRESS"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -288,7 +318,8 @@
       "imgSteps": [
         "AC-FLAP"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "SRS(安全气囊)",
@@ -300,7 +331,8 @@
       "imgSteps": [
         "AIRBAG-1"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "SRS(安全气囊)",
@@ -312,7 +344,8 @@
       "imgSteps": [
         "AIRBAG-RGS"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "全轮驱动",
@@ -324,7 +357,8 @@
       "imgSteps": [
         "ALLRAD-LABEL_CAJUN"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "网关",
@@ -336,7 +370,8 @@
       "imgSteps": [
         "BCM2_CONFIG_KEY"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "网关",
@@ -348,7 +383,8 @@
       "imgSteps": [
         "CAYENNE-92A-GATEWAY-TEACH01"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "网关",
@@ -360,7 +396,8 @@
       "imgSteps": [
         "SPEC-GATEW-DRIVERCARDS-01"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "平视显示器",
@@ -372,7 +409,8 @@
       "imgSteps": [
         "9YA_HUD_CALIBRATION_TOOL"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "水平高度控制/PASM",
@@ -384,7 +422,8 @@
       "imgSteps": [
         "HEIGHT_DIMENSION_01"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "灯光电子",
@@ -398,8 +437,10 @@
         "HEADLIGHT_ADJUST-03"
       ],
       "imgDir": "SPECFUNPIC/",
-      "systemId": 0,
-      "resolvedFrom": "LEC（灯光电子）—— 内置例程名实证：CAY92A_FHBA_Calibration / MACAN_LEC_Calibration / PAN970_LEC_Height_Sensor_System_Calibration"
+      "systemId": null,
+      "resolvedFrom": "LEC（灯光电子）—— 内置例程名实证：CAY92A_FHBA_Calibration / MACAN_LEC_Calibration / PAN970_LEC_Height_Sensor_System_Calibration",
+      "routineIdVerified": false,
+      "systemNote": "LEC 灯光电子 —— systemCatalog 无同名项；最近候选 ecu=184/185 左右大灯灯光调节(SSL)。由 .so 例程名实证：MACAN_LEC_Calibration / PAN970_LEC_Height_Sensor_System_Calibration"
     },
     {
       "system": "AC(空调系统)",
@@ -423,7 +464,8 @@
         "TME-CLEAN_REFRIGERANT-12",
         "TME-CLEAN_REFRIGERANT-13"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -436,7 +478,8 @@
         "TME-COMPRESS-1",
         "TME-COMPRESS-2"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -448,7 +491,8 @@
       "imgSteps": [
         "TME-COOL_CURCUIT"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -460,7 +504,8 @@
       "imgSteps": [
         "TME-EXPANSION-992"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -472,7 +517,8 @@
       "imgSteps": [
         "TME-FUNTEST"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "AC(空调系统)",
@@ -484,7 +530,8 @@
       "imgSteps": [
         "TME-TEACH_PT_992"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "Tiptronic 变速器控制",
@@ -496,7 +543,8 @@
       "imgSteps": [
         "PDK_VTG_ALLRAD"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "通讯连接系统",
@@ -509,8 +557,10 @@
         "SPEC-CONNECT-DFM-02"
       ],
       "imgDir": "SPECFUNPIC/",
-      "systemId": 0,
-      "resolvedFrom": "Connect System —— 内置例程名实证：E3/G3/J1_Connect_System_Deactivate_Flight_Mode（图片 SPEC-CONNECT-DFM 即 Connect System）"
+      "systemId": null,
+      "resolvedFrom": "Connect System —— 内置例程名实证：E3/G3/J1_Connect_System_Deactivate_Flight_Mode（图片 SPEC-CONNECT-DFM 即 Connect System）",
+      "routineIdVerified": false,
+      "systemNote": "Connect System —— systemCatalog 无同名项。由 .so 例程名实证：E3/G3/J1_Connect_System_Deactivate_Flight_Mode"
     },
     {
       "system": "前端电子设备",
@@ -522,7 +572,8 @@
       "imgSteps": [
         "9PA_MEASURINGPOINT_FRONTAXLE"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "后端电子设备",
@@ -534,7 +585,8 @@
       "imgSteps": [
         "9PA_MEASURINGPOINT_REARAXLE"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "动力机组支承",
@@ -547,7 +599,8 @@
         "PANAMERA-971-TME-FTEST-01",
         "PANAMERA-971-TME-FTEST-02"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "动力机组支承",
@@ -559,7 +612,8 @@
       "imgSteps": [
         "PANAMERA-971-TME-EXPANSION01"
       ],
-      "imgDir": "SPECFUNPIC/"
+      "imgDir": "SPECFUNPIC/",
+      "routineIdVerified": false
     },
     {
       "system": "后端电子设备",
@@ -567,7 +621,8 @@
       "routineId": "0x0340",
       "risk": "medium",
       "img": "",
-      "systemId": 35
+      "systemId": 35,
+      "routineIdVerified": false
     },
     {
       "system": "后端电子设备",
@@ -575,7 +630,8 @@
       "routineId": "0x0341",
       "risk": "medium",
       "img": "",
-      "systemId": 35
+      "systemId": 35,
+      "routineIdVerified": false
     },
     {
       "system": "后端电子设备",
@@ -583,7 +639,8 @@
       "routineId": "0x0342",
       "risk": "low",
       "img": "",
-      "systemId": 35
+      "systemId": 35,
+      "routineIdVerified": false
     },
     {
       "system": "后端电子设备",
@@ -591,7 +648,8 @@
       "routineId": "0x0343",
       "risk": "medium",
       "img": "",
-      "systemId": 35
+      "systemId": 35,
+      "routineIdVerified": false
     },
     {
       "system": "后端电子设备",
@@ -599,7 +657,8 @@
       "routineId": "0x0344",
       "risk": "medium",
       "img": "",
-      "systemId": 35
+      "systemId": 35,
+      "routineIdVerified": false
     },
     {
       "system": "前端电子设备",
@@ -607,7 +666,8 @@
       "routineId": "0x0345",
       "risk": "medium",
       "img": "",
-      "systemId": 32
+      "systemId": 32,
+      "routineIdVerified": false
     },
     {
       "system": "前端电子设备",
@@ -615,7 +675,8 @@
       "routineId": "0x0346",
       "risk": "low",
       "img": "",
-      "systemId": 32
+      "systemId": 32,
+      "routineIdVerified": false
     },
     {
       "system": "前端电子设备",
@@ -623,7 +684,8 @@
       "routineId": "0x0347",
       "risk": "medium",
       "img": "",
-      "systemId": 32
+      "systemId": 32,
+      "routineIdVerified": false
     },
     {
       "system": "可折叠顶篷",
@@ -631,7 +693,8 @@
       "routineId": "0x0348",
       "risk": "high",
       "img": "",
-      "systemId": 39
+      "systemId": 39,
+      "routineIdVerified": false
     },
     {
       "system": "可折叠顶篷",
@@ -639,7 +702,8 @@
       "routineId": "0x0349",
       "risk": "high",
       "img": "",
-      "systemId": 39
+      "systemId": 39,
+      "routineIdVerified": false
     },
     {
       "system": "座椅记忆",
@@ -647,7 +711,8 @@
       "routineId": "0x034A",
       "risk": "medium",
       "img": "",
-      "systemId": 38
+      "systemId": 38,
+      "routineIdVerified": false
     },
     {
       "system": "EPS(电动助力转向系统)",
@@ -655,7 +720,8 @@
       "routineId": "0x034B",
       "risk": "high",
       "img": "",
-      "systemId": 69
+      "systemId": 69,
+      "routineIdVerified": false
     },
     {
       "system": "ESP/PSM(电控稳定系统)",
@@ -663,7 +729,8 @@
       "routineId": "0x034C",
       "risk": "high",
       "img": "",
-      "systemId": 5
+      "systemId": 5,
+      "routineIdVerified": false
     },
     {
       "system": "轮胎压力监控 （TPM）",
@@ -672,7 +739,8 @@
       "risk": "medium",
       "img": "",
       "systemAliasFrom": "轮胎压力监控",
-      "systemId": 55
+      "systemId": 55,
+      "routineIdVerified": false
     },
     {
       "system": "组合仪表",
@@ -680,7 +748,8 @@
       "routineId": "0x034E",
       "risk": "medium",
       "img": "",
-      "systemId": 8
+      "systemId": 8,
+      "routineIdVerified": false
     }
   ],
   "source": {
@@ -688,6 +757,7 @@
     "authoritativeSource": "特殊功能配置文件 [SYS_SPEC]",
     "verifiedAgainstSource": false,
     "picDir": "SPECFUNPIC（研究目录，不进发版包）",
-    "picModel": "imgSteps = 同一功能的分步图序列（按序号）；img 保留为首步"
+    "picModel": "imgSteps = 同一功能的分步图序列（按序号）；img 保留为首步",
+    "routineIdNote": "⚠️ routineId 是手工分配的菜单索引（0x200-0x34E 连续块），与实测例程 ID (GAG 79 个唯一 RID，如 0x0107/0x0103) 几乎零重叠（交集仅 1 个）。执行前必须真车核对。"
   }
 }

@@ -1,0 +1,3811 @@
+{
+  "schemaVersion": 4,
+  "source": "PORSCHE_DRIVELINKS.BIN 三层目录 + PORSCHE_SYS_DATA.BIN 表B(sysId→internal) + 表A(internal→CAN)",
+  "note": "internal→CAN 一对多。proven=真机锚点；table-unique=proto 过滤后唯一；candidate=多候选需消歧；needsProbe=走 431 探测协议",
+  "probeRule": "blockKey ∈ {0x0B40,0x0B41,0x2040,0x2041,0x2340..0x2345} → 发探测命令，按响应 flags 丢 2/3 条候选",
+  "entries": [
+    {
+      "sysId": "0x0501",
+      "sysIdDec": 1281,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0146",
+        "0x014C",
+        "0x014D",
+        "0x014E",
+        "0x014F",
+        "0x0150",
+        "0x0147",
+        "0x0148"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0502",
+      "sysIdDec": 1282,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0243"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0505",
+      "sysIdDec": 1285,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0540",
+        "0x0541",
+        "0x0542",
+        "0x0543"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0507",
+      "sysIdDec": 1287,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0740",
+        "0x0741",
+        "0x0742",
+        "0x0743"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0508",
+      "sysIdDec": 1288,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0843",
+        "0x0844",
+        "0x0845"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x050B",
+      "sysIdDec": 1291,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": true,
+      "probeCmd": [
+        "01 04 21 01 00 01",
+        "01 04 21 01 00 01"
+      ],
+      "blockKeys": [
+        "0x0B40",
+        "0x0B41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x050C",
+      "sysIdDec": 1292,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0C40",
+        "0x0C41",
+        "0x0C42"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0511",
+      "sysIdDec": 1297,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1140"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0512",
+      "sysIdDec": 1298,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1240",
+        "0x1241"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x051D",
+      "sysIdDec": 1309,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D40",
+        "0x1D41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x051E",
+      "sysIdDec": 1310,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E40",
+        "0x1E41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x051F",
+      "sysIdDec": 1311,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F40",
+        "0x1F41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0520",
+      "sysIdDec": 1312,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": true,
+      "probeCmd": [
+        "01 04 21 01 01 02",
+        "01 04 21 01 01 02"
+      ],
+      "blockKeys": [
+        "0x2040",
+        "0x2041"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0522",
+      "sysIdDec": 1314,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2240"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0523",
+      "sysIdDec": 1315,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": true,
+      "probeCmd": [
+        "01 04 21 01 00 01",
+        "01 04 21 01 00 01",
+        "01 04 21 01 00 01"
+      ],
+      "blockKeys": [
+        "0x2342",
+        "0x2343",
+        "0x2345"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0525",
+      "sysIdDec": 1317,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2540"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0526",
+      "sysIdDec": 1318,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2640"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0527",
+      "sysIdDec": 1319,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2740",
+        "0x2741"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0528",
+      "sysIdDec": 1320,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2840"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0601",
+      "sysIdDec": 1537,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0140",
+        "0x0141",
+        "0x0151",
+        "0x0142",
+        "0x0143",
+        "0x0144",
+        "0x0145"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0602",
+      "sysIdDec": 1538,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0242",
+        "0x0247",
+        "0x0244",
+        "0x0245",
+        "0x0246"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0605",
+      "sysIdDec": 1541,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0540",
+        "0x0541",
+        "0x0542",
+        "0x0543"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0607",
+      "sysIdDec": 1543,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0740",
+        "0x0741",
+        "0x0742",
+        "0x0743"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0608",
+      "sysIdDec": 1544,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0840",
+        "0x0841",
+        "0x0842"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x060B",
+      "sysIdDec": 1547,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": true,
+      "probeCmd": [
+        "01 04 21 01 00 01",
+        "01 04 21 01 00 01"
+      ],
+      "blockKeys": [
+        "0x0B40",
+        "0x0B41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x060C",
+      "sysIdDec": 1548,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0C40",
+        "0x0C41",
+        "0x0C42"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0611",
+      "sysIdDec": 1553,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1140"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0612",
+      "sysIdDec": 1554,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1240",
+        "0x1241"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x061D",
+      "sysIdDec": 1565,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D40",
+        "0x1D41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x061E",
+      "sysIdDec": 1566,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E40",
+        "0x1E41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x061F",
+      "sysIdDec": 1567,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F40",
+        "0x1F41"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0620",
+      "sysIdDec": 1568,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": true,
+      "probeCmd": [
+        "01 04 21 01 01 02",
+        "01 04 21 01 01 02"
+      ],
+      "blockKeys": [
+        "0x2040",
+        "0x2041"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0622",
+      "sysIdDec": 1570,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2240"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0623",
+      "sysIdDec": 1571,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": true,
+      "probeCmd": [
+        "01 04 21 01 00 01",
+        "01 04 21 01 00 01",
+        "01 04 21 01 00 01"
+      ],
+      "blockKeys": [
+        "0x2340",
+        "0x2341",
+        "0x2344"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0626",
+      "sysIdDec": 1574,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2640"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B01",
+      "sysIdDec": 2817,
+      "tx": "0x7E0",
+      "rx": "0x7E8",
+      "confidence": "proven",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0160",
+        "0x0161",
+        "0x0162",
+        "0x0163",
+        "0x0164",
+        "0x0165",
+        "0x0166",
+        "0x0167"
+      ],
+      "proto": "UDS",
+      "attr": "0x0E0C",
+      "source": "real-vehicle-anchor (ECU-ADDRESSING-20261019.md §2)",
+      "system": "DME"
+    },
+    {
+      "sysId": "0x0B02",
+      "sysIdDec": 2818,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0260",
+        "0x0261",
+        "0x0262"
+      ],
+      "system": "Tiptronic 变速器控制"
+    },
+    {
+      "sysId": "0x0B04",
+      "sysIdDec": 2820,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0460",
+        "0x0461"
+      ],
+      "system": "安全气囊"
+    },
+    {
+      "sysId": "0x0B05",
+      "sysIdDec": 2821,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0560",
+        "0x0561",
+        "0x0562",
+        "0x0563",
+        "0x0564",
+        "0x0565"
+      ],
+      "system": "ESP/PSM(电控稳定系统)"
+    },
+    {
+      "sysId": "0x0B07",
+      "sysIdDec": 2823,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0761",
+        "0x0762",
+        "0x0763",
+        "0x0764",
+        "0x0765",
+        "0x0766",
+        "0x0767",
+        "0x0768"
+      ],
+      "system": "AC(空调系统)"
+    },
+    {
+      "sysId": "0x0B08",
+      "sysIdDec": 2824,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0860",
+        "0x0861",
+        "0x0862",
+        "0x0863",
+        "0x0864",
+        "0x0865",
+        "0x0866",
+        "0x0867"
+      ],
+      "system": "IC(仪表)"
+    },
+    {
+      "sysId": "0x0B09",
+      "sysIdDec": 2825,
+      "tx": "0x710",
+      "rx": "0x77A",
+      "confidence": "proven",
+      "internals": [
+        "0x01C6"
+      ],
+      "candidateCount": 26,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0960",
+        "0x0961",
+        "0x0962",
+        "0x0963",
+        "0x0964",
+        "0x0965",
+        "0x0966",
+        "0x0967"
+      ],
+      "proto": "KWP",
+      "attr": "0x0C02",
+      "source": "real-vehicle-anchor (ECU-ADDRESSING-20261019.md §2)",
+      "system": "Gateway"
+    },
+    {
+      "sysId": "0x0B12",
+      "sysIdDec": 2834,
+      "tx": "0x7CF",
+      "rx": "0x7D7",
+      "confidence": "proven",
+      "internals": [
+        "0x01CA"
+      ],
+      "candidateCount": 18,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1260",
+        "0x1261",
+        "0x1262"
+      ],
+      "proto": "UDS",
+      "attr": "0x0C02",
+      "source": "real-vehicle-anchor (ECU-ADDRESSING-20261019.md §2)",
+      "system": "PDC"
+    },
+    {
+      "sysId": "0x0B13",
+      "sysIdDec": 2835,
+      "tx": "0x7D0",
+      "rx": "0x7D8",
+      "confidence": "proven",
+      "internals": [
+        "0x01C7",
+        "0x01CB"
+      ],
+      "candidateCount": 106,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1360",
+        "0x1361",
+        "0x1362",
+        "0x1363",
+        "0x1364",
+        "0x1365"
+      ],
+      "proto": "UDS",
+      "attr": "0x0C02",
+      "source": "real-vehicle-anchor (ECU-ADDRESSING-20261019.md §2)",
+      "system": "PASM"
+    },
+    {
+      "sysId": "0x0B1D",
+      "sysIdDec": 2845,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [
+        "0x01CE"
+      ],
+      "candidateCount": 42,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D60",
+        "0x1D61",
+        "0x1D62",
+        "0x1D63",
+        "0x1D64"
+      ],
+      "system": "附加仪表 - 时钟"
+    },
+    {
+      "sysId": "0x0B1E",
+      "sysIdDec": 2846,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [
+        "0x01CF"
+      ],
+      "candidateCount": 22,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E60",
+        "0x1E61",
+        "0x1E62"
+      ],
+      "system": "驾驶员侧车门"
+    },
+    {
+      "sysId": "0x0B1F",
+      "sysIdDec": 2847,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [
+        "0x01CF"
+      ],
+      "candidateCount": 22,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F60",
+        "0x1F61",
+        "0x1F62"
+      ],
+      "system": "乘客侧车门"
+    },
+    {
+      "sysId": "0x0B20",
+      "sysIdDec": 2848,
+      "tx": "0x7D1",
+      "rx": "0x7D9",
+      "confidence": "proven",
+      "internals": [
+        "0x01C7"
+      ],
+      "candidateCount": 96,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2060",
+        "0x2061",
+        "0x2062",
+        "0x2063",
+        "0x2064",
+        "0x2065",
+        "0x2066",
+        "0x2067"
+      ],
+      "proto": "UDS",
+      "attr": "0x0C02",
+      "source": "real-vehicle-anchor (ECU-ADDRESSING-20261019.md §2)",
+      "system": "BCM_vorne"
+    },
+    {
+      "sysId": "0x0B23",
+      "sysIdDec": 2851,
+      "tx": "0x74F",
+      "rx": "0x757",
+      "confidence": "proven",
+      "internals": [
+        "0x01C6"
+      ],
+      "candidateCount": 26,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2360",
+        "0x2361",
+        "0x2362",
+        "0x2363",
+        "0x2364"
+      ],
+      "proto": "UDS",
+      "attr": "0x0F05",
+      "source": "real-vehicle-anchor (ECU-ADDRESSING-20261019.md §2)",
+      "system": "BCM_hinten"
+    },
+    {
+      "sysId": "0x0B2B",
+      "sysIdDec": 2859,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2B60",
+        "0x2B61",
+        "0x2B62"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B2F",
+      "sysIdDec": 2863,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2F61",
+        "0x2F62"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B30",
+      "sysIdDec": 2864,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3061",
+        "0x3062"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B32",
+      "sysIdDec": 2866,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3260",
+        "0x3261"
+      ],
+      "system": "驻车制动器"
+    },
+    {
+      "sysId": "0x0B34",
+      "sysIdDec": 2868,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3460",
+        "0x3461"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B35",
+      "sysIdDec": 2869,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3560",
+        "0x3561",
+        "0x3562"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B36",
+      "sysIdDec": 2870,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3660",
+        "0x3661",
+        "0x3662",
+        "0x3663"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B37",
+      "sysIdDec": 2871,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3761"
+      ],
+      "system": "轮胎压力监控 （TPM）"
+    },
+    {
+      "sysId": "0x0B40",
+      "sysIdDec": 2880,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4060",
+        "0x4061",
+        "0x4062",
+        "0x4063",
+        "0x4064",
+        "0x4065"
+      ],
+      "system": "CCS/ACC(巡航控制系统)"
+    },
+    {
+      "sysId": "0x0B41",
+      "sysIdDec": 2881,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4160",
+        "0x4162"
+      ],
+      "system": "外部放大器"
+    },
+    {
+      "sysId": "0x0B42",
+      "sysIdDec": 2882,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4260",
+        "0x4261"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B43",
+      "sysIdDec": 2883,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4360",
+        "0x4361",
+        "0x4362"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B45",
+      "sysIdDec": 2885,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4560",
+        "0x4561",
+        "0x4562"
+      ],
+      "system": "EPS(电动助力转向系统)"
+    },
+    {
+      "sysId": "0x0B46",
+      "sysIdDec": 2886,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4660",
+        "0x4662",
+        "0x4663",
+        "0x4664"
+      ],
+      "system": "PCM/CDR（通信管理/CD、收音机）"
+    },
+    {
+      "sysId": "0x0B48",
+      "sysIdDec": 2888,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4860"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B49",
+      "sysIdDec": 2889,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4960",
+        "0x4965"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B4A",
+      "sysIdDec": 2890,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4A60",
+        "0x4A61",
+        "0x4A62",
+        "0x4A63",
+        "0x4A64",
+        "0x4A65",
+        "0x4A66",
+        "0x4A67"
+      ],
+      "system": "前摄像头"
+    },
+    {
+      "sysId": "0x0B4B",
+      "sysIdDec": 2891,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4B60",
+        "0x4B61"
+      ],
+      "system": "电视调谐器"
+    },
+    {
+      "sysId": "0x0B4C",
+      "sysIdDec": 2892,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4C60",
+        "0x4C61",
+        "0x4C62"
+      ],
+      "system": "驾驶员侧座椅存储器"
+    },
+    {
+      "sysId": "0x0B4E",
+      "sysIdDec": 2894,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4E60",
+        "0x4E61",
+        "0x4E62"
+      ],
+      "system": "乘客侧座椅存储器"
+    },
+    {
+      "sysId": "0x0B4F",
+      "sysIdDec": 2895,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4F60",
+        "0x4F61",
+        "0x4F62"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0B50",
+      "sysIdDec": 2896,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5060",
+        "0x5061",
+        "0x5062"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C01",
+      "sysIdDec": 3073,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x018A",
+        "0x018B",
+        "0x018C",
+        "0x018D",
+        "0x018E",
+        "0x018F",
+        "0x0190",
+        "0x0191"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C02",
+      "sysIdDec": 3074,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0263",
+        "0x0264",
+        "0x0265",
+        "0x0266",
+        "0x0267",
+        "0x0268",
+        "0x0269",
+        "0x026A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C04",
+      "sysIdDec": 3076,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0463",
+        "0x0464"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C05",
+      "sysIdDec": 3077,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0566",
+        "0x0567",
+        "0x0568",
+        "0x0569",
+        "0x056A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C07",
+      "sysIdDec": 3079,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0770",
+        "0x0771",
+        "0x0772",
+        "0x0773",
+        "0x0774",
+        "0x0775",
+        "0x0776",
+        "0x0777"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C08",
+      "sysIdDec": 3080,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0869",
+        "0x086A",
+        "0x086B",
+        "0x086C",
+        "0x086D",
+        "0x086E",
+        "0x086F",
+        "0x0870"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C09",
+      "sysIdDec": 3081,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x096F",
+        "0x0970",
+        "0x0971",
+        "0x0972",
+        "0x0973",
+        "0x0974",
+        "0x0975",
+        "0x0976"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C12",
+      "sysIdDec": 3090,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1264",
+        "0x1265",
+        "0x1266",
+        "0x1267",
+        "0x1268",
+        "0x1269"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C13",
+      "sysIdDec": 3091,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1366",
+        "0x1367",
+        "0x1368",
+        "0x1369",
+        "0x136A",
+        "0x136B",
+        "0x136C",
+        "0x136D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C1D",
+      "sysIdDec": 3101,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D65",
+        "0x1D66",
+        "0x1D67",
+        "0x1D68",
+        "0x1D69"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C1E",
+      "sysIdDec": 3102,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E63",
+        "0x1E64"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C1F",
+      "sysIdDec": 3103,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F63",
+        "0x1F64"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C20",
+      "sysIdDec": 3104,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x206B",
+        "0x206C",
+        "0x206D",
+        "0x206E",
+        "0x206F",
+        "0x2070",
+        "0x2071",
+        "0x2072"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C23",
+      "sysIdDec": 3107,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2366",
+        "0x2367",
+        "0x2368",
+        "0x2369",
+        "0x236A",
+        "0x236B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C2B",
+      "sysIdDec": 3115,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2B64",
+        "0x2B65",
+        "0x2B66",
+        "0x2B67",
+        "0x2B68",
+        "0x2B69"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C2F",
+      "sysIdDec": 3119,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2F64",
+        "0x2F65"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C30",
+      "sysIdDec": 3120,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3064",
+        "0x3065"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C32",
+      "sysIdDec": 3122,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3263",
+        "0x3264"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C34",
+      "sysIdDec": 3124,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3464",
+        "0x3465",
+        "0x3466"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C36",
+      "sysIdDec": 3126,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3666",
+        "0x3667"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C37",
+      "sysIdDec": 3127,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3766"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C40",
+      "sysIdDec": 3136,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4067",
+        "0x4068",
+        "0x4069",
+        "0x406A",
+        "0x406B",
+        "0x406C"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C41",
+      "sysIdDec": 3137,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4164",
+        "0x4166"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C42",
+      "sysIdDec": 3138,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4262",
+        "0x4263",
+        "0x4264",
+        "0x4265"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C43",
+      "sysIdDec": 3139,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4364",
+        "0x4365",
+        "0x4366",
+        "0x4367"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C44",
+      "sysIdDec": 3140,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4460",
+        "0x4461"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C45",
+      "sysIdDec": 3141,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4564",
+        "0x4565",
+        "0x4566"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C46",
+      "sysIdDec": 3142,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4665",
+        "0x4667",
+        "0x4668",
+        "0x4669",
+        "0x466A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C48",
+      "sysIdDec": 3144,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4861"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C4A",
+      "sysIdDec": 3146,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4A68",
+        "0x4A72",
+        "0x4A73",
+        "0x4A74",
+        "0x4A75",
+        "0x4A76",
+        "0x4A77",
+        "0x4A78"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C4B",
+      "sysIdDec": 3147,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4B63",
+        "0x4B64"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C4C",
+      "sysIdDec": 3148,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4C64",
+        "0x4C65"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C4E",
+      "sysIdDec": 3150,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4E64",
+        "0x4E65"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C4F",
+      "sysIdDec": 3151,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4F63",
+        "0x4F64"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C50",
+      "sysIdDec": 3152,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5063",
+        "0x5064"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0C51",
+      "sysIdDec": 3153,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5162",
+        "0x5163",
+        "0x5164",
+        "0x5165"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D01",
+      "sysIdDec": 3329,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x01B5",
+        "0x01B6",
+        "0x01B7",
+        "0x01B8",
+        "0x01B9",
+        "0x01BA",
+        "0x01BB",
+        "0x01BC"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D02",
+      "sysIdDec": 3330,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0275",
+        "0x0276",
+        "0x0277",
+        "0x0278",
+        "0x0279",
+        "0x027A",
+        "0x027B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D04",
+      "sysIdDec": 3332,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0466",
+        "0x0467",
+        "0x0468",
+        "0x0469",
+        "0x046A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D05",
+      "sysIdDec": 3333,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x056C",
+        "0x056D",
+        "0x056E",
+        "0x056F",
+        "0x0570"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D07",
+      "sysIdDec": 3335,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x077E",
+        "0x077F",
+        "0x0780",
+        "0x0781",
+        "0x0782",
+        "0x0783",
+        "0x0784",
+        "0x0785"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D08",
+      "sysIdDec": 3336,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0874",
+        "0x0875",
+        "0x0876",
+        "0x0877",
+        "0x0878",
+        "0x0879",
+        "0x087A",
+        "0x087B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D09",
+      "sysIdDec": 3337,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0982",
+        "0x0983",
+        "0x0984",
+        "0x0985",
+        "0x0986",
+        "0x0987",
+        "0x0988",
+        "0x0989"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D12",
+      "sysIdDec": 3346,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x126C",
+        "0x126D",
+        "0x126E",
+        "0x1270",
+        "0x1271",
+        "0x1277"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D13",
+      "sysIdDec": 3347,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x136F",
+        "0x1370",
+        "0x1371",
+        "0x1375",
+        "0x1376",
+        "0x1377"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D1D",
+      "sysIdDec": 3357,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D6A",
+        "0x1D6B",
+        "0x1D6C",
+        "0x1D6D",
+        "0x1D6E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D1E",
+      "sysIdDec": 3358,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E66",
+        "0x1E67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D1F",
+      "sysIdDec": 3359,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F66",
+        "0x1F67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D20",
+      "sysIdDec": 3360,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2078",
+        "0x2079",
+        "0x207A",
+        "0x207B",
+        "0x207C",
+        "0x207D",
+        "0x207E",
+        "0x207F"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D23",
+      "sysIdDec": 3363,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x236D",
+        "0x236E",
+        "0x236F",
+        "0x2370",
+        "0x2371",
+        "0x2372",
+        "0x2373",
+        "0x2374"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D27",
+      "sysIdDec": 3367,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2761",
+        "0x2762",
+        "0x2763",
+        "0x2764"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D2F",
+      "sysIdDec": 3375,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2F69",
+        "0x2F6A",
+        "0x2F6B",
+        "0x2F6C",
+        "0x2F6D",
+        "0x2F6E",
+        "0x2F6F",
+        "0x2F70"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D30",
+      "sysIdDec": 3376,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3066",
+        "0x3067",
+        "0x3068",
+        "0x3069",
+        "0x306A",
+        "0x306B",
+        "0x306C",
+        "0x306D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D32",
+      "sysIdDec": 3378,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3266"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D36",
+      "sysIdDec": 3382,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3668",
+        "0x3669",
+        "0x366A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D37",
+      "sysIdDec": 3383,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x376B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D40",
+      "sysIdDec": 3392,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x406E",
+        "0x406F",
+        "0x4070",
+        "0x4071",
+        "0x4072",
+        "0x4073",
+        "0x4074"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D41",
+      "sysIdDec": 3393,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4168",
+        "0x416A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D44",
+      "sysIdDec": 3396,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4462",
+        "0x4463"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D45",
+      "sysIdDec": 3397,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4568",
+        "0x4569",
+        "0x456A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D46",
+      "sysIdDec": 3398,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x466B",
+        "0x466D",
+        "0x466E",
+        "0x466F",
+        "0x4670"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D4A",
+      "sysIdDec": 3402,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4A79",
+        "0x4A7A",
+        "0x4A7B",
+        "0x4A7C",
+        "0x4A7D",
+        "0x4A7E",
+        "0x4A7F",
+        "0x4A80"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D4B",
+      "sysIdDec": 3403,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4B66",
+        "0x4B67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D4C",
+      "sysIdDec": 3404,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4C67",
+        "0x4C68",
+        "0x4C69"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D4E",
+      "sysIdDec": 3406,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4E67",
+        "0x4E68",
+        "0x4E69"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0D51",
+      "sysIdDec": 3409,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x516C"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E01",
+      "sysIdDec": 3585,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x01B5",
+        "0x01B6",
+        "0x01B7",
+        "0x01B8",
+        "0x01B9",
+        "0x01BA",
+        "0x01BB",
+        "0x01BC"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E02",
+      "sysIdDec": 3586,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0275",
+        "0x0276",
+        "0x0277",
+        "0x0278",
+        "0x0279",
+        "0x027A",
+        "0x027B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E04",
+      "sysIdDec": 3588,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0466",
+        "0x0467",
+        "0x0468",
+        "0x0469",
+        "0x046A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E05",
+      "sysIdDec": 3589,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x056C",
+        "0x056D",
+        "0x056E",
+        "0x056F",
+        "0x0570"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E07",
+      "sysIdDec": 3591,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x077E",
+        "0x077F",
+        "0x0780",
+        "0x0781",
+        "0x0782",
+        "0x0783",
+        "0x0784",
+        "0x0785"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E08",
+      "sysIdDec": 3592,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0874",
+        "0x0875",
+        "0x0876",
+        "0x0877",
+        "0x0878",
+        "0x0879",
+        "0x087A",
+        "0x087B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E09",
+      "sysIdDec": 3593,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0982",
+        "0x0983",
+        "0x0984",
+        "0x0985",
+        "0x0986",
+        "0x0987",
+        "0x0988",
+        "0x0989"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E12",
+      "sysIdDec": 3602,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x126C",
+        "0x126D",
+        "0x126E",
+        "0x1270",
+        "0x1271",
+        "0x1277"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E13",
+      "sysIdDec": 3603,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x136F",
+        "0x1370",
+        "0x1371",
+        "0x1375",
+        "0x1376",
+        "0x1377"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E1D",
+      "sysIdDec": 3613,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D6A",
+        "0x1D6B",
+        "0x1D6C",
+        "0x1D6D",
+        "0x1D6E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E1E",
+      "sysIdDec": 3614,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E66",
+        "0x1E67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E1F",
+      "sysIdDec": 3615,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F66",
+        "0x1F67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E20",
+      "sysIdDec": 3616,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2078",
+        "0x2079",
+        "0x207A",
+        "0x207B",
+        "0x207C",
+        "0x207D",
+        "0x207E",
+        "0x207F"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E23",
+      "sysIdDec": 3619,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x236D",
+        "0x236E",
+        "0x236F",
+        "0x2370",
+        "0x2371",
+        "0x2372",
+        "0x2373",
+        "0x2374"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E27",
+      "sysIdDec": 3623,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2761",
+        "0x2762",
+        "0x2763",
+        "0x2764"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E2B",
+      "sysIdDec": 3627,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2B6A",
+        "0x2B6B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E2F",
+      "sysIdDec": 3631,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x2F69",
+        "0x2F6A",
+        "0x2F6B",
+        "0x2F6C",
+        "0x2F6D",
+        "0x2F6E",
+        "0x2F6F",
+        "0x2F70"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E30",
+      "sysIdDec": 3632,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3066",
+        "0x3067",
+        "0x3068",
+        "0x3069",
+        "0x306A",
+        "0x306B",
+        "0x306C",
+        "0x306D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E32",
+      "sysIdDec": 3634,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3266"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E36",
+      "sysIdDec": 3638,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3668",
+        "0x3669",
+        "0x366A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E37",
+      "sysIdDec": 3639,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x376B"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E40",
+      "sysIdDec": 3648,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x406E",
+        "0x406F",
+        "0x4070",
+        "0x4071",
+        "0x4072",
+        "0x4073",
+        "0x4074"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E41",
+      "sysIdDec": 3649,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4168",
+        "0x416A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E44",
+      "sysIdDec": 3652,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4462",
+        "0x4463"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E45",
+      "sysIdDec": 3653,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4568",
+        "0x4569",
+        "0x456A"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E46",
+      "sysIdDec": 3654,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x466B",
+        "0x466D",
+        "0x466E",
+        "0x466F",
+        "0x4670"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E4A",
+      "sysIdDec": 3658,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4A79",
+        "0x4A7A",
+        "0x4A7B",
+        "0x4A7C",
+        "0x4A7D",
+        "0x4A7E",
+        "0x4A7F",
+        "0x4A80"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E4B",
+      "sysIdDec": 3659,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4B66",
+        "0x4B67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E4C",
+      "sysIdDec": 3660,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4C67",
+        "0x4C68",
+        "0x4C69"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E4E",
+      "sysIdDec": 3662,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4E67",
+        "0x4E68",
+        "0x4E69"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E4F",
+      "sysIdDec": 3663,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4F66",
+        "0x4F67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E50",
+      "sysIdDec": 3664,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5066",
+        "0x5067"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E51",
+      "sysIdDec": 3665,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x516C"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E52",
+      "sysIdDec": 3666,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5260",
+        "0x5261",
+        "0x5262",
+        "0x5263",
+        "0x5264"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E59",
+      "sysIdDec": 3673,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5960",
+        "0x5961",
+        "0x5962",
+        "0x5963"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E5A",
+      "sysIdDec": 3674,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5A60",
+        "0x5A61",
+        "0x5A62",
+        "0x5A63"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0E5B",
+      "sysIdDec": 3675,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5B60",
+        "0x5B61"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F01",
+      "sysIdDec": 3841,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x01D1",
+        "0x01D2",
+        "0x01D3",
+        "0x01D4",
+        "0x01D5",
+        "0x01D8",
+        "0x01DA"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F02",
+      "sysIdDec": 3842,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0273",
+        "0x0274"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F04",
+      "sysIdDec": 3844,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x046C",
+        "0x046D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F05",
+      "sysIdDec": 3845,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x0574",
+        "0x0575",
+        "0x0576",
+        "0x0577",
+        "0x0578",
+        "0x0579"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F07",
+      "sysIdDec": 3847,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x078D",
+        "0x078E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F08",
+      "sysIdDec": 3848,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x088A",
+        "0x088B",
+        "0x0892"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F09",
+      "sysIdDec": 3849,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x098F",
+        "0x0990",
+        "0x0991",
+        "0x0992",
+        "0x0993",
+        "0x0994",
+        "0x0995",
+        "0x0996"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F12",
+      "sysIdDec": 3858,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1274",
+        "0x1275",
+        "0x1276"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F13",
+      "sysIdDec": 3859,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1373",
+        "0x1374"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F1D",
+      "sysIdDec": 3869,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1D73",
+        "0x1D74",
+        "0x1D75",
+        "0x1D76",
+        "0x1D77"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F1E",
+      "sysIdDec": 3870,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1E6D",
+        "0x1E6E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F1F",
+      "sysIdDec": 3871,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x1F6D",
+        "0x1F6E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F20",
+      "sysIdDec": 3872,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x209D",
+        "0x209E",
+        "0x209F",
+        "0x20A0",
+        "0x20A1",
+        "0x20A2",
+        "0x20A3",
+        "0x20A4"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F23",
+      "sysIdDec": 3875,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x237E",
+        "0x237F",
+        "0x2380",
+        "0x2381",
+        "0x2382",
+        "0x2383",
+        "0x2384",
+        "0x2385"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F32",
+      "sysIdDec": 3890,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x326C",
+        "0x326D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F34",
+      "sysIdDec": 3892,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x346B",
+        "0x346C",
+        "0x346D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F35",
+      "sysIdDec": 3893,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x3565",
+        "0x3566",
+        "0x3567"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F36",
+      "sysIdDec": 3894,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x366D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F37",
+      "sysIdDec": 3895,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x376D",
+        "0x376E",
+        "0x376F"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F40",
+      "sysIdDec": 3904,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4079",
+        "0x407A",
+        "0x407B",
+        "0x407C",
+        "0x407D",
+        "0x407E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F41",
+      "sysIdDec": 3905,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4170",
+        "0x4171",
+        "0x8D02"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F45",
+      "sysIdDec": 3909,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x456F",
+        "0x4570",
+        "0x4571"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F46",
+      "sysIdDec": 3910,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4675",
+        "0x4676",
+        "0x4677",
+        "0x4678",
+        "0x4679"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F49",
+      "sysIdDec": 3913,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4964"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F4A",
+      "sysIdDec": 3914,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4A6A",
+        "0x4A6B",
+        "0x4A6C",
+        "0x4A6D",
+        "0x4A6E",
+        "0x4A6F",
+        "0x4A70",
+        "0x4A71"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F4B",
+      "sysIdDec": 3915,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4B6C",
+        "0x4B6D"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F4C",
+      "sysIdDec": 3916,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4C6F",
+        "0x4C70",
+        "0x4C71"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F4D",
+      "sysIdDec": 3917,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4D67"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F4E",
+      "sysIdDec": 3918,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4E6F",
+        "0x4E70",
+        "0x4E71"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F4F",
+      "sysIdDec": 3919,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x4F6D",
+        "0x4F6E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F50",
+      "sysIdDec": 3920,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x506D",
+        "0x506E"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F51",
+      "sysIdDec": 3921,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5167",
+        "0x5168",
+        "0x7403"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F54",
+      "sysIdDec": 3924,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5402"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F56",
+      "sysIdDec": 3926,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5602",
+        "0x5603"
+      ],
+      "system": null
+    },
+    {
+      "sysId": "0x0F58",
+      "sysIdDec": 3928,
+      "tx": null,
+      "rx": null,
+      "confidence": "candidate",
+      "internals": [],
+      "candidateCount": 0,
+      "needsProbe": false,
+      "probeCmd": [],
+      "blockKeys": [
+        "0x5802",
+        "0x5803",
+        "0x5804"
+      ],
+      "system": null
+    }
+  ],
+  "anchorNote": "6 条 proven 来自真机实测锚点（2026-10-19 验证 6/6 命中）。candidate 需消歧或真机扫描。",
+  "stat": {
+    "total": 209,
+    "proven": 6,
+    "needsProbe": 6,
+    "candidate": 203
+  }
+}

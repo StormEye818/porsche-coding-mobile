@@ -30,6 +30,10 @@ fi
 echo "   ✅ 干净"
 
 echo "── 3/5 编真机包 ──"
+# ⚠️ 2026-10-17 踩过：SourcePackages 的 checkout 会烂掉，xcodebuild 报
+#    "Package.swift doesn't exist in file system"。构建前清掉缓存即可。
+#    （直接换 -derivedDataPath 也能绕，但会一直堆垃圾，还是清干净。）
+rm -rf /tmp/pc-build-device/SourcePackages
 xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
   -destination 'generic/platform=iOS' \
   -derivedDataPath /tmp/pc-build-device \
@@ -41,7 +45,9 @@ APP=/tmp/pc-build-device/Build/Products/Debug-iphoneos/App.app
 echo "   ✅ $APP"
 
 echo "── 4/5 找设备 ──"
-UDID=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && /available/ {print $3; exit}')
+# ⚠️ 状态字可能是 connected/available 等，别写死一种（2026-10-17 装机时踩过：
+#    写死 /available/ 但真机报 connected，导致误报「无可用物理 iPhone」）
+UDID=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && ($0 ~ /connected|available|busy/) {print $3; exit}')
 if [ -z "$UDID" ]; then
   echo "❌ 无可用物理 iPhone。请插线并解锁。"
   echo "   （模拟器可先用：npm run ios）"
@@ -62,5 +68,6 @@ echo
 echo "⚠️  首次启动提示「不受信任的开发者」："
 echo "    设置 → 通用 → VPN与设备管理 → 信任 MW795KJMTY"
 echo
-echo "⚠️  写入功能当前全锁（level=source-defined，7 道闸门第 1 道）"
-echo "    装机后先只做【只读对照】，确认无误再考虑升 level。"
+echo "⚠️  写入默认开启，但参数 level 仍全部是 source-defined（未逐项实车验证）"
+echo "    首次上车只做【只读对照】；写入前先导出备份，并逐项确认当前值/目标值。"
+echo "    真正拦住错误写入的是：只读项 / 缺 LID / SID 不配对 / 变更越界 / 回读不一致。"

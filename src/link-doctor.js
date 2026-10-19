@@ -22,6 +22,7 @@
 
 import { MfiPort } from './mfi-port.js';
 import { Elm327 } from './elm327.js';
+import { parseResp } from './coder.js';
 
 // 保时捷 981 已知地址（实测 + 参考实现 拓扑）
 export const KNOWN_ADDRS = [
@@ -112,30 +113,61 @@ export class LinkDoctor {
    * 判据：0100/0902 有 41/49 正响应。NO DATA vs CAN ERROR 要分开报。
    */
   async lockProtocol() {
-    await this.elm.cmd('ATH0', 1500);   // 干净格式便于解析
+    // ⚠️ P0（2026-10-17 审计）：真机路径从不发 `ATE0` —— elm327.init() 里的完整配方
+    //    (`ATE0 ATL0 ATS0 ATH1 ATCAF0 ATSTFF`) 全工程无一处调用，ELM327 上电默认
+    //    **ATE1（回显开）**。回显行会被 parseResp 当成 ISO-TP 帧（如 `210A` 被判成 CF），
+    //    导致多帧读全灭 / body[0] 不是正响应 SID → 「响应异常」。
+    //    实车日志 `>> 1003 << 1003` 里的第二个 1003 就是回显。
+    //    此处补发初始化配方；同时 parseResp 里再做一道回显行剔除（双保险）。
+    // ✅ 2026-10-18 审计：这里改成调用 `Elm327.prepareLink()` —— 与 `init()` 同一套配方，
+    //    包含 ATE0/ATL0/ATS0/ATAL/ATH1/ATCAF0/ATSTFF/ATAT0 + 流控三件套。
+    //    此前真机路径只手动发了 ATE0/ATL0/ATS0/ATCAF0/ATH0/ATS1，**ATAL 和流控配方都没发**，
+    //    `init()` 却全工程无人调用 —— 多帧读写在真车上缺少必要配置。
+    await this.elm.prepareLink();
+    await this.elm.cmd('ATH0', 1500);   // 探测阶段用干净格式便于解析
     await this.elm.cmd('ATS1', 1500);
     await this.elm.cmd('ATSH7DF', 1500); // OBD 功能寻址（不是 ATSH000！）
     await this.elm.cmd('ATCRA000', 1500);
 
+    // ⚠️⚠️ 2026-10-17 真车实测修的两个 bug（参考诊断仪 能连、我们连不上）：
+    //   ① 探测用 `0100`（OBD-II PID）问 0x7DF 广播 —— 保时捷走 **KWP `1A 9F`**，
+    //      即使总线通了 0100 也只会 NO DATA，判据对保时捷无效。
+    //   ② 试完 6/7/8/9 全失败后**没有把协议设回去**，停在 ATSP9（11bit/250k）。
+    //      保时捷是 500k，之后 enterSession 寻址 0x7E0 用错波特率 → 全是 CAN ERROR。
+    //      日志里「L4 是 NO DATA、后面全是 CAN ERROR」就是这么来的。
+    //   改法：用 KWP 1A9F @ DME 0x7E0 探测；结束时**无条件恢复 ATSP6**。
+    const PROTOS = [
+      [6, '11bit/500k'], [7, '29bit/500k'], [8, '11bit/250k'], [9, '29bit/250k'],
+    ];
     const tries = [];
-    for (const p of [6, 7, 8, 9]) {
+    let locked = null;
+    for (const [p, desc] of PROTOS) {
       await this.elm.cmd(`ATSP${p}`, 2500);
-      const r = (await this.elm.cmd('0100', 8000) || '').trim();
-      const hit = /\b41\b/.test(r) || /\b49\b/.test(r);
-      tries.push(`ATSP${p}→${r.slice(0, 24) || '空'}`);
-      if (hit) {
-        await this.elm.cmd('ATH1', 1500);  // 恢复 CAN 头给模块扫描用
-        await this.elm.cmd('ATS0', 1500);
-        this._ok('L4', '协议锁定', `ATSP${p}（CAN ${p === 6 ? '11bit/500k' : p === 7 ? '29bit/500k' : p === 8 ? '29bit/250k' : '11bit/250k'}）已锁定`);
-        return `ATSP${p}`;
-      }
+      // 保时捷用 KWP 读标识（HANDOFF 实证：1A 9F/95/93/87），不是 OBD-II 0100
+      await this.elm.cmd('ATSH7E0', 1500);
+      await this.elm.cmd('ATCRA7E8', 1500);
+      const r = (await this.elm.cmd('1A9F', 8000) || '').trim();
+      // KWP 正响应是 `5A 9F ...`；UDS 是 `62 ...`。有实质字节即算通。
+      const hit = /\b5A\b/i.test(r) || /\b62\b/i.test(r) || /\b49\b/i.test(r);
+      tries.push(`ATSP${p}(${desc})→${r.slice(0, 24) || '空'}`);
+      if (hit) { locked = p; break; }
+    }
+    // ⚠️ 无论成败，**必须**把协议固定下来 —— 绝不能停在试到一半的波特率上。
+    await this.elm.cmd(`ATSP${locked ?? 6}`, 2500);
+    await this.elm.cmd('ATH1', 1500);   // 恢复 CAN 头给模块扫描用
+    await this.elm.cmd('ATS0', 1500);
+
+    if (locked) {
+      const desc = PROTOS.find(([p]) => p === locked)[1];
+      this._ok('L4', '协议锁定', `ATSP${locked}（CAN ${desc}）已锁定 · KWP 1A9F 有应答`);
+      return `ATSP${locked}`;
     }
     // 诊断：NO DATA = 协议对但无 ECU；CAN ERROR = 波特率错
     const allNodata = tries.every((t) => /NO DATA/i.test(t));
     this._fail('L4', '协议锁定', tries.join('  '),
       allNodata
-        ? '全部 NO DATA：协议层通但无 ECU 应答。检查点火 ON、电压 >12.4V、发动机是否真启动。'
-        : '出现 CAN ERROR：波特率不对。981 应为 ATSP6（11bit/500k）。');
+        ? '全部 NO DATA：波特率可能对但无 ECU 应答。检查点火 ON、电压 >12.4V、OBD 口 CAN 线是否接上。'
+        : '出现 CAN ERROR：波特率不对。已强制回 ATSP6（11bit/500k）。请重试连接。');
     return null;
   }
 
@@ -143,14 +175,22 @@ export class LinkDoctor {
   async probeModules() {
     const found = [];
     for (const a of KNOWN_ADDRS) {
-      await this.elm.cmd(`ATSH${a.tx.toString(16).toUpperCase()}`, 1500);
-      await this.elm.cmd(`ATCRA${a.rx.toString(16).toUpperCase()}`, 1500);
+      try {
+        await this.elm.cmd(`ATSH${a.tx.toString(16).toUpperCase()}`, 2500);
+        await this.elm.cmd(`ATCRA${a.rx.toString(16).toUpperCase()}`, 2500);
+      } catch (e) { continue; }
       const row = { ...a, idents: {} };
       for (const pr of KWP_PROBES) {
-        const r = (await this.elm.cmd(pr.hex, 4500) || '').trim();
-        const clean = r.replace(/\s+/g, '');
-        if (clean.toUpperCase().startsWith(pr.positive)) {
-          row.idents[pr.label] = clean.slice(0, 48);
+        let r = '';
+        try { r = (await this.elm.cmd(pr.hex, 6000) || '').trim(); } catch (e) { continue; }
+        // ⚠️ ATS0（无空格）时应答是 `7E8035A9F…` 连写 —— 必须先剥 CAN ID 再判前缀，
+        //    否则 startsWith('5A9F') 永远不命中 → 误报「无 KWP 应答」（2026-10-17 实车日志）
+        // 用 parseResp 统一剥 CAN ID + ISO-TP PCI（ATS0/ATS1 两种格式都认）
+        const p2 = parseResp(r);
+        const body = Array.from(p2.body || [])
+          .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+        if (body.startsWith(pr.positive)) {
+          row.idents[pr.label] = body.slice(0, 48);
         }
       }
       const n = Object.keys(row.idents).length;
@@ -210,20 +250,32 @@ export class LinkDoctor {
 export async function scanEcuAddresses(elm, onLog = () => {}) {
   const found = [];
   // 保时捷 981 常见请求 ID 段；应答多为 +8，网关例外
+  // ⚠️ 扫描结果要**持久化回填 ECU_ADDR**（2026-10-17 审计 A2）：此前只 toast，
+  //    扫到也进不了模块，每次都要手改源码 —— 「上车即用」断在这里。
   const RX_OFFS = [0x08, 0x6A, 0x00];
   for (let tx = 0x700; tx <= 0x7F0; tx += 1) {
     // 只试常见的步进，避免扫太久
     if (!((tx & 0x0F) === 0 || (tx & 0x0F) === 1 || (tx & 0x0F) === 2)) continue;
     for (const off of RX_OFFS) {
       const rx = tx + off;
-      await elm.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 800);
-      await elm.cmd(`ATCRA${rx.toString(16).toUpperCase()}`, 800);
-      // 用 1A 9F 探（KWP 识别，多数 ECU 都回）
-      const r = (await elm.cmd('1A9F', 1200) || '').trim();
-      const ok = /\b5A\b/i.test(r) && !/NO DATA|ERROR|STOPPED/i.test(r);
-      if (ok) {
+      // ⚠️ 三处实车问题（2026-10-17 真车日志）：
+      //   ① 800ms 太短 —— 真车 ATSH 就超时，扫描一开头就中断
+      //   ② 单次超时会让整个扫描抛错退出 —— 无应答是常态，必须吞掉继续
+      //   ③ /\b5A\b/i 检测应答在 ATS0（无空格）下永远不命中 ——
+      //      应答是 `7E8035A9F…` 连写，5A 没有词边界
+      try {
+        await elm.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 2500);
+        await elm.cmd(`ATCRA${rx.toString(16).toUpperCase()}`, 2500);
+      } catch (e) { continue; }
+      let r = '';
+      try { r = (await elm.cmd('1A9F', 3000) || '').trim(); } catch (e) { continue; }
+      if (!r) continue;
+      // 用 parseResp 统一剥 CAN ID + ISO-TP PCI（ATS0/ATS1 都认，见审计 A2）
+      const pr = parseResp(r);
+      const body = Array.from(pr.body || []).map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+      if (body.startsWith('5A') && !/NO DATA|ERROR|STOPPED|UNABLE/i.test(r)) {
         found.push({ tx, rx, sid: '1A9F', raw: r.slice(0, 60) });
-        onLog(`  ✅ 0x${tx.toString(16).toUpperCase()}/0x${rx.toString(16).toUpperCase()} → ${r.slice(0, 40)}`);
+        onLog(`  ✅ 0x${tx.toString(16).toUpperCase()}/0x${rx.toString(16).toUpperCase()} → ${body.slice(0, 32)}`);
       }
     }
     if ((tx & 0x0F) === 0) onLog(`  … 扫到 0x${tx.toString(16).toUpperCase()}，已发现 ${found.length} 个`);
