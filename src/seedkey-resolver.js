@@ -259,7 +259,7 @@ export function makeResolverProvider(mode, ctx = {}) {
 /**
  * 按 **ECU 名字**算 key —— 走 原厂 的 `nameTable` 名字表。
  *
- * 这是「和 431 对齐」的正解：名字来自车辆数据/编码条目，
+ * 这是「和 参考诊断仪 对齐」的正解：名字来自车辆数据/编码条目，
  * 直接查权威映射表选变体，不猜、不造别名。
  *
  * @param {string} name   ECU 名字（如 'ASAM_seedkey_PSM' / 'E3_RDK'）

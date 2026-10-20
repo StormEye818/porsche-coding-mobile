@@ -137,7 +137,7 @@ console.log('\n[5] ECU address table');
   const m = src.match(/const ECU_ADDR = \{[\s\S]*?\n\};/);
   const tbl = new Function(m[0] + '\nreturn ECU_ADDR;')();
   ok('IC 用标准 0x7E4（不是 DME 应答 0x7E8）', tbl['IC(仪表)'].tx === 0x7E4);
-  ok('IC 是候选地址（431/标准顺序，进模块核验）', tbl['IC(仪表)'].state === 'candidate');
+  ok('IC 是候选地址（标准顺序，进模块核验）', tbl['IC(仪表)'].state === 'candidate');
   ok('PASM 用 PORSCHE_SYS_DATA 1CB→7D0', tbl['水平高度控制/PASM'].tx === 0x7D0);
   ok('后端电子设备 1C6→74F', tbl['后端电子设备'].tx === 0x74F);
   {
@@ -388,7 +388,7 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
 console.log('\n[8] 特殊功能安全访问');
 {
   const src = readFileSync('./src/app.js', 'utf8');
-  // 431 实测：27 09 → 31 xx（FINDINGS「关键请求」）
+  // 实测基准：27 09 → 31 xx（FINDINGS「关键请求」）
   const iSec = src.indexOf('securityAccessEx({ level: 0x09');
   const iRout = src.indexOf('coder.runRoutine(sf, id');
   ok('特殊功能路径调用了 securityAccessEx(0x09)', iSec > 0);
@@ -805,7 +805,7 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
 
 // ===== 15. 特殊功能（0x31 例程）可用性 =====
 // 背景：special-functions.json 那 67 个 routineId 是手工菜单索引（0x200–0x34E），
-// 与 431 实测 RID（COMMAND.GAG，79 个）交集只有 1 个 —— 不能拿去发 31 01。
+// 与实测基准 RID（COMMAND.GAG，79 个）交集只有 1 个 —— 不能拿去发 31 01。
 // 这组断言锁死三件事：① 实测库在且合法 ② 假 ID 不许被标成已核实 ③ UI 不再有死按钮。
 console.log('\n[15] 特殊功能 / 例程 0x31');
 {
@@ -844,10 +844,8 @@ console.log('\n[15] 特殊功能 / 例程 0x31');
   const appSrc = readFileSync('./src/app.js', 'utf8');
   ok('app.js 不再生成 disabled 的「执行（已禁用）」按钮',
      !appSrc.includes('执行（已禁用）'));
-  ok('app.js 已接实测例程库 routines-verified.json',
-     appSrc.includes('routines-verified.json'));
-  ok('app.js 有手动指定 RID 的入口',
-     appSrc.includes('class="mRun"') && appSrc.includes('mRid'));
+  ok('特殊功能页不再暴露原始 RID 池与手动输入（只留确认可执行的项）',
+     !appSrc.includes('routines-verified.json') && !appSrc.includes('class="mRun"'));
   ok('参数详情有「读当前值」且 doRead 会回写 currentValue',
      appSrc.includes('id="pRead"') && appSrc.includes("$('pRead').onclick = () => doRead(p)")
      && appSrc.includes('p.currentValue = v;'));
@@ -862,6 +860,99 @@ console.log('\n[15] 特殊功能 / 例程 0x31');
   ok('例程执行统一走 coder.runRoutine（NRC 78 会转 31 03 轮询）',
      spBlock.includes('coder.runRoutine'));
   ok('例程执行前会做二次确认（危险操作）', spBlock.includes('confirm('));
+
+  // ── 真实特殊功能目录（2026-10-20）：从诊断插件解析出来的 674 项 ──
+  const real = readJson('./data/special-functions-real.json');
+  ok('真实特殊功能目录存在且有内容', real.count > 500 && Object.keys(real.platforms || {}).length >= 10,
+     `${real.count} 项 / ${Object.keys(real.platforms || {}).length} 平台`);
+  ok('9X1（981/718）有模块目录', Object.keys(real.platforms?.['9X1'] || {}).length >= 15,
+     `${Object.keys(real.platforms?.['9X1'] || {}).length} 模块`);
+  ok('目录项带中文 label 与 action',
+     Object.values(real.platforms || {}).some((mods) =>
+       Object.values(mods).some((arr) => arr.every((f) => f.label && f.action))));
+  ok('moduleAliases 存在（否则菜单树模块名匹配不上）',
+     real.moduleAliases && Object.keys(real.moduleAliases).length > 10,
+     `${Object.keys(real.moduleAliases || {}).length} 条`);
+  const withRid = Object.values(real.platforms || {}).flatMap((mods) => Object.values(mods))
+    .flat().filter((f) => (f.rids || []).length);
+  ok('目录里有带真实 RID 的功能', withRid.length >= 15, `${withRid.length} 项带 RID`);
+  ok('app.js 已改接特殊功能映射表 special-function-map.json',
+     appSrc.includes('special-function-map.json'));
+  ok('app.js 不再引用旧的 67 条手工索引（specialFunctionsFor）',
+     !appSrc.includes('specialFunctionsFor('));
+  ok('app.js 不再加载 674 项目录（只保留确认可执行的项）',
+     !appSrc.includes('special-functions-real.json'));
+  // 命令模板表：139 条 0x31 模板，是 RID 的来源
+  const tmpl = readJson('./data/routine-templates.json');
+  ok('命令模板表存在且含 0x31 例程', tmpl.items.length >= 100 && tmpl.uniqueRid >= 70,
+     `${tmpl.items.length} 条模板 / ${tmpl.uniqueRid} RID`);
+
+  // ── 完整命令序列（2026-10-20）──
+  const seq = readJson('./data/function-sequences.json');
+  ok('命令序列表存在', Array.isArray(seq.functions) && seq.functions.length > 300,
+     `${seq.functions.length} 个函数`);
+  const zm = (seq.zhMatches || []).filter((m) => m.candidates && m.candidates.length);
+  ok('中文功能能对上函数序列（≥30 条）', zm.length >= 30, `${zm.length} 条`);
+  ok('9X1（981）的功能优先匹配 P9x1_* 函数',
+     zm.some((m) => m.candidates[0].name.startsWith('P9x1_')));
+  // 序列里的 31 子功能必须合法（否则是数据被误判成命令）
+  const OK_SUB = new Set([0x01, 0x02, 0x03, 0x04, 0x06, 0x0B, 0x0C, 0x0D, 0x10,
+    0xB8, 0xB9, 0xBA, 0xBB]);
+  const bad31 = [];
+  for (const f of seq.functions) {
+    for (const c of f.cmds || []) {
+      const h = c.replace(/\s/g, '');
+      if (h.startsWith('31') && !OK_SUB.has(parseInt(h.slice(2, 4), 16))) bad31.push(`${f.name}:${c}`);
+    }
+  }
+  ok('序列里所有 31 子功能都合法', bad31.length === 0,
+     bad31.slice(0, 3).join(' '));
+  ok('app.js 有序列执行器（seqRun + runSequence）',
+     appSrc.includes('class="seqRun"') && appSrc.includes('const runSequence'));
+  ok('序列执行前会二次确认且提示写入条数',
+     /runSequence[\s\S]{0,900}写入类/.test(appSrc));
+
+  // ── 67 条菜单项 → 各平台实现（2026-10-20）──
+  // 这张表决定「诊断仪有的功能，本 App 能不能做」。它是人工核对的，不是关键词猜的，
+  // 所以要断言它没被改坏：条数、覆盖率、平台标注、以及几个已知的易错点。
+  const map = readJson('./data/special-function-map.json');
+  ok('菜单项映射表覆盖全部 67 条', map.count === 67 && map.maps.length === 67, `${map.count} 条`);
+  const mappedOk = map.maps.filter((m) => m.status === 'ok');
+  ok('大部分菜单项有可执行实现（≥60）', mappedOk.length >= 60, `${mappedOk.length}/67`);
+  ok('每条有实现的项都带平台与命令数',
+     mappedOk.every((m) => m.impls.length && m.impls.every((x) => x.platforms.length && x.cmdCount > 0)));
+  // 981 只能做 9X1 上真正实现过、且映射已确认的那些（67 条是跨平台并集：
+  // 里面包含 Panamera/992 的 TME、天窗、软顶等，981 本来就没有对应 ECU）
+  const visible = map.maps.filter((m) => m.status === 'ok' && m.verified !== false);
+  const p9n = visible.filter((m) => m.impls
+    .some((x) => x.platforms.includes('9X1') || x.platforms.includes('ALL'))).length;
+  ok('9X1 平台可执行项 ≥28（981/718 的实际覆盖面）', p9n >= 28, `${p9n}/67`);
+  const g2n = visible.filter((m) => m.impls
+    .some((x) => x.platforms.includes('G2') || x.platforms.includes('ALL'))).length;
+  ok('G2（92A Cayenne）平台可执行项 ≥38', g2n >= 38, `${g2n}/67`);
+  // 语义对不上的映射不能进 app（否则按钮会做错事）
+  const unverified = map.maps.filter((m) => m.verified === false);
+  ok('未确认的映射都带原因，且 app 会过滤掉',
+     unverified.length >= 4 && unverified.every((m) => m.unverifiedReason)
+     && appSrc.includes('it.verified === false'),
+     `${unverified.length} 条`);
+  ok('systemAliases 存在（中文系统名 ↔ 菜单树模块名）',
+     Object.keys(map.systemAliases || {}).length >= 20, `${Object.keys(map.systemAliases || {}).length} 条`);
+  const seqNames = new Set(seq.functions.map((f) => f.name));
+  // 只校验「有命令」的实现；cmdCount=0 的是「有符号但序列在运行时拼」（HUD），不在序列表里属正常
+  const missingImpl = map.maps.flatMap((m) => m.impls)
+    .filter((x) => x.cmdCount > 0 && !seqNames.has(x.name));
+  ok('映射里的实现函数都能在序列表里找到', missingImpl.length === 0,
+     missingImpl.slice(0, 3).map((x) => x.name).join(' '));
+  const oilItem = map.maps.find((m) => m.menuId === '0x0301');
+  ok('机油加注优先 Tiptronic 实现（不是 DME）',
+     /TIP_Oil_Filling/.test(oilItem.impls[0].name), oilItem.impls[0].name);
+  const keyItem = map.maps.find((m) => m.menuId === '0x0327');
+  ok('钥匙匹配不会命中钥匙保持电磁阀',
+     !keyItem.impls.some((x) => /Key_Retaining/.test(x.name)));
+  ok('app.js 用映射表做平台闸门（跨平台只给查看、不给执行）',
+     appSrc.includes('special-function-map.json') && appSrc.includes('const implFor'),
+     'implFor 决定当前平台是否有实现');
 
   // —— 真发一帧：实测 RID 经 coder 必须拼出合法 31 帧，且 NRC 0x78 会转 31 03 轮询 ——
   const mkC = (handler) => {
@@ -988,10 +1079,10 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
   // ⑦b mode 0x00 —— securityModel 无 case 0 → ASAM_SeedKey 无 case → 不发 key
   {
     const r = resolveKey(0x00, 0x12345678, {});
-    ok('mode 0x00 归 NO_ALGO（431 无 case 0，不发 key）', r.needsKey === false && r.outlen === 0);
+    ok('mode 0x00 归 NO_ALGO（参考诊断仪无 case 0，不发 key）', r.needsKey === false && r.outlen === 0);
   }
 
-  // ⑧ 故障码请求形态对齐 431 GAG（不是 REA 的 190208）
+  // ⑧ 故障码请求形态对齐 参考诊断仪 GAG（不是 REA 的 190208）
   {
     const c = new Coder(new Elm327(new FakePort(), { timeoutMs: 1 }),
       { tx: 0x6C0, rx: 0x6C8, verbose: false });
@@ -1004,9 +1095,9 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
       throw new Error('unexpected ' + h);
     };
     await c.readDtc(0x02);
-    ok('431 GAG 读码用 19 02 89', sent[0] === '190289', sent.join(','));
+    ok('参考诊断仪 GAG 读码用 19 02 89', sent[0] === '190289', sent.join(','));
     await c.clearDtc();
-    ok('431 GAG 清码默认 14 FF 00（不是 14 FF FF）', sent.includes('14FF00'), sent.join(','));
+    ok('参考诊断仪 GAG 清码默认 14 FF 00（不是 14 FF FF）', sent.includes('14FF00'), sent.join(','));
   }
 
   // ⑤ LinkDoctor 真机路径必须与 init 同一套 CAN 配方（ATAL / 流控 / ATSTFF / ATAT0）
@@ -1033,7 +1124,7 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
   }
 }
 
-// ===== 17. 自动选变体（431 不弹窗） =====
+// ===== 17. 自动选变体（参考诊断仪不弹窗） =====
 console.log('\n[17] 自动选变体');
 {
   const acc3 = {
@@ -1044,7 +1135,7 @@ console.log('\n[17] 自动选变体');
       { name: 'ACC3_A4', file: 'ACC3_A4.json' },
     ],
   };
-  ok('无识别文本 → 431 默认变体',
+  ok('无识别文本 → 参考诊断仪默认变体',
     autoPickVariant(acc3, '').name === 'ACC3_BaseSys');
   ok('识别文本含完整变体名 → 精确命中',
     autoPickVariant(acc3, 'ACC3_A4').name === 'ACC3_A4');
@@ -1063,7 +1154,7 @@ console.log('\n[17] 自动选变体');
     autoPickVariant(acc3, 'WP0ZZZ99ZGS123456').name === 'ACC3_BaseSys');
 }
 
-// ===== 18. 特殊功能目录过滤（431 只显示当前系统） =====
+// ===== 18. 特殊功能目录过滤（参考诊断仪只显示当前系统） =====
 console.log('\n[18] 特殊功能目录过滤');
 {
   const fns = JSON.parse(readFileSync(new URL('./data/special-functions.json', import.meta.url), 'utf8')).functions;
@@ -1078,7 +1169,7 @@ console.log('\n[18] 特殊功能目录过滤');
     specialFunctionsFor('AC(空调系统)', fns).every((f) => /[\u4e00-\u9fff]/.test(f.sub)));
   ok('未知模块 → 0 项（不跨类别带出无关功能）',
     specialFunctionsFor('不存在的模块XYZ', fns).length === 0);
-  // 431 981 基准：14 系统 / 27 子功能（0x0200–0x0314）
+  // 981 基准：14 系统 / 27 子功能（0x0200–0x0314）
   ok('981 PCM 3 项（不混入新平台）',
     specialFunctionsFor('PCM/CDR（通信管理/CD、收音机）', fns, '9X1').length === 3);
   ok('981 PASM 4 项（水平高度别名）',
@@ -1097,7 +1188,7 @@ console.log('\n[18] 特殊功能目录过滤');
     specialFunctionsFor('后端电子设备', fns, '9X1').some((f) => f.sub.includes('扰流器标准化')));
   ok('992 空调仍显示 8 项（新平台段 0x0320+）',
     specialFunctionsFor('AC(空调系统)', fns, '992').length === 8);
-  // 431 981 硬基准：14 系统 / 27 子功能（按 981 菜单树的系统名逐项求和）
+  // 981 硬基准：14 系统 / 27 子功能（按 981 菜单树的系统名逐项求和）
   {
     const tree = JSON.parse(readFileSync(new URL('./data/menu-tree-v3.json', import.meta.url), 'utf8'));
     const g = (tree.groups || []).find((x) => x.models?.some((m) => m.label === 'Boxster（981）'));
@@ -1114,10 +1205,10 @@ console.log('\n[18] 特殊功能目录过滤');
   // 新平台菜单里的泛称“辅助系统/车道变换辅助系统”不能整块为空
   ok('992 泛称辅助系统 → 左/右车道 2 项',
     specialFunctionsFor('辅助系统', fns, '992').length === 2);
-  // 431 Funcfg.so [SPECFUNC_CFG] 官方系统开关
+  // Funcfg.so [SPECFUNC_CFG] 官方系统开关
   {
     const sf = JSON.parse(readFileSync(new URL('./data/special-systems.json', import.meta.url), 'utf8'));
-    ok('431 Funcfg SF 标志 = 21 项（系统映射未确认）',
+    ok('Funcfg SF 标志 = 21 项（系统映射未确认）',
       sf.sf.length === 21 && sf.sf.includes(0x13) && sf.sf.includes(0x09) && sf.sf.includes(0x34),
       `${sf.sf.length} 项/未知 ${sf.unknown.length}`);
   }
@@ -1137,9 +1228,11 @@ console.log('\n[19] 特殊功能显示守卫');
   ok('special-functions-ext.json 未被 src/app.js 引用（防英文内部名复发）', extRefs === 0);
   const bundle = readFileSync('./www/app.bundle.js', 'utf8');
   ok('special-functions-ext.json 未进 bundle', (bundle.match(/special-functions-ext/g) || []).length === 0);
-  // ② spStop/spResult 必须带 data-name（否则 label 回退 hex）
-  ok('spStop 带 data-name', /class="spStop"[^>]*data-name=/.test(app));
-  ok('spResult 带 data-name', /class="spResult"[^>]*data-name=/.test(app));
+  // ② 特殊功能只有「执行 / 查看步骤」两个入口，不再按单条 RID 直接发
+  ok('特殊功能项带执行与查看步骤入口（都带 label）',
+     /class="seqRun"[^>]*data-label=/.test(app) && /class="seqView"[^>]*data-label=/.test(app));
+  ok('不再按单条 RID 直接执行（无 spRun/spStop/spResult）',
+     !/class="spRun"/.test(app) && !/class="spStop"/.test(app) && !/class="spResult"/.test(app));
   // ③ 成功 toast 不打原始响应字节
   ok('例程成功 toast 不直接打 body hex',
     !/toast\('ok', `\$\{verb\}成功`, body \+/.test(app));

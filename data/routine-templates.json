@@ -1,0 +1,792 @@
+{
+ "schemaVersion": 1,
+ "kind": "routine-templates",
+ "source": "保时捷例程命令表（含子功能与参数）",
+ "note": "从保时捷诊断程序的命令模板里解出的例程命令（<请求长><响应长><cmd>00）。与实车会话里的 79 个 RID 可交叉印证。",
+ "count": 139,
+ "uniqueRid": 85,
+ "rids": [
+  "0x0000",
+  "0x0007",
+  "0x0013",
+  "0x006C",
+  "0x00FF",
+  "0x0103",
+  "0x0106",
+  "0x0111",
+  "0x0224",
+  "0x0231",
+  "0x0240",
+  "0x0300",
+  "0x0305",
+  "0x030A",
+  "0x030B",
+  "0x030F",
+  "0x0316",
+  "0x0317",
+  "0x0324",
+  "0x0325",
+  "0x032C",
+  "0x032D",
+  "0x032E",
+  "0x034A",
+  "0x034D",
+  "0x0354",
+  "0x0358",
+  "0x0370",
+  "0x0377",
+  "0x039F",
+  "0x03A9",
+  "0x03BE",
+  "0x03CC",
+  "0x03CD",
+  "0x03E1",
+  "0x03F0",
+  "0x0400",
+  "0x0402",
+  "0x0404",
+  "0x0405",
+  "0x0406",
+  "0x0407",
+  "0x040B",
+  "0x0442",
+  "0x0450",
+  "0x0451",
+  "0x045B",
+  "0x0466",
+  "0x0493",
+  "0x04A9",
+  "0x04B6",
+  "0x04BD",
+  "0x04BF",
+  "0x04D6",
+  "0x04D9",
+  "0x04DE",
+  "0x0516",
+  "0x051A",
+  "0x0523",
+  "0x0527",
+  "0x052D",
+  "0x0531",
+  "0x0533",
+  "0x054F",
+  "0x0564",
+  "0x0583",
+  "0x0597",
+  "0x059C",
+  "0x05BC",
+  "0x05BE",
+  "0x05D6",
+  "0x0600",
+  "0x0622",
+  "0x0678",
+  "0x06EA",
+  "0x06F6",
+  "0x0770",
+  "0x1003",
+  "0x1024",
+  "0x2000",
+  "0x392E",
+  "0xC800",
+  "0xF002",
+  "0xF00B",
+  "0xF00E"
+ ],
+ "items": [
+  {
+   "routineId": "0x0404",
+   "sub": "0x03",
+   "params": ""
+  },
+  {
+   "routineId": "0x392E",
+   "sub": "0x2E",
+   "params": "2E 2E 32 2E 33"
+  },
+  {
+   "routineId": "0xF00E",
+   "sub": "0x01",
+   "params": "A0 96 0A A0 87 0F 05 00 05 04 31 03 F0 0E"
+  },
+  {
+   "routineId": "0x0450",
+   "sub": "0x01",
+   "params": "03 18 01 18 00"
+  },
+  {
+   "routineId": "0x06F6",
+   "sub": "0x02",
+   "params": "0B 76 01 01 00"
+  },
+  {
+   "routineId": "0x06EA",
+   "sub": "0x03",
+   "params": "0D D4 01 01 00"
+  },
+  {
+   "routineId": "0x06F6",
+   "sub": "0x04",
+   "params": "0B 76 01 01 0D D4 06 EA 01 01 00"
+  },
+  {
+   "routineId": "0x0466",
+   "sub": "0x01",
+   "params": "01 13 88 00"
+  },
+  {
+   "routineId": "0x0103",
+   "sub": "0xB9",
+   "params": "00 00 00"
+  },
+  {
+   "routineId": "0x0103",
+   "sub": "0xBB",
+   "params": "00 00 00 00 00 00 00"
+  },
+  {
+   "routineId": "0x0013",
+   "sub": "0x02",
+   "params": "00"
+  },
+  {
+   "routineId": "0xF002",
+   "sub": "0x01",
+   "params": "00 29"
+  },
+  {
+   "routineId": "0x0007",
+   "sub": "0x03",
+   "params": "00"
+  },
+  {
+   "routineId": "0x030A",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0325",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x032D",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x006C",
+   "sub": "0xBA",
+   "params": "00"
+  },
+  {
+   "routineId": "0xC800",
+   "sub": "0x08",
+   "params": "00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x11",
+   "params": "08 37 10 00 00"
+  },
+  {
+   "routineId": "0x0404",
+   "sub": "0x01",
+   "params": "0B B8 FC 00 00"
+  },
+  {
+   "routineId": "0x0404",
+   "sub": "0x01",
+   "params": "00 C8 54 2F 00"
+  },
+  {
+   "routineId": "0x0354",
+   "sub": "0x01",
+   "params": "00 00 00 00"
+  },
+  {
+   "routineId": "0x040B",
+   "sub": "0x01",
+   "params": "00 00 00 00 00 00 00 00 00 00 00 0A 00 00 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "05 00 00 00"
+  },
+  {
+   "routineId": "0x2000",
+   "sub": "0x01",
+   "params": "05 00 00 00"
+  },
+  {
+   "routineId": "0x1003",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0316",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x032E",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x030F",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04BD",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0305",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "05 00 00 00"
+  },
+  {
+   "routineId": "0x0400",
+   "sub": "0x03",
+   "params": "00"
+  },
+  {
+   "routineId": "0x032D",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0111",
+   "sub": "0x50",
+   "params": ""
+  },
+  {
+   "routineId": "0x0231",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0103",
+   "sub": "0xBB",
+   "params": "00 00 00 00 07 00 00 80 00"
+  },
+  {
+   "routineId": "0x0531",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x03A9",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0325",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0406",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0317",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x03E1",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0400",
+   "sub": "0x02",
+   "params": "00"
+  },
+  {
+   "routineId": "0x0103",
+   "sub": "0xBB",
+   "params": "00 00 00 00 00 00 00 00 00"
+  },
+  {
+   "routineId": "0x0316",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x059C",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0324",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0493",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0377",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0597",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04A9",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x032E",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0678",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0xF00B",
+   "sub": "0x01",
+   "params": "00 1E 28 00"
+  },
+  {
+   "routineId": "0x05D6",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "78 00 78 00"
+  },
+  {
+   "routineId": "0x045B",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0358",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x032E",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0407",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0402",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0405",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x054F",
+   "sub": "0x01",
+   "params": "00 00 01 00"
+  },
+  {
+   "routineId": "0x05BE",
+   "sub": "0x01",
+   "params": "01 00 1E 00"
+  },
+  {
+   "routineId": "0x05BC",
+   "sub": "0x01",
+   "params": "00 00 00 00"
+  },
+  {
+   "routineId": "0x039F",
+   "sub": "0x01",
+   "params": "00 00 04 00"
+  },
+  {
+   "routineId": "0x0516",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0317",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0583",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "58 00 58 00"
+  },
+  {
+   "routineId": "0x0527",
+   "sub": "0x01",
+   "params": "40 00 00 00"
+  },
+  {
+   "routineId": "0x0523",
+   "sub": "0x01",
+   "params": "40 00 00 00"
+  },
+  {
+   "routineId": "0x034D",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x034D",
+   "sub": "0x01",
+   "params": "00 00 00 00"
+  },
+  {
+   "routineId": "0x045B",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0516",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0533",
+   "sub": "0x01",
+   "params": "04 02 00 00"
+  },
+  {
+   "routineId": "0x04D9",
+   "sub": "0x01",
+   "params": "00 00 02 00"
+  },
+  {
+   "routineId": "0x039F",
+   "sub": "0x01",
+   "params": "00 00 04 00"
+  },
+  {
+   "routineId": "0x0106",
+   "sub": "0x01",
+   "params": "00 FF 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0325",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "58 00 58 00"
+  },
+  {
+   "routineId": "0x03CD",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x03CC",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0240",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04DE",
+   "sub": "0x01",
+   "params": "2D 00 00 00"
+  },
+  {
+   "routineId": "0x045B",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x039F",
+   "sub": "0x01",
+   "params": "00 00 04 00"
+  },
+  {
+   "routineId": "0x04D9",
+   "sub": "0x01",
+   "params": "00 00 02 00"
+  },
+  {
+   "routineId": "0x04D9",
+   "sub": "0x01",
+   "params": "00 00 01 00"
+  },
+  {
+   "routineId": "0x0370",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04B6",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x1024",
+   "sub": "0x01",
+   "params": "00 05 80 00 00 07 00 05 00"
+  },
+  {
+   "routineId": "0x0600",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0404",
+   "sub": "0x01",
+   "params": "01 2C 09 C4 00 1E 00"
+  },
+  {
+   "routineId": "0x0451",
+   "sub": "0x01",
+   "params": "01 02 DA 03 E8 00 1E 00"
+  },
+  {
+   "routineId": "0x04D9",
+   "sub": "0x01",
+   "params": "00 00 02 00"
+  },
+  {
+   "routineId": "0x0564",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x03E1",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04BF",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x03BE",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0300",
+   "sub": "0x03",
+   "params": "00"
+  },
+  {
+   "routineId": "0x034A",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x052D",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0442",
+   "sub": "0x01",
+   "params": "00 00 00 00"
+  },
+  {
+   "routineId": "0x03A9",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0240",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x032C",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x059C",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0770",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04BF",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0224",
+   "sub": "0x01",
+   "params": "00 0F 6E 00 32 00"
+  },
+  {
+   "routineId": "0x051A",
+   "sub": "0x01",
+   "params": "06 40 01 F4 00 00 00"
+  },
+  {
+   "routineId": "0x04B6",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x03BE",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0358",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x04D9",
+   "sub": "0x01",
+   "params": "00 00 02 00"
+  },
+  {
+   "routineId": "0x04D9",
+   "sub": "0x01",
+   "params": "00 00 01 00"
+  },
+  {
+   "routineId": "0x039F",
+   "sub": "0x01",
+   "params": "00 00 01 00"
+  },
+  {
+   "routineId": "0x04D6",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x00FF",
+   "sub": "0x01",
+   "params": "88 00 00 00 00 00 00 00 00 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x11",
+   "params": "00 00 00 01 00"
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x01",
+   "params": ""
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x18",
+   "params": ""
+  },
+  {
+   "routineId": "0x0622",
+   "sub": "0x73",
+   "params": ""
+  },
+  {
+   "routineId": "0x0000",
+   "sub": "0x08",
+   "params": ""
+  },
+  {
+   "routineId": "0x03F0",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x030B",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  },
+  {
+   "routineId": "0x0583",
+   "sub": "0x01",
+   "params": "04 00 00 00"
+  }
+ ]
+}

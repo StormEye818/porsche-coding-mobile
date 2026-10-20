@@ -258,7 +258,7 @@ export class Coder {
    *    走不通时按 `session` 参数换，别硬试。
    */
   /**
-   * 进诊断会话 —— 按 431 实测编排，但**分级容错**。
+   * 进诊断会话 —— 按 参考诊断仪 实测编排，但**分级容错**。
    *
    * COMMAND.GAG 3139 条实测的会话 ID 分布：
    *   10 89 (×6) · 10 03 (×3) · 10 86 (×3) · 10 85 · 10 81 · 10 C0 · 10 00 · 10 4F
@@ -280,11 +280,11 @@ export class Coder {
     await this.uds('3E00', 2000, { allowEmpty: true }).catch(() => {});
     // ③ 识别 ECU（失败不致命，只记日志）
     // ★ 2026-10-18：把 1A 9F/94/92 的 ASCII 文本留下来，用于自动选变体。
-    //   431 不弹变体选择，它是按 ECU 识别/ODX 变体名自动进模块的；我们之前
+    //   参考诊断仪 不弹变体选择，它是按 ECU 识别/ODX 变体名自动进模块的；我们之前
     //   只看十六进制、然后 prompt 让用户选，方向反了。
     this.lastIdent = '';
     const identParts = [];
-    // 431 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
+    // 参考诊断仪 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
     for (const cmd of ['1A9F', '1A94']) {
       try {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
@@ -828,9 +828,9 @@ async function readDtc(subFunc = 0x02, mask = 0x89, timeoutMs = 10000) {
   }
   // ⚠️ UDS 19 失败要回退 KWP 18（2026-10-17 审计 F6）：GAG 实测 18×10 比 19×5 更常用，
   //    KWP 模块只发 19 会 NRC。实测形态：`18 00 40 00` / `18 00 FF 00`
-  // ⚠️ mask 默认 0x89 —— **431 真机序列 GAG 里是 `19 02 89` / `19 02 AD`，没有 `19 02 08`**
-  //    （2026-10-18 R3 复核）。此前按 REA 的 protocol_native 改成 0x08，反而偏离 431 实例；
-  //    0x08 不是错值，但默认必须跟 431 真车证据走。
+  // ⚠️ mask 默认 0x89 —— **参考诊断仪 真机序列 GAG 里是 `19 02 89` / `19 02 AD`，没有 `19 02 08`**
+  //    （2026-10-18 R3 复核）。此前按 REA 的 protocol_native 改成 0x08，反而偏离 参考诊断仪 实例；
+  //    0x08 不是错值，但默认必须跟 参考诊断仪 真车证据走。
   try {
     const r = await this.uds(`19${subFunc.toString(16).padStart(2, '0')}${mask.toString(16).padStart(2, '0')}`, timeoutMs);
     return { ...r, dtcProtocol: 'uds' };
@@ -843,13 +843,13 @@ async function readDtc(subFunc = 0x02, mask = 0x89, timeoutMs = 10000) {
 
 /** 清故障码 `14 <group>` 实测 14 FF FF / 14 00 00 */
 async function clearDtc(group = 0xFF00, timeoutMs = 15000) {
-  // ⚠️ 2026-10-18 R3：431 真机 GAG 的清码请求是 `14 FF 00` / `14 40 00` / `14 00 00`…
-  //    **没有 `14 FF FF`**；默认改成 431 实测的 `14 FF 00`。
+  // ⚠️ 2026-10-18 R3：参考诊断仪 真机 GAG 的清码请求是 `14 FF 00` / `14 40 00` / `14 00 00`…
+  //    **没有 `14 FF FF`**；默认改成 参考诊断仪 实测的 `14 FF 00`。
   //    同时修掉旧实现把 group 拼两遍（只有 0xFF 恰好拼对）的问题：现在就是 2 字节组号。
   if (!Number.isFinite(group) || group < 0 || group > 0xffff) {
     throw new CodingError(`清码组号 0x${Number(group).toString(16)} 超出 2 字节`);
   }
-  // 兼容旧调用 `clearDtc(0xFF)`：按 431 的 `FF 00` 解释，而不是发成 `00 FF`。
+  // 兼容旧调用 `clearDtc(0xFF)`：按 参考诊断仪 的 `FF 00` 解释，而不是发成 `00 FF`。
   const gval = group === 0xFF ? 0xFF00 : group;
   const g = gval.toString(16).toUpperCase().padStart(4, '0');
   const r = await this.uds(`14${g}`, timeoutMs);

@@ -1,0 +1,594 @@
+{
+  "note": "参考诊断仪中文特殊功能菜单项 → 各平台实现函数。pattern 按优先级排列，同一条目内先匹配到的先用。平台由函数名前缀推断（见 build-special-map.py 的 platform_of）。match 语义：exact=名字直译即对应；semantic=动作语义对应（名字不同）；none=本版本未找到实现。",
+  "items": [
+    {
+      "menuId": "0x0301",
+      "match": "exact",
+      "patterns": [
+        "TIP_Oil_Filling",
+        "PDK_OilFill",
+        "PDK_Oil_Filling",
+        "Oil_Filling",
+        "OilFilling",
+        "oil_filling"
+      ]
+    },
+    {
+      "menuId": "0x0203",
+      "match": "exact",
+      "patterns": [
+        "Normalise_Seat_Motors",
+        "Standardize_Seat_Motors"
+      ]
+    },
+    {
+      "menuId": "0x0204",
+      "match": "exact",
+      "patterns": [
+        "PASM_PASM_PADM_Commissioning",
+        "PDCC_Commissioning",
+        "Roll_Stabilization_Commissioning",
+        "PASM.*Commissioning"
+      ]
+    },
+    {
+      "menuId": "0x0300",
+      "match": "exact",
+      "patterns": [
+        "PASM_Calibration",
+        "PASM_Height_Sensor_Calibration",
+        "Height_Sensor_System_Calibration",
+        "Height_Sensor_Calibration"
+      ]
+    },
+    {
+      "menuId": "0x0302",
+      "match": "exact",
+      "patterns": [
+        "System_Test_Unit_Mounting"
+      ]
+    },
+    {
+      "menuId": "0x0303",
+      "match": "exact",
+      "patterns": [
+        "dampervalves",
+        "Dampervalves"
+      ]
+    },
+    {
+      "menuId": "0x0304",
+      "match": "exact",
+      "patterns": [
+        "PSM_Bleed_The_Brakes",
+        "PSM_Bleed_the_Brakes",
+        "PSM_Service_Bleeding",
+        "PSM_Bleed_0540"
+      ]
+    },
+    {
+      "menuId": "0x0200",
+      "match": "exact",
+      "patterns": [
+        "MOSTSystemTest",
+        "Most_System_Test",
+        "MOST_system_test",
+        "MOST_system",
+        "Multimedia_interface_test"
+      ]
+    },
+    {
+      "menuId": "0x0201",
+      "match": "exact",
+      "patterns": [
+        "Confirmation_Of_Update",
+        "Confirmation_Update"
+      ]
+    },
+    {
+      "menuId": "0x0202",
+      "match": "exact",
+      "patterns": [
+        "Deactivate_Production_Mode",
+        "DeactivateProductionMode",
+        "DisProductionMode"
+      ]
+    },
+    {
+      "menuId": "0x0305",
+      "match": "exact",
+      "patterns": [
+        "Wiping_Angle_Adaptation",
+        "Adjust_Wiping_Angle"
+      ]
+    },
+    {
+      "menuId": "0x0306",
+      "match": "semantic",
+      "patterns": [
+        "HeadLight_Comission",
+        "Headlight_Commissioning",
+        "Headlight__Bulbs_LED",
+        "Headlight.*Commission"
+      ]
+    },
+    {
+      "menuId": "0x0307",
+      "match": "exact",
+      "patterns": [
+        "Activation_Of_Key_Retaining_Solenoid",
+        "Activation_of_key_retaining"
+      ]
+    },
+    {
+      "menuId": "0x0308",
+      "match": "exact",
+      "patterns": [
+        "Throttle_Adaption",
+        "DME_UDS_AdaptSec",
+        "DME_Adaptation_Kickdown"
+      ]
+    },
+    {
+      "menuId": "0x0309",
+      "match": "exact",
+      "patterns": [
+        "Set_Total_Mileage",
+        "Total_distance",
+        "Total_Distance",
+        "Advance_total"
+      ]
+    },
+    {
+      "menuId": "0x030A",
+      "match": "exact",
+      "patterns": [
+        "Reset_Maintenance_Interval",
+        "Write_Maintenance_Interval",
+        "Maintenance_Interval"
+      ]
+    },
+    {
+      "menuId": "0x030B",
+      "match": "exact",
+      "patterns": [
+        "Battery_Change",
+        "Battery_change",
+        "Battery_Replacement",
+        "Battery_Replace",
+        "Battery_change"
+      ]
+    },
+    {
+      "menuId": "0x030C",
+      "match": "exact",
+      "patterns": [
+        "SWA3_Calibration",
+        "SWA.*Calibration",
+        "LaneChang.*Teach",
+        "ChangAssis.*Calibration"
+      ]
+    },
+    {
+      "menuId": "0x030D",
+      "match": "semantic",
+      "patterns": [
+        "ESCLSet",
+        "Steering_Column_Adjustment",
+        "Steering_Column"
+      ]
+    },
+    {
+      "menuId": "0x030E",
+      "match": "semantic",
+      "patterns": [
+        "STW_Steering_angle",
+        "Steering_Angle_Sensor_Calibration",
+        "SteeringAngle_Sensor_Calibration",
+        "Steering_angle"
+      ]
+    },
+    {
+      "menuId": "0x0310",
+      "match": "semantic",
+      "patterns": [
+        "EPB_Initial_Start_Up",
+        "BrakeReset_Calibration",
+        "CalibrateBrake",
+        "BrakeReset_Adjust",
+        "Initial_Start_Up"
+      ]
+    },
+    {
+      "menuId": "0x0311",
+      "match": "exact",
+      "patterns": [
+        "Check_Basic_Setting"
+      ]
+    },
+    {
+      "menuId": "0x0312",
+      "match": "exact",
+      "patterns": [
+        "Move_To_Installation_Position",
+        "move_to_assembly_position"
+      ]
+    },
+    {
+      "menuId": "0x0313",
+      "match": "exact",
+      "patterns": [
+        "Release_Parking_Brake",
+        "Release_parking_brake",
+        "Put_Hand_Brake"
+      ]
+    },
+    {
+      "menuId": "0x0314",
+      "match": "exact",
+      "patterns": [
+        "Tension_Parking_Brake",
+        "Tension_parking_brake"
+      ]
+    },
+    {
+      "menuId": "0x0320",
+      "match": "exact",
+      "patterns": [
+        "Bleeding_Cooling_System",
+        "Bleed_cooling_system",
+        "Bleeding_HighTemperature",
+        "VentingTheCoolingCircuits",
+        "DrainAndFillCoolingCircuits",
+        "Drain_And_Fill_Refrigerant"
+      ]
+    },
+    {
+      "menuId": "0x0321",
+      "match": "exact",
+      "patterns": [
+        "Release_Stuck_Clutch"
+      ]
+    },
+    {
+      "menuId": "0x0322",
+      "match": "exact",
+      "patterns": [
+        "Compressor_run_in",
+        "Compresser_Tech",
+        "TeachAirConditioningCompressor",
+        "Program_Electric_AC_Compressor"
+      ]
+    },
+    {
+      "menuId": "0x0323",
+      "match": "exact",
+      "patterns": [
+        "Servo_motor_teaching",
+        "TeachAndCheckFlapServo",
+        "Teach_Flap_Servo",
+        "TeachCoolingAirFlaps"
+      ]
+    },
+    {
+      "menuId": "0x0324",
+      "match": "semantic",
+      "patterns": [
+        "AirBag_PorscheEcuReplaceFunc",
+        "Occupant_Detection_Replacement"
+      ],
+      "verified": false,
+      "unverifiedReason": "气囊电脑更换适配，不是「复位」"
+    },
+    {
+      "menuId": "0x0325",
+      "match": "semantic",
+      "patterns": [
+        "Reset_Of_Crash_Switch"
+      ]
+    },
+    {
+      "menuId": "0x0326",
+      "match": "semantic",
+      "patterns": [
+        "AllradSetCalibration",
+        "AllradWriteVehOrder",
+        "AllradModifyVehOrder",
+        "TransferBoxReplace"
+      ],
+      "verified": false,
+      "unverifiedReason": "全轮驱动标定，不是「标签配置」"
+    },
+    {
+      "menuId": "0x0327",
+      "match": "exact",
+      "patterns": [
+        "TransponderKey",
+        "Version_Of_The_Key",
+        "TransferRemoteControls",
+        "Kessy_PorscheEcuReplaceFunc"
+      ]
+    },
+    {
+      "menuId": "0x0328",
+      "match": "exact",
+      "patterns": [
+        "Gateway_specified_configuration_0986",
+        "Gateway_specified_configuration_0982",
+        "GATEWAY_Nominal_Actual_configuration",
+        "Actual_specified_configuration",
+        "NominalAndActualConfiguration",
+        "GATEWAY_installed_components"
+      ]
+    },
+    {
+      "menuId": "0x0329",
+      "match": "exact",
+      "patterns": [
+        "Teaching_Driver_Cards",
+        "Teach_PVTS_Driver_Cards"
+      ]
+    },
+    {
+      "menuId": "0x032A",
+      "match": "no-seq",
+      "patterns": [
+        "HUD_Shakedown",
+        "HUD_Calibration"
+      ],
+      "symbols": [
+        {
+          "name": "E3_HUD_Shakedown_Test",
+          "platforms": [
+            "E3"
+          ]
+        }
+      ]
+    },
+    {
+      "menuId": "0x032B",
+      "match": "exact",
+      "patterns": [
+        "Height_Sensor_Calibration",
+        "Height_Sensor_System_Calibration"
+      ]
+    },
+    {
+      "menuId": "0x032C",
+      "match": "exact",
+      "patterns": [
+        "Headlight_Beam_Adjustment",
+        "Headlight_Adjustment",
+        "HBA_Calibration",
+        "LHB_Calibration"
+      ]
+    },
+    {
+      "menuId": "0x032D",
+      "match": "exact",
+      "patterns": [
+        "Clean_Refrigerant"
+      ]
+    },
+    {
+      "menuId": "0x032E",
+      "match": "semantic",
+      "patterns": [
+        "Program_Electric_AC_Compressor",
+        "TeachAirConditioningCompressor",
+        "Compresser_Tech"
+      ]
+    },
+    {
+      "menuId": "0x032F",
+      "match": "exact",
+      "patterns": [
+        "CoolingSystem_Check",
+        "DrainAndFillCoolingCircuits",
+        "VentingTheCoolingCircuits"
+      ]
+    },
+    {
+      "menuId": "0x0330",
+      "match": "exact",
+      "patterns": [
+        "Teach_Expansion",
+        "Expansion_Valve"
+      ]
+    },
+    {
+      "menuId": "0x0331",
+      "match": "exact",
+      "patterns": [
+        "Thermal_Management_Function_Test",
+        "Therm_Manag_Test"
+      ]
+    },
+    {
+      "menuId": "0x0332",
+      "match": "semantic",
+      "patterns": [
+        "Teach_in_LIN_automatic_addressing",
+        "Teach_Refrigerant"
+      ]
+    },
+    {
+      "menuId": "0x0333",
+      "match": "semantic",
+      "patterns": [
+        "PTM_Front_axle",
+        "TransferBoxReplace",
+        "All_wheel_drive_Transfer_box"
+      ],
+      "verified": false,
+      "unverifiedReason": "前桥测试，不是 PDK/VTG 综合测试"
+    },
+    {
+      "menuId": "0x0334",
+      "match": "semantic",
+      "patterns": [
+        "Connect_System_Deactivate_Flight_Mode",
+        "TelemCommuUnitUDS",
+        "ConBoxHigh"
+      ]
+    },
+    {
+      "menuId": "0x0335",
+      "match": "none",
+      "patterns": [
+        "MEASURINGPOINT",
+        "MeasuringPoint"
+      ]
+    },
+    {
+      "menuId": "0x0336",
+      "match": "none",
+      "patterns": [
+        "MEASURINGPOINT",
+        "MeasuringPoint"
+      ]
+    },
+    {
+      "menuId": "0x0337",
+      "match": "exact",
+      "patterns": [
+        "Thermal_Management_Function_Test"
+      ]
+    },
+    {
+      "menuId": "0x0338",
+      "match": "exact",
+      "patterns": [
+        "Teach_Expansion",
+        "Expansion_Valve"
+      ]
+    },
+    {
+      "menuId": "0x0340",
+      "match": "exact",
+      "patterns": [
+        "Teach_Rear_Spoiler",
+        "TeachRearSpoiler",
+        "Rear_Spoiler"
+      ]
+    },
+    {
+      "menuId": "0x0341",
+      "match": "exact",
+      "patterns": [
+        "Teach_Rear_Spoiler",
+        "TeachRearSpoiler",
+        "Rear_Spoiler"
+      ],
+      "verified": false,
+      "unverifiedReason": "与「标准化」同一函数，无法区分去标准化方向"
+    },
+    {
+      "menuId": "0x0342",
+      "match": "none",
+      "patterns": [
+        "Rear_Wip",
+        "Heckwischer"
+      ]
+    },
+    {
+      "menuId": "0x0343",
+      "match": "exact",
+      "patterns": [
+        "Rear_lid_Calibrate",
+        "Calibrate_rear_lid"
+      ]
+    },
+    {
+      "menuId": "0x0344",
+      "match": "exact",
+      "patterns": [
+        "Power_Windows_Standardization"
+      ]
+    },
+    {
+      "menuId": "0x0345",
+      "match": "exact",
+      "patterns": [
+        "Headlight_Commissioning",
+        "Headlight__Bulbs_LED"
+      ]
+    },
+    {
+      "menuId": "0x0346",
+      "match": "exact",
+      "patterns": [
+        "Wiping_Angle",
+        "Wiper_Motor_Adjust"
+      ]
+    },
+    {
+      "menuId": "0x0347",
+      "match": "exact",
+      "patterns": [
+        "Teach_Panoramic_Roof"
+      ]
+    },
+    {
+      "menuId": "0x0348",
+      "match": "semantic",
+      "patterns": [
+        "Lifting_Roof_Standardisation",
+        "Sliding_roof_standardisation"
+      ],
+      "verified": false,
+      "unverifiedReason": "Targa 升降顶，不是软顶"
+    },
+    {
+      "menuId": "0x0349",
+      "match": "exact",
+      "patterns": [
+        "Sliding_roof_standardisation",
+        "Sliding_Lifting_Roof_Standardisation"
+      ]
+    },
+    {
+      "menuId": "0x034A",
+      "match": "exact",
+      "patterns": [
+        "Normalise_Seat_Motors",
+        "Standardize_Seat_Motors"
+      ]
+    },
+    {
+      "menuId": "0x034B",
+      "match": "exact",
+      "patterns": [
+        "Steering_Angle_Sensor_Calibration",
+        "SteeringAngle_Sensor_Calibration",
+        "STW_Steering_angle"
+      ]
+    },
+    {
+      "menuId": "0x034C",
+      "match": "exact",
+      "patterns": [
+        "PSM_Bleed",
+        "Service_Bleeding",
+        "Brake1UDS_Service_Bleeding"
+      ]
+    },
+    {
+      "menuId": "0x034D",
+      "match": "exact",
+      "patterns": [
+        "Teach_WheelIDs",
+        "Teach_wheel_sensors",
+        "TPM_Teach"
+      ]
+    },
+    {
+      "menuId": "0x034E",
+      "match": "semantic",
+      "patterns": [
+        "Fuel_Level_Sensor_Calibration",
+        "Instrument_Cluster.*Calibration"
+      ]
+    }
+  ]
+}

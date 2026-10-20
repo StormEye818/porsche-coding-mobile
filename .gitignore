@@ -113,4 +113,25 @@ tools/probe-rc.mjs
 tools/sample-modes.py
 tools/step-a-status.py
 tools/vectors/
+
+# ── 2026-10-20：命令序列提取工具链（输入是 .so/.BIN 原生文件，只留本地）──
+tools/build-function-sequences.py
+tools/build-special-catalog.py
+tools/scan-all-tmpl-refs.py
+tools/scan-immediates.py
+tools/scan-specfunc-31.py
+tools/parse-cmd-templates.py
+tools/list-calls.py
+tools/link-func-templates.py
+tools/map-func-routines.py
+tools/probe-rid-tables.py
+tools/probe-special-candidates.py
+tools/find-packed-cmds.py
+tools/find-sid31-sites.py
+
+# 分析文档 / 中间产物（只留本地）
+ROUTINE-ID-ANALYSIS*.md
+func-routines.json
+tmpl-refs.json
 tools/__pycache__/
+tools/resolve-pcrel.py

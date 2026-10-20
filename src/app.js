@@ -17,7 +17,6 @@ import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFie
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
-import { specialFunctionsFor } from './special-catalog.js';
 import { makeResolverProvider, SeedKeyUnresolvedError, resolveKeyByName, resolveKey } from './seedkey-resolver.js';
 import { nonAsapForName, nonAsapForModule, platformForModel } from './seedkey-nonasap.js';
 import { variantForName, NAME_TO_VARIANT } from './seedkey-name-map.js';
@@ -65,21 +64,21 @@ const ECU_ADDR = {
   '网关':                  { tx: 0x710, rx: 0x77A, state: 'measured', note: '实测（rx≠tx+8）' },
   // 981/718/991 的 CAN 诊断地址按 ECU 顺序：7E0 DME、7E1 PDK、7E2 PSM、
   // 7E3 Airbag、7E4 IC、7E5 AC、7E6 PASM、7E7 TPM。此前 7E2/7E4/7E5/7E6 整体错位，
-  // 会把 AC 当 PASM、PSM 当 IC；2026-10-18 按 431 可进模块 + 该顺序修正。
-  '安全气囊':               { tx: 0x7E3, rx: 0x7EB, state: 'candidate', note: '标准 7E3；431 可进' },
-  'SRS(安全气囊)':          { tx: 0x7E3, rx: 0x7EB, state: 'candidate', note: '标准 7E3；431 可进' },
-  'ESP/PSM(电控稳定系统)':   { tx: 0x7E2, rx: 0x7EA, state: 'candidate', note: '标准 7E2；431 可进' },
-  'PSM':                    { tx: 0x7E2, rx: 0x7EA, state: 'candidate', note: '标准 7E2；431 可进' },
-  'AC(空调系统)':           { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；431 可进' },
-  '空调':                   { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；431 可进' },
-  '空调压缩机':              { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；431 可进' },
-  'IC(仪表)':               { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '标准 7E4；431 可进' },
-  '组合仪表':               { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '标准 7E4；431 可进' },
+  // 会把 AC 当 PASM、PSM 当 IC；2026-10-18 按 参考诊断仪 可进模块 + 该顺序修正。
+  '安全气囊':               { tx: 0x7E3, rx: 0x7EB, state: 'candidate', note: '标准 7E3；可进入' },
+  'SRS(安全气囊)':          { tx: 0x7E3, rx: 0x7EB, state: 'candidate', note: '标准 7E3；可进入' },
+  'ESP/PSM(电控稳定系统)':   { tx: 0x7E2, rx: 0x7EA, state: 'candidate', note: '标准 7E2；可进入' },
+  'PSM':                    { tx: 0x7E2, rx: 0x7EA, state: 'candidate', note: '标准 7E2；可进入' },
+  'AC(空调系统)':           { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；可进入' },
+  '空调':                   { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；可进入' },
+  '空调压缩机':              { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；可进入' },
+  'IC(仪表)':               { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '标准 7E4；可进入' },
+  '组合仪表':               { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '标准 7E4；可进入' },
   'EPS(电动助力转向系统)':   { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
   '电动转向':               { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
   '动力转向':               { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
-  'Tiptronic 变速器控制':    { tx: 0x7E1, rx: 0x7E9, state: 'candidate', note: '标准 7E1；431 可进' },
-  'TCM/PDK(自动变速箱控制模块)': { tx: 0x7E1, rx: 0x7E9, state: 'candidate', note: '标准 7E1；431 可进' },
+  'Tiptronic 变速器控制':    { tx: 0x7E1, rx: 0x7E9, state: 'candidate', note: '标准 7E1；可进入' },
+  'TCM/PDK(自动变速箱控制模块)': { tx: 0x7E1, rx: 0x7E9, state: 'candidate', note: '标准 7E1；可进入' },
   '驻车制动器':             { tx: null, rx: null, state: 'unknown', note: '7E3 与安全气囊冲突，待 CAN 表/扫描；不能猜' },
   // 由 PORSCHE_SYS_DATA 的 CAN/internal 表得：PASM internal 0x1CB → CAN 0x7D0；
   // BCM_hinten internal 0x1C6 → 0x74F；BCM_vorne internal 0x1C7 → 0x7D1。
@@ -99,13 +98,13 @@ const ECU_ADDR = {
   '右侧前照灯':              { tx: 0x71A, rx: 0x722, state: 'candidate', note: 'CAN 表 110 候选 71A' },
   '中央前照灯':              { tx: 0x719, rx: 0x721, state: 'candidate', note: 'CAN 表 110 候选 719' },
 
-  '轮胎压力监控 （TPM）':    { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；431 可进' },
-  '轮胎压力监控':            { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；431 可进' },
-  'TPM':                    { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；431 可进' },
+  '轮胎压力监控 （TPM）':    { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；可进入' },
+  '轮胎压力监控':            { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；可进入' },
+  'TPM':                    { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；可进入' },
   // ── 2026-10-19 审计：菜单实际标签别名（原键在菜单里不存在，成死键）──
   '驻车辅助系统':            { tx: 0x7CF, rx: 0x7D7, state: 'measured', note: 'RE 锚点 0x0B12→7CF/7D7（ECU-ADDRESSING §2）' },
   '右前照灯':                { tx: 0x71A, rx: 0x722, state: 'candidate', note: 'CAN 表 110 候选 71A' },
-  'TPMS/TPM(胎压监控系统)':  { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；431 可进' },
+  'TPMS/TPM(胎压监控系统)':  { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；可进入' },
 };
 
 const ADDR_OVERRIDE_KEY = 'pc_addr_overrides_v1';
@@ -1545,6 +1544,9 @@ function exitSystem() {
 
 let currentBlocks = {};
 
+/** 参考诊断仪 完整命令序列（function-sequences.json，特殊功能页加载后填充） */
+let fnSeqData = null;
+
 /**
  * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐参考诊断仪）。
  * 参考诊断仪 是进模块就读全量，不是一个一个进去读。
@@ -1560,7 +1562,7 @@ async function enterSystem(sys) {
     } else {
       // ⚠️ 不猜地址，但必须给用户一条**可执行**的路：
       //    地址扫描能发现车上可用的 tx/rx，只是没有「模块名→地址」映射。
-      //    允许用户从扫描日志/431 上抄一对地址，保存后下次直接用。
+      //    允许用户从扫描日志/参考诊断仪 上抄一对地址，保存后下次直接用。
       const why = addr?.note ? `（${addr.note}）` : '';
       // 2026-10-19：RE 实证寻址表标 needs-probe 的模块（1.2%），给探测命令
       if (addr?.state === 'needs-probe' && addr.probeCmd) {
@@ -1570,7 +1572,7 @@ async function enterSystem(sys) {
       }
       const raw = (typeof prompt === 'function')
         ? prompt(`未找到「${sys.label}」的可用 CAN 地址${why}。\n\n`
-          + '若已用「地址扫描」或 431 查到 tx/rx，请输入一对地址（如 7E0/7E8）。\n'
+          + '若已用「地址扫描」或参考设备查到 tx/rx，请输入一对地址（如 7E0/7E8）。\n'
           + '留空 = 取消。\n\n'
           + '⚠️ 地址必须实测，猜地址可能读到别的 ECU。')
         : null;
@@ -1597,15 +1599,15 @@ async function enterSystem(sys) {
   // ⚠️ 候选地址（未实测）必须让用户知情（2026-10-17 审计 C2）：
   //    直接用未验证地址发请求，可能把别的 ECU 的数据当目标模块显示。
   if (addr.state === 'candidate') {
-    // 431 不在进模块时弹「地址未实测」；地址来自 431/标准顺序，进模块后用 1A9F/读块核验。
+    // 参考诊断仪 不在进模块时弹「地址未实测」；地址来自 参考诊断仪/标准顺序，进模块后用 1A9F/读块核验。
     // 只在日志提示，不再阻塞用户（此前 confirm 让模拟模式也每次弹，且真车点取消就进不去）。
-    log(`  ${sys.label} 地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()}（431/标准顺序；进模块后核验）`, 'info');
+    log(`  ${sys.label} 地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()}（标准顺序；进模块后核验）`, 'info');
   }
   coder.setAddress(addr.tx, addr.rx, sys.label);
   // ⚠️ 换模块必须重选 seed/key 变体（2026-10-17 审计 D1）：
   //    此前只在连接时选一次，换 ECU 后仍是旧变体 → 算错 key → NRC 0x35 → 可能锁死。
   try {
-    // ⚠️ 优先走 原厂 的 mode 表（securityModel），这是「和 431 对齐」的正解。
+    // ⚠️ 优先走 原厂 的 mode 表（securityModel），这是「和 参考诊断仪 对齐」的正解。
     //    拿不到 mode 才退回按 ECU 名猜变体（旧路径）。
     // ⚠️⚠️ 这里**绝不能阻塞**：2026-10-17 装机后实测「进模块一直转圈」，
     //    根因就是这段 `await fetch(...)` 在同步流程里 —— fetch 不 resolve 就永远 await，
@@ -1678,7 +1680,7 @@ async function enterSystem(sys) {
       }
     } else {
       // ⚠️ 优先走 原厂 的 `nameTable` 名字表（138 条，权威），
-      //    这是「和 431 对齐」的正解；查不到才退回旧的 pickVariant 别名表。
+      //    这是「和 参考诊断仪 对齐」的正解；查不到才退回旧的 pickVariant 别名表。
       const cands = [sys.label, ...(sys.modules || [])];
       let variant = null, hitName = null;
       // ⓪ 非 ASAP1A 入口先试。
@@ -1773,10 +1775,10 @@ async function enterSystem(sys) {
     const mi = (cat?.modules || []).find((m) => m.module === mod);
     if (mi && (mi.variants || []).length > 1) {
       state.multiVariantModules.add(mod);
-      // ★ 2026-10-18：431 **不弹变体选择**。它靠 ECU 识别（1A 9F/94/92）
-      //   匹配 ODX 变体名；我们之前反过来让用户手选，既不像 431，也把
+      // ★ 2026-10-18：参考诊断仪 **不弹变体选择**。它靠 ECU 识别（1A 9F/94/92）
+      //   匹配 ODX 变体名；我们之前反过来让用户手选，既不像 参考诊断仪，也把
       //   大多数模块的写入锁死。现在自动选：识别串命中变体名 → 精确；
-      //   命中模块名 → BaseSys；都不中 → 431 默认变体（default）。
+      //   命中模块名 → BaseSys；都不中 → 参考诊断仪 默认变体（default）。
       //   仍然保留 selectedVariant 这个安全闸门（自动选也会写入它），
       //   这样 doWrite 不再因为「未选」拒写。
       const auto = autoPickVariant(mi, coder.lastIdent);
@@ -2613,88 +2615,95 @@ async function showSysExtra(f) {
       编程按标准流程：<b>读当前值 → 修改 → 写入 → 回读校验</b>。高风险，请先备份。</div>
       <label style="display:block;margin-top:6px"><input type="checkbox" id="xProgUds"> 该块使用 UDS（22/2E）</label>`;
   } else if (kind === 'special') {
-    // ★ 特殊功能 —— 按参考诊断仪的路径：选车型 → 选模块 → 只显示**该车型变体 × 该模块**的项。
+    // ★ 特殊功能（只列「本平台确认可执行」的项）
     //
-    // 数据源：
-    //   special-functions.json      67 条中文功能（执行/停止/查结果）
-    //   routines-verified.json      79 个 431 实测 RID（只在「高级/调试」折叠区）
-    // 过滤口径：只按系统名精确匹配（含已确认别名），不跨类别。
-    // ★ 2026-10-18：特殊功能只显示 431 同系统、中文子功能。
-    //   旧版把 ODX 链、79 个实测 RID、548 条英文例程名、手动 RID 全铺在首页，
-    //   用户看到的是一屏技术编号 —— 和 431 的「系统 → 中文功能」完全不像。
-    //   现在：首页只有中文功能；原始 RID 收进「高级 / 调试」折叠区。
-    const [specialData, verifiedData] = await Promise.all([
-      fetch('data/special-functions.json').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('data/routines-verified.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    // 一条特殊功能 = 一段完整命令序列，不是单个 RID：
+    //   读状态(21/22) → 启动例程(31 01) → 查结果(31 03) → 驱动/写入(2F/2E) → 停止(31 02)
+    // 数据来自 special-function-map.json（功能项 → 各平台实现）
+    // 与 function-sequences.json（实现函数 → 命令序列）。
+    //
+    // 展示口径：只显示当前车型平台有实现、且序列非空的项。
+    // 其他平台有实现的、本版本没有实现的，一律不列 —— RID 与 ECU 绑定，
+    // 跨平台发出去要么没响应，要么命中另一个例程。
+    const [mapData, seqData] = await Promise.all([
+      fetch('data/special-function-map.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('data/function-sequences.json').then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
-    const funcs = specialFunctionsFor(sys.label, specialData?.functions || [], platformForModel(currentModel));
-    const riskText = (r) => r === 'high' ? '高' : r === 'medium' ? '中' : '低';
+    fnSeqData = seqData;
+
+    const plat = platformForModel(currentModel);
+    const nrm = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9一-鿿]/g, '');
+    const up = (x) => String(x || '').toUpperCase();
+    const sysNorm = nrm(sys.label);
+    const sysHay = up(sys.label) + ' ' + (sys.modules || []).map(up).join(' ');
+    const sysAliases = mapData?.systemAliases || {};
+    // 按词切分而不是子串包含：「ACC(巡航)」不能因为含 AC 就命中「空调」，
+    // 「Frontkamera」也不能因为含 Front 就命中「前端电子设备」。
+    const wordTokens = (s) => {
+      const out = new Set();
+      String(s || '').replace(/[^A-Za-z0-9]+/g, ' ').split(/\s+/).filter(Boolean).forEach((w) => {
+        out.add(w.toUpperCase());
+        (w.match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])|\d+/g) || []).forEach((p) => out.add(p.toUpperCase()));
+      });
+      return out;
+    };
+    const sysTokens = wordTokens(sysHay);
+    const sysConcat = sysHay.replace(/[^A-Z0-9]/g, '');
+    const aliasHit = (a) => sysTokens.has(a)
+      || (a.length >= 5 && sysConcat.includes(a))
+      || [...sysTokens].some((t) => t.startsWith(a) && /^\d*$/.test(t.slice(a.length)));
+
+    // 功能项 → 当前系统：中文名互含 / 别名表 / 拉丁代码重合
+    const hitSystem = (it) => {
+      const a = nrm(it.system);
+      if (a && sysNorm && (a === sysNorm || a.includes(sysNorm) || sysNorm.includes(a))) return true;
+      if ((sysAliases[a] || []).some(aliasHit)) return true;
+      return [...wordTokens(it.system)].some((t) => sysTokens.has(t));
+    };
+    const implFor = (it) => it.impls.find((x) => x.platforms.includes(plat))
+      || it.impls.find((x) => x.platforms.includes('ALL'));
+
+    // 只保留「本平台有实现 + 序列非空 + 映射已确认」的项。
+    // verified=false 的是语义对不上、或同一函数无法区分正反操作的（比如
+    // "去标准化" 和 "标准化" 指向同一段序列），宁可不显示也不给错按钮。
+    // 另外按「名称 + 实现函数」去重：左右设备两条菜单指向同一段序列时只留一条。
+    const picked = [];
+    const seenKey = new Set();
+    for (const it of (mapData?.maps || []).filter(hitSystem)) {
+      if (it.status !== 'ok' || it.verified === false) continue;
+      const c = implFor(it);
+      if (!c) continue;
+      const key = `${it.sub}|${c.name}`;
+      if (seenKey.has(key)) continue;
+      seenKey.add(key);
+      picked.push({ it, impl: c });
+    }
+    const items = picked.map((x) => x.it);
 
     let html = '';
-    html += `<div class="hint" style="margin-bottom:8px">
-      431 特殊功能 · 系统 <b>${esc(sys.label)}</b> · <b>${funcs.length}</b> 项
-    </div>`;
-    if (funcs.length) {
-      html += `<div class="specialList">${funcs.map((f) => `
-        <div class="specialItem">
-          <div class="siName">${esc(f.sub)}</div>
-          <div class="siMeta">431 特殊功能 · 风险：${riskText(f.risk)}</div>
-          <div class="siActs">
-            <button class="spRun" data-rid="${esc(f.routineId)}" data-name="${esc(f.sub)}" data-sub="01">执行</button>
-            <button class="spStop" data-rid="${esc(f.routineId)}" data-name="${esc(f.sub)}">停止</button>
-            <button class="spResult" data-rid="${esc(f.routineId)}" data-name="${esc(f.sub)}">查结果</button>
-          </div>
-        </div>`).join('')}</div>`;
-      html += `<div class="hint" style="margin-top:8px">
-        首次执行先点「查结果」，确认该例程在当前 ECU 上有响应；执行前确认车辆状态安全。
-      </div>`;
+    if (!plat) {
+      html += `<div class="hint">未识别车型平台 —— 先选车型，再看该模块的特殊功能。</div>`;
+    } else if (!items.length) {
+      html += `<div class="hint">该模块在平台 <b>${esc(plat)}</b> 上没有可执行的特殊功能。</div>`;
     } else {
-      html += `<div class="hint">
-        431 没有为这个模块列出特殊功能。若车型/模块选对了，说明该模块在 431 菜单里确实没有特殊功能。
+      html += `<div class="hint" style="margin-bottom:8px">
+        特殊功能 · 系统 <b>${esc(sys.label)}</b> · 平台 <b>${esc(plat)}</b> · 共 <b>${items.length}</b> 项
       </div>`;
-    }
-
-    // 调试用：431 原始例程 ID / 手动 RID。只有当前系统有中文功能时才显示，
-    // 避免“该模块没有特殊功能”的页面还挂着一大块技术编号。
-    if (funcs.length) {
-      const vrout = verifiedData?.items || [];
-      html += `<details style="margin-top:14px">
-        <summary class="hint" style="cursor:pointer">高级 / 431 原始例程（调试）</summary>`;
-      if (vrout.length) {
-        html += `<div class="hint" style="margin:8px 0;color:#8a6d3b">
-          以下 ${vrout.length} 个 RID 是 431 真机请求里出现过的原始例程，仅供对照/手动调试；
-          普通功能请用上面的中文项。
-        </div>`;
-        html += `<div class="specialList">${vrout.slice(0, 40).map((r) => {
-          const sf = (r.subFuncs || [])[0] || { sub: '0x01' };
-          const pr = (r.params || [])[0]?.hex || '';
-          return `
-          <div class="specialItem">
-            <div class="siName">${esc(r.routineId)}
-              <span class="hint" style="margin-left:6px">实测 ${r.hits} 次</span></div>
-            <div class="siMeta">子功能 ${esc((r.subFuncs || []).map((x) => x.sub).join('/'))}
-              ${pr ? ` · 参数 ${esc(pr)}` : ' · 无参'}</div>
-            <div class="siActs">
-              <button class="vRun" data-rid="${esc(r.routineId)}" data-sub="${esc(sf.sub)}" data-params="${esc(pr)}">执行</button>
-              <button class="vStop" data-rid="${esc(r.routineId)}" data-name="RID ${esc(r.routineId)}">停止</button>
-              <button class="vResult" data-rid="${esc(r.routineId)}" data-name="RID ${esc(r.routineId)}">查结果</button>
-            </div>
-          </div>`;
-        }).join('')}</div>`;
-        if (vrout.length > 40) html += `<div class="hint">…另有 ${vrout.length - 40} 个 RID 未列出</div>`;
-      }
-      html += `<div class="hint" style="margin:10px 0 6px">手动指定例程（从 431 上抄 RID）</div>
+      html += `<div class="specialList">${picked.map(({ it, impl: c }) => {
+        const ridText = (c.rids || []).length ? ` · 例程 ${esc(c.rids.slice(0, 3).join(' / '))}` : '';
+        return `
         <div class="specialItem">
-          <div class="siMeta">十六进制，不含 0x 前缀</div>
+          <div class="siName">${esc(it.sub)}</div>
+          <div class="siMeta">${c.cmdCount} 步命令${ridText}</div>
           <div class="siActs">
-            <input id="mRid" placeholder="RID 0107" style="width:96px">
-            <input id="mSub" value="01" placeholder="子功能" style="width:64px">
-            <input id="mParams" placeholder="参数 0100" style="width:120px">
-            <button class="mRun">执行</button>
-            <button class="mResult">查结果</button>
+            <button class="seqRun" data-fn="${esc(c.name)}" data-label="${esc(it.sub)}">执行</button>
+            <button class="seqView" data-fn="${esc(c.name)}" data-label="${esc(it.sub)}">查看步骤</button>
           </div>
-        </div>
-      </details>`;
+        </div>`;
+      }).join('')}</div>`;
+      html += `<div class="hint" style="margin-top:8px">
+        首次执行先点「查看步骤」核对；执行前确认车辆状态安全（熄火 / 拉手刹 / 必要时上举升机）。
+      </div>`;
     }
     actions = html;
   } else if (kind === 'measure') {
@@ -2813,7 +2822,7 @@ async function showSysExtra(f) {
         },
       });
       hideLoading();
-      // 2026-10-19：不向用户打原始响应字节（hex）——431 只显示结果状态。
+      // 2026-10-19：不向用户打原始响应字节（hex）——参考诊断仪 只显示结果状态。
       // 原始字节进日志供调试，toast 只报人话。
       const nBytes = (r?.body || []).length;
       const detail = polled ? `轮询 ${polled} 次后取到结果` : (nBytes ? `ECU 已响应（${nBytes} 字节）` : 'ECU 已确认');
@@ -2823,13 +2832,100 @@ async function showSysExtra(f) {
       hideLoading();
       const nrc = e instanceof CodingError ? e.nrc : null;
       let msg = e.message + (nrc ? `（NRC 0x${nrc.toString(16)}）` : '');
-      // 431 菜单项与 ECU 实际 RID 不一定是同一个；0x31 明确告诉用户不是“车坏了”。
-      if (nrc === 0x31) msg += ' —— 当前 ECU 没有这个例程 ID；该 431 菜单项可能对应别的 RID。';
+      // 参考诊断仪 菜单项与 ECU 实际 RID 不一定是同一个；0x31 明确告诉用户不是“车坏了”。
+      if (nrc === 0x31) msg += ' —— 当前 ECU 没有这个例程 ID；该功能项可能对应别的例程 ID。';
       toast('err', `${verb}失败`, msg);
     }
   };
 
   const RISK_TIP = '例程会真的让 ECU 动作（匹配/复位/学习/驱动）。\n确认车辆状态安全（熄火/拉手刹/必要时上举升机）再执行。';
+
+  /**
+   * 执行**完整命令序列**（不是只发一条 31）。
+   *
+   * 序列成分（实测 P9x1_TIP_Oil_Filling）：
+   *   21/22 读状态 → 31 01 启动例程 → 31 03 查结果 → 2F IO 控制 → 31 02 停止
+   * 安全策略：
+   *   · 读命令（21/22/19/1A）失败 → 跳过继续
+   *   · 例程（31 01/03）失败 → 停止
+   *   · 写入（2E/3B/2F/14/11）失败 → 停止
+   */
+  const runSequence = async (fnName, label) => {
+    const f = fnSeqData?.functions?.find((x) => x.name === fnName);
+    if (!f) { toast('err', '找不到执行步骤'); return; }
+    if (!needLink()) return;
+    const cmds = f.cmds || [];
+    const isWrite = (c) => /^(2E|3B|2F|14|11)/i.test(c.replace(/\s/g, ''));
+    const isRead = (c) => /^(21|22|19|1A)/i.test(c.replace(/\s/g, ''));
+    const nWrite = cmds.filter(isWrite).length;
+    const ok = confirm(
+      `执行「${label}」的完整序列？\n\n`
+      + `共 ${cmds.length} 条命令，其中写入类 ${nWrite} 条。\n\n`
+      + `该序列是完整执行流程：读状态 → 启动例程 → 查结果 → 写参数 → 停止。\n`
+      + `⚠️ 写入会改变 ECU 配置，请确认已备份。\n\n${RISK_TIP}`);
+    if (!ok) return;
+
+    showLoading(`执行「${label}」`, `0 / ${cmds.length}`);
+    let done = 0;
+    try {
+      await coder.enterSessionFor('routine');
+      if (coder.seedKeyProvider) {
+        await coder.securityAccessEx({ level: 0x09, kwp: false }).catch(() => {});
+      }
+      for (const c of cmds) {
+        const raw = c.replace(/\s/g, '').toUpperCase();
+        const sid = parseInt(raw.slice(0, 2), 16);
+        done += 1;
+        updateLoading(`执行「${label}」`, `${done} / ${cmds.length}　${raw.slice(0, 20)}`);
+        try {
+          if (sid === 0x31) {
+            const sub = parseInt(raw.slice(2, 4), 16);
+            const rid = parseInt(raw.slice(4, 8), 16);
+            const params = raw.slice(8);
+            if (sub === 0x01 || sub === 0x03) {
+              await coder.runRoutine(sub, rid, params, { maxMs: 15000, intervalMs: 1200, poll: false });
+            } else {
+              await coder.routineControl(sub, rid, params);
+            }
+          } else if (sid === 0x27 || sid === 0x17) {
+            await coder.securityAccessEx({ level: 0x09, kwp: sid === 0x17 }).catch(() => {});
+          } else {
+            await coder.uds(raw, 6000, { allowEmpty: isRead(raw) });
+          }
+          log(`  ✅ ${done}/${cmds.length} ${raw.slice(0, 24)}`, 'ok');
+        } catch (e) {
+          const nrc = e instanceof CodingError ? e.nrc : null;
+          if (isRead(raw)) {
+            log(`  （跳过读 ${raw.slice(0, 12)}：${e.message}）`, 'warn');
+            continue;
+          }
+          throw new CodingError(
+            `第 ${done}/${cmds.length} 步失败：${raw.slice(0, 24)} —— ${e.message}` +
+            (nrc ? `（NRC 0x${nrc.toString(16)}）` : '') +
+            `\n序列已中止（未继续后续步骤）。`, nrc);
+        }
+      }
+      hideLoading();
+      toast('ok', `「${label}」序列完成`, `${cmds.length} 条命令全部执行`);
+    } catch (e) {
+      hideLoading();
+      const nrc = e instanceof CodingError ? e.nrc : null;
+      toast('err', `「${label}」中止`, e.message + (nrc ? '' : ''));
+    }
+  };
+  $('paramBox').querySelectorAll('.seqRun').forEach((b) => {
+    b.onclick = () => runSequence(b.dataset.fn, b.dataset.label || b.dataset.fn);
+  });
+  $('paramBox').querySelectorAll('.seqView').forEach((b) => {
+    b.onclick = () => {
+      const f = fnSeqData?.functions?.find((x) => x.name === b.dataset.fn);
+      if (!f) { toast('err', '找不到执行步骤'); return; }
+      const label = b.dataset.label || '特殊功能';
+      log(`\n=== ${label} 执行步骤（${f.cmdCount} 步）===`, 'info');
+      f.cmds.forEach((c, i) => log(`  ${String(i + 1).padStart(2)}. ${c}`, 'info'));
+      toast('info', `${f.cmdCount} 步已打印到日志`, '点右上「日志」查看');
+    };
+  });
 
   $('paramBox').querySelectorAll('.spRun, .vRun').forEach((b) => {
     if (b.disabled) return;
@@ -3050,7 +3146,7 @@ async function showSysExtra(f) {
     });
     $('xProgWrite').onclick = () => progRun('写编程块', async (lid) => {
       // 必须显式给出完整块 + 长度校验 + 回读校验；不允许「读到什么就写回什么」。
-      // 2026-10-19 对齐 431：备份 → 写入 → 回读 → 失败恢复。
+      // 2026-10-19 对齐 参考诊断仪：备份 → 写入 → 回读 → 失败恢复。
       const input = prompt(
         `要写入 LID 0x${Number(lid).toString(16).toUpperCase()} 的完整块（十六进制，空格可选）：\n`
         + '留空 = 取消。请先复制当前块、改好再粘回。', '');
@@ -3063,7 +3159,7 @@ async function showSysExtra(f) {
       if (clean.length / 2 !== cur.length) {
         throw new Error(`长度不符：要写 ${clean.length / 2} 字节，块实际 ${cur.length} 字节 —— 已中止`);
       }
-      // 431 序列：写前备份整块（回读不一致时原样写回）
+      // 参考诊断仪 序列：写前备份整块（回读不一致时原样写回）
       const backupHex = cur.map((b) => b.toString(16).padStart(2, '0')).join('');
       await coder.securityAccess(0x09, !uds);
       const sidHex = writeSid.toString(16).toUpperCase().padStart(2, '0');
@@ -3121,7 +3217,7 @@ async function showSysExtra(f) {
  * ⚠️ **变体必须匹配**（2026-10-17 审计）：每个模块有多个变体
  *    （ACC3_BaseSys / ACC3_A2 / ACC3_A4 …），不同变体的 byte/bit 映射**可能完全不同**。
  *    旧实现只加载 `mod.default`，车上若是别的变体 → 读写到错误字节。
- *    431 靠 1A 9F/94/92 的识别文本匹配 ODX 变体名（变体识别），不弹窗。
+ *    参考诊断仪 靠 1A 9F/94/92 的识别文本匹配 ODX 变体名（变体识别），不弹窗。
  *    本实现 `autoPickVariant()` 自动匹配；匹配不到用默认变体。
  *    `state.selectedVariant[module]` 仍是写入安全闸门，但由自动选择填充。
  */

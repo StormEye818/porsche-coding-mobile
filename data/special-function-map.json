@@ -1,0 +1,5067 @@
+{
+ "schemaVersion": 1,
+ "kind": "special-function-map",
+ "source": "特殊功能项与各平台实现的对应关系（人工核对）",
+ "note": "每个功能项给出各平台的实现函数与命令序列。app 只展示当前车型平台有实现且序列非空的项；跨平台 RID 与 ECU 绑定，不执行。",
+ "count": 67,
+ "mapped": 63,
+ "systemAliases": {
+  "tiptronic变速器控制": [
+   "TIP",
+   "PDK",
+   "GETRIEBE",
+   "TCM"
+  ],
+  "乘客侧座椅位置记忆": [
+   "SITZ",
+   "DSM"
+  ],
+  "驾驶员侧座椅记忆": [
+   "SITZ",
+   "DSM"
+  ],
+  "pasm保时捷主动悬架管理系统": [
+   "PASM",
+   "PADM"
+  ],
+  "esppsm电控稳定系统": [
+   "PSM"
+  ],
+  "pcm保时捷通信管理系统": [
+   "PCM",
+   "MOST",
+   "HEAD_UNIT",
+   "INFORCONTR"
+  ],
+  "前端电子设备": [
+   "BCM_VORNE"
+  ],
+  "ecmdme发动机控制模块": [
+   "DME",
+   "ECM",
+   "MED",
+   "BDE"
+  ],
+  "组合仪表": [
+   "KOMBI"
+  ],
+  "网关": [
+   "GATEWAY",
+   "GAT"
+  ],
+  "车道变换辅助系统右侧主设备": [
+   "SWA",
+   "LANECHANG",
+   "SPUR"
+  ],
+  "车道变换辅助系统左侧从动设备": [
+   "SWA",
+   "LANECHANG",
+   "SPUR"
+  ],
+  "转向盘电子设备": [
+   "LENKSTOCK",
+   "LWS",
+   "STEERING_COLUMN"
+  ],
+  "驻车制动器": [
+   "EPB",
+   "PBM",
+   "PARKBREMSE"
+  ],
+  "ac空调系统": [
+   "BKE",
+   "KLIMA",
+   "AIRCOND"
+  ],
+  "srs安全气囊": [
+   "AIRBAG",
+   "SRS"
+  ],
+  "全轮驱动": [
+   "VTG",
+   "ALLRAD",
+   "PTM",
+   "TRANSFER"
+  ],
+  "平视显示器": [
+   "HUD"
+  ],
+  "水平高度控制pasm": [
+   "LEC",
+   "PASM"
+  ],
+  "灯光电子": [
+   "SCHEINWERFER",
+   "LHB"
+  ],
+  "通讯连接系统": [
+   "CONNECT",
+   "TELEMAT"
+  ],
+  "后端电子设备": [
+   "BCM_HINTEN"
+  ],
+  "动力机组支承": [
+   "TME",
+   "LAGER"
+  ],
+  "可折叠顶篷": [
+   "VERDECK",
+   "DACH",
+   "REA"
+  ],
+  "座椅记忆": [
+   "SITZ",
+   "DSM"
+  ],
+  "eps电动助力转向系统": [
+   "EPS",
+   "STEERING_CONTROL"
+  ],
+  "轮胎压力监控tpm": [
+   "RDK",
+   "TPM"
+  ]
+ },
+ "maps": [
+  {
+   "menuId": "0x0301",
+   "system": "Tiptronic 变速器控制",
+   "sub": "机油加注",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TIP-OILFILL",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "G3",
+    "992",
+    "E2",
+    "E1",
+    "CAJUN"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_TIP_Oil_Filling",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x0409",
+      "0x0410",
+      "0x0429"
+     ]
+    },
+    {
+     "name": "G3_TIP_PDK_OilFill",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 9,
+     "rids": [
+      "0x0421",
+      "0x0422",
+      "0x0467"
+     ]
+    },
+    {
+     "name": "P992_992_2_PDK_OilFill",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 44,
+     "rids": [
+      "0x0211",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0412",
+      "0x0423",
+      "0x045F",
+      "0x04D6",
+      "0x04DE",
+      "0x0531"
+     ]
+    },
+    {
+     "name": "Panamera_971_PDK_Oil_Filling",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 49,
+     "rids": [
+      "0x0211",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0423",
+      "0x045F",
+      "0x04DE",
+      "0x0531"
+     ]
+    },
+    {
+     "name": "P9X1_DEM_Oil_filling_windows",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 1,
+     "rids": []
+    },
+    {
+     "name": "PAN970_DME_oil_filling_018A",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 31,
+     "rids": [
+      "0x030A",
+      "0x0325"
+     ]
+    },
+    {
+     "name": "Macan_DEM_Oil_Filling",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 46,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P9x1_DME_UDS_Oil_Filling",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 26,
+     "rids": [
+      "0x0402",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P992_BV_TransContrModulUDS_Oil_Filling",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x0211",
+      "0x0212",
+      "0x035F",
+      "0x0361",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0410",
+      "0x0423",
+      "0x045F",
+      "0x04DE",
+      "0x0531"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0203",
+   "system": "乘客侧座椅位置记忆",
+   "sub": "校正座椅电机",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_DSM_Normalise_Seat_Motors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "Cayenne_9YA_Standardize_Seat_Motors",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 24,
+     "rids": []
+    },
+    {
+     "name": "G2_SCMR_Standardize_Seat_Motors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 20,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x0533"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0203",
+   "system": "驾驶员侧座椅记忆",
+   "sub": "校正座椅电机",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_DSM_Normalise_Seat_Motors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "Cayenne_9YA_Standardize_Seat_Motors",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 24,
+     "rids": []
+    },
+    {
+     "name": "G2_SCMR_Standardize_Seat_Motors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 20,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x0533"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0204",
+   "system": "PASM（保时捷主动悬架管理系统）",
+   "sub": "PASM/PADM 调试",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_PASM_PASM_PADM_Commissioning",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 21,
+     "rids": [
+      "0x0001",
+      "0x0004",
+      "0x0005",
+      "0x0442",
+      "0x04F1",
+      "0x052D",
+      "0x052E"
+     ]
+    },
+    {
+     "name": "P992_Roll_Stabilization_Commissioning",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 57,
+     "rids": [
+      "0x030F",
+      "0x0316",
+      "0x032E",
+      "0x045B",
+      "0x051A"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0300",
+   "system": "PASM（保时捷主动悬架管理系统）",
+   "sub": "校准",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "HEIGHT_DIMENSION_01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "918S",
+    "G2",
+    "E1",
+    "G3",
+    "J1",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_PASM_Calibration",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 25,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305"
+     ]
+    },
+    {
+     "name": "P918_PASM_Calibration",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0400"
+     ]
+    },
+    {
+     "name": "Cayenne_2010_PASM_Height_Sensor_Calibration",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 39,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF101",
+      "0xF106",
+      "0xF108"
+     ]
+    },
+    {
+     "name": "PAN970_LEC_Height_Sensor_System_Calibration",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 39,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "CAY9YA_1113_Height_Sensor_Calibration",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x03D2",
+      "0x03D4",
+      "0x03D6",
+      "0x0412",
+      "0x041A",
+      "0x0516"
+     ]
+    },
+    {
+     "name": "PJ1_1513_Height_Sensor_Calibration",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 99,
+     "rids": [
+      "0x031A",
+      "0x031B",
+      "0x0324",
+      "0x0325",
+      "0x0329",
+      "0x032C",
+      "0x033C",
+      "0x033D",
+      "0x03AE",
+      "0x03B7",
+      "0x03B9",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x040A",
+      "0x0412",
+      "0x0418",
+      "0x041A",
+      "0x04BF",
+      "0x0542",
+      "0x0543",
+      "0xF104",
+      "0xF106",
+      "0xF108"
+     ]
+    },
+    {
+     "name": "P992_1413_Height_Sensor_Calibration",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 32,
+     "rids": [
+      "0x0325",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0302",
+   "system": "PASM（保时捷主动悬架管理系统）",
+   "sub": "系统测试：单元支座",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_PASM_System_Test_Unit_Mounting",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 23,
+     "rids": [
+      "0x0004",
+      "0x0005",
+      "0x0354",
+      "0x0442",
+      "0x04F1",
+      "0x052D",
+      "0x052E",
+      "0xF101",
+      "0xF104"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0303",
+   "system": "PASM（保时捷主动悬架管理系统）",
+   "sub": "驱动链接测试：减震器阀",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_PASM_dampervalves",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 37,
+     "rids": [
+      "0x0007",
+      "0x0008",
+      "0x000A",
+      "0x0011",
+      "0x0012",
+      "0x0013",
+      "0x0408"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0304",
+   "system": "ESP/PSM(电控稳定系统)",
+   "sub": "对制动器排气",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "E1",
+    "9X1",
+    "E2",
+    "G3",
+    "9X7"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_PSM_Bleed_the_Brakes",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 25,
+     "rids": [
+      "0x0402",
+      "0x0409",
+      "0x0410",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "PAN970_PSM_Bleed_The_Brakes",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 35,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0x03AE",
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P9x1_PSM_Bleed_The_Brakes",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 36,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0x03AE",
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "Panamera_971_PSM_Service_Bleeding",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 28,
+     "rids": [
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x04DE",
+      "0x0531"
+     ]
+    },
+    {
+     "name": "G3_PSM_Service_Bleeding",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 76,
+     "rids": [
+      "0x0211",
+      "0x030A",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0412",
+      "0x041A",
+      "0x0420",
+      "0x046D",
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x04DE",
+      "0x0531"
+     ]
+    },
+    {
+     "name": "P997_PSM_Bleed_0540",
+     "platforms": [
+      "9X7"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x000A",
+      "0x0400",
+      "0x0500",
+      "0x0543",
+      "0xF101",
+      "0xF106"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0200",
+   "system": "PCM（保时捷通信管理系统）",
+   "sub": "MOST 系统测试",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "CAJUN",
+    "ALL",
+    "E2",
+    "E3",
+    "9X1"
+   ],
+   "impls": [
+    {
+     "name": "Macan_PCM4_MOSTSystemTest",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 34,
+     "rids": [
+      "0x0317",
+      "0x0359",
+      "0x0403",
+      "0x0493"
+     ]
+    },
+    {
+     "name": "SYS_1246_SPE_MOSTSystemTest",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 78,
+     "rids": [
+      "0x0316",
+      "0x0317",
+      "0x0359",
+      "0x0377",
+      "0x0397",
+      "0x03CA",
+      "0x03CB",
+      "0x03CC",
+      "0x03D4",
+      "0x03D6",
+      "0x03E1",
+      "0x0404",
+      "0x0408",
+      "0x0475",
+      "0x0493",
+      "0x0515",
+      "0x0516",
+      "0x054F",
+      "0x2012",
+      "0x2013",
+      "0x2016",
+      "0x201C",
+      "0x2201",
+      "0x2207",
+      "0x9003",
+      "0x9004",
+      "0x9006",
+      "0x9007",
+      "0x9008"
+     ]
+    },
+    {
+     "name": "Macan_PCM_MOST_system_test_windows",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 55,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361",
+      "0x0408",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "Panamera_PCM_MOST_system_test_windows",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 4,
+     "rids": [
+      "0x0408"
+     ]
+    },
+    {
+     "name": "E3_PCM_Most_System_Test",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 25,
+     "rids": [
+      "0x0524"
+     ]
+    },
+    {
+     "name": "P9x1_PCM31_CDR_Most_System_Test",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 193,
+     "rids": [
+      "0x0316",
+      "0x0317",
+      "0x032A",
+      "0x032D",
+      "0x032E",
+      "0x034A",
+      "0x0377",
+      "0x0402",
+      "0x0405",
+      "0x0408",
+      "0x040B",
+      "0x0493",
+      "0x051C",
+      "0x067B",
+      "0x067C",
+      "0x2002",
+      "0x2003",
+      "0x2004",
+      "0x2005",
+      "0x2006",
+      "0x2009",
+      "0x200A",
+      "0x200B",
+      "0x200C",
+      "0x200D",
+      "0x2012",
+      "0x2013",
+      "0x2016",
+      "0x2017",
+      "0x201C",
+      "0x2103",
+      "0x2104",
+      "0x2105",
+      "0x2106",
+      "0x2107",
+      "0x2201",
+      "0x2207",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF009",
+      "0xF00B",
+      "0xF00C"
+     ]
+    },
+    {
+     "name": "P9x1_PCM_CDR31_Most_System_Test",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 108,
+     "rids": [
+      "0x0000",
+      "0x0001",
+      "0x0004",
+      "0x0005",
+      "0x0212",
+      "0x030A",
+      "0x0316",
+      "0x032E",
+      "0x035F",
+      "0x0361",
+      "0x03ED",
+      "0x03EE",
+      "0x0402",
+      "0x0442",
+      "0x04F1",
+      "0x052D",
+      "0x052E",
+      "0x059C",
+      "0x2107",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "Panamera_PCM_MOST_system_reserve_windows",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 10,
+     "rids": [
+      "0x0408",
+      "0xF101",
+      "0xF106",
+      "0xF108"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0201",
+   "system": "PCM（保时捷通信管理系统）",
+   "sub": "确认更新",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "CAJUN"
+   ],
+   "impls": [
+    {
+     "name": "Macan_PCM4_Confirmation_Update",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 14,
+     "rids": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x0202",
+   "system": "PCM（保时捷通信管理系统）",
+   "sub": "禁用生产模式",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "992",
+    "CAJUN",
+    "E2",
+    "ALL"
+   ],
+   "impls": [
+    {
+     "name": "E3_PCM_Deactivate_Production_Mode",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x0401",
+      "0x0404",
+      "0x0408",
+      "0x0412",
+      "0x041A",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "P992_BV_InforContrUnit1UDS_Deactivate_Production_Mode",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x0402",
+      "0x0405",
+      "0x040A",
+      "0x0412",
+      "0x0418",
+      "0x041A",
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "Macan_PCM4_Deactivate_Production_Mode",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 2,
+     "rids": []
+    },
+    {
+     "name": "E2_Pcm_DeactivateProductionMode",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "SYS_1246_SPE_DisProductionMode",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 102,
+     "rids": [
+      "0x0212",
+      "0x0359",
+      "0x035F",
+      "0x0361",
+      "0x03CA",
+      "0x03CB",
+      "0x03CC",
+      "0x03D4",
+      "0x03D6",
+      "0x03E1",
+      "0x0404",
+      "0x0405",
+      "0x0408",
+      "0x0475",
+      "0x0515",
+      "0x0516",
+      "0x0542",
+      "0x0543",
+      "0x9003",
+      "0x9004",
+      "0x9006",
+      "0x9007",
+      "0x9008",
+      "0xE210",
+      "0xF005",
+      "0xF006",
+      "0xF009",
+      "0xF00B",
+      "0xF00C",
+      "0xF00E"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0305",
+   "system": "前端电子设备",
+   "sub": "刮水角度自适应",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_FRONT_Wiping_Angle_Adaptation",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0409",
+      "0x0410"
+     ]
+    },
+    {
+     "name": "E3_Windshield_Wiper_Motor_Adjust_Wiping_Angle",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 19,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0306",
+   "system": "前端电子设备",
+   "sub": "前照灯调试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "HEADLIGHT_ADJUST-01",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "E2",
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "E2_HeadLight_Comission",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 13,
+     "rids": [
+      "0x030B",
+      "0x0315",
+      "0x036E",
+      "0x03F0"
+     ]
+    },
+    {
+     "name": "E3_Headlight__Bulbs_LED_Left_Right_Headlight_Commissioning",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 17,
+     "rids": [
+      "0x0451",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "E3_PDLS_LED_Headlight_Commissioning",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 69,
+     "rids": [
+      "0x0000",
+      "0x00FF",
+      "0x030F",
+      "0x0315",
+      "0x0400",
+      "0x0401",
+      "0x0404",
+      "0x0408",
+      "0x0412",
+      "0x041A",
+      "0x0422",
+      "0x0441",
+      "0x0544",
+      "0xF106",
+      "0xF10C"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0307",
+   "system": "前端电子设备",
+   "sub": "启动钥匙保持电磁阀",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "918S"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_FRONT_Activation_Of_Key_Retaining_Solenoid",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 13,
+     "rids": [
+      "0x0409",
+      "0x0410",
+      "0x0429"
+     ]
+    },
+    {
+     "name": "P918_Frongtend_Activation_of_key_retaining_solenoid",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 14,
+     "rids": [
+      "0x0409",
+      "0x0410",
+      "0x0429"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0308",
+   "system": "ECM/DME(发动机控制模块)",
+   "sub": "节气门匹配",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "9X1"
+   ],
+   "impls": [
+    {
+     "name": "Cayenne_2011_DME_Adaption_Throttle_Adaption_0160",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 2,
+     "rids": [
+      "0x0410"
+     ]
+    },
+    {
+     "name": "P9x1_DME_UDS_AdaptSec",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 61,
+     "rids": [
+      "0x030A",
+      "0x030F"
+     ]
+    },
+    {
+     "name": "CAY92A_DME_Adaptation_Kickdown_Switch_0161",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 17,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0309",
+   "system": "组合仪表",
+   "sub": "设置总里程",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "918S",
+    "CS1",
+    "ALL",
+    "9X6",
+    "E3",
+    "9X7"
+   ],
+   "impls": [
+    {
+     "name": "P918_ICM_Set_Total_Mileage",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 29,
+     "rids": [
+      "0x0402",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "CS1_GT4_Set_Total_Mileage",
+     "platforms": [
+      "CS1"
+     ],
+     "cmdCount": 29,
+     "rids": [
+      "0x0402",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "ICM_Set_Total_Mileage",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x0402",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P9x6_ICM_Total_distance_0809",
+     "platforms": [
+      "9X6"
+     ],
+     "cmdCount": 36,
+     "rids": [
+      "0x0400",
+      "0x0402",
+      "0x0543",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF101"
+     ]
+    },
+    {
+     "name": "E3_Instrument_Cluster_Setting_Total_Distance",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 2,
+     "rids": []
+    },
+    {
+     "name": "P997_ICM_Advance_total_0840",
+     "platforms": [
+      "9X7"
+     ],
+     "cmdCount": 17,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x030A",
+   "system": "组合仪表",
+   "sub": "重置保养间隔",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "G2",
+    "G3",
+    "J1",
+    "992",
+    "CAJUN"
+   ],
+   "impls": [
+    {
+     "name": "E3_G2_ICM_Reset_Maintenance_Interval",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 19,
+     "rids": [
+      "0x0210",
+      "0x0211",
+      "0x0230",
+      "0x0231",
+      "0x0317",
+      "0x0451",
+      "0x0483",
+      "0x0533"
+     ]
+    },
+    {
+     "name": "E3_Write_Maintenance_Interval_LGEPO536",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 77,
+     "rids": [
+      "0x030F",
+      "0x0325",
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "E3_Write_Maintenance_Interval_EV_InstrClustVistePO623_005",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 72,
+     "rids": [
+      "0x0325",
+      "0x0402",
+      "0x0409",
+      "0x0410",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "G2_Write_Maintenance_Interval",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 75,
+     "rids": [
+      "0x0325",
+      "0x0402",
+      "0x0409",
+      "0x0410",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "G3_Write_Maintenance_Interval_LGEPO536",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 89,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0325",
+      "0x03AE",
+      "0x0401",
+      "0x0402",
+      "0x0404",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF102",
+      "0xF103",
+      "0xF106",
+      "0xF108"
+     ]
+    },
+    {
+     "name": "J1_BV_DashBoardUDS_Write_Maintenance_Interval",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x0402",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P992_Write_Maintenance_Interval",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 59,
+     "rids": [
+      "0x0325",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x0409",
+      "0x040A",
+      "0x0410",
+      "0x0418",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF104",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "Macan_Write_Maintenance_Interval",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 42,
+     "rids": [
+      "0x034D",
+      "0x0350",
+      "0x0351",
+      "0x0362",
+      "0x0402",
+      "0x0523",
+      "0x0524",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x030B",
+   "system": "网关",
+   "sub": "电池更换",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "9X1",
+    "918S",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_GAT_Battery_Change",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x000A",
+      "0x0400",
+      "0x0500",
+      "0x0543",
+      "0xF101",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "P9x1_GAT_Battery_Change",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x0402",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P918_GATEWAY_Battery_change",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 1,
+     "rids": []
+    },
+    {
+     "name": "Cayenne_9YA_Gate_Battery_Replacement",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x0210",
+      "0x0211",
+      "0x0230",
+      "0x0231"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x030C",
+   "system": "车道变换辅助系统，右侧（主设备）",
+   "sub": "校准",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "CAJUN",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_SWA3_Calibration",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x0442",
+      "0x052D",
+      "0x052E"
+     ]
+    },
+    {
+     "name": "Macan_SWA3_Calibration",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 50,
+     "rids": [
+      "0x0350",
+      "0x0362",
+      "0x0420",
+      "0x0422",
+      "0x0423",
+      "0x0425",
+      "0x04A2",
+      "0x052D",
+      "0x052E"
+     ]
+    },
+    {
+     "name": "Macan_SWA2_Calibration",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x0402",
+      "0x0439",
+      "0x043A",
+      "0x043C"
+     ]
+    },
+    {
+     "name": "G2_BV_LaneChangAssisUDS_Teach",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 45,
+     "rids": [
+      "0x052D",
+      "0x052E",
+      "0xE210",
+      "0xF005",
+      "0xF006",
+      "0xF009",
+      "0xF00B",
+      "0xF00C",
+      "0xF00E"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x030C",
+   "system": "车道变换辅助系统，左侧（从动设备）",
+   "sub": "校准",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "CAJUN",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_SWA3_Calibration",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x0442",
+      "0x052D",
+      "0x052E"
+     ]
+    },
+    {
+     "name": "Macan_SWA3_Calibration",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 50,
+     "rids": [
+      "0x0350",
+      "0x0362",
+      "0x0420",
+      "0x0422",
+      "0x0423",
+      "0x0425",
+      "0x04A2",
+      "0x052D",
+      "0x052E"
+     ]
+    },
+    {
+     "name": "Macan_SWA2_Calibration",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x0402",
+      "0x0439",
+      "0x043A",
+      "0x043C"
+     ]
+    },
+    {
+     "name": "G2_BV_LaneChangAssisUDS_Teach",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 45,
+     "rids": [
+      "0x052D",
+      "0x052E",
+      "0xE210",
+      "0xF005",
+      "0xF006",
+      "0xF009",
+      "0xF00B",
+      "0xF00C",
+      "0xF00E"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x030D",
+   "system": "转向盘电子设备",
+   "sub": "功能启动",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "ALL",
+    "G2",
+    "E2",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "FRO_0E20_SPE_ESCLSet",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 35,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xE210",
+      "0xF00E"
+     ]
+    },
+    {
+     "name": "CAY92A_FRONT_Steering_Column_Adjustment",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 9,
+     "rids": [
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "Panamera_971_BCM_Teach_Steering_Column_Adjustment",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 52,
+     "rids": [
+      "0x0317",
+      "0x0325",
+      "0x03A9",
+      "0x0402",
+      "0x0403",
+      "0x0404",
+      "0x0405",
+      "0x0406",
+      "0x0407",
+      "0x040F",
+      "0x0428",
+      "0x0451",
+      "0x0483",
+      "0x04DE",
+      "0x0531",
+      "0x0533",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P992_BV_CentrElectUDS_Teach_Steering_Column_Adjustment",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 45,
+     "rids": [
+      "0x03A9",
+      "0x03BE",
+      "0x0401",
+      "0x0402",
+      "0x0409",
+      "0x0410",
+      "0x0412",
+      "0x041A",
+      "0x04DE",
+      "0x0531",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x030E",
+   "system": "转向盘电子设备",
+   "sub": "标定",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "9X1",
+    "CS1",
+    "E2",
+    "E1",
+    "918S"
+   ],
+   "impls": [
+    {
+     "name": "P9X1_STW_Steering_angle",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x030A",
+      "0x0400"
+     ]
+    },
+    {
+     "name": "CS1_GT4_Steering_Angle_Sensor_Calibration",
+     "platforms": [
+      "CS1"
+     ],
+     "cmdCount": 2,
+     "rids": [
+      "0x0400"
+     ]
+    },
+    {
+     "name": "Panamera_971_SteeringAngle_Sensor_Calibration",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 39,
+     "rids": [
+      "0x0212",
+      "0x0325",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "Panamera_970_STW_SteeringAngle_Sensor_Calibration",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 2,
+     "rids": [
+      "0x0400"
+     ]
+    },
+    {
+     "name": "P918_Steering_Wheel_Steering_angle",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 40,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x030A",
+      "0x0400"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0310",
+   "system": "驻车制动器",
+   "sub": "校准",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "CAJUN",
+    "E3",
+    "G2",
+    "J1"
+   ],
+   "impls": [
+    {
+     "name": "Macan_EPB_Initial_Start_Up",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 21,
+     "rids": [
+      "0x03A9",
+      "0x03AB",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x03CA",
+      "0x03CD",
+      "0x04DE",
+      "0x0531",
+      "0x900D"
+     ]
+    },
+    {
+     "name": "E3G2_PS_BrakeReset_Calibration",
+     "platforms": [
+      "E3",
+      "G2"
+     ],
+     "cmdCount": 62,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0325",
+      "0x0327",
+      "0x0404",
+      "0x0441",
+      "0x0542",
+      "0x0543",
+      "0x2022",
+      "0x2024",
+      "0x202A",
+      "0x2206"
+     ]
+    },
+    {
+     "name": "J1_BV_Brake1UDS_CalibrateBrake",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 6,
+     "rids": [
+      "0x0544"
+     ]
+    },
+    {
+     "name": "E3G2_PSM_BrakeReset_Adjust",
+     "platforms": [
+      "E3",
+      "G2"
+     ],
+     "cmdCount": 52,
+     "rids": [
+      "0x03A1",
+      "0x046D",
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x04AA",
+      "0x04AB",
+      "0x04AC",
+      "0x04AD",
+      "0x0542",
+      "0x0543"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0311",
+   "system": "驻车制动器",
+   "sub": "检查驻车制动器的基本设置",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_PAB_Check_Basic_Setting",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 32,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0409",
+      "0x0410",
+      "0x0441"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0312",
+   "system": "驻车制动器",
+   "sub": "移至安装位置",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "918S"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_Move_To_Installation_Position",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 33,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0212",
+      "0x035F",
+      "0x0361",
+      "0x03AB",
+      "0x03CA",
+      "0x03CD",
+      "0x0400",
+      "0x900D"
+     ]
+    },
+    {
+     "name": "P918_PARK_move_to_assembly_position",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0212",
+      "0x035F",
+      "0x0361",
+      "0x0400"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0313",
+   "system": "驻车制动器",
+   "sub": "释放驻车制动器",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "918S",
+    "9X1",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "P918_PARK_Release_parking_brake",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 20,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    },
+    {
+     "name": "P9x1_Release_Parking_Brake",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 9,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    },
+    {
+     "name": "CAY92A_PAB_Put_Hand_Brake",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 9,
+     "rids": [
+      "0x0002",
+      "0x0305"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0314",
+   "system": "驻车制动器",
+   "sub": "锁紧驻车制动器",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "918S",
+    "9X1"
+   ],
+   "impls": [
+    {
+     "name": "P918_PARK_Tension_parking_brake",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    },
+    {
+     "name": "P9x1_Tension_Parking_Brake",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0320",
+   "system": "ECM/DME(发动机控制模块)",
+   "sub": "冷却系统排气",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "DME-BLEEDING_COOLING_992",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "918S",
+    "992",
+    "9X1",
+    "E2",
+    "J1",
+    "E3",
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "P918_DME_Bleeding_Cooling_System",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 24,
+     "rids": []
+    },
+    {
+     "name": "P992_DME_30TFS_Bleeding_Cooling_System",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 26,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "P9X1_9x1_dme_DME_BDE_Continental_Bleed_cooling_system",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 138,
+     "rids": [
+      "0x0006",
+      "0x030A",
+      "0x0316",
+      "0x0317",
+      "0x032C",
+      "0x032D",
+      "0x032E",
+      "0x0405",
+      "0x040B",
+      "0x04F1",
+      "0x051C",
+      "0x0597",
+      "0x05B7",
+      "0x0661",
+      "0x0662",
+      "0x0663",
+      "0x0664",
+      "0x0665",
+      "0x0666",
+      "0x0667",
+      "0x067B",
+      "0x067C",
+      "0x0BCE",
+      "0x1003"
+     ]
+    },
+    {
+     "name": "Panamera_971_DME_Bleeding_HighTemperature_Coolant_Circuit",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x03A9",
+      "0x04DE"
+     ]
+    },
+    {
+     "name": "J1_BV_ThermManagUDS_VentingTheCoolingCircuits",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 4,
+     "rids": []
+    },
+    {
+     "name": "E3_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0358",
+      "0x03A9",
+      "0x045B",
+      "0x04DE"
+     ]
+    },
+    {
+     "name": "G2_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 30,
+     "rids": [
+      "0x03A9",
+      "0x04DE",
+      "0x0524",
+      "0x0528"
+     ]
+    },
+    {
+     "name": "G3_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 49,
+     "rids": [
+      "0x030A",
+      "0x0358",
+      "0x0397",
+      "0x03A9",
+      "0x045B",
+      "0x04DE",
+      "0x0600",
+      "0x0601"
+     ]
+    },
+    {
+     "name": "J1_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 16,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x0600"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0321",
+   "system": "ECM/DME(发动机控制模块)",
+   "sub": "释放卡住的离合器",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "DME-RELEASE_STUCK_CLUTCH",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "E3_DME_Release_Stuck_Clutch",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 45,
+     "rids": [
+      "0x034D",
+      "0x0350",
+      "0x0351",
+      "0x0362",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x040A",
+      "0x0418",
+      "0x04CF",
+      "0x0523",
+      "0x0524",
+      "0x0527",
+      "0xF104"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0322",
+   "system": "AC(空调系统)",
+   "sub": "压缩机测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "AC-COMPRESS",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "992",
+    "E3",
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_Airconditioning_Compressor_run_in",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 43,
+     "rids": [
+      "0x030F",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x0408",
+      "0x040A",
+      "0x0410",
+      "0x0418",
+      "0x0441",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P992_BCM1_ComPresser_Tech",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x0305",
+      "0x032E",
+      "0x0358",
+      "0x039E"
+     ]
+    },
+    {
+     "name": "E3_BV_AirCondiUDS_TeachAirConditioningCompressor",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 13,
+     "rids": [
+      "0x0358",
+      "0x0402",
+      "0x0405",
+      "0x040A",
+      "0x0418"
+     ]
+    },
+    {
+     "name": "G2_BV_AirCondiUDS_TeachAirConditioningCompressor",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0358",
+      "0x0402",
+      "0x0405",
+      "0x040A",
+      "0x0418"
+     ]
+    },
+    {
+     "name": "G3_BV_AirCondiUDS_TeachAirConditioningCompressor",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 4,
+     "rids": [
+      "0x0358"
+     ]
+    },
+    {
+     "name": "G3_BV_ThermManagUDS_Program_Electric_AC_Compressor",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0358",
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0323",
+   "system": "AC(空调系统)",
+   "sub": "风门测试",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "AC-FLAP",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "G2",
+    "G3",
+    "992",
+    "CAJUN",
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_Airconditioning_Servo_motor_teaching",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 46,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0401",
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0418",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "G2_BV_AirCondiUDS_TeachAndCheckFlapServoMotors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x034D",
+      "0x0362",
+      "0x0467"
+     ]
+    },
+    {
+     "name": "G3_BV_AirCondiUDS_TeachAndCheckFlapServoMotors",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 7,
+     "rids": [
+      "0x0409",
+      "0x0410"
+     ]
+    },
+    {
+     "name": "P992_BV_CentrElectUDS_Teach_Flap_Servo_Motors",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 28,
+     "rids": [
+      "0x0316",
+      "0x0358"
+     ]
+    },
+    {
+     "name": "Macan_AC_Teach_Flap_Servo_Motors",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 77,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0354",
+      "0x03AE",
+      "0x0401",
+      "0x0402",
+      "0x0403",
+      "0x0404",
+      "0x0405",
+      "0x0406",
+      "0x0416",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF101",
+      "0xF104"
+     ]
+    },
+    {
+     "name": "E3_BV_ThermManagUDS_TeachCoolingAirFlaps",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 7,
+     "rids": [
+      "0x045B"
+     ]
+    },
+    {
+     "name": "G3_BV_ThermManagUDS_TeachCoolingAirFlaps",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 6,
+     "rids": [
+      "0x030F",
+      "0x045B"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0324",
+   "system": "SRS(安全气囊)",
+   "sub": "安全气囊复位",
+   "risk": "high",
+   "verified": false,
+   "unverifiedReason": "气囊电脑更换适配，不是「复位」",
+   "img": "AIRBAG-1",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "E1",
+    "CS1"
+   ],
+   "impls": [
+    {
+     "name": "E1_AirBag_PorscheEcuReplaceFunc",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 5,
+     "rids": []
+    },
+    {
+     "name": "CS1_GT4_Occupant_Detection_Replacement",
+     "platforms": [
+      "CS1"
+     ],
+     "cmdCount": 9,
+     "rids": [
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x040A",
+      "0x0418"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0325",
+   "system": "SRS(安全气囊)",
+   "sub": "RGS 复位",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "AIRBAG-RGS",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "G2_BMC_Reset_Of_Crash_Switch_Off",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 44,
+     "rids": [
+      "0x03CA",
+      "0x03CB",
+      "0x03CC",
+      "0x03D4",
+      "0x03D6",
+      "0x03E1",
+      "0x0475",
+      "0x0515",
+      "0x0516",
+      "0x052E",
+      "0x9003",
+      "0x9004",
+      "0x9006",
+      "0x9007",
+      "0x9008"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0326",
+   "system": "全轮驱动",
+   "sub": "标签配置",
+   "risk": "low",
+   "verified": false,
+   "unverifiedReason": "全轮驱动标定，不是「标签配置」",
+   "img": "ALLRAD-LABEL_CAJUN",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "ALL",
+    "CAJUN"
+   ],
+   "impls": [
+    {
+     "name": "AllradSetCalibration",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 29,
+     "rids": []
+    },
+    {
+     "name": "AllradWriteVehOrder",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x0325",
+      "0x2001",
+      "0x2009",
+      "0x200F",
+      "0x2010",
+      "0x2014",
+      "0x2103",
+      "0x2104"
+     ]
+    },
+    {
+     "name": "AllradModifyVehOrder",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x0325",
+      "0x2001",
+      "0x2009",
+      "0x200F",
+      "0x2010",
+      "0x2014",
+      "0x2103",
+      "0x2104"
+     ]
+    },
+    {
+     "name": "Macan_TransferBoxReplace",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x0327",
+   "system": "网关",
+   "sub": "钥匙匹配",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "BCM2_CONFIG_KEY",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X6",
+    "G2",
+    "ALL",
+    "E1"
+   ],
+   "impls": [
+    {
+     "name": "P9x6_ALM_TransponderKey",
+     "platforms": [
+      "9X6"
+     ],
+     "cmdCount": 16,
+     "rids": []
+    },
+    {
+     "name": "CAY92A_FRONT_Kessy_Functions_Version_Of_The_Key",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 6,
+     "rids": [
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "DME_0B20_SPE_Version_Of_The_Key",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 28,
+     "rids": [
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P9x6_ALM_TransferRemoteControls",
+     "platforms": [
+      "9X6"
+     ],
+     "cmdCount": 2,
+     "rids": []
+    },
+    {
+     "name": "E1_Kessy_PorscheEcuReplaceFunc",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 17,
+     "rids": [
+      "0x0212"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0328",
+   "system": "网关",
+   "sub": "网关匹配",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "CAYENNE-92A-GATEWAY-TEACH01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "G2",
+    "CAJUN",
+    "918S",
+    "E1"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_Gateway_specified_configuration_0986",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305"
+     ]
+    },
+    {
+     "name": "P9x1_Gateway_specified_configuration_0982",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 1,
+     "rids": []
+    },
+    {
+     "name": "Cayenne_2010_GATEWAY_Nominal_Actual_configuration",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x030A"
+     ]
+    },
+    {
+     "name": "MACAN_GAT_Actual_specified_configuration_windows",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305"
+     ]
+    },
+    {
+     "name": "Cayenne_GAT_Actual_specified_configuration",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305"
+     ]
+    },
+    {
+     "name": "P918_GATEWAY_Actual_specified_configuration",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 34,
+     "rids": [
+      "0x0000",
+      "0x0316",
+      "0x0317",
+      "0x0377",
+      "0x0493",
+      "0x2012",
+      "0x2013",
+      "0x2016",
+      "0x201C",
+      "0x2201",
+      "0x2207"
+     ]
+    },
+    {
+     "name": "P918_GATEWAY_Actual_specified_configuration_A5",
+     "platforms": [
+      "918S"
+     ],
+     "cmdCount": 73,
+     "rids": [
+      "0x0000",
+      "0x030A",
+      "0x0316",
+      "0x0405",
+      "0x0406",
+      "0x0408",
+      "0x1001",
+      "0x1003",
+      "0x2207"
+     ]
+    },
+    {
+     "name": "E1_GateWay_NominalAndActualConfiguration",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 15,
+     "rids": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x0329",
+   "system": "网关",
+   "sub": "驾驶员认证",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "SPEC-GATEW-DRIVERCARDS-01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "G2_PVTS_Teaching_Driver_Cards",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    },
+    {
+     "name": "E3_GateWay_Teach_PVTS_Driver_Cards",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 37,
+     "rids": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x032A",
+   "system": "平视显示器",
+   "sub": "HUD 校准",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "9YA_HUD_CALIBRATION_TOOL",
+   "status": "no-seq",
+   "match": "no-seq",
+   "platforms": [
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "E3_HUD_Shakedown_Test",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 0,
+     "rids": [],
+     "cmds": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x032B",
+   "system": "水平高度控制/PASM",
+   "sub": "高度校准",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "HEIGHT_DIMENSION_01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "G3",
+    "J1",
+    "992",
+    "E1"
+   ],
+   "impls": [
+    {
+     "name": "Cayenne_2010_PASM_Height_Sensor_Calibration",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 39,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF101",
+      "0xF106",
+      "0xF108"
+     ]
+    },
+    {
+     "name": "CAY9YA_1113_Height_Sensor_Calibration",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x03D2",
+      "0x03D4",
+      "0x03D6",
+      "0x0412",
+      "0x041A",
+      "0x0516"
+     ]
+    },
+    {
+     "name": "PJ1_1513_Height_Sensor_Calibration",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 99,
+     "rids": [
+      "0x031A",
+      "0x031B",
+      "0x0324",
+      "0x0325",
+      "0x0329",
+      "0x032C",
+      "0x033C",
+      "0x033D",
+      "0x03AE",
+      "0x03B7",
+      "0x03B9",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x040A",
+      "0x0412",
+      "0x0418",
+      "0x041A",
+      "0x04BF",
+      "0x0542",
+      "0x0543",
+      "0xF104",
+      "0xF106",
+      "0xF108"
+     ]
+    },
+    {
+     "name": "P992_1413_Height_Sensor_Calibration",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 32,
+     "rids": [
+      "0x0325",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "PAN970_LEC_Height_Sensor_System_Calibration",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 39,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x032C",
+   "system": "灯光电子",
+   "sub": "前照灯调节",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "HEADLIGHT_ADJUST-01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E2",
+    "CAJUN",
+    "E3",
+    "G2",
+    "E1",
+    "9X7"
+   ],
+   "impls": [
+    {
+     "name": "Panamera_971_BCM_Teach_Headlight_Beam_Adjustment",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A"
+     ]
+    },
+    {
+     "name": "Macan_Teach_Headlight_Beam_Adjustment_PASM",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 4,
+     "rids": []
+    },
+    {
+     "name": "Macan_Teach_Headlight_Beam_Adjustment_HBA",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 3,
+     "rids": []
+    },
+    {
+     "name": "E3_BCM1_Headlight_Adjustment_Tech",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 48,
+     "rids": [
+      "0x03BD",
+      "0x03BE",
+      "0x03D2",
+      "0x03D4",
+      "0x03D6",
+      "0x0515",
+      "0x0516",
+      "0x05B7",
+      "0x0667",
+      "0x0BCE"
+     ]
+    },
+    {
+     "name": "CAY92A_FHBA_Calibration",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 41,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0401",
+      "0x0402",
+      "0x0404",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "PAN970_FRONT_HBA_Calibration",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 32,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0401",
+      "0x0404"
+     ]
+    },
+    {
+     "name": "P997_FRO_AHBA_Calibration_2040",
+     "platforms": [
+      "9X7"
+     ],
+     "cmdCount": 18,
+     "rids": []
+    },
+    {
+     "name": "CAYENNE_2010_HCL_AHBA_calibration",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 34,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x032D",
+   "system": "AC(空调系统)",
+   "sub": "制冷剂清洁",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TME-CLEAN_REFRIGERANT-01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "E3_TME_Thermal_Management_Clean_Refrigerant_Circuit",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 30,
+     "rids": [
+      "0x0350",
+      "0x0362",
+      "0x0370",
+      "0x0422",
+      "0x0423",
+      "0x0425",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "G2_TME_Thermal_Management_Clean_Refrigerant_Circuit",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 10,
+     "rids": [
+      "0x0358"
+     ]
+    },
+    {
+     "name": "G3_TME_Thermal_Management_Clean_Refrigerant_Circuit",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 36,
+     "rids": [
+      "0x0350",
+      "0x0358",
+      "0x0362",
+      "0x0420",
+      "0x0422",
+      "0x0423",
+      "0x0425"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x032E",
+   "system": "AC(空调系统)",
+   "sub": "压缩机功能测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TME-COMPRESS-1",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "G3",
+    "E3",
+    "G2",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "G3_BV_ThermManagUDS_Program_Electric_AC_Compressor",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0358",
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "E3_BV_AirCondiUDS_TeachAirConditioningCompressor",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 13,
+     "rids": [
+      "0x0358",
+      "0x0402",
+      "0x0405",
+      "0x040A",
+      "0x0418"
+     ]
+    },
+    {
+     "name": "G2_BV_AirCondiUDS_TeachAirConditioningCompressor",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0358",
+      "0x0402",
+      "0x0405",
+      "0x040A",
+      "0x0418"
+     ]
+    },
+    {
+     "name": "G3_BV_AirCondiUDS_TeachAirConditioningCompressor",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 4,
+     "rids": [
+      "0x0358"
+     ]
+    },
+    {
+     "name": "P992_BCM1_ComPresser_Tech",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x0305",
+      "0x032E",
+      "0x0358",
+      "0x039E"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x032F",
+   "system": "AC(空调系统)",
+   "sub": "冷却回路测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TME-COOL_CURCUIT",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "J1",
+    "E3",
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "PJ1_BV_ThermManagUDS_CoolingSystem_Check",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 12,
+     "rids": [
+      "0x0412",
+      "0x041A"
+     ]
+    },
+    {
+     "name": "E3_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0358",
+      "0x03A9",
+      "0x045B",
+      "0x04DE"
+     ]
+    },
+    {
+     "name": "G2_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 30,
+     "rids": [
+      "0x03A9",
+      "0x04DE",
+      "0x0524",
+      "0x0528"
+     ]
+    },
+    {
+     "name": "G3_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 49,
+     "rids": [
+      "0x030A",
+      "0x0358",
+      "0x0397",
+      "0x03A9",
+      "0x045B",
+      "0x04DE",
+      "0x0600",
+      "0x0601"
+     ]
+    },
+    {
+     "name": "J1_BV_ThermManagUDS_DrainAndFillCoolingCircuits",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 16,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x0600"
+     ]
+    },
+    {
+     "name": "J1_BV_ThermManagUDS_VentingTheCoolingCircuits",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 4,
+     "rids": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x0330",
+   "system": "AC(空调系统)",
+   "sub": "膨胀阀测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TME-EXPANSION-992",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "J1",
+    "992",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "PJ1_BV_ThermManagUDS_Teach_Expansion",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    },
+    {
+     "name": "P992_BV_ThermManagUDS_Teach_Expansion",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 57,
+     "rids": [
+      "0x0397",
+      "0x0420",
+      "0x0423",
+      "0x0425",
+      "0x04D9",
+      "0x054F"
+     ]
+    },
+    {
+     "name": "G2_TME_Teach_In_Expansion_Valve_EXV1",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 28,
+     "rids": [
+      "0x030A",
+      "0x0420",
+      "0x0422"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0331",
+   "system": "AC(空调系统)",
+   "sub": "功能测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TME-FUNTEST",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "E3",
+    "G3",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "G2_TME_Thermal_Management_Function_Test",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 38,
+     "rids": [
+      "0x0354",
+      "0x0358",
+      "0x039F",
+      "0x045B",
+      "0x8097",
+      "0xF101",
+      "0xF104"
+     ]
+    },
+    {
+     "name": "PE3_BV_ThermManagUDS_Therm_Manag_Test",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 26,
+     "rids": [
+      "0x0358",
+      "0x039F",
+      "0x0412",
+      "0x041A",
+      "0x8097"
+     ]
+    },
+    {
+     "name": "G3_BV_ThermManagUDS_Therm_Manag_Test",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 52,
+     "rids": [
+      "0x0358",
+      "0x039F",
+      "0x0401",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x040A",
+      "0x0412",
+      "0x0418",
+      "0x041A",
+      "0x0543",
+      "0x0598",
+      "0x0615",
+      "0x8097",
+      "0xF104"
+     ]
+    },
+    {
+     "name": "P992_BV_ThermManagUDS_Therm_Manag_Test",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 131,
+     "rids": [
+      "0x0212",
+      "0x030F",
+      "0x0315",
+      "0x0325",
+      "0x0358",
+      "0x035F",
+      "0x0361",
+      "0x039F",
+      "0x0402",
+      "0x0404",
+      "0x0408",
+      "0x0441",
+      "0x8097",
+      "0x9003",
+      "0x9004",
+      "0x9006",
+      "0x9007",
+      "0x9008",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0332",
+   "system": "AC(空调系统)",
+   "sub": "温度传感器匹配",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "TME-TEACH_PT_992",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "CAJUN",
+    "E2",
+    "G2",
+    "G3",
+    "J1",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "MACAN_Air_conditioner_Teach_in_LIN_automatic_addressing",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 24,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0401",
+      "0x0404"
+     ]
+    },
+    {
+     "name": "Panamera_Air_conditioner_Teach_in_LIN_automatic_addressing",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 29,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0401",
+      "0x0402",
+      "0x0404",
+      "0x0405",
+      "0x0418"
+     ]
+    },
+    {
+     "name": "Cayenne2011_Air_conditioner_Teach_in_LIN_automatic_addressing",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 25,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0401",
+      "0x0404"
+     ]
+    },
+    {
+     "name": "G2_BV_ThermManagUDS_Teach_Refrigerant",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 6,
+     "rids": [
+      "0x04D9"
+     ]
+    },
+    {
+     "name": "G3_BV_ThermManagUDS_Teach_Refrigerant",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 1,
+     "rids": [
+      "0x04D9"
+     ]
+    },
+    {
+     "name": "PJ1_BV_ThermManagUDS_Teach_Refrigerant",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 54,
+     "rids": [
+      "0x030A",
+      "0x032E",
+      "0x0420",
+      "0x0422",
+      "0x04D9"
+     ]
+    },
+    {
+     "name": "P992_BV_ThermManagUDS_Teach_Refrigerant",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361",
+      "0x04D9"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0333",
+   "system": "Tiptronic 变速器控制",
+   "sub": "PDK/VTG/全轮驱动测试",
+   "risk": "medium",
+   "verified": false,
+   "unverifiedReason": "前桥测试，不是 PDK/VTG 综合测试",
+   "img": "PDK_VTG_ALLRAD",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "9X1",
+    "CAJUN",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_PTM_Front_axle_5260",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 6,
+     "rids": [
+      "0x0007"
+     ]
+    },
+    {
+     "name": "P9x1_PTM_Front_axle_5262",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 45,
+     "rids": [
+      "0x0006",
+      "0x0007",
+      "0x0008",
+      "0x0305",
+      "0x030A",
+      "0x0316",
+      "0x032E",
+      "0x036E",
+      "0x03ED",
+      "0x03EE",
+      "0x03F0",
+      "0x0404",
+      "0x0407",
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "Macan_TransferBoxReplace",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    },
+    {
+     "name": "Cayenne2011_All_wheel_drive_Transfer_box_oil_service",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    }
+   ]
+  },
+  {
+   "menuId": "0x0334",
+   "system": "通讯连接系统",
+   "sub": "DFM 连接",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "SPEC-CONNECT-DFM-01",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "E3",
+    "J1",
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "E3_Connect_System_Deactivate_Flight_Mode",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 23,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "J1_Connect_System_Deactivate_Flight_Mode",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 26,
+     "rids": []
+    },
+    {
+     "name": "P992_BV_TelemCommuUnitUDS_Deactivate_Flight_Mode",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 25,
+     "rids": [
+      "0x032E"
+     ]
+    },
+    {
+     "name": "P992_BV_TelemCommuUnitUDS_PVTS_Test",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 30,
+     "rids": [
+      "0x039E",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x05BC"
+     ]
+    },
+    {
+     "name": "P992_EV_ConBoxHighAU49X_Deactivate_Flight_Mode",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 26,
+     "rids": [
+      "0x030A",
+      "0x032E",
+      "0x036E",
+      "0x03ED",
+      "0x03EE"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0335",
+   "system": "前端电子设备",
+   "sub": "测量点校准",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "9PA_MEASURINGPOINT_FRONTAXLE",
+   "status": "no-impl",
+   "match": "none",
+   "platforms": [],
+   "impls": []
+  },
+  {
+   "menuId": "0x0336",
+   "system": "后端电子设备",
+   "sub": "测量点校准",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "9PA_MEASURINGPOINT_REARAXLE",
+   "status": "no-impl",
+   "match": "none",
+   "platforms": [],
+   "impls": []
+  },
+  {
+   "menuId": "0x0337",
+   "system": "动力机组支承",
+   "sub": "功能测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "PANAMERA-971-TME-FTEST-01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "G2_TME_Thermal_Management_Function_Test",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 38,
+     "rids": [
+      "0x0354",
+      "0x0358",
+      "0x039F",
+      "0x045B",
+      "0x8097",
+      "0xF101",
+      "0xF104"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0338",
+   "system": "动力机组支承",
+   "sub": "膨胀测试",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "PANAMERA-971-TME-EXPANSION01",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "J1",
+    "992",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "PJ1_BV_ThermManagUDS_Teach_Expansion",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    },
+    {
+     "name": "P992_BV_ThermManagUDS_Teach_Expansion",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 57,
+     "rids": [
+      "0x0397",
+      "0x0420",
+      "0x0423",
+      "0x0425",
+      "0x04D9",
+      "0x054F"
+     ]
+    },
+    {
+     "name": "G2_TME_Teach_In_Expansion_Valve_EXV1",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 28,
+     "rids": [
+      "0x030A",
+      "0x0420",
+      "0x0422"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0340",
+   "system": "后端电子设备",
+   "sub": "扰流器标准化",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "J1",
+    "ALL"
+   ],
+   "impls": [
+    {
+     "name": "E3_Rear_Spoiler_Teach_Rear_Spoiler",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 56,
+     "rids": [
+      "0x030A",
+      "0x034D",
+      "0x0350",
+      "0x0351",
+      "0x0362",
+      "0x0420",
+      "0x0422",
+      "0x0425",
+      "0x0523",
+      "0x0524",
+      "0x0527",
+      "0x054F"
+     ]
+    },
+    {
+     "name": "J1_Aerod_TeachRearSpoiler",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 66,
+     "rids": [
+      "0x032E",
+      "0x0404",
+      "0x0408",
+      "0x0542",
+      "0x0543",
+      "0xF005",
+      "0xF006",
+      "0xF009",
+      "0xF00B",
+      "0xF00C",
+      "0xF00E"
+     ]
+    },
+    {
+     "name": "SYS_1293_SPE_TeachRearSpoiler",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 44,
+     "rids": [
+      "0x030A",
+      "0x0316",
+      "0x032E",
+      "0x03ED",
+      "0x03EE",
+      "0x0404",
+      "0x0408",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "E3_Rear_Spoiler_Activate_Service_Position",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x0211",
+      "0x030A",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0420",
+      "0x0422",
+      "0x0423",
+      "0x045F",
+      "0x04DE",
+      "0x0531"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0341",
+   "system": "后端电子设备",
+   "sub": "扰流器去标准化",
+   "risk": "medium",
+   "verified": false,
+   "unverifiedReason": "与「标准化」同一函数，无法区分去标准化方向",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "J1",
+    "ALL"
+   ],
+   "impls": [
+    {
+     "name": "E3_Rear_Spoiler_Teach_Rear_Spoiler",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 56,
+     "rids": [
+      "0x030A",
+      "0x034D",
+      "0x0350",
+      "0x0351",
+      "0x0362",
+      "0x0420",
+      "0x0422",
+      "0x0425",
+      "0x0523",
+      "0x0524",
+      "0x0527",
+      "0x054F"
+     ]
+    },
+    {
+     "name": "J1_Aerod_TeachRearSpoiler",
+     "platforms": [
+      "J1"
+     ],
+     "cmdCount": 66,
+     "rids": [
+      "0x032E",
+      "0x0404",
+      "0x0408",
+      "0x0542",
+      "0x0543",
+      "0xF005",
+      "0xF006",
+      "0xF009",
+      "0xF00B",
+      "0xF00C",
+      "0xF00E"
+     ]
+    },
+    {
+     "name": "SYS_1293_SPE_TeachRearSpoiler",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 44,
+     "rids": [
+      "0x030A",
+      "0x0316",
+      "0x032E",
+      "0x03ED",
+      "0x03EE",
+      "0x0404",
+      "0x0408",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "E3_Rear_Spoiler_Activate_Service_Position",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 47,
+     "rids": [
+      "0x0211",
+      "0x030A",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0420",
+      "0x0422",
+      "0x0423",
+      "0x045F",
+      "0x04DE",
+      "0x0531"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0342",
+   "system": "后端电子设备",
+   "sub": "后刮水器自适应",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "no-impl",
+   "match": "none",
+   "platforms": [],
+   "impls": []
+  },
+  {
+   "menuId": "0x0343",
+   "system": "后端电子设备",
+   "sub": "后盖初始化",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "CAJUN"
+   ],
+   "impls": [
+    {
+     "name": "MACAN_Rear_lid_Calibrate_rear_lid",
+     "platforms": [
+      "CAJUN"
+     ],
+     "cmdCount": 14,
+     "rids": [
+      "0x0354",
+      "0x0412",
+      "0x0416",
+      "0xF101",
+      "0xF104"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0344",
+   "system": "后端电子设备",
+   "sub": "车窗初始化",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "E3G2_BV_DoorElectDriveSideUDS_Power_Windows_Standardization_Run",
+     "platforms": [
+      "E3",
+      "G2"
+     ],
+     "cmdCount": 13,
+     "rids": [
+      "0x0211",
+      "0x046D",
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x04AB",
+      "0x04AC",
+      "0x04AD"
+     ]
+    },
+    {
+     "name": "E3G2_BV_DoorElectRearDriveSideUDS_Power_Windows_Standardization_Run",
+     "platforms": [
+      "E3",
+      "G2"
+     ],
+     "cmdCount": 9,
+     "rids": [
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x04AB",
+      "0x04AD"
+     ]
+    },
+    {
+     "name": "E3G2_BV_DoorElectPasseSideUDS_Power_Windows_Standardization_Run",
+     "platforms": [
+      "E3",
+      "G2"
+     ],
+     "cmdCount": 7,
+     "rids": [
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x04AD"
+     ]
+    },
+    {
+     "name": "E3G2_BV_DoorElectRearPasseSideUDS_Power_Windows_Standardization_Run",
+     "platforms": [
+      "E3",
+      "G2"
+     ],
+     "cmdCount": 4,
+     "rids": [
+      "0x046E",
+      "0x0470"
+     ]
+    },
+    {
+     "name": "G3G2_BV_DoorElectRearDriveSideUDS_Power_Windows_Standardization_Run",
+     "platforms": [
+      "G3",
+      "G2"
+     ],
+     "cmdCount": 57,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x03E1",
+      "0x0401",
+      "0x0404",
+      "0x0412",
+      "0x041A",
+      "0x0467",
+      "0x046D",
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x048B",
+      "0x048C",
+      "0x048D",
+      "0x048E",
+      "0x04AC",
+      "0x04AD",
+      "0x0515"
+     ]
+    },
+    {
+     "name": "G3G2_BV_DoorElectRearPasseSideUDS_Power_Windows_Standardization_Run",
+     "platforms": [
+      "G3",
+      "G2"
+     ],
+     "cmdCount": 41,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x03E1",
+      "0x0401",
+      "0x0404",
+      "0x0412",
+      "0x041A",
+      "0x046E",
+      "0x0470",
+      "0x048B",
+      "0x048C"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0345",
+   "system": "前端电子设备",
+   "sub": "前照灯标准化",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "E3_Headlight__Bulbs_LED_Left_Right_Headlight_Commissioning",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 17,
+     "rids": [
+      "0x0451",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "E3_PDLS_LED_Headlight_Commissioning",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 69,
+     "rids": [
+      "0x0000",
+      "0x00FF",
+      "0x030F",
+      "0x0315",
+      "0x0400",
+      "0x0401",
+      "0x0404",
+      "0x0408",
+      "0x0412",
+      "0x041A",
+      "0x0422",
+      "0x0441",
+      "0x0544",
+      "0xF106",
+      "0xF10C"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0346",
+   "system": "前端电子设备",
+   "sub": "刮水器自适应",
+   "risk": "low",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "9X1",
+    "E3"
+   ],
+   "impls": [
+    {
+     "name": "P9x1_FRONT_Wiping_Angle_Adaptation",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0409",
+      "0x0410"
+     ]
+    },
+    {
+     "name": "E3_Windshield_Wiper_Motor_Adjust_Wiping_Angle",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 19,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0347",
+   "system": "前端电子设备",
+   "sub": "天窗标准化",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E3",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "E3_Sunro_Teach_Panoramic_Roof",
+     "platforms": [
+      "E3"
+     ],
+     "cmdCount": 15,
+     "rids": [
+      "0x034D",
+      "0x0350",
+      "0x0351",
+      "0x0362",
+      "0x0523",
+      "0x0524"
+     ]
+    },
+    {
+     "name": "G2_BV_ContrModul2ForSunroUDS_Teach_Panoramic_Roof_Sun_Blind",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 51,
+     "rids": [
+      "0x034D",
+      "0x0350",
+      "0x0351",
+      "0x0362",
+      "0x0397",
+      "0x03CB",
+      "0x03CC",
+      "0x03D4",
+      "0x03E1",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x0475",
+      "0x0523",
+      "0x0524",
+      "0x054F"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0348",
+   "system": "可折叠顶篷",
+   "sub": "软顶标准化",
+   "risk": "high",
+   "verified": false,
+   "unverifiedReason": "Targa 升降顶，不是软顶",
+   "img": "",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "CS1",
+    "E1"
+   ],
+   "impls": [
+    {
+     "name": "CS1_GT4_Sliding_Lifting_Roof_Standardisation",
+     "platforms": [
+      "CS1"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    },
+    {
+     "name": "Panamer970_REA_Sliding_roof_standardisation",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0402"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x0349",
+   "system": "可折叠顶篷",
+   "sub": "滑动车顶标准化",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E1",
+    "CS1"
+   ],
+   "impls": [
+    {
+     "name": "Panamer970_REA_Sliding_roof_standardisation",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 18,
+     "rids": [
+      "0x0402"
+     ]
+    },
+    {
+     "name": "CS1_GT4_Sliding_Lifting_Roof_Standardisation",
+     "platforms": [
+      "CS1"
+     ],
+     "cmdCount": 11,
+     "rids": [
+      "0x0212",
+      "0x035F",
+      "0x0361"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x034A",
+   "system": "座椅记忆",
+   "sub": "座椅标准化",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_DSM_Normalise_Seat_Motors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x030F",
+      "0x0315",
+      "0x0404",
+      "0x0408",
+      "0x0441"
+     ]
+    },
+    {
+     "name": "Cayenne_9YA_Standardize_Seat_Motors",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 24,
+     "rids": []
+    },
+    {
+     "name": "G2_SCMR_Standardize_Seat_Motors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 20,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x0533"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x034B",
+   "system": "EPS(电动助力转向系统)",
+   "sub": "转向角传感器校准",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "CS1",
+    "E2",
+    "E1",
+    "9X1"
+   ],
+   "impls": [
+    {
+     "name": "CS1_GT4_Steering_Angle_Sensor_Calibration",
+     "platforms": [
+      "CS1"
+     ],
+     "cmdCount": 2,
+     "rids": [
+      "0x0400"
+     ]
+    },
+    {
+     "name": "Panamera_971_SteeringAngle_Sensor_Calibration",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 39,
+     "rids": [
+      "0x0212",
+      "0x0325",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0xF001",
+      "0xF002",
+      "0xF003",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "Panamera_970_STW_SteeringAngle_Sensor_Calibration",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 2,
+     "rids": [
+      "0x0400"
+     ]
+    },
+    {
+     "name": "P9X1_STW_Steering_angle",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 27,
+     "rids": [
+      "0x030A",
+      "0x0400"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x034C",
+   "system": "ESP/PSM(电控稳定系统)",
+   "sub": "制动系统排气",
+   "risk": "high",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "G2",
+    "E1",
+    "9X1",
+    "9X7",
+    "E2",
+    "992",
+    "G3"
+   ],
+   "impls": [
+    {
+     "name": "CAY92A_PSM_Bleed_the_Brakes",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 25,
+     "rids": [
+      "0x0402",
+      "0x0409",
+      "0x0410",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "PAN970_PSM_Bleed_The_Brakes",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 35,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0x03AE",
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P9x1_PSM_Bleed_The_Brakes",
+     "platforms": [
+      "9X1"
+     ],
+     "cmdCount": 36,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0x03AE",
+      "0xF001",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "P997_PSM_Bleed_0540",
+     "platforms": [
+      "9X7"
+     ],
+     "cmdCount": 22,
+     "rids": [
+      "0x000A",
+      "0x0400",
+      "0x0500",
+      "0x0543",
+      "0xF101",
+      "0xF106"
+     ]
+    },
+    {
+     "name": "Panamera_971_PSM_Service_Bleeding",
+     "platforms": [
+      "E2"
+     ],
+     "cmdCount": 28,
+     "rids": [
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x04DE",
+      "0x0531"
+     ]
+    },
+    {
+     "name": "P992_Brake1UDS_Service_Bleeding",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 32,
+     "rids": [
+      "0x0211",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0x04DE",
+      "0x0531"
+     ]
+    },
+    {
+     "name": "G3_PSM_Service_Bleeding",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 76,
+     "rids": [
+      "0x0211",
+      "0x030A",
+      "0x03A9",
+      "0x03AF",
+      "0x03BD",
+      "0x03BE",
+      "0x0412",
+      "0x041A",
+      "0x0420",
+      "0x046D",
+      "0x046E",
+      "0x046F",
+      "0x0470",
+      "0x04DE",
+      "0x0531"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x034D",
+   "system": "轮胎压力监控 （TPM）",
+   "sub": "TPM 传感器匹配",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "exact",
+   "platforms": [
+    "E1",
+    "G3",
+    "ALL",
+    "G2"
+   ],
+   "impls": [
+    {
+     "name": "PAN970_TPM_Teach_WheelIDs",
+     "platforms": [
+      "E1"
+     ],
+     "cmdCount": 6,
+     "rids": []
+    },
+    {
+     "name": "CAY9YA_1137_Teach_WheelIDs_Func1",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 21,
+     "rids": [
+      "0x0401",
+      "0x0412",
+      "0x041A",
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "CAY9YA_1137_Teach_WheelIDs_Func2",
+     "platforms": [
+      "G3"
+     ],
+     "cmdCount": 6,
+     "rids": [
+      "0x0000",
+      "0x03AB",
+      "0x03E1"
+     ]
+    },
+    {
+     "name": "Teach_WheelIDs_Func1",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 12,
+     "rids": [
+      "0xF001",
+      "0xF002",
+      "0xF003"
+     ]
+    },
+    {
+     "name": "Teach_WheelIDs_Func2",
+     "platforms": [
+      "ALL"
+     ],
+     "cmdCount": 26,
+     "rids": [
+      "0x0001",
+      "0x0002",
+      "0x0005",
+      "0x0009",
+      "0x0305",
+      "0x0412"
+     ]
+    },
+    {
+     "name": "Cayenne_2011_TPM_Teach_wheel_sensors",
+     "platforms": [
+      "G2"
+     ],
+     "cmdCount": 33,
+     "rids": [
+      "0x000A",
+      "0x0400",
+      "0x0418",
+      "0x0450",
+      "0x0500",
+      "0x0543",
+      "0x06EA",
+      "0x06F6",
+      "0xF101",
+      "0xF106"
+     ]
+    }
+   ]
+  },
+  {
+   "menuId": "0x034E",
+   "system": "组合仪表",
+   "sub": "仪表板校准",
+   "risk": "medium",
+   "verified": true,
+   "unverifiedReason": "",
+   "img": "",
+   "status": "ok",
+   "match": "semantic",
+   "platforms": [
+    "992"
+   ],
+   "impls": [
+    {
+     "name": "P992_BV_DashBoardUDS_Fuel_Level_Sensor_Calibration",
+     "platforms": [
+      "992"
+     ],
+     "cmdCount": 8,
+     "rids": [
+      "0x0466",
+      "0x0632"
+     ]
+    }
+   ]
+  }
+ ]
+}

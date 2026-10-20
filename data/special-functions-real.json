@@ -1,0 +1,4096 @@
+{
+ "schemaVersion": 1,
+ "kind": "special-functions-real",
+ "source": "保时捷特殊功能目录（按平台 × 模块 × 动作整理）",
+ "note": "platform/module/action 来自函数名；rids 仅在有确凿模板引用时填充。没有 rids 的项说明是「读数据/多步引导」型或尚未解析出命令序列。",
+ "count": 674,
+ "withRid": 20,
+ "moduleAliases": {
+  "DME": [
+   "发动机",
+   "ecm",
+   "dme",
+   "motor",
+   "med17"
+  ],
+  "TIP": [
+   "变速器",
+   "tiptronic",
+   "getriebe",
+   "pdk",
+   "tcm"
+  ],
+  "Gateway": [
+   "网关",
+   "gateway",
+   "gat"
+  ],
+  "Airbag": [
+   "安全气囊",
+   "srs",
+   "airbag",
+   "pab"
+  ],
+  "ICM": [
+   "仪表",
+   "kombi",
+   "ic(",
+   "kombiinstrument"
+  ],
+  "Airconditioning": [
+   "空调",
+   "klima",
+   "ac(",
+   "aircond"
+  ],
+  "EPB": [
+   "驻车制动",
+   "epb",
+   "bremse",
+   "pbm"
+  ],
+  "PASM": [
+   "pasm",
+   "水平高度",
+   "悬架",
+   "damper"
+  ],
+  "PSM": [
+   "psm",
+   "esp",
+   "稳定"
+  ],
+  "ACC": [
+   "acc",
+   "巡航",
+   "adaptive"
+  ],
+  "FRONT": [
+   "前端",
+   "bcm",
+   "front",
+   "vorne"
+  ],
+  "REAR": [
+   "后端",
+   "rear",
+   "hinten"
+  ],
+  "TUER": [
+   "车门",
+   "tuer",
+   "door"
+  ],
+  "SITZ": [
+   "座椅",
+   "sitz",
+   "seat"
+  ],
+  "LHS": [
+   "前照灯",
+   "scheinwerfer",
+   "light",
+   "lec"
+  ],
+  "RDK": [
+   "轮胎",
+   "tpm",
+   "rdk",
+   "reifen"
+  ],
+  "LWS": [
+   "转向盘",
+   "转向柱",
+   "lenk",
+   "steering"
+  ],
+  "SWA": [
+   "变道",
+   "车道变换",
+   "spur",
+   "lane"
+  ],
+  "SWA3": [
+   "变道",
+   "车道变换",
+   "spur",
+   "lane",
+   "swa"
+  ],
+  "KAM": [
+   "摄像头",
+   "kamera",
+   "camera"
+  ],
+  "PCM": [
+   "pcm",
+   "通信",
+   "cdr",
+   "head_unit",
+   "multimedia"
+  ],
+  "Verstaerker": [
+   "放大器",
+   "verstaerker",
+   "amp",
+   "sound"
+  ],
+  "TVTuner": [
+   "电视",
+   "tvtuner",
+   "tuner"
+  ],
+  "Kompass": [
+   "罗盘",
+   "kompass"
+  ],
+  "Zusatzinstrument": [
+   "附加仪表",
+   "zusatz"
+  ],
+  "Hinterachslenkung": [
+   "后桥转向",
+   "hinterachs"
+  ],
+  "PDCC": [
+   "pdcc",
+   "侧倾"
+  ],
+  "GAT": [
+   "蓄电池",
+   "batterie",
+   "gat"
+  ],
+  "MED17": [
+   "med17",
+   "机油"
+  ]
+ },
+ "platforms": {
+  "COMMON": {
+   "Calibrate": [
+    {
+     "action": "Fuel_Level_Sensor",
+     "label": "Fuel_Level_Sensor",
+     "rids": []
+    }
+   ],
+   "Set": [
+    {
+     "action": "Total_Mileage",
+     "label": "Total_Mileage",
+     "rids": []
+    }
+   ],
+   "Reset": [
+    {
+     "action": "Maintenance_Interval",
+     "label": "Maintenance_Interval",
+     "rids": []
+    }
+   ],
+   "Save": [
+    {
+     "action": "Fuel_Level_Sensor_To_REAR",
+     "label": "Fuel_Level_Sensor_To_REAR",
+     "rids": []
+    }
+   ],
+   "Calibration": [
+    {
+     "action": "SWA_G1_E2",
+     "label": "SWA_G1_E2",
+     "rids": []
+    },
+    {
+     "action": "RearView_RVRV",
+     "label": "RearView_RVRV",
+     "rids": []
+    },
+    {
+     "action": "RearTopView_G1",
+     "label": "RearTopView_G1",
+     "rids": [
+      "0x0400"
+     ]
+    },
+    {
+     "action": "Rueckfahrkamera_G1",
+     "label": "Rueckfahrkamera_G1",
+     "rids": []
+    },
+    {
+     "action": "Rueckfahrkamera_E2",
+     "label": "Rueckfahrkamera_E2",
+     "rids": []
+    },
+    {
+     "action": "RealTopView2_E2_MACAN",
+     "label": "RealTopView2_E2_MACAN",
+     "rids": []
+    },
+    {
+     "action": "Static_ChangAssis_E3_J1_992",
+     "label": "Static_ChangAssis_E3_J1_992",
+     "rids": []
+    },
+    {
+     "action": "Dynamic_ChangAssis_E3_J1_992",
+     "label": "Dynamic_ChangAssis_E3_J1_992",
+     "rids": []
+    }
+   ]
+  },
+  "G1": {
+   "PSM": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "SysAdaption",
+     "label": "匹配（Sys）",
+     "rids": []
+    }
+   ],
+   "LHB": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "ACC": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Service_Position",
+     "label": "Service_Position",
+     "rids": []
+    }
+   ],
+   "AWS": [
+    {
+     "action": "Teach_Sensors",
+     "label": "学习/匹配（Sensors）",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Reset",
+     "label": "复位",
+     "rids": []
+    }
+   ],
+   "TAG": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "TPM": [
+    {
+     "action": "SysAdaptation",
+     "label": "匹配（Sys）",
+     "rids": []
+    },
+    {
+     "action": "1921_WriteWheel",
+     "label": "1921_WriteWheel",
+     "rids": []
+    },
+    {
+     "action": "1922_WriteWheel",
+     "label": "1922_WriteWheel",
+     "rids": []
+    }
+   ],
+   "TIP": [
+    {
+     "action": "ResetAdaption",
+     "label": "匹配（Reset）",
+     "rids": []
+    }
+   ],
+   "LEC": [
+    {
+     "action": "BleedOrFill",
+     "label": "排气（OrFill）",
+     "rids": []
+    }
+   ],
+   "HCL": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Reset",
+     "label": "复位",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "SDI41_CtrlUnitProgram",
+     "label": "SDI41_CtrlUnitProgram",
+     "rids": []
+    }
+   ],
+   "First": [
+    {
+     "action": "Start",
+     "label": "Start",
+     "rids": []
+    },
+    {
+     "action": "Start_Sdi41",
+     "label": "Start_Sdi41",
+     "rids": []
+    }
+   ],
+   "Short": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Test_Sdi41",
+     "label": "测试（Sdi41）",
+     "rids": []
+    }
+   ],
+   "System": [
+    {
+     "action": "Adaption",
+     "label": "匹配",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Sdi41",
+     "label": "匹配（Sdi41）",
+     "rids": []
+    }
+   ],
+   "Transport": [
+    {
+     "action": "Production_Mode",
+     "label": "Production_Mode",
+     "rids": []
+    }
+   ],
+   "Erase": [
+    {
+     "action": "Adaptation_Values",
+     "label": "匹配（Values）",
+     "rids": []
+    }
+   ]
+  },
+  "G2": {
+   "PSM": [
+    {
+     "action": "Bleed_the_Brakes",
+     "label": "刹车排气",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Swap_Test_0561",
+     "label": "更换（Test_0561）",
+     "rids": []
+    },
+    {
+     "action": "Test_Mode_0561",
+     "label": "测试（Mode_0561）",
+     "rids": []
+    },
+    {
+     "action": "Test_0561",
+     "label": "测试（0561）",
+     "rids": []
+    }
+   ],
+   "GAT": [
+    {
+     "action": "Change",
+     "label": "更换",
+     "rids": []
+    }
+   ],
+   "FHBA": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "LEC": [
+    {
+     "action": "SPE1",
+     "label": "SPE1",
+     "rids": []
+    },
+    {
+     "action": "SPE2",
+     "label": "SPE2",
+     "rids": []
+    },
+    {
+     "action": "SPE3",
+     "label": "SPE3",
+     "rids": []
+    },
+    {
+     "action": "SPE4",
+     "label": "SPE4",
+     "rids": []
+    },
+    {
+     "action": "SPE5",
+     "label": "SPE5",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring_Bleed",
+     "label": "更换（Air_Spring_Bleed）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring_Filling",
+     "label": "更换（Air_Spring_Filling）",
+     "rids": []
+    }
+   ],
+   "PAB": [
+    {
+     "action": "Put_Hand_Brake",
+     "label": "Put_Hand_Brake",
+     "rids": []
+    },
+    {
+     "action": "Check_Basic_Setting",
+     "label": "Check_Basic_Setting",
+     "rids": []
+    },
+    {
+     "action": "Grinding_In",
+     "label": "Grinding_In",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "DSM": [
+    {
+     "action": "Normalise_Seat_Motors",
+     "label": "标准化（Seat_Motors）",
+     "rids": [
+      "0x0103"
+     ]
+    }
+   ],
+   "DME": [
+    {
+     "action": "Adaptation_Kickdown_Switch_0161",
+     "label": "匹配（Kickdown_Switch_0161）",
+     "rids": []
+    },
+    {
+     "action": "Adaptation_IMA_ISA_0161",
+     "label": "匹配（IMA_ISA_0161）",
+     "rids": []
+    },
+    {
+     "action": "Adaptation_While_Engine_Running_0161",
+     "label": "匹配（While_Engine_Running_0161）",
+     "rids": []
+    },
+    {
+     "action": "Bleed_Fuel_System_0161",
+     "label": "排气（Fuel_System_0161）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Data_0160",
+     "label": "匹配（Data_0160）",
+     "rids": []
+    },
+    {
+     "action": "Ready_Status_0160",
+     "label": "Ready_Status_0160",
+     "rids": []
+    },
+    {
+     "action": "Adaptation_IMA_ISA",
+     "label": "匹配（IMA_ISA）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Throttle_Adaption_0160",
+     "label": "匹配（Throttle_Adaption_0160）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Kickdown_Adaption_0160",
+     "label": "匹配（Kickdown_Adaption_0160）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Kickdown_Adaption_016E",
+     "label": "匹配（Kickdown_Adaption_016E）",
+     "rids": []
+    },
+    {
+     "action": "Adaptation_While_Engine_Running_016E",
+     "label": "匹配（While_Engine_Running_016E）",
+     "rids": []
+    },
+    {
+     "action": "DPF_016E",
+     "label": "DPF_016E",
+     "rids": []
+    },
+    {
+     "action": "DPF_0172",
+     "label": "DPF_0172",
+     "rids": []
+    },
+    {
+     "action": "Radiator_Shutter_0174",
+     "label": "Radiator_Shutter_0174",
+     "rids": []
+    },
+    {
+     "action": "Adaptation_017E",
+     "label": "匹配（017E）",
+     "rids": []
+    },
+    {
+     "action": "Adaptation_Radiator_Shutter_0187",
+     "label": "匹配（Radiator_Shutter_0187）",
+     "rids": []
+    },
+    {
+     "action": "Read_Out_Ready_Status_0173",
+     "label": "Read_Out_Ready_Status_0173",
+     "rids": []
+    },
+    {
+     "action": "Set_Ready_Status_0173",
+     "label": "Set_Ready_Status_0173",
+     "rids": []
+    },
+    {
+     "action": "Ready_Status_017E",
+     "label": "Ready_Status_017E",
+     "rids": []
+    },
+    {
+     "action": "Clutch_Actuator_And_Separating_Clutch_0185",
+     "label": "Clutch_Actuator_And_Separating_Clutch_0185",
+     "rids": []
+    },
+    {
+     "action": "Adopt_Bank2_particle_filter_mileage_in_the_DME_017A",
+     "label": "Adopt_Bank2_particle_filter_mileage_in_the_DME_017A",
+     "rids": []
+    },
+    {
+     "action": "tests_0160",
+     "label": "测试（s_0160）",
+     "rids": []
+    },
+    {
+     "action": "tests_016E",
+     "label": "测试（s_016E）",
+     "rids": []
+    },
+    {
+     "action": "tests_0172",
+     "label": "测试（s_0172）",
+     "rids": []
+    },
+    {
+     "action": "tests_0173",
+     "label": "测试（s_0173）",
+     "rids": []
+    },
+    {
+     "action": "tests_017A",
+     "label": "测试（s_017A）",
+     "rids": []
+    },
+    {
+     "action": "tests_017E",
+     "label": "测试（s_017E）",
+     "rids": []
+    },
+    {
+     "action": "tests_0181",
+     "label": "测试（s_0181）",
+     "rids": []
+    },
+    {
+     "action": "tests_0184",
+     "label": "测试（s_0184）",
+     "rids": []
+    },
+    {
+     "action": "tests_0185",
+     "label": "测试（s_0185）",
+     "rids": []
+    },
+    {
+     "action": "Tank_leakage_0187",
+     "label": "Tank_leakage_0187",
+     "rids": [
+      "0x0325"
+     ]
+    }
+   ],
+   "FRONT": [
+    {
+     "action": "Adjustment",
+     "label": "调整",
+     "rids": []
+    },
+    {
+     "action": "Kessy_Functions_Version_Of_The_Key",
+     "label": "Kessy_Functions_Version_Of_The_Key",
+     "rids": []
+    },
+    {
+     "action": "Kessy_Functions_Kessy_Antenna_Path",
+     "label": "Kessy_Functions_Kessy_Antenna_Path",
+     "rids": []
+    },
+    {
+     "action": "Kessy_Functions_Radio_Central_Locking_Antenna_Path",
+     "label": "Kessy_Functions_Radio_Central_Locking_Antenna_Path",
+     "rids": []
+    }
+   ],
+   "Left": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "ICM": [
+    {
+     "action": "Warning_Memory",
+     "label": "Warning_Memory",
+     "rids": []
+    }
+   ],
+   "PDCC": [
+    {
+     "action": "Calibration_2B60",
+     "label": "校准（2B60）",
+     "rids": []
+    },
+    {
+     "action": "Actuation_2B60",
+     "label": "Actuation_2B60",
+     "rids": []
+    }
+   ],
+   "REA": [
+    {
+     "action": "Standardisation_Of_Sliding_Or_Panorama_Roof",
+     "label": "Standardisation_Of_Sliding_Or_Panorama_Roof",
+     "rids": []
+    }
+   ],
+   "TPM": [
+    {
+     "action": "Teach_wheel_sensors",
+     "label": "学习/匹配（wheel_sensors）",
+     "rids": []
+    },
+    {
+     "action": "System_check",
+     "label": "System_check",
+     "rids": []
+    }
+   ],
+   "AWS": [
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Actual_values",
+     "label": "Actual_values",
+     "rids": []
+    }
+   ],
+   "HCL": [
+    {
+     "action": "Reset_dipped_beam_values",
+     "label": "复位（dipped_beam_values）",
+     "rids": []
+    },
+    {
+     "action": "Reset_high_beam_values",
+     "label": "复位（high_beam_values）",
+     "rids": []
+    },
+    {
+     "action": "Reset_static_cornering_light_values",
+     "label": "复位（static_cornering_light_values）",
+     "rids": []
+    },
+    {
+     "action": "exchange",
+     "label": "更换（ex）",
+     "rids": []
+    },
+    {
+     "action": "calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "HCR": [
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "1213": [
+    {
+     "action": "Replacement_Air_Spring",
+     "label": "更换（Air_Spring）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring1",
+     "label": "更换（Air_Spring1）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring2",
+     "label": "更换（Air_Spring2）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring3",
+     "label": "更换（Air_Spring3）",
+     "rids": []
+    }
+   ],
+   "BV": [
+    {
+     "action": "FrontSensoDriveAssisSysteUDS_FRC",
+     "label": "FrontSensoDriveAssisSysteUDS_FRC",
+     "rids": []
+    },
+    {
+     "action": "AdaptCruisContrUDS_ACC_Calibration",
+     "label": "校准（AdaptCruisContrUDS_ACC）",
+     "rids": []
+    },
+    {
+     "action": "DrainAndFillCoolingCircuits",
+     "label": "排空并加注（CoolingCircuits）",
+     "rids": []
+    },
+    {
+     "action": "TeachAndCheckFlapServoMotors",
+     "label": "学习/匹配（AndCheckFlapServoMotors）",
+     "rids": [
+      "0x034D"
+     ]
+    },
+    {
+     "action": "TeachAirConditioningCompressor",
+     "label": "学习/匹配（AirConditioningCompressor）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Panoramic_Roof_Sun_Blind",
+     "label": "学习/匹配（Panoramic_Roof_Sun_Blind）",
+     "rids": []
+    },
+    {
+     "action": "Teach",
+     "label": "学习/匹配",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Teach_Refrigerant",
+     "label": "学习/匹配（Refrigerant）",
+     "rids": []
+    }
+   ],
+   "ACC": [
+    {
+     "action": "Adjust_Adaptive_Cruise_Control_GetStatus",
+     "label": "调整（Adaptive_Cruise_Control_GetStatus）",
+     "rids": []
+    },
+    {
+     "action": "Adjust_Adaptive_Cruise_Control",
+     "label": "调整（Adaptive_Cruise_Control）",
+     "rids": []
+    }
+   ],
+   "ENG": [
+    {
+     "action": "Adaption_Mode1",
+     "label": "匹配（Mode1）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode2",
+     "label": "匹配（Mode2）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode3",
+     "label": "匹配（Mode3）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode4",
+     "label": "匹配（Mode4）",
+     "rids": []
+    },
+    {
+     "action": "Tank_Leakage_Diagnostics",
+     "label": "Tank_Leakage_Diagnostics",
+     "rids": []
+    },
+    {
+     "action": "GetStatu_0100",
+     "label": "GetStatu_0100",
+     "rids": []
+    }
+   ],
+   "BMC": [
+    {
+     "action": "Reset_Of_Crash_Switch_Off",
+     "label": "复位（Of_Crash_Switch_Off）",
+     "rids": []
+    },
+    {
+     "action": "SOH",
+     "label": "SOH",
+     "rids": []
+    }
+   ],
+   "Chassis": [
+    {
+     "action": "Control_Suspension_Alignment",
+     "label": "Control_Suspension_Alignment",
+     "rids": []
+    },
+    {
+     "action": "Control_Suspension_Alignment_LF",
+     "label": "Control_Suspension_Alignment_LF",
+     "rids": []
+    }
+   ],
+   "Replacement": [
+    {
+     "action": "Work_On_Air_Spring_System",
+     "label": "Work_On_Air_Spring_System",
+     "rids": []
+    }
+   ],
+   "PCM": [
+    {
+     "action": "Reset_To_Factory_Settings",
+     "label": "复位（To_Factory_Settings）",
+     "rids": []
+    }
+   ],
+   "SCMR": [
+    {
+     "action": "Standardize_Seat_Motors",
+     "label": "Standardize_Seat_Motors",
+     "rids": []
+    }
+   ],
+   "TME": [
+    {
+     "action": "Teach_In_Expansion_Valve_EXV1",
+     "label": "学习/匹配（In_Expansion_Valve_EXV1）",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Thermal_Management_Clean_Refrigerant_Circuit",
+     "label": "Thermal_Management_Clean_Refrigerant_Circuit",
+     "rids": []
+    }
+   ],
+   "FrontCame": [
+    {
+     "action": "CalibrationLed",
+     "label": "校准（Led）",
+     "rids": []
+    }
+   ],
+   "PVTS": [
+    {
+     "action": "Teaching_Driver_Cards",
+     "label": "学习（Driver_Cards）",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "Instrument": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Calibration_Values",
+     "label": "校准（Values）",
+     "rids": []
+    },
+    {
+     "action": "Calibration_Values",
+     "label": "校准（Values）",
+     "rids": []
+    }
+   ],
+   "Write": [
+    {
+     "action": "Maintenance_Interval",
+     "label": "Maintenance_Interval",
+     "rids": []
+    }
+   ],
+   "EBKV": [
+    {
+     "action": "FUN_Check",
+     "label": "FUN_Check",
+     "rids": []
+    },
+    {
+     "action": "FUN_Check1",
+     "label": "FUN_Check1",
+     "rids": []
+    }
+   ],
+   "Activation": [
+    {
+     "action": "Of_Height_Control",
+     "label": "Of_Height_Control",
+     "rids": []
+    }
+   ],
+   "Bleeding": [
+    {
+     "action": "Air_Spring_System",
+     "label": "Air_Spring_System",
+     "rids": []
+    }
+   ],
+   "Air": [
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    }
+   ],
+   "EraGlonass": [
+    {
+     "action": "ReplaceBattery",
+     "label": "ReplaceBattery",
+     "rids": []
+    }
+   ]
+  },
+  "E1": {
+   "HVB": [
+    {
+     "action": "High_Voltage_Battery_Charging",
+     "label": "High_Voltage_Battery_Charging",
+     "rids": []
+    }
+   ],
+   "TPM": [
+    {
+     "action": "SysAdaptation",
+     "label": "匹配（Sys）",
+     "rids": []
+    },
+    {
+     "action": "Teach_WheelIDs",
+     "label": "学习/匹配（WheelIDs）",
+     "rids": []
+    }
+   ],
+   "LEC": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring_Ventilation",
+     "label": "更换（Air_Spring_Ventilation）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring_Charge",
+     "label": "更换（Air_Spring_Charge）",
+     "rids": []
+    }
+   ],
+   "PDO": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "FRONT": [
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "PSM": [
+    {
+     "action": "Bleed_The_Brakes",
+     "label": "刹车排气",
+     "rids": []
+    },
+    {
+     "action": "Calibration_Of_Combination_Sensor",
+     "label": "校准（Of_Combination_Sensor）",
+     "rids": []
+    },
+    {
+     "action": "Swap_Test_0566",
+     "label": "更换（Test_0566）",
+     "rids": []
+    },
+    {
+     "action": "test_0566",
+     "label": "测试（0566）",
+     "rids": []
+    },
+    {
+     "action": "test_0566",
+     "label": "测试（0566）",
+     "rids": []
+    },
+    {
+     "action": "Test_Mode_0566",
+     "label": "测试（Mode_0566）",
+     "rids": []
+    }
+   ],
+   "PAB": [
+    {
+     "action": "Grinding_In",
+     "label": "Grinding_In",
+     "rids": []
+    }
+   ],
+   "PDCC": [
+    {
+     "action": "Actuation_2B66",
+     "label": "Actuation_2B66",
+     "rids": []
+    }
+   ],
+   "PRO": [
+    {
+     "action": "Display_Central_Locking_History_026B",
+     "label": "Display_Central_Locking_History_026B",
+     "rids": []
+    },
+    {
+     "action": "Display_Servotronic_Emergency_Operation_Counter_026B",
+     "label": "Display_Servotronic_Emergency_Operation_Counter_026B",
+     "rids": []
+    }
+   ],
+   "REA": [
+    {
+     "action": "Display_History_Memory_For_Anti_Theft_Alarm_system",
+     "label": "Display_History_Memory_For_Anti_Theft_Alarm_system",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "test_018A",
+     "label": "测试（018A）",
+     "rids": []
+    },
+    {
+     "action": "filling_018A",
+     "label": "加注（018A）",
+     "rids": []
+    },
+    {
+     "action": "test_018D",
+     "label": "测试（018D）",
+     "rids": []
+    },
+    {
+     "action": "calibration_01A9",
+     "label": "校准（01A9）",
+     "rids": []
+    },
+    {
+     "action": "Tank_leakage_01A9",
+     "label": "Tank_leakage_01A9",
+     "rids": [
+      "0x0325"
+     ]
+    },
+    {
+     "action": "test_018A",
+     "label": "测试（018A）",
+     "rids": []
+    },
+    {
+     "action": "test_018D",
+     "label": "测试（018D）",
+     "rids": []
+    },
+    {
+     "action": "test_01A9",
+     "label": "测试（01A9）",
+     "rids": []
+    },
+    {
+     "action": "Getvalue",
+     "label": "Getvalue",
+     "rids": []
+    }
+   ],
+   "TIP": [
+    {
+     "action": "Parmanent_Fault_Memory",
+     "label": "Parmanent_Fault_Memory",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "STW": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": [
+      "0x0400"
+     ]
+    }
+   ],
+   "FRC": [
+    {
+     "action": "Frontkamera_Kalibrieren",
+     "label": "Frontkamera_Kalibrieren",
+     "rids": []
+    }
+   ]
+  },
+  "9X1": {
+   "GAT": [
+    {
+     "action": "Change",
+     "label": "更换",
+     "rids": []
+    }
+   ],
+   "PSM": [
+    {
+     "action": "Bleed_The_Brakes",
+     "label": "刹车排气",
+     "rids": []
+    },
+    {
+     "action": "test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "test_mode",
+     "label": "测试（mode）",
+     "rids": []
+    },
+    {
+     "action": "Sensor_cluster_compensation",
+     "label": "Sensor_cluster_compensation",
+     "rids": []
+    },
+    {
+     "action": "test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "TIP": [
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    }
+   ],
+   "PASM": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "dampervalves",
+     "label": "减振阀",
+     "rids": [
+      "0x0013"
+     ]
+    },
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    },
+    {
+     "action": "Test_Unit_Mounting",
+     "label": "测试（Unit_Mounting）",
+     "rids": []
+    }
+   ],
+   "FRONT": [
+    {
+     "action": "Activation_Of_Key_Retaining_Solenoid",
+     "label": "激活（Of_Key_Retaining_Solenoid）",
+     "rids": []
+    },
+    {
+     "action": "Adaptation",
+     "label": "匹配",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "ShortTest",
+     "label": "短测试",
+     "rids": []
+    },
+    {
+     "action": "Adapt",
+     "label": "匹配",
+     "rids": []
+    },
+    {
+     "action": "Reset_adaptation_values",
+     "label": "复位匹配值",
+     "rids": []
+    },
+    {
+     "action": "Bleeding",
+     "label": "排气",
+     "rids": []
+    },
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    },
+    {
+     "action": "UDS_Ready_status",
+     "label": "UDS_Ready_status",
+     "rids": []
+    },
+    {
+     "action": "UDS_First_start",
+     "label": "UDS_First_start",
+     "rids": []
+    },
+    {
+     "action": "UDS_DPF",
+     "label": "UDS_DPF",
+     "rids": []
+    },
+    {
+     "action": "SysTestSec",
+     "label": "测试（SysSec）",
+     "rids": []
+    },
+    {
+     "action": "ShortTestSec",
+     "label": "短测试（Sec）",
+     "rids": []
+    },
+    {
+     "action": "AdaptSec",
+     "label": "匹配（Sec）",
+     "rids": []
+    },
+    {
+     "action": "Reset_adaptation_valuesSec",
+     "label": "复位匹配值（Sec）",
+     "rids": []
+    },
+    {
+     "action": "Bleeding_Step",
+     "label": "排气（ing_Step）",
+     "rids": []
+    },
+    {
+     "action": "UDS_DPF_Step1_Son",
+     "label": "UDS_DPF_Step1_Son",
+     "rids": []
+    },
+    {
+     "action": "UDS_DPF_Step1",
+     "label": "UDS_DPF_Step1",
+     "rids": []
+    },
+    {
+     "action": "UDS_Add_Spe_Ds",
+     "label": "UDS_Add_Spe_Ds",
+     "rids": []
+    },
+    {
+     "action": "UDS_DPF_Step2_Son",
+     "label": "UDS_DPF_Step2_Son",
+     "rids": []
+    },
+    {
+     "action": "UDS_DPF_Step2",
+     "label": "UDS_DPF_Step2",
+     "rids": []
+    },
+    {
+     "action": "UDS_DPF_Interface",
+     "label": "UDS_DPF_Interface",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "Airbag": [
+    {
+     "action": "detection",
+     "label": "检测",
+     "rids": []
+    }
+   ],
+   "Airconditioning": [
+    {
+     "action": "Compressor_run_in",
+     "label": "Compressor_run_in",
+     "rids": []
+    },
+    {
+     "action": "teaching",
+     "label": "学习",
+     "rids": []
+    }
+   ],
+   "Gateway": [
+    {
+     "action": "configuration_0982",
+     "label": "配置（0982）",
+     "rids": []
+    },
+    {
+     "action": "configuration_0986",
+     "label": "配置（0986）",
+     "rids": []
+    }
+   ],
+   "ICM": [
+    {
+     "action": "Displaytestimages",
+     "label": "显示测试图",
+     "rids": []
+    }
+   ],
+   "PCM": [
+    {
+     "action": "test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "PDCC": [
+    {
+     "action": "actuation",
+     "label": "actuation",
+     "rids": []
+    },
+    {
+     "action": "RollTest",
+     "label": "侧倾测试",
+     "rids": []
+    }
+   ],
+   "PTM": [
+    {
+     "action": "Front_axle_5260",
+     "label": "Front_axle_5260",
+     "rids": []
+    },
+    {
+     "action": "Front_axle_5262",
+     "label": "Front_axle_5262",
+     "rids": []
+    }
+   ],
+   "REA": [
+    {
+     "action": "Sliding",
+     "label": "Sliding",
+     "rids": []
+    }
+   ],
+   "Release": [
+    {
+     "action": "Parking_Brake",
+     "label": "Parking_Brake",
+     "rids": []
+    }
+   ],
+   "Tension": [
+    {
+     "action": "Parking_Brake",
+     "label": "Parking_Brake",
+     "rids": []
+    }
+   ],
+   "Move": [
+    {
+     "action": "To_Installation_Position",
+     "label": "To_Installation_Position",
+     "rids": []
+    }
+   ],
+   "MED17": [
+    {
+     "action": "1_11_Oil",
+     "label": "机油（1_11）",
+     "rids": []
+    }
+   ],
+   "ACC": [
+    {
+     "action": "Adjust_Adaptive_Cruise_Control",
+     "label": "调整（Adaptive_Cruise_Control）",
+     "rids": []
+    }
+   ],
+   "PCM31": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "Hinterachslenkung": [
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    }
+   ],
+   "SWA3": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ]
+  },
+  "CAJUN": {
+   "Calibrate": [
+    {
+     "action": "EPT_0F45",
+     "label": "EPT_0F45",
+     "rids": []
+    }
+   ],
+   "Rueckfahrkamera2": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "SWA2": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "GAT": [
+    {
+     "action": "configuration_windows",
+     "label": "配置（windows）",
+     "rids": []
+    },
+    {
+     "action": "replacement_windows",
+     "label": "更换（windows）",
+     "rids": []
+    }
+   ],
+   "Instrument": [
+    {
+     "action": "calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "Tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "Adaptations_while_engine_is_running",
+     "label": "匹配值（while_engine_is_running）",
+     "rids": []
+    },
+    {
+     "action": "01DA_Ready_status",
+     "label": "01DA_Ready_status",
+     "rids": []
+    },
+    {
+     "action": "tests_New",
+     "label": "测试（s_New）",
+     "rids": []
+    },
+    {
+     "action": "tests_New",
+     "label": "测试（s_New）",
+     "rids": []
+    },
+    {
+     "action": "Adaptations_New",
+     "label": "匹配值（New）",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "29TFS551CG_HighTempCoolant",
+     "label": "29TFS551CG_HighTempCoolant",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "29TFS551DJ_Tank_Leakage",
+     "label": "29TFS551DJ_Tank_Leakage",
+     "rids": []
+    },
+    {
+     "action": "regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "20TFS02095B906259Q_Tank_Leakage",
+     "label": "20TFS02095B906259Q_Tank_Leakage",
+     "rids": []
+    },
+    {
+     "action": "regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "20TFS_259E_Tank_Leakage",
+     "label": "20TFS_259E_Tank_Leakage",
+     "rids": []
+    },
+    {
+     "action": "regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "Tests_New",
+     "label": "测试（s_New）",
+     "rids": []
+    },
+    {
+     "action": "Reset_Adap",
+     "label": "复位（Adap）",
+     "rids": []
+    },
+    {
+     "action": "Reset_Adap",
+     "label": "复位（Adap）",
+     "rids": []
+    },
+    {
+     "action": "Reset",
+     "label": "复位",
+     "rids": []
+    },
+    {
+     "action": "Reset_Turbocharger_Learning",
+     "label": "学习（Reset_Turbocharger_ing）",
+     "rids": []
+    },
+    {
+     "action": "01DA_Reducing_agent_system",
+     "label": "01DA_Reducing_agent_system",
+     "rids": []
+    },
+    {
+     "action": "regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "01DA_Adopt_particle_filter_mileage_in_the_DME",
+     "label": "01DA_Adopt_particle_filter_mileage_in_the_DME",
+     "rids": []
+    },
+    {
+     "action": "BV_ECM30_GEN2_TNF_Adopt_particle_filter_mileage_in_the_DME",
+     "label": "BV_ECM30_GEN2_TNF_Adopt_particle_filter_mileage_in_the_DME",
+     "rids": []
+    },
+    {
+     "action": "Reset_Adap",
+     "label": "复位（Adap）",
+     "rids": []
+    },
+    {
+     "action": "Reset_Adap",
+     "label": "复位（Adap）",
+     "rids": []
+    }
+   ],
+   "Rear": [
+    {
+     "action": "Calibrate_rear_lid",
+     "label": "校准（rear_lid）",
+     "rids": []
+    }
+   ],
+   "Air": [
+    {
+     "action": "Teach_in_LIN_automatic_addressing",
+     "label": "学习/匹配（in_LIN_automatic_addressing）",
+     "rids": []
+    },
+    {
+     "action": "conditioner_LIN_control_motors_measurement_run",
+     "label": "conditioner_LIN_control_motors_measurement_run",
+     "rids": []
+    }
+   ],
+   "DEM": [
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "tests_New",
+     "label": "测试（s_New）",
+     "rids": []
+    },
+    {
+     "action": "First_Start",
+     "label": "First_Start",
+     "rids": []
+    },
+    {
+     "action": "adaptation_data",
+     "label": "匹配（data）",
+     "rids": []
+    },
+    {
+     "action": "Ready_status",
+     "label": "Ready_status",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    },
+    {
+     "action": "30TDI_Ready_status",
+     "label": "30TDI_Ready_status",
+     "rids": []
+    },
+    {
+     "action": "29TFS551CG_Ready_status",
+     "label": "29TFS551CG_Ready_status",
+     "rids": []
+    },
+    {
+     "action": "29TFS01195B907551L_Ready_status",
+     "label": "29TFS01195B907551L_Ready_status",
+     "rids": []
+    }
+   ],
+   "PCM": [
+    {
+     "action": "test_windows",
+     "label": "测试（windows）",
+     "rids": []
+    },
+    {
+     "action": "AM_field_strength_windows",
+     "label": "AM_field_strength_windows",
+     "rids": []
+    },
+    {
+     "action": "FM_field_strength_windows",
+     "label": "FM_field_strength_windows",
+     "rids": []
+    },
+    {
+     "action": "Current_FM_field_strength_windows",
+     "label": "Current_FM_field_strength_windows",
+     "rids": []
+    }
+   ],
+   "Transmission": [
+    {
+     "action": "Calibrate",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Calibrate_windows",
+     "label": "校准（windows）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate_Result",
+     "label": "校准（Result）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate1",
+     "label": "校准（1）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate2",
+     "label": "校准（2）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate3",
+     "label": "校准（3）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate4",
+     "label": "校准（4）",
+     "rids": []
+    }
+   ],
+   "LEC": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "AC": [
+    {
+     "action": "Compressor_Runin",
+     "label": "Compressor_Runin",
+     "rids": []
+    },
+    {
+     "action": "Teach_Flap_Servo_Motors",
+     "label": "学习/匹配（Flap_Servo_Motors）",
+     "rids": []
+    },
+    {
+     "action": "Teach_AC_Unit",
+     "label": "学习/匹配（AC_Unit）",
+     "rids": []
+    }
+   ],
+   "EPB": [
+    {
+     "action": "Initial_Start_Up",
+     "label": "初始化（Start_Up）",
+     "rids": []
+    }
+   ],
+   "FRC": [
+    {
+     "action": "Frontkamera2_Kalibrieren",
+     "label": "Frontkamera2_Kalibrieren",
+     "rids": []
+    }
+   ],
+   "BCM1": [
+    {
+     "action": "Teach_Headlight_Beam_Adjustment",
+     "label": "调整（Teach_Headlight_Beam）",
+     "rids": []
+    }
+   ],
+   "HBA": [
+    {
+     "action": "Teach_Headlight_Beam_Adjustment",
+     "label": "调整（Teach_Headlight_Beam）",
+     "rids": []
+    }
+   ],
+   "PCM4": [
+    {
+     "action": "Deactivate_Production_Mode",
+     "label": "Deactivate_Production_Mode",
+     "rids": []
+    },
+    {
+     "action": "Confirmation_Update",
+     "label": "Confirmation_Update",
+     "rids": []
+    },
+    {
+     "action": "MOSTSystemTest",
+     "label": "测试（MOSTSystem）",
+     "rids": []
+    }
+   ],
+   "SWA3": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Write": [
+    {
+     "action": "Maintenance_Interval",
+     "label": "Maintenance_Interval",
+     "rids": []
+    }
+   ],
+   "Teach": [
+    {
+     "action": "Adjustment_PASM",
+     "label": "调整（PASM）",
+     "rids": []
+    },
+    {
+     "action": "Adjustment_BCM1",
+     "label": "调整（BCM1）",
+     "rids": []
+    },
+    {
+     "action": "Adjustment_HBA",
+     "label": "调整（HBA）",
+     "rids": []
+    }
+   ]
+  },
+  "9X7": {
+   "ACC": [
+    {
+     "action": "System_check_0740",
+     "label": "System_check_0740",
+     "rids": []
+    }
+   ],
+   "FRO": [
+    {
+     "action": "Calibration_2040",
+     "label": "校准（2040）",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "adaption_0146",
+     "label": "匹配（0146）",
+     "rids": []
+    },
+    {
+     "action": "adaptation_0146",
+     "label": "匹配（0146）",
+     "rids": []
+    },
+    {
+     "action": "test_0146",
+     "label": "测试（0146）",
+     "rids": []
+    },
+    {
+     "action": "system_check_0140",
+     "label": "system_check_0140",
+     "rids": []
+    },
+    {
+     "action": "Frist_start_0146",
+     "label": "Frist_start_0146",
+     "rids": []
+    },
+    {
+     "action": "Empty_the_tank_0146",
+     "label": "Empty_the_tank_0146",
+     "rids": []
+    }
+   ],
+   "GATEWAY": [
+    {
+     "action": "installed_components_0940",
+     "label": "installed_components_0940",
+     "rids": []
+    },
+    {
+     "action": "Sleep_mode_0940",
+     "label": "Sleep_mode_0940",
+     "rids": []
+    },
+    {
+     "action": "Single_wire_0940",
+     "label": "Single_wire_0940",
+     "rids": []
+    },
+    {
+     "action": "Wake_up_0940",
+     "label": "Wake_up_0940",
+     "rids": []
+    }
+   ],
+   "PAS": [
+    {
+     "action": "ELV_identification_2140",
+     "label": "ELV_identification_2140",
+     "rids": []
+    },
+    {
+     "action": "Teach_electronic_2140",
+     "label": "学习/匹配（electronic_2140）",
+     "rids": []
+    }
+   ],
+   "POSIP": [
+    {
+     "action": "Read_crash_data_1140",
+     "label": "Read_crash_data_1140",
+     "rids": []
+    },
+    {
+     "action": "Read_system_1140",
+     "label": "Read_system_1140",
+     "rids": []
+    }
+   ],
+   "PSM": [
+    {
+     "action": "test_0540",
+     "label": "测试（0540）",
+     "rids": []
+    },
+    {
+     "action": "Bleed_0540",
+     "label": "排气（0540）",
+     "rids": []
+    },
+    {
+     "action": "Speed_sensor_0540",
+     "label": "Speed_sensor_0540",
+     "rids": [
+      "0xC800"
+     ]
+    },
+    {
+     "action": "Swap_test_0540",
+     "label": "更换（test_0540）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate_0540",
+     "label": "校准（0540）",
+     "rids": []
+    }
+   ],
+   "REA": [
+    {
+     "action": "Activation_state_2340",
+     "label": "激活（state_2340）",
+     "rids": []
+    },
+    {
+     "action": "Alarm_event_2340",
+     "label": "Alarm_event_2340",
+     "rids": []
+    }
+   ],
+   "TIP": [
+    {
+     "action": "Fluid_fill_0240",
+     "label": "Fluid_fill_0240",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "TPM": [
+    {
+     "action": "adaption_1941",
+     "label": "匹配（1941）",
+     "rids": []
+    }
+   ],
+   "AWS": [
+    {
+     "action": "Calibration_1B40",
+     "label": "校准（1B40）",
+     "rids": []
+    },
+    {
+     "action": "Teaching_sensors_1B40",
+     "label": "学习（sensors_1B40）",
+     "rids": []
+    }
+   ],
+   "ICM": [
+    {
+     "action": "calibration_0840",
+     "label": "校准（0840）",
+     "rids": []
+    },
+    {
+     "action": "Advance_total_0840",
+     "label": "Advance_total_0840",
+     "rids": []
+    },
+    {
+     "action": "Set_service_0840",
+     "label": "Set_service_0840",
+     "rids": []
+    },
+    {
+     "action": "Voltage_difference_0840",
+     "label": "Voltage_difference_0840",
+     "rids": []
+    }
+   ],
+   "Program": [
+    {
+     "action": "Immobilizer_Code",
+     "label": "Immobilizer_Code",
+     "rids": []
+    }
+   ],
+   "9x7": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "TOP": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "dme": [
+    {
+     "action": "me781_PermanentFaultMemory",
+     "label": "me781_PermanentFaultMemory",
+     "rids": []
+    },
+    {
+     "action": "BoostPressureElectricActuatorTest",
+     "label": "测试（BoostPressureElectricActuator）",
+     "rids": []
+    },
+    {
+     "action": "AdaptationOfBoostPressureActuator",
+     "label": "匹配（OfBoostPressureActuator）",
+     "rids": []
+    }
+   ]
+  },
+  "9X6": {
+   "DME": [
+    {
+     "action": "Program_immobilizercode_0101",
+     "label": "Program_immobilizercode_0101",
+     "rids": []
+    },
+    {
+     "action": "Control_unittype",
+     "label": "Control_unittype",
+     "rids": []
+    },
+    {
+     "action": "test_0102",
+     "label": "测试（0102）",
+     "rids": []
+    }
+   ],
+   "ICM": [
+    {
+     "action": "Reset_tank_calibration_value_0809",
+     "label": "校准（Reset_tank__value_0809）",
+     "rids": []
+    },
+    {
+     "action": "calibration_0809",
+     "label": "校准（0809）",
+     "rids": []
+    },
+    {
+     "action": "Total_distance_0809",
+     "label": "Total_distance_0809",
+     "rids": []
+    },
+    {
+     "action": "Events_0809",
+     "label": "Events_0809",
+     "rids": []
+    },
+    {
+     "action": "Erase_event_memory_0809",
+     "label": "Erase_event_memory_0809",
+     "rids": []
+    },
+    {
+     "action": "Activate_instrument_cluster_0809",
+     "label": "Activate_instrument_cluster_0809",
+     "rids": []
+    },
+    {
+     "action": "ResetMaintenanceInterval",
+     "label": "复位（MaintenanceInterval）",
+     "rids": []
+    }
+   ],
+   "ABS": [
+    {
+     "action": "swap_test_0301",
+     "label": "更换（test_0301）",
+     "rids": []
+    },
+    {
+     "action": "test_0301",
+     "label": "测试（0301）",
+     "rids": []
+    },
+    {
+     "action": "swap_test_send",
+     "label": "更换（test_send）",
+     "rids": []
+    }
+   ],
+   "COT": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "ALM": [
+    {
+     "action": "LearningFunctions",
+     "label": "学习（ingFunctions）",
+     "rids": []
+    },
+    {
+     "action": "Immobilizer",
+     "label": "Immobilizer",
+     "rids": []
+    },
+    {
+     "action": "TransponderKey",
+     "label": "TransponderKey",
+     "rids": []
+    },
+    {
+     "action": "RemoteControl",
+     "label": "RemoteControl",
+     "rids": []
+    },
+    {
+     "action": "TransferRemoteControls",
+     "label": "TransferRemoteControls",
+     "rids": []
+    }
+   ],
+   "PSM57": [
+    {
+     "action": "SteeringAngleSensorCalibration",
+     "label": "校准（SteeringAngleSensor）",
+     "rids": [
+      "0x00FF"
+     ]
+    }
+   ]
+  },
+  "G3": {
+   "1137": [
+    {
+     "action": "Teach_Wheel_Id",
+     "label": "学习/匹配（Wheel_Id）",
+     "rids": []
+    },
+    {
+     "action": "Teach_WheelIDs_Func1",
+     "label": "学习/匹配（WheelIDs_Func1）",
+     "rids": []
+    },
+    {
+     "action": "Teach_WheelIDs_Func2",
+     "label": "学习/匹配（WheelIDs_Func2）",
+     "rids": []
+    }
+   ],
+   "1135": [
+    {
+     "action": "Basic_Setting_Of_Clutch_Actuator",
+     "label": "Basic_Setting_Of_Clutch_Actuator",
+     "rids": []
+    }
+   ],
+   "1113": [
+    {
+     "action": "Filling_Air_Springs",
+     "label": "加注（Air_Springs）",
+     "rids": [
+      "0x03E1"
+     ]
+    },
+    {
+     "action": "Dryer_Regeneration",
+     "label": "再生（Dryer）",
+     "rids": []
+    },
+    {
+     "action": "Bleeding_Air_Spring_System",
+     "label": "排气（ing_Air_Spring_System）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring",
+     "label": "更换（Air_Spring）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring1",
+     "label": "更换（Air_Spring1）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring2",
+     "label": "更换（Air_Spring2）",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Air_Spring3",
+     "label": "更换（Air_Spring3）",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "ACC": [
+    {
+     "action": "Reset_Personalization",
+     "label": "复位（Personalization）",
+     "rids": [
+      "0x03A9"
+     ]
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Standardize": [
+    {
+     "action": "Seat_Motors",
+     "label": "Seat_Motors",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "Tank_Leakage_Diagnostics",
+     "label": "Tank_Leakage_Diagnostics",
+     "rids": []
+    },
+    {
+     "action": "Tank_Leakage",
+     "label": "Tank_Leakage",
+     "rids": []
+    },
+    {
+     "action": "PHEV_Tank_Leakage",
+     "label": "PHEV_Tank_Leakage",
+     "rids": []
+    },
+    {
+     "action": "High_Temp_Coolant_Circuit",
+     "label": "High_Temp_Coolant_Circuit",
+     "rids": []
+    },
+    {
+     "action": "EVO_High_Temp_Coolant_Circuit",
+     "label": "EVO_High_Temp_Coolant_Circuit",
+     "rids": []
+    }
+   ],
+   "Gate": [
+    {
+     "action": "Replacement",
+     "label": "更换",
+     "rids": []
+    }
+   ],
+   "ENG": [
+    {
+     "action": "DPF_MODE",
+     "label": "DPF_MODE",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode1",
+     "label": "匹配（Mode1）",
+     "rids": []
+    },
+    {
+     "action": "ShortTest_V6",
+     "label": "短测试（V6）",
+     "rids": []
+    },
+    {
+     "action": "ShortTest_V8",
+     "label": "短测试（V8）",
+     "rids": []
+    },
+    {
+     "action": "GetStatu_0100",
+     "label": "GetStatu_0100",
+     "rids": []
+    }
+   ],
+   "PSM": [
+    {
+     "action": "Bleeding",
+     "label": "排气",
+     "rids": []
+    },
+    {
+     "action": "Swap_Test",
+     "label": "更换（Test）",
+     "rids": []
+    }
+   ],
+   "G2": [
+    {
+     "action": "BV_DoorElectRearDriveSideUDS_Power_Windows_Standardization_Run",
+     "label": "BV_DoorElectRearDriveSideUDS_Power_Windows_Standardization_Run",
+     "rids": []
+    },
+    {
+     "action": "BV_DoorElectRearPasseSideUDS_Power_Windows_Standardization_Run",
+     "label": "BV_DoorElectRearPasseSideUDS_Power_Windows_Standardization_Run",
+     "rids": []
+    }
+   ],
+   "Chassis": [
+    {
+     "action": "Control_Suspension_Alignment_LF",
+     "label": "Control_Suspension_Alignment_LF",
+     "rids": []
+    }
+   ],
+   "TIP": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "PDK_OilFill",
+     "label": "机油（PDK_Fill）",
+     "rids": []
+    }
+   ],
+   "Calibration": [
+    {
+     "action": "RearView_RVRV",
+     "label": "RearView_RVRV",
+     "rids": []
+    }
+   ],
+   "BV": [
+    {
+     "action": "TeachAirConditioningCompressor",
+     "label": "学习/匹配（AirConditioningCompressor）",
+     "rids": []
+    },
+    {
+     "action": "TeachAndCheckFlapServoMotors",
+     "label": "学习/匹配（AndCheckFlapServoMotors）",
+     "rids": []
+    },
+    {
+     "action": "DrainAndFillCoolingCircuits",
+     "label": "排空并加注（CoolingCircuits）",
+     "rids": []
+    },
+    {
+     "action": "TeachCoolingAirFlaps",
+     "label": "学习/匹配（CoolingAirFlaps）",
+     "rids": []
+    },
+    {
+     "action": "ThermManagUDS_Program_Electric_AC_Compressor",
+     "label": "ThermManagUDS_Program_Electric_AC_Compressor",
+     "rids": []
+    },
+    {
+     "action": "Teach_Expansion",
+     "label": "学习/匹配（Expansion）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Refrigerant",
+     "label": "学习/匹配（Refrigerant）",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "Replacement": [
+    {
+     "action": "Work_On_Air_Spring_System",
+     "label": "Work_On_Air_Spring_System",
+     "rids": []
+    },
+    {
+     "action": "Air_Spring3",
+     "label": "Air_Spring3",
+     "rids": []
+    },
+    {
+     "action": "Air_Spring2",
+     "label": "Air_Spring2",
+     "rids": []
+    },
+    {
+     "action": "Air_Spring1",
+     "label": "Air_Spring1",
+     "rids": []
+    },
+    {
+     "action": "Air_Spring",
+     "label": "Air_Spring",
+     "rids": []
+    }
+   ],
+   "Airbag": [
+    {
+     "action": "Teach_Reversible_Belt_Tensioners",
+     "label": "学习/匹配（Reversible_Belt_Tensioners）",
+     "rids": []
+    },
+    {
+     "action": "Calibrate_Combination_Sensor",
+     "label": "校准（Combination_Sensor）",
+     "rids": []
+    },
+    {
+     "action": "Lock",
+     "label": "Lock",
+     "rids": []
+    }
+   ],
+   "TME": [
+    {
+     "action": "Thermal_Management_Clean_Refrigerant_Circuit",
+     "label": "Thermal_Management_Clean_Refrigerant_Circuit",
+     "rids": []
+    }
+   ],
+   "High": [
+    {
+     "action": "Voltage_Battery_Balance",
+     "label": "Voltage_Battery_Balance",
+     "rids": []
+    },
+    {
+     "action": "Voltage_Battery_Classification",
+     "label": "Voltage_Battery_Classification",
+     "rids": []
+    }
+   ],
+   "Coding": [
+    {
+     "action": "of_the_serial_number_of_the_high_voltage_battery",
+     "label": "of_the_serial_number_of_the_high_voltage_battery",
+     "rids": []
+    }
+   ],
+   "GateWay": [
+    {
+     "action": "Resetting_The_Range_Calculation",
+     "label": "复位（ting_The_Range_Calculation）",
+     "rids": []
+    }
+   ],
+   "Gateway": [
+    {
+     "action": "NetMonitor",
+     "label": "NetMonitor",
+     "rids": []
+    },
+    {
+     "action": "ResetNoIPV6Count",
+     "label": "复位（NoIPV6Count）",
+     "rids": []
+    }
+   ],
+   "EBKV": [
+    {
+     "action": "FUN_Check",
+     "label": "FUN_Check",
+     "rids": []
+    }
+   ],
+   "Aerod": [
+    {
+     "action": "ActivateServicePosition",
+     "label": "ActivateServicePosition",
+     "rids": []
+    }
+   ],
+   "Connect": [
+    {
+     "action": "System_Deactivate_Flight_Mode",
+     "label": "System_Deactivate_Flight_Mode",
+     "rids": []
+    }
+   ],
+   "AuxilParkiHeateUDS": [
+    {
+     "action": "AuxiliaryHeatingTeach",
+     "label": "学习/匹配（AuxiliaryHeating）",
+     "rids": []
+    }
+   ],
+   "BCM2": [
+    {
+     "action": "ClientReset",
+     "label": "复位（Client）",
+     "rids": []
+    }
+   ],
+   "Write": [
+    {
+     "action": "Maintenance_Interval_LGEPO536",
+     "label": "Maintenance_Interval_LGEPO536",
+     "rids": []
+    }
+   ],
+   "AC": [
+    {
+     "action": "Teachand_Check_Flap_Servo_Motors",
+     "label": "学习/匹配（and_Check_Flap_Servo_Motors）",
+     "rids": []
+    }
+   ],
+   "Bleeding": [
+    {
+     "action": "Air_Spring_System",
+     "label": "Air_Spring_System",
+     "rids": []
+    }
+   ],
+   "Air": [
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    }
+   ]
+  },
+  "918S": {
+   "DME": [
+    {
+     "action": "Adaptations",
+     "label": "匹配值",
+     "rids": []
+    },
+    {
+     "action": "tests",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Ready_status",
+     "label": "Ready_status",
+     "rids": []
+    },
+    {
+     "action": "Tank_leakage",
+     "label": "Tank_leakage",
+     "rids": [
+      "0x0325"
+     ]
+    },
+    {
+     "action": "Bleeding_Cooling_System",
+     "label": "排气（ing_Cooling_System）",
+     "rids": []
+    },
+    {
+     "action": "Clutch_Actuator",
+     "label": "Clutch_Actuator",
+     "rids": []
+    }
+   ],
+   "ICM": [
+    {
+     "action": "Reset_maintenance_interval",
+     "label": "复位（maintenance_interval）",
+     "rids": []
+    },
+    {
+     "action": "Set_Total_Mileage",
+     "label": "Set_Total_Mileage",
+     "rids": []
+    }
+   ],
+   "PARK": [
+    {
+     "action": "move_to_assembly_position",
+     "label": "move_to_assembly_position",
+     "rids": []
+    },
+    {
+     "action": "Release_parking_brake",
+     "label": "Release_parking_brake",
+     "rids": []
+    },
+    {
+     "action": "Tension_parking_brake",
+     "label": "Tension_parking_brake",
+     "rids": []
+    }
+   ],
+   "GATEWAY": [
+    {
+     "action": "change",
+     "label": "更换",
+     "rids": []
+    },
+    {
+     "action": "configuration",
+     "label": "配置",
+     "rids": []
+    },
+    {
+     "action": "configuration_A5",
+     "label": "配置（A5）",
+     "rids": []
+    }
+   ],
+   "AIRBAG": [
+    {
+     "action": "detection",
+     "label": "检测",
+     "rids": []
+    }
+   ],
+   "Frongtend": [
+    {
+     "action": "Activation_of_key_retaining_solenoid",
+     "label": "激活（of_key_retaining_solenoid）",
+     "rids": []
+    }
+   ],
+   "High": [
+    {
+     "action": "voltage_battery_Battery_classification",
+     "label": "voltage_battery_Battery_classification",
+     "rids": []
+    }
+   ],
+   "PASM": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Steering": [
+    {
+     "action": "Wheel_Steering_angle",
+     "label": "Wheel_Steering_angle",
+     "rids": [
+      "0x0400"
+     ]
+    }
+   ],
+   "TIP": [
+    {
+     "action": "Read_permanent_fault_memory",
+     "label": "Read_permanent_fault_memory",
+     "rids": []
+    }
+   ]
+  },
+  "E3": {
+   "G2": [
+    {
+     "action": "Reset_Maintenance_Interval",
+     "label": "复位（Maintenance_Interval）",
+     "rids": []
+    },
+    {
+     "action": "BV_DoorElectDriveSideUDS_Power_Windows_Standardization_Run",
+     "label": "BV_DoorElectDriveSideUDS_Power_Windows_Standardization_Run",
+     "rids": []
+    },
+    {
+     "action": "BV_DoorElectRearDriveSideUDS_Power_Windows_Standardization_Run",
+     "label": "BV_DoorElectRearDriveSideUDS_Power_Windows_Standardization_Run",
+     "rids": []
+    },
+    {
+     "action": "BV_DoorElectPasseSideUDS_Power_Windows_Standardization_Run",
+     "label": "BV_DoorElectPasseSideUDS_Power_Windows_Standardization_Run",
+     "rids": []
+    },
+    {
+     "action": "BV_DoorElectRearPasseSideUDS_Power_Windows_Standardization_Run",
+     "label": "BV_DoorElectRearPasseSideUDS_Power_Windows_Standardization_Run",
+     "rids": []
+    },
+    {
+     "action": "BrakeReset",
+     "label": "复位（Brake）",
+     "rids": []
+    },
+    {
+     "action": "ICM_EV_InstrClustVistePO623_005_Interval",
+     "label": "ICM_EV_InstrClustVistePO623_005_Interval",
+     "rids": []
+    },
+    {
+     "action": "BrakeReset_Adjust",
+     "label": "调整（BrakeReset）",
+     "rids": []
+    },
+    {
+     "action": "BrakeReset_GrindingIn",
+     "label": "复位（Brake_GrindingIn）",
+     "rids": []
+    },
+    {
+     "action": "BrakeReset_Calibration",
+     "label": "校准（BrakeReset）",
+     "rids": []
+    },
+    {
+     "action": "PSM_Break_GetStatusId",
+     "label": "PSM_Break_GetStatusId",
+     "rids": []
+    },
+    {
+     "action": "PSM_BreakRest_GrindingIn_No",
+     "label": "PSM_BreakRest_GrindingIn_No",
+     "rids": []
+    },
+    {
+     "action": "PSM_BreakRest_GrindingIn_YES",
+     "label": "PSM_BreakRest_GrindingIn_YES",
+     "rids": []
+    },
+    {
+     "action": "ENG_DPF_MODE1",
+     "label": "ENG_DPF_MODE1",
+     "rids": []
+    },
+    {
+     "action": "ENG_DPF_MODE2",
+     "label": "ENG_DPF_MODE2",
+     "rids": []
+    },
+    {
+     "action": "ENG_DPF_MODE3",
+     "label": "ENG_DPF_MODE3",
+     "rids": []
+    }
+   ],
+   "BV": [
+    {
+     "action": "FrontSensoDriveAssisSysteUDS_FRC",
+     "label": "FrontSensoDriveAssisSysteUDS_FRC",
+     "rids": []
+    },
+    {
+     "action": "ThermManagUDS_OperatingInstructionsForBCR",
+     "label": "ThermManagUDS_OperatingInstructionsForBCR",
+     "rids": []
+    },
+    {
+     "action": "DrainAndFillCoolingCircuits",
+     "label": "排空并加注（CoolingCircuits）",
+     "rids": []
+    },
+    {
+     "action": "TeachCoolingAirFlaps",
+     "label": "学习/匹配（CoolingAirFlaps）",
+     "rids": [
+      "0x045B"
+     ]
+    },
+    {
+     "action": "ThermManagUDS_Program_Electric_AC_Compressor",
+     "label": "ThermManagUDS_Program_Electric_AC_Compressor",
+     "rids": []
+    },
+    {
+     "action": "TeachAirConditioningCompressor",
+     "label": "学习/匹配（AirConditioningCompressor）",
+     "rids": []
+    }
+   ],
+   "ENG": [
+    {
+     "action": "3040TDI_WriteMilleage",
+     "label": "3040TDI_WriteMilleage",
+     "rids": []
+    },
+    {
+     "action": "ShortTest",
+     "label": "短测试",
+     "rids": []
+    },
+    {
+     "action": "3040TDI_ReducingAgent",
+     "label": "3040TDI_ReducingAgent",
+     "rids": []
+    },
+    {
+     "action": "3040TDI_ReadyState",
+     "label": "3040TDI_ReadyState",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode1",
+     "label": "匹配（Mode1）",
+     "rids": []
+    },
+    {
+     "action": "ShortTest",
+     "label": "短测试",
+     "rids": []
+    },
+    {
+     "action": "ShortTest_001",
+     "label": "短测试（001）",
+     "rids": []
+    },
+    {
+     "action": "ShortTest_002",
+     "label": "短测试（002）",
+     "rids": []
+    },
+    {
+     "action": "ReadyState",
+     "label": "ReadyState",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode2",
+     "label": "匹配（Mode2）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode3",
+     "label": "匹配（Mode3）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode4",
+     "label": "匹配（Mode4）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode5",
+     "label": "匹配（Mode5）",
+     "rids": []
+    },
+    {
+     "action": "Adaption_Mode6",
+     "label": "匹配（Mode6）",
+     "rids": []
+    },
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    },
+    {
+     "action": "Reset_After_Replacing_Chain",
+     "label": "复位（After_Replacing_Chain）",
+     "rids": []
+    },
+    {
+     "action": "Tank_Leakage_Diagnostics",
+     "label": "Tank_Leakage_Diagnostics",
+     "rids": []
+    },
+    {
+     "action": "Tank_Leakage_Diagnostics2",
+     "label": "Tank_Leakage_Diagnostics2",
+     "rids": []
+    },
+    {
+     "action": "Commissioning_GetStatu",
+     "label": "调试（GetStatu）",
+     "rids": []
+    },
+    {
+     "action": "Commissioning_GetStatu",
+     "label": "调试（GetStatu）",
+     "rids": []
+    },
+    {
+     "action": "GetStatu_0102",
+     "label": "GetStatu_0102",
+     "rids": []
+    },
+    {
+     "action": "GetStatu_1244",
+     "label": "GetStatu_1244",
+     "rids": []
+    }
+   ],
+   "Surround": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Light": [
+    {
+     "action": "Distribution_For_Matrix_LED_Headlight_activate",
+     "label": "Distribution_For_Matrix_LED_Headlight_activate",
+     "rids": []
+    }
+   ],
+   "Test": [
+    {
+     "action": "Warning_Brake_Assistant",
+     "label": "Warning_Brake_Assistant",
+     "rids": []
+    }
+   ],
+   "Front": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Rear": [
+    {
+     "action": "Spoiler_Activate_Service_Position",
+     "label": "机油（Sper_Activate_Service_Position）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Rear_Spoiler",
+     "label": "学习/匹配（Rear_Spoiler）",
+     "rids": []
+    }
+   ],
+   "AirBag": [
+    {
+     "action": "Read_Out_Crash_Data",
+     "label": "Read_Out_Crash_Data",
+     "rids": []
+    }
+   ],
+   "High": [
+    {
+     "action": "Voltage_Battery_Balance",
+     "label": "Voltage_Battery_Balance",
+     "rids": []
+    },
+    {
+     "action": "Voltage_Battery_Classification",
+     "label": "Voltage_Battery_Classification",
+     "rids": []
+    },
+    {
+     "action": "Teach_Cell_Modules",
+     "label": "学习/匹配（Cell_Modules）",
+     "rids": []
+    }
+   ],
+   "Coding": [
+    {
+     "action": "of_the_serial_number_of_the_high_voltage_battery",
+     "label": "of_the_serial_number_of_the_high_voltage_battery",
+     "rids": []
+    }
+   ],
+   "Windshield": [
+    {
+     "action": "Adjust_Wiping_Angle",
+     "label": "调整（Wiping_Angle）",
+     "rids": []
+    }
+   ],
+   "Instrument": [
+    {
+     "action": "Cluster_Setting_Total_Distance",
+     "label": "Cluster_Setting_Total_Distance",
+     "rids": []
+    },
+    {
+     "action": "Warning_Event_Memory_And_Clear_If_Necessary",
+     "label": "Warning_Event_Memory_And_Clear_If_Necessary",
+     "rids": []
+    }
+   ],
+   "GateWay": [
+    {
+     "action": "Deactivate_Activate_48V_Vehicle_Electrical_System",
+     "label": "Deactivate_Activate_48V_Vehicle_Electrical_System",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Deactivate_Flight_Mode",
+     "label": "Deactivate_Flight_Mode",
+     "rids": []
+    },
+    {
+     "action": "Resetting_The_Range_Calculation",
+     "label": "复位（ting_The_Range_Calculation）",
+     "rids": []
+    },
+    {
+     "action": "Teach_PVTS_Driver_Cards",
+     "label": "学习/匹配（PVTS_Driver_Cards）",
+     "rids": []
+    }
+   ],
+   "PCM": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Deactivate_Production_Mode",
+     "label": "Deactivate_Production_Mode",
+     "rids": []
+    },
+    {
+     "action": "Reset_To_Factory_Settings",
+     "label": "复位（To_Factory_Settings）",
+     "rids": []
+    }
+   ],
+   "Headlight": [
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    }
+   ],
+   "Night": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Connect": [
+    {
+     "action": "System_Deactivate_Flight_Mode",
+     "label": "System_Deactivate_Flight_Mode",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "System_Deactivate_Flight_Mode_AU49X",
+     "label": "System_Deactivate_Flight_Mode_AU49X",
+     "rids": []
+    }
+   ],
+   "Chassis": [
+    {
+     "action": "Control_Suspension_Alignment",
+     "label": "Control_Suspension_Alignment",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "Measure_Oil",
+     "label": "机油（Measure）",
+     "rids": []
+    },
+    {
+     "action": "Reset_Sensor_Wheel_Adap",
+     "label": "复位（Sensor_Wheel_Adap）",
+     "rids": []
+    },
+    {
+     "action": "Reset_Wheel_Adap",
+     "label": "复位（Wheel_Adap）",
+     "rids": []
+    },
+    {
+     "action": "Crankshaft_Sensor_Wheel_Tech",
+     "label": "Crankshaft_Sensor_Wheel_Tech",
+     "rids": []
+    },
+    {
+     "action": "High_Temp_Coolant_Circuit",
+     "label": "High_Temp_Coolant_Circuit",
+     "rids": []
+    },
+    {
+     "action": "EVO_High_Temp_Coolant_Circuit",
+     "label": "EVO_High_Temp_Coolant_Circuit",
+     "rids": []
+    },
+    {
+     "action": "Release_Stuck_Clutch",
+     "label": "Release_Stuck_Clutch",
+     "rids": []
+    }
+   ],
+   "BCM1": [
+    {
+     "action": "Fan_Tech",
+     "label": "Fan_Tech",
+     "rids": []
+    },
+    {
+     "action": "Adjustment_Tech",
+     "label": "调整（Tech）",
+     "rids": []
+    }
+   ],
+   "EPS": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "HUD": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "PDCC": [
+    {
+     "action": "Sway_Check",
+     "label": "Sway_Check",
+     "rids": []
+    }
+   ],
+   "TME": [
+    {
+     "action": "Thermal_Management_Clean_Refrigerant_Circuit",
+     "label": "Thermal_Management_Clean_Refrigerant_Circuit",
+     "rids": []
+    }
+   ],
+   "AssistSys": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Soft_Update",
+     "label": "Soft_Update",
+     "rids": []
+    }
+   ],
+   "ICM": [
+    {
+     "action": "MaintenanceHistoryWriteCode",
+     "label": "MaintenanceHistoryWriteCode",
+     "rids": []
+    }
+   ],
+   "Sunro": [
+    {
+     "action": "Teach_Panoramic_Roof",
+     "label": "学习/匹配（Panoramic_Roof）",
+     "rids": []
+    }
+   ],
+   "Write": [
+    {
+     "action": "Maintenance_Interval_LGEPO536",
+     "label": "Maintenance_Interval_LGEPO536",
+     "rids": []
+    },
+    {
+     "action": "Maintenance_Interval_EV_InstrClustVistePO623_005",
+     "label": "Maintenance_Interval_EV_InstrClustVistePO623_005",
+     "rids": []
+    }
+   ],
+   "SRS": [
+    {
+     "action": "ReadCollision",
+     "label": "ReadCollision",
+     "rids": []
+    }
+   ],
+   "AC": [
+    {
+     "action": "RearSeatHeat_Tech",
+     "label": "RearSeatHeat_Tech",
+     "rids": []
+    },
+    {
+     "action": "Fan_Tech",
+     "label": "Fan_Tech",
+     "rids": []
+    },
+    {
+     "action": "Reset",
+     "label": "复位",
+     "rids": []
+    },
+    {
+     "action": "Teachand_Check_Flap_Servo_Motors_LIN2",
+     "label": "学习/匹配（and_Check_Flap_Servo_Motors_LIN2）",
+     "rids": []
+    }
+   ],
+   "PDLS": [
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    }
+   ]
+  },
+  "E2": {
+   "Calibrate": [
+    {
+     "action": "Combination_Sensor",
+     "label": "Combination_Sensor",
+     "rids": []
+    }
+   ],
+   "Teach": [
+    {
+     "action": "Detection",
+     "label": "检测",
+     "rids": []
+    },
+    {
+     "action": "Reversible_Belt_Tensioners",
+     "label": "Reversible_Belt_Tensioners",
+     "rids": [
+      "0x0231"
+     ]
+    }
+   ],
+   "SteeringAngle": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "PDK": [
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    }
+   ],
+   "PSM": [
+    {
+     "action": "Bleeding",
+     "label": "排气",
+     "rids": []
+    },
+    {
+     "action": "Swap_Test",
+     "label": "更换（Test）",
+     "rids": []
+    }
+   ],
+   "Gate": [
+    {
+     "action": "Replacement",
+     "label": "更换",
+     "rids": []
+    },
+    {
+     "action": "Resetting_The_Range_Calculation",
+     "label": "复位（ting_The_Range_Calculation）",
+     "rids": []
+    }
+   ],
+   "BCM": [
+    {
+     "action": "Teach_Headlight_Beam_Adjustment",
+     "label": "调整（Teach_Headlight_Beam）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Steering_Column_Adjustment",
+     "label": "调整（Teach_Steering_Column）",
+     "rids": [
+      "0x04DE",
+      "0x0531"
+     ]
+    }
+   ],
+   "DME": [
+    {
+     "action": "Regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "Bleeding_HighTemperature_Coolant_Circuit",
+     "label": "排气（ing_HighTemperature_Coolant_Circuit）",
+     "rids": []
+    }
+   ]
+  },
+  "CS1": {
+   "GT4": [
+    {
+     "action": "Detection_Replacement",
+     "label": "更换（Detection）",
+     "rids": []
+    },
+    {
+     "action": "Set_Total_Mileage",
+     "label": "Set_Total_Mileage",
+     "rids": []
+    },
+    {
+     "action": "Sliding_Lifting_Roof_Standardisation",
+     "label": "Sliding_Lifting_Roof_Standardisation",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": [
+      "0x0400"
+     ]
+    },
+    {
+     "action": "TIP_Parmanent_Fault_Memory",
+     "label": "TIP_Parmanent_Fault_Memory",
+     "rids": []
+    },
+    {
+     "action": "Activation_Of_Relaining_Solenoid",
+     "label": "激活（Of_Relaining_Solenoid）",
+     "rids": []
+    }
+   ]
+  },
+  "992": {
+   "Brake1UDS": [
+    {
+     "action": "Bleeding",
+     "label": "排气",
+     "rids": []
+    }
+   ],
+   "BV": [
+    {
+     "action": "Teach_Steering_Column_Adjustment",
+     "label": "调整（Teach_Steering_Column）",
+     "rids": []
+    },
+    {
+     "action": "ShortTest",
+     "label": "短测试",
+     "rids": []
+    },
+    {
+     "action": "CentrElectUDS_40FSI0119GT_ReadyState",
+     "label": "CentrElectUDS_40FSI0119GT_ReadyState",
+     "rids": []
+    },
+    {
+     "action": "CentrElectUDS_40FSI0119GT_DPF",
+     "label": "CentrElectUDS_40FSI0119GT_DPF",
+     "rids": []
+    },
+    {
+     "action": "CentrElectUDS_40FSI0119GT_Injector",
+     "label": "CentrElectUDS_40FSI0119GT_Injector",
+     "rids": []
+    },
+    {
+     "action": "EraseAdaptionVaules",
+     "label": "匹配（EraseVaules）",
+     "rids": []
+    },
+    {
+     "action": "TankTest",
+     "label": "测试（Tank）",
+     "rids": []
+    },
+    {
+     "action": "Adaption",
+     "label": "匹配",
+     "rids": []
+    },
+    {
+     "action": "CentrElectUDS_Other_AjustmentPressure",
+     "label": "CentrElectUDS_Other_AjustmentPressure",
+     "rids": []
+    },
+    {
+     "action": "ShortTest",
+     "label": "短测试",
+     "rids": []
+    },
+    {
+     "action": "EraseAdaptionVaules",
+     "label": "匹配（EraseVaules）",
+     "rids": []
+    },
+    {
+     "action": "Adaption",
+     "label": "匹配",
+     "rids": []
+    },
+    {
+     "action": "Adaption",
+     "label": "匹配",
+     "rids": []
+    },
+    {
+     "action": "Adaption",
+     "label": "匹配",
+     "rids": []
+    },
+    {
+     "action": "Filling",
+     "label": "加注",
+     "rids": []
+    },
+    {
+     "action": "Teach_Flap_Servo_Motors",
+     "label": "学习/匹配（Flap_Servo_Motors）",
+     "rids": []
+    },
+    {
+     "action": "DashBoardUDS_Setting_total_distance",
+     "label": "DashBoardUDS_Setting_total_distance",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "DashBoardUDS_Del_Fault",
+     "label": "DashBoardUDS_Del_Fault",
+     "rids": []
+    },
+    {
+     "action": "AdaptCruisContrUDS_Reset_Personalization",
+     "label": "匹配（CruisContrUDS_Reset_Personalization）",
+     "rids": [
+      "0x03A9"
+     ]
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "InforContrUnit1UDS_Deactivate_Production_Mode",
+     "label": "InforContrUnit1UDS_Deactivate_Production_Mode",
+     "rids": []
+    },
+    {
+     "action": "Reset_Factory_Settings",
+     "label": "复位（Factory_Settings）",
+     "rids": []
+    },
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "TelemCommuUnitUDS_Deactivate_Flight_Mode",
+     "label": "TelemCommuUnitUDS_Deactivate_Flight_Mode",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "VehicTrackSysteUDS_Driver_Set",
+     "label": "VehicTrackSysteUDS_Driver_Set",
+     "rids": []
+    },
+    {
+     "action": "Calibrate_Combination_Sensor",
+     "label": "校准（Combination_Sensor）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Expansion",
+     "label": "学习/匹配（Expansion）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Refrigerant",
+     "label": "学习/匹配（Refrigerant）",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "EV": [
+    {
+     "action": "TankTest",
+     "label": "测试（Tank）",
+     "rids": []
+    },
+    {
+     "action": "ShortTest",
+     "label": "短测试",
+     "rids": []
+    },
+    {
+     "action": "EraseAdaptionVaules",
+     "label": "匹配（EraseVaules）",
+     "rids": []
+    },
+    {
+     "action": "ConBoxHighAU49X_Deactivate_Flight_Mode",
+     "label": "ConBoxHighAU49X_Deactivate_Flight_Mode",
+     "rids": []
+    },
+    {
+     "action": "ConBoxChinaAU58X_Deactivate_Flight_Mode",
+     "label": "ConBoxChinaAU58X_Deactivate_Flight_Mode",
+     "rids": []
+    }
+   ],
+   "DME": [
+    {
+     "action": "regeneration",
+     "label": "再生",
+     "rids": []
+    },
+    {
+     "action": "30TFS_First_Start",
+     "label": "30TFS_First_Start",
+     "rids": []
+    },
+    {
+     "action": "Bleeding_Cooling_System",
+     "label": "排气（ing_Cooling_System）",
+     "rids": []
+    },
+    {
+     "action": "30TFS_Measure_Oil",
+     "label": "机油（30TFS_Measure）",
+     "rids": []
+    },
+    {
+     "action": "Bleeding_Cooling_System",
+     "label": "排气（ing_Cooling_System）",
+     "rids": []
+    }
+   ],
+   "TIP": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "1413": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    }
+   ],
+   "Roll": [
+    {
+     "action": "Commissioning",
+     "label": "调试",
+     "rids": []
+    }
+   ],
+   "Gateway": [
+    {
+     "action": "NetMonitor",
+     "label": "NetMonitor",
+     "rids": []
+    }
+   ],
+   "EPS": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "EBKV": [
+    {
+     "action": "FUN_Check",
+     "label": "FUN_Check",
+     "rids": []
+    },
+    {
+     "action": "FUN_Check1",
+     "label": "FUN_Check1",
+     "rids": []
+    }
+   ],
+   "BCM1": [
+    {
+     "action": "Fan_Tech",
+     "label": "Fan_Tech",
+     "rids": []
+    },
+    {
+     "action": "ComPresser_Tech",
+     "label": "ComPresser_Tech",
+     "rids": []
+    }
+   ],
+   "BCM2": [
+    {
+     "action": "Config_VehicleKey",
+     "label": "Config_VehicleKey",
+     "rids": []
+    },
+    {
+     "action": "Teach",
+     "label": "学习/匹配",
+     "rids": []
+    }
+   ],
+   "Write": [
+    {
+     "action": "Maintenance_Interval",
+     "label": "Maintenance_Interval",
+     "rids": []
+    }
+   ],
+   "BMC": [
+    {
+     "action": "SOH",
+     "label": "SOH",
+     "rids": []
+    }
+   ],
+   "992": [
+    {
+     "action": "2_PDK_OilFill",
+     "label": "机油（2_PDK_Fill）",
+     "rids": []
+    },
+    {
+     "action": "2_T_PDK_OilFill",
+     "label": "机油（2_T_PDK_Fill）",
+     "rids": []
+    }
+   ]
+  },
+  "J1": {
+   "BV": [
+    {
+     "action": "AdaptCruisContrUDS_ACC_Calibration",
+     "label": "校准（AdaptCruisContrUDS_ACC）",
+     "rids": []
+    },
+    {
+     "action": "ThermManagUDS_OperatingInstructionsForBCR",
+     "label": "ThermManagUDS_OperatingInstructionsForBCR",
+     "rids": []
+    },
+    {
+     "action": "DrainAndFillCoolingCircuits",
+     "label": "排空并加注（CoolingCircuits）",
+     "rids": [
+      "0x0600"
+     ]
+    },
+    {
+     "action": "ThermManagUDS_VentingTheCoolingCircuits",
+     "label": "ThermManagUDS_VentingTheCoolingCircuits",
+     "rids": []
+    },
+    {
+     "action": "AirCondiUDS_Check_Cooling_Inside_Vehicle",
+     "label": "AirCondiUDS_Check_Cooling_Inside_Vehicle",
+     "rids": []
+    },
+    {
+     "action": "BatteEnergContrModulUDS_Battery_Classification",
+     "label": "BatteEnergContrModulUDS_Battery_Classification",
+     "rids": []
+    },
+    {
+     "action": "BatteEnergContrModulUDS_Extend_Del_Fault",
+     "label": "BatteEnergContrModulUDS_Extend_Del_Fault",
+     "rids": []
+    },
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    },
+    {
+     "action": "DashBoardUDS_Write_Maintenance_Interval",
+     "label": "DashBoardUDS_Write_Maintenance_Interval",
+     "rids": []
+    },
+    {
+     "action": "Adapt_Gearbox",
+     "label": "匹配（Gearbox）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Expansion",
+     "label": "学习/匹配（Expansion）",
+     "rids": []
+    },
+    {
+     "action": "Teach_Refrigerant",
+     "label": "学习/匹配（Refrigerant）",
+     "rids": []
+    },
+    {
+     "action": "ThermManagUDS_CoolingSystem_Check",
+     "label": "ThermManagUDS_CoolingSystem_Check",
+     "rids": []
+    },
+    {
+     "action": "Drain_And_Fill_Refrigerant_Circuit",
+     "label": "排空（And_Fill_Refrigerant_Circuit）",
+     "rids": []
+    },
+    {
+     "action": "ThermManagUDS_Clean_Refrigerant_Circuit",
+     "label": "ThermManagUDS_Clean_Refrigerant_Circuit",
+     "rids": []
+    },
+    {
+     "action": "Replacement_Work_On_Air_Spring_System",
+     "label": "更换（Work_On_Air_Spring_System）",
+     "rids": []
+    },
+    {
+     "action": "CalibrateBrake",
+     "label": "校准（Brake）",
+     "rids": []
+    },
+    {
+     "action": "ThermManagUDS_Check_Cooling_Inside_Vehicle",
+     "label": "ThermManagUDS_Check_Cooling_Inside_Vehicle",
+     "rids": []
+    }
+   ],
+   "1513": [
+    {
+     "action": "Calibration",
+     "label": "校准",
+     "rids": []
+    },
+    {
+     "action": "Filling_Air_Springs",
+     "label": "加注（Air_Springs）",
+     "rids": []
+    }
+   ],
+   "Coding": [
+    {
+     "action": "of_the_serial_number_of_the_high_voltage_battery",
+     "label": "of_the_serial_number_of_the_high_voltage_battery",
+     "rids": []
+    }
+   ],
+   "BMS": [
+    {
+     "action": "Reactivation_of_insulation_measurement",
+     "label": "激活（Re_of_insulation_measurement）",
+     "rids": []
+    }
+   ],
+   "GateWay": [
+    {
+     "action": "Resetting_The_Range_Calculation",
+     "label": "复位（ting_The_Range_Calculation）",
+     "rids": []
+    }
+   ],
+   "BMC": [
+    {
+     "action": "SOH",
+     "label": "SOH",
+     "rids": []
+    }
+   ],
+   "Connect": [
+    {
+     "action": "System_Deactivate_Flight_Mode",
+     "label": "System_Deactivate_Flight_Mode",
+     "rids": []
+    }
+   ],
+   "Aerod": [
+    {
+     "action": "ActivateServicePosition",
+     "label": "ActivateServicePosition",
+     "rids": []
+    },
+    {
+     "action": "TeachRearSpoiler",
+     "label": "学习/匹配（RearSpoiler）",
+     "rids": []
+    }
+   ],
+   "EPS": [
+    {
+     "action": "Test",
+     "label": "测试",
+     "rids": []
+    }
+   ],
+   "EBKV": [
+    {
+     "action": "FUN_Check",
+     "label": "FUN_Check",
+     "rids": []
+    },
+    {
+     "action": "Bleeding",
+     "label": "排气",
+     "rids": []
+    }
+   ],
+   "Reset": [
+    {
+     "action": "Warn",
+     "label": "Warn",
+     "rids": [
+      "0x0300"
+     ]
+    }
+   ],
+   "OTA": [
+    {
+     "action": "Smart_Service",
+     "label": "Smart_Service",
+     "rids": []
+    }
+   ]
+  }
+ }
+}
