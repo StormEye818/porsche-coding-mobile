@@ -51,7 +51,7 @@ console.log('\n[1] Elm327 AT layer');
   ok('no invented ATFC0', !sent.includes('ATFC0'), sent.filter((s) => s.startsWith('ATFC')).join(','));
   ok('no ATSP0 (auto-detect always fails)', !sent.some((s) => s.startsWith('ATSP0')));
   ok('default protocol ATSP6', sent.includes('ATSP6'));
-  ok('explicit ATCAF0 (parseResp needs PCI)', sent.includes('ATCAF0'));
+  ok('explicit ATCAF1 (ELM327 auto ISO-TP PCI on tx/rx)', sent.includes('ATCAF1') && !sent.includes('ATCAF0'));
   ok('flow control ATCFC1', sent.includes('ATCFC1'));
   ok('flow control recipe ATFCSD', sent.some((s) => s.startsWith('ATFCSD')));
   ok('flow control mode ATFCSM0', sent.includes('ATFCSM0'));
@@ -1109,7 +1109,7 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
       cmd: fakeCmd,
       // LinkDoctor 现在走 Elm327.prepareLink() 这一套公共配方；fake 里按同样命令序列实现。
       prepareLink: async function () {
-        for (const a of ['ATE0', 'ATL0', 'ATS0', 'ATAL', 'ATH1', 'ATCAF0', 'ATSTFF', 'ATAT0',
+        for (const a of ['ATE0', 'ATL0', 'ATS0', 'ATAL', 'ATH1', 'ATCAF1', 'ATSTFF', 'ATAT0',
           'ATCFC1', 'ATFCSD 30 00 00 00 00 00 00 00', 'ATFCSM0']) await this.cmd(a);
       },
     };

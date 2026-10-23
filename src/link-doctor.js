@@ -24,18 +24,29 @@ import { MfiPort } from './mfi-port.js';
 import { Elm327 } from './elm327.js';
 import { parseResp } from './coder.js';
 
-// 保时捷 981 已知地址（实测 + 参考实现 拓扑）
+// 保时捷 981 已知地址 —— 6 条 proven（431 锚点验证，见 ECU-ADDRESSING-20261019.md §2）
 export const KNOWN_ADDRS = [
   { name: 'Gateway 网关', tx: 0x710, rx: 0x77A, note: '实测 710/77A，rx≠tx+8' },
   { name: 'DME 发动机',   tx: 0x7E0, rx: 0x7E8, note: '实测 7E0/7E8' },
+  { name: 'PDC 驻车',     tx: 0x7CF, rx: 0x7D7, note: '431 proven' },
+  { name: 'PASM 悬架',    tx: 0x7D0, rx: 0x7D8, note: '431 proven' },
+  { name: '前端电子',     tx: 0x7D1, rx: 0x7D9, note: '431 proven BCM_vorne' },
+  { name: '后端电子',     tx: 0x74F, rx: 0x757, note: '431 proven BCM_hinten' },
 ];
 
-// KWP-2000 风格识别探针（保时捷实际用的服务，不是 UDS 22）
+// 识别探针：KWP + UDS 双栈（431 主力是 UDS 22，GAG 2050 条 vs KWP 1A 只 55 条）
+// 判定放宽：正响应 OR 负响应(7F) 都算「模块在」—— 7F=模块活着但不支持该服务
 export const KWP_PROBES = [
   { hex: '1A9F', label: 'DSN',         positive: '5A9F' },
   { hex: '1A95', label: '软件版本',     positive: '5A95' },
   { hex: '1A93', label: '硬件版本',     positive: '5A93' },
   { hex: '1A87', label: '零件号',       positive: '5A87' },
+];
+export const UDS_PROBES = [
+  { hex: '22F190', label: 'VIN',       positive: '62F190' },
+  { hex: '22F187', label: '零件号',     positive: '62F187' },
+  { hex: '22F189', label: '软件版本',   positive: '62F189' },
+  { hex: '22F180', label: 'BootSW',    positive: '62F180' },
 ];
 
 export class LinkDoctor {
@@ -147,8 +158,8 @@ export class LinkDoctor {
       await this.elm.cmd('ATSH7E0', 1500);
       await this.elm.cmd('ATCRA7E8', 1500);
       const r = (await this.elm.cmd('1A9F', 8000) || '').trim();
-      // KWP 正响应是 `5A 9F ...`；UDS 是 `62 ...`。有实质字节即算通。
-      const hit = /\b5A\b/i.test(r) || /\b62\b/i.test(r) || /\b49\b/i.test(r);
+      // KWP 正响应 `5A`；UDS 正响应 `62`/`49`；负响应 `7F` 也算协议通（ECU 活着）
+      const hit = /\b5A\b/i.test(r) || /\b62\b/i.test(r) || /\b49\b/i.test(r) || /\b7F\b/i.test(r);
       tries.push(`ATSP${p}(${desc})→${r.slice(0, 24) || '空'}`);
       if (hit) { locked = p; break; }
     }
@@ -174,13 +185,14 @@ export class LinkDoctor {
   /** L5 —— 模块可达（KWP 1A9F 读 DSN） */
   async probeModules() {
     const found = [];
+    const allProbes = [...KWP_PROBES, ...UDS_PROBES];
     for (const a of KNOWN_ADDRS) {
       try {
         await this.elm.cmd(`ATSH${a.tx.toString(16).toUpperCase()}`, 2500);
         await this.elm.cmd(`ATCRA${a.rx.toString(16).toUpperCase()}`, 2500);
       } catch (e) { continue; }
-      const row = { ...a, idents: {} };
-      for (const pr of KWP_PROBES) {
+      const row = { ...a, idents: {}, alive: false };
+      for (const pr of allProbes) {
         let r = '';
         try { r = (await this.elm.cmd(pr.hex, 6000) || '').trim(); } catch (e) { continue; }
         // ⚠️ ATS0（无空格）时应答是 `7E8035A9F…` 连写 —— 必须先剥 CAN ID 再判前缀，
@@ -189,8 +201,20 @@ export class LinkDoctor {
         const p2 = parseResp(r);
         const body = Array.from(p2.body || [])
           .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+        // 正响应 → 记录识别信息
         if (body.startsWith(pr.positive)) {
           row.idents[pr.label] = body.slice(0, 48);
+          row.alive = true;
+        }
+        // ⚠️ 负响应 7F 也算「模块在」（2026-10-22 对齐 431）：
+        //    7F <SID> <NRC> = 模块活着但不支持该服务（如 Gateway 不支持 KWP 1A），
+        //    此前只认正响应导致 Gateway/PDC/PASM 等全误报「无应答」。
+        if (p2.kind === 'nrc' || body.startsWith('7F')) {
+          row.alive = true;
+        }
+        // parseResp 的 kind 非 empty 也说明有字节回来
+        if (p2.kind === 'ok' && body.length) {
+          row.alive = true;
         }
       }
       const n = Object.keys(row.idents).length;
@@ -199,8 +223,13 @@ export class LinkDoctor {
         this._ok('L5', `模块 ${a.name}`,
           `${a.tx.toString(16).toUpperCase()}/${a.rx.toString(16).toUpperCase()} → ` +
           Object.entries(row.idents).map(([k, v]) => `${k}=${v}`).join('  '));
+      } else if (row.alive) {
+        // 模块活着但没采到识别信息（全 NRC）—— 不算失败
+        found.push(row);
+        this._ok('L5', `模块 ${a.name}`,
+          `${a.tx.toString(16).toUpperCase()}/${a.rx.toString(16).toUpperCase()} → 有应答（NRC），无识别数据`);
       } else {
-        this._fail('L5', `模块 ${a.name}`, '无 KWP 应答',
+        this._fail('L5', `模块 ${a.name}`, '无应答',
           '该模块不在诊断 CAN 上（五条主 CAN 在网关后面），或地址需调整。');
       }
     }

@@ -17,6 +17,15 @@ import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFie
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
+import { ECU_NUM_TO_ADDR, LABEL_TO_ECU_NUM } from './ecu-num-addr.js';
+
+// 431 探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
+// sel=blockKey → 探测命令，用响应 flags 消歧候选地址
+const PROBE_CMD_BY_ECU = {
+  // 已知需要探测的 ecu（431 的 1.2%）
+  // 其余走默认 KWP 1A9F 识别
+};
+const DEFAULT_PROBE_CMD = '1A9F';
 import { makeResolverProvider, SeedKeyUnresolvedError, resolveKeyByName, resolveKey } from './seedkey-resolver.js';
 import { nonAsapForName, nonAsapForModule, platformForModel } from './seedkey-nonasap.js';
 import { variantForName, NAME_TO_VARIANT } from './seedkey-name-map.js';
@@ -169,19 +178,97 @@ function ecuAddrFromTable(label, sys) {
   return null;
 }
 
+/**
+ * ecu 号桥接：label → ecu 号 → CAN 地址（2026-10-22，431 数据驱址）。
+ * 覆盖 systemCatalog 全量 177 label / 152 ecu 号。
+ * 已知地址（proven/标准 OBD/ECU_ADDR）直接返回；未知 ecu 返回 needs-probe。
+ */
+function ecuAddrFromNum(label, sys) {
+  // 查 ecu 号：① label 精确 ② sys.modules 兜底
+  let ecuNum = LABEL_TO_ECU_NUM[label];
+  if (ecuNum == null && sys?.modules?.length) {
+    for (const m of sys.modules) {
+      const e = LABEL_TO_ECU_NUM[m];
+      if (e != null) { ecuNum = e; break; }
+    }
+  }
+  if (ecuNum == null) return null;
+  const hit = ECU_NUM_TO_ADDR[ecuNum];
+  if (hit && hit.tx) {
+    return {
+      tx: parseInt(hit.tx, 16), rx: parseInt(hit.rx, 16),
+      state: 'measured',
+      note: `ecu=${ecuNum}（431 数据驱址）`,
+    };
+  }
+  // ecu 号已知但无地址 → 探测指令路径（431 的 1.2% 方案）
+  return {
+    tx: null, rx: null, state: 'needs-probe',
+    note: `ecu=${ecuNum} 需探测寻址`,
+    probeCmd: PROBE_CMD_BY_ECU[ecuNum] || '01 04 21 01 00 01',
+    ecuNum,
+  };
+}
+
+/**
+ * 431 探测指令：对候选 CAN 地址逐个发识别探针，找模块地址。
+ * 对齐 431 的运行时探测逻辑（ECU-ADDRESSING-20261019.md §8）。
+ * 探测顺序：先试标准 OBD 范围（7E0-7E7），再试保时捷扩展范围（700-7EF）。
+ * 返回 {tx, rx} 或 null。
+ */
+async function probeAddressFor(label, probeCmd, model) {
+  if (!coder) return null;
+  const probes = [];
+  // 标准 OBD-II 诊断地址（DME/TCM/ABS/SRS/IC/AC/TPMS 等）
+  for (let tx = 0x7E0; tx <= 0x7E7; tx++) {
+    probes.push({ tx, rx: tx + 8 });
+  }
+  // 保时捷扩展地址（Gateway/PASM/BCM/PDC 等已知）
+  for (const [tx, rx] of [[0x710,0x77A],[0x7CF,0x7D7],[0x7D0,0x7D8],[0x7D1,0x7D9],
+                           [0x74F,0x757],[0x730,0x738],[0x719,0x721],[0x71A,0x722],
+                           [0x76D,0x775],[0x7D9,0x7E1],[0x7DA,0x7E2],[0x7E2,0x7EA]]) {
+    probes.push({ tx, rx });
+  }
+  showLoading(`正在探测 ${label}`, `试 ${probes.length} 个候选地址…`);
+  try {
+    for (const p of probes) {
+      try {
+        await coder.elm.cmd(`ATSH${p.tx.toString(16).toUpperCase()}`, 1500);
+        await coder.elm.cmd(`ATCRA${p.rx.toString(16).toUpperCase()}`, 1500);
+        // 发识别探针：KWP 1A9F（DSN）为主，UDS 22F190（VIN）为辅
+        for (const cmd of (probeCmd ? [probeCmd] : ['1A9F', '22F190'])) {
+          const r = (await coder.elm.cmd(cmd, 4000) || '').trim();
+          const p2 = parseResp(r);
+          const body = Array.from(p2.body || [])
+            .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+          // 正响应（5A9F/62F190）→ 命中；NRC 7F → 模块在但不支持该服务 → 也算命中
+          if (body.startsWith('5A') || body.startsWith('62') || body.startsWith('7F')) {
+            log(`  探测命中 0x${p.tx.toString(16).toUpperCase()}/0x${p.rx.toString(16).toUpperCase()} (${cmd} → ${body.slice(0,16)})`, 'ok');
+            return { tx: p.tx, rx: p.rx };
+          }
+        }
+      } catch { /* 超时/无应答，继续 */ }
+    }
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
+
 function addrFor(label, model = currentModel, sys = null) {
-  // 手工覆盖优先于内置表：内置表里不少是 candidate/unknown，用户实测后应能覆盖。
-  // ⚠️ 覆盖键带车型（2026-10-18 审计）：同一个「网关」在 981/992 上地址可能不同，
-  //    只用 label 会把 981 的实测地址套到别的车型。旧的无车型键仍作兜底读取。
-  // 2026-10-19：RE 表（proven 真机锚点）优先于 ECU_ADDR 的 candidate ——
-  //   避免 candidate 遮蔽 proven（审计 1b）。
+  // 手工覆盖优先于内置表。
+  // 2026-10-22：接入 ecu→addr 全量查表（431 数据驱址），label→ecu→CAN 三层。
   const all = loadAddrOverrides();
   const override = overrideFor(addrKey(label, model), all) || overrideFor(label, all);
   if (override) return override;
   const fromRe = ecuAddrFromTable(label, sys);
   if (fromRe && fromRe.state === 'measured') return fromRe;
+  // ecu 号桥接：label → ecu → CAN 地址（全量覆盖 177 label / 152 ecu）
+  const ecuAddr = ecuAddrFromNum(label, sys);
+  if (ecuAddr) return ecuAddr;
   return ECU_ADDR[label] || fromRe || null;
 }
+
 import { registerPlugin } from '@capacitor/core';
 
 // 状态栏留白：WebView 里 env(safe-area-inset-top) 常为 0，
@@ -609,6 +696,11 @@ const state = {
 // ---------- ① 连接 ----------
 $('btnDoctor').onclick = async () => {
   $('btnDoctor').disabled = true;
+  // ⚠️ 自检期间屏蔽其它操作（2026-10-22）：此前用户在自检中点「自动搜索」，
+  //    coder 还没建（doctor.run() 才返回），误报「未连接适配器」——
+  //    日志里「自动搜索」夹在 L3✅ 和 L4❌ 中间就是这个时序。
+  $('btnDisc').disabled = true;
+  $('btnScan').disabled = true;
   toast('info', '开始连接自检', '配件发现 → 会话 → 协议锁定 → 模块探测');
   try {
     // ⚠️ 重连前必须先关掉上一个 EA 会话 —— 否则 EASession 创建失败（僵尸会话）。
@@ -658,6 +750,7 @@ $('btnDoctor').onclick = async () => {
     toast('err', '自检异常', e.message);
   }
   $('btnDoctor').disabled = false;
+  if (coder) { $('btnDisc').disabled = false; $('btnScan').disabled = false; }
 };
 
 // 地址扫描：实测车上哪些 ECU 有应答（比查表猜靠谱）
@@ -1560,35 +1653,30 @@ async function enterSystem(sys) {
       // 模拟模式：任何模块都能进，给个占位地址
       addr = { tx: 0x7E0, rx: 0x7E8, note: '模拟' };
     } else {
-      // ⚠️ 不猜地址，但必须给用户一条**可执行**的路：
-      //    地址扫描能发现车上可用的 tx/rx，只是没有「模块名→地址」映射。
-      //    允许用户从扫描日志/参考诊断仪 上抄一对地址，保存后下次直接用。
+      // 2026-10-22：未知 ecu 走 431 探测指令路径（替代手工输入）。
+      // 对候选 CAN 地址逐个发识别探针（KWP 1A9F / UDS 22F190），
+      // 有正响应的地址就是模块地址，保存后下次直接用。
       const why = addr?.note ? `（${addr.note}）` : '';
-      // 2026-10-19：RE 实证寻址表标 needs-probe 的模块（1.2%），给探测命令
-      if (addr?.state === 'needs-probe' && addr.probeCmd) {
-        log(`  ${sys.label} 需探测寻址（RE 表 ${why}）`, 'info');
-        log(`  探测命令：${addr.probeCmd}`, 'info');
-        toast('info', `${sys.label} 需探测寻址`, `探测命令 ${addr.probeCmd}，或手工输入 tx/rx`);
+      log(`  ${sys.label} 地址未知${why}，启动 431 探测…`, 'info');
+      const probed = await probeAddressFor(sys.label, addr?.probeCmd, currentModel);
+      if (probed) {
+        saveAddrOverride(sys.label, probed, currentModel);
+        addr = { ...probed, state: 'probed', note: '431 探测命中' };
+        log(`  ✅ ${sys.label} 探测到 0x${probed.tx.toString(16).toUpperCase()}/0x${probed.rx.toString(16).toUpperCase()}（已保存）`, 'ok');
+      } else {
+        // 探测失败 → 仍允许手工输入兜底
+        log(`  ❌ ${sys.label} 探测未命中${why}，可手工输入地址`, 'warn');
+        const raw = (typeof prompt === 'function')
+          ? prompt(`探测未找到「${sys.label}」的 CAN 地址${why}。\n\n`
+            + '若已用「地址扫描」或参考设备查到 tx/rx，请输入一对地址（如 7E0/7E8）。\n'
+            + '留空 = 取消。')
+          : null;
+        if (!raw) return false;
+        const pair = parseAddrPair(raw);
+        if (!pair) { toast('err', '地址格式不对', '请输入如 7E0/7E8'); return false; }
+        saveAddrOverride(sys.label, pair, currentModel);
+        addr = { ...pair, state: 'manual', note: '手工输入/已保存' };
       }
-      const raw = (typeof prompt === 'function')
-        ? prompt(`未找到「${sys.label}」的可用 CAN 地址${why}。\n\n`
-          + '若已用「地址扫描」或参考设备查到 tx/rx，请输入一对地址（如 7E0/7E8）。\n'
-          + '留空 = 取消。\n\n'
-          + '⚠️ 地址必须实测，猜地址可能读到别的 ECU。')
-        : null;
-      if (!raw) {
-        toast('warn', `无「${sys.label}」的可用地址${why}`,
-          '先跑「地址扫描」（连接自检 L5）实测该 ECU 的 tx/rx，再进模块时手工输入并保存。别猜地址——猜不得。');
-        return false;
-      }
-      const pair = parseAddrPair(raw);
-      if (!pair) {
-        toast('err', '地址格式不对', '请输入一对地址，如 7E0/7E8（十六进制）。');
-        return false;
-      }
-      saveAddrOverride(sys.label, pair, currentModel);
-      addr = { ...pair, state: 'manual', note: '手工输入/已保存' };
-      log(`  📌 ${sys.label} 使用手工地址 0x${pair.tx.toString(16).toUpperCase()}/0x${pair.rx.toString(16).toUpperCase()}（已保存）`, 'warn');
     }
   }
   showLoading(`正在进入 ${sys.label}`, `地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()} · 建立会话中…`);

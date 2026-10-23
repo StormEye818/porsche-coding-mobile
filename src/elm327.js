@@ -87,7 +87,7 @@ export class Elm327 {
    *    多帧读/写在真车上因此缺少必要配置。这个函数是真机路径与 init() 的唯一配方源。
    */
   async prepareLink() {
-    for (const a of ['ATE0', 'ATL0', 'ATS0', 'ATAL', 'ATH1', 'ATCAF0', 'ATSTFF', 'ATAT0']) {
+    for (const a of ['ATE0', 'ATL0', 'ATS0', 'ATAL', 'ATH1', 'ATCAF1', 'ATSTFF', 'ATAT0']) {
       await this.cmd(a, 2000);
     }
     // 流控走适配器内建（ATCFC1 + FC 配方）——手动注入会在收应答窗口触发 STOPPED。
@@ -105,7 +105,11 @@ export class Elm327 {
    *   - `ATFC0` 是**臆造命令**（只有 ATCFC0/1 + ATFCSH/ATFCSD/ATFCSM）。
    *     山寨适配器对任何命令都回 OK，会把臆造命令「洗」成看似正常 —— 已删。
    *   - 补 `ATCAF` / `ATCFC` / `ATFCSH`/`ATFCSD`/`ATFCSM`：
-   *     parseResp 的 ISO-TP 重组假定应答**带 PCI 字节**，因此必须 `ATCAF0`（原始）。
+   *     ⚠️ 2026-10-22 修：改用 `ATCAF1`（收发都自动加/剥 PCI）。
+   *     此前用 ATCAF0 但请求没手动补 PCI —— `1A9F` 裸发被 ECU 当成首帧（长度0xA9F），
+   *     回流控帧 `32 00 02`（溢出），L4 判不出正响应 → 协议锁定失败 → 连不上车。
+   *     ATCAF1 下 ELM327 自动加 SF PCI，应答剥 PCI 后 SID(≥0x50) 落进 parseResp
+   *     的「无 PCI」分支，整帧即载荷 —— 单帧/多帧都正确。
    *     流控走适配器内建（ATCFC1 + FC 配方）——手动注入会在收应答窗口触发 STOPPED。
    *
    * @param {number} protocol  ELM327 协议号；保时捷 981/718/991/Macan = 6（11bit/500k）

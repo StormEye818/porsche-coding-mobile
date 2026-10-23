@@ -66,7 +66,7 @@ console.log('\n[1] 连接 + 协议初始化');
   const ecu = strictEcu();
   const { elm } = await link(ecu);
   ok('ELM327 init 成功', !!elm);
-  ok('发了 ATCAF0（parseResp 需要 PCI）', elm.log.some(([c]) => c.includes('ATCAF0')));
+  ok('发了 ATCAF1（ELM327 自动 ISO-TP PCI）', elm.log.some(([c]) => c.includes('ATCAF1')) && !elm.log.some(([c]) => c.includes('ATCAF0')));
   ok('发了流控三件套', elm.log.some(([c]) => c.includes('ATCFC1')) &&
      elm.log.some(([c]) => c.includes('ATFCSM0')));
 }

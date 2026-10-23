@@ -25,7 +25,7 @@ console.log('\n[1] 连接层');
   const init = await e.init({ protocol: 6 });
   ok('ELM init 成功', !!init);
   ok('默认协议 ATSP6', e.log.some(([c]) => c.includes('ATSP6')));
-  ok('ATCAF0 显式（parseResp 需要 PCI）', e.log.some(([c]) => c.includes('ATCAF0')));
+  ok('ATCAF1 显式（ELM327 自动 ISO-TP PCI）', e.log.some(([c]) => c.includes('ATCAF1')) && !e.log.some(([c]) => c.includes('ATCAF0')));
   ok('流控 ATCFC1 + ATFCSD + ATFCSM0',
      e.log.some(([c]) => c.includes('ATCFC1')) && e.log.some(([c]) => c.includes('ATFCSD')) && e.log.some(([c]) => c.includes('ATFCSM0')));
   ok('无臆造 ATFC0', !e.log.some(([c]) => c.replace(/\r/g, '') === 'ATFC0'));
