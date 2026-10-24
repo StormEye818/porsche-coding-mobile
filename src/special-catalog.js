@@ -39,7 +39,7 @@ export function specialSystemKey(label) {
  * 0x0326 全轮驱动_CAJUN、0x0327 网关匹配_Cayenne-92A、0x0337 Panamera-971）。
  * 不按平台过滤时 981 会显示 53 项，其中 26 项是别的平台 —— 这就是“看不懂的一大堆”的来源。
  */
-const NEW_PLATFORMS = new Set(['992', 'CAJUN', 'G1', 'G2', 'G3', 'E1', 'E2', 'E3', 'J1']);
+const NEW_PLATFORMS = new Set(['992', 'CAJUN', 'G1', 'G2', 'G3', 'E1', 'E2', 'E3', 'J1', '918S']);
 
 // 981/718/991 的「后端电子设备」尾翼/后盖/后刮水器 = 0x0340–0x0344；
 // 可折叠顶篷、座椅、EPS、TPM 在 0x0348–0x034D。它们不是「新平台」，

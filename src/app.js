@@ -12,7 +12,7 @@
  *
  * 连接与适配器通信参考同门工具；车上的读写走本项目协议层（coder.js）。
  */
-import { Coder, CodingError, MissingSeedKeyError } from './coder.js';
+import { Coder, CodingError, MissingSeedKeyError, parseResp } from './coder.js';
 import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant } from './variant.js';
@@ -193,12 +193,35 @@ function ecuAddrFromNum(label, sys) {
     }
   }
   if (ecuNum == null) return null;
+  // 如果 431 证据表明确说这个 sysId 没有 tx（candidateCount 0 / 非 proven），
+  // 不要用 ECU_NUM 的标准 OBD 猜测覆盖它 —— 走探测。
+  let sysId = SYSTEM_TO_ECUID[label];
+  if (!sysId && sys?.modules?.length) {
+    for (const m of sys.modules) {
+      if (MODULE_TO_ECUID[m]) { sysId = MODULE_TO_ECUID[m]; break; }
+    }
+  }
+  if (sysId && ecuAddrTable) {
+    const e = (ecuAddrTable.entries || []).find((x) => x.sysId && x.sysId.toLowerCase() === sysId.toLowerCase());
+    if (e && e.confidence !== 'proven' && e.tx == null) {
+      return {
+        tx: null, rx: null, state: 'needs-probe',
+        note: `sysId=${sysId} 431 证据表无 tx，需探测`,
+        probeCmd: e.probeCmd?.[0] || DEFAULT_PROBE_CMD,
+        ecuNum,
+      };
+    }
+  }
   const hit = ECU_NUM_TO_ADDR[ecuNum];
-  if (hit && hit.tx) {
+  if (hit && hit.tx && hit.rx) {
+    const tx = parseInt(hit.tx, 16), rx = parseInt(hit.rx, 16);
+    if (!Number.isFinite(tx) || !Number.isFinite(rx)) return null;
+    // ⚠️ ECU_NUM_TO_ADDR 里多数是标准 OBD/431 候选，不是真车实测；
+    //    不能统一标 measured，否则 UI 会把它当成已验证地址。
     return {
-      tx: parseInt(hit.tx, 16), rx: parseInt(hit.rx, 16),
-      state: 'measured',
-      note: `ecu=${ecuNum}（431 数据驱址）`,
+      tx, rx,
+      state: 'candidate',
+      note: `ecu=${ecuNum}（431 候选，未实测）`,
     };
   }
   // ecu 号已知但无地址 → 探测指令路径（431 的 1.2% 方案）
@@ -231,6 +254,8 @@ async function probeAddressFor(label, probeCmd, model) {
   }
   showLoading(`正在探测 ${label}`, `试 ${probes.length} 个候选地址…`);
   try {
+    // 候选都是 11-bit；上一个模块可能是 29-bit，先切回 ATSP6。
+    await coder.elm.cmd('ATSP6', 1500).catch(() => {});
     for (const p of probes) {
       try {
         await coder.elm.cmd(`ATSH${p.tx.toString(16).toUpperCase()}`, 1500);
@@ -241,10 +266,15 @@ async function probeAddressFor(label, probeCmd, model) {
           const p2 = parseResp(r);
           const body = Array.from(p2.body || [])
             .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-          // 正响应（5A9F/62F190）→ 命中；NRC 7F → 模块在但不支持该服务 → 也算命中
-          if (body.startsWith('5A') || body.startsWith('62') || body.startsWith('7F')) {
+          // 只认正响应（5A9F/62F190）。NRC 7F 只证明「这个地址有某个模块」，
+          // 不能证明它就是目标模块 —— 旧代码把 7F 当命中，会把别的 ECU
+          // 的地址保存给当前系统，之后读到的全是错模块数据。
+          if (body.startsWith('5A') || body.startsWith('62')) {
             log(`  探测命中 0x${p.tx.toString(16).toUpperCase()}/0x${p.rx.toString(16).toUpperCase()} (${cmd} → ${body.slice(0,16)})`, 'ok');
             return { tx: p.tx, rx: p.rx };
+          }
+          if (body.startsWith('7F')) {
+            log(`  · 0x${p.tx.toString(16).toUpperCase()} 有模块但回 NRC（${body.slice(0,8)}），不作为目标地址`, 'info');
           }
         }
       } catch { /* 超时/无应答，继续 */ }
@@ -263,10 +293,16 @@ function addrFor(label, model = currentModel, sys = null) {
   if (override) return override;
   const fromRe = ecuAddrFromTable(label, sys);
   if (fromRe && fromRe.state === 'measured') return fromRe;
+  // 地址扫描回填的 ECU_ADDR（measured）优先于 431 的 needs-probe；
+  // 已经扫到的实测地址不需要再探测。
+  const builtin = ECU_ADDR[label];
+  if (builtin && builtin.state === 'measured') return builtin;
+  // 431 明确要求探测的 sysId，必须走 probe；不能被 ECU_NUM 的通用候选覆盖。
+  if (fromRe && fromRe.state === 'needs-probe') return fromRe;
   // ecu 号桥接：label → ecu → CAN 地址（全量覆盖 177 label / 152 ecu）
   const ecuAddr = ecuAddrFromNum(label, sys);
   if (ecuAddr) return ecuAddr;
-  return ECU_ADDR[label] || fromRe || null;
+  return builtin || fromRe || null;
 }
 
 import { registerPlugin } from '@capacitor/core';
@@ -691,6 +727,7 @@ const loadedVariants = new Map();   // 缓存已加载的变体
 const state = {
   multiVariantModules: new Set(),
   selectedVariant: {},        // { [module]: 变体名 }
+  currentAddr: null,          // 当前进入模块的地址证据（measured/probed/manual/candidate）
 };
 
 // ---------- ① 连接 ----------
@@ -756,19 +793,27 @@ $('btnDoctor').onclick = async () => {
 // 地址扫描：实测车上哪些 ECU 有应答（比查表猜靠谱）
 $('btnScan').onclick = async () => {
   if (!needLink()) return;
-  toast('info', 'ECU 地址扫描中', '逐个试 0x7XX，约需 1-2 分钟，请勿断开');
+  toast('info', 'ECU 地址扫描中', '逐个试 0x700–0x7F0；真车无应答多，需数分钟，请勿断开');
   $('btnScan').disabled = true;
   try {
     const found = await scanEcuAddresses(elm, (m) => log(m, 'info'));
     if (found.length) {
       // ⚠️ 扫到就回填 ECU_ADDR 并标 measured（审计 A2）—— 否则扫了也用不上
       for (const f of found) {
-        for (const [k, v] of Object.entries(ECU_ADDR)) {
-          if (v.state === 'candidate' && v.tx === f.tx) {
-            v.rx = f.rx; v.state = 'measured';
-            v.note = `地址扫描实测 ${new Date().toISOString().slice(0, 10)}`;
-            log(`  ✅ ${k} 地址实测确认 0x${f.tx.toString(16).toUpperCase()}/0x${f.rx.toString(16).toUpperCase()}`, 'ok');
-          }
+        // 一个 tx 可能对应多个候选名字（如 PSM/前摄像头都曾是 7E2）；
+        // 扫描只能证明「这个地址活着」，不能证明它属于哪一个名字。
+        // 只有唯一候选才回填 measured，否则保持 candidate，避免把错模块标成实测。
+        const matches = Object.entries(ECU_ADDR)
+          .filter(([, v]) => v.state === 'candidate' && v.tx === f.tx);
+        if (matches.length === 1) {
+          const [k, v] = matches[0];
+          v.rx = f.rx; v.state = 'measured';
+          v.note = `地址扫描实测 ${new Date().toISOString().slice(0, 10)}`;
+          // 持久化：否则重启 app 后扫描结果丢失（旧实现只改内存常量）。
+          saveAddrOverride(k, { tx: f.tx, rx: f.rx }, currentModel);
+          log(`  ✅ ${k} 地址实测确认 0x${f.tx.toString(16).toUpperCase()}/0x${f.rx.toString(16).toUpperCase()}`, 'ok');
+        } else if (matches.length > 1) {
+          log(`  ⚠️ 0x${f.tx.toString(16).toUpperCase()} 命中多个候选（${matches.map(([k]) => k).join('/')}），不自动归属`, 'warn');
         }
         // 未知模块也记下来（供后续人工命名）
         ECU_ADDR[`扫描到 0x${f.tx.toString(16).toUpperCase()}`] =
@@ -892,13 +937,16 @@ async function autoSearch() {
       // ⚠️ 兜底走 KWP 1A（审计 B3）：1A 9F 常返回 **11 位 VIN 前缀**（WP0ZZZ991GS），
       //    不是完整 17 位 —— 此前要求 17 位，兜底永不命中。
       //    现在接受 11 位前缀，再接 1A 87 序列号拼完整 VIN；拼不出就用前缀+提示手动选。
-      for (const kid of ['9F', '97', '87']) {
+      for (const kid of ['90', '9F', '97', '87', '91', '88']) {
         try {
           const r = await coder.uds('1A' + kid, 3000, { allowEmpty: true });
           const b = Array.from(r.body || []);
           const payload = b[0] === 0x5a ? b.slice(2) : b;
           const txt = payload.map((c) => (c >= 0x20 && c < 0x7f ? String.fromCharCode(c) : '')).join('')
             .replace(/[\u0000\u0020]+$/g, '').trim();
+          log(`  1A ${kid} = "${txt}"（${txt.length} 字符）`, 'info');
+          // 零件号（9 开头 11 位数字串）不当 VIN
+          if (/^9[0-9]{10}$/.test(txt)) { log(`  1A ${kid} 是零件号，跳过`, 'info'); continue; }
           if (/^[A-HJ-NPR-Z0-9]{11,17}$/.test(txt)) {
             if (txt.length === 17) {
               vin = txt; log(`  从 1A ${kid} 得到完整 VIN`, 'ok'); break;
@@ -1631,6 +1679,7 @@ function exitSystem() {
   }
   currentBlocks = {};
   currentParam = null;
+  state.currentAddr = null;
   $('secParam').style.display = 'none';
   toast('info', `已退出 ${name}`, '回到系统列表');
 }
@@ -1646,6 +1695,7 @@ let fnSeqData = null;
  */
 async function enterSystem(sys) {
   if (!needLink()) return false;
+  state.currentAddr = null;   // 进模块失败时不能沿用上一个模块的地址证据
   let addr = addrFor(sys.label, currentModel, sys);
   // 地址缺失两种情况：①表里没这模块 ②表里有但 tx/rx 未知（如 IC，原填 0x7E8 与 DME 应答冲突已作废）
   if (!addr || addr.tx == null || addr.rx == null) {
@@ -1679,6 +1729,7 @@ async function enterSystem(sys) {
       }
     }
   }
+  state.currentAddr = addr;
   showLoading(`正在进入 ${sys.label}`, `地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()} · 建立会话中…`);
   // ⚠️⚠️ 从这里到函数末尾**整段 try/finally**：loading 必然被关掉。
   //    2026-10-17 实测「进模块一直转圈」—— 中间任何一处抛未捕获异常，
@@ -1870,8 +1921,15 @@ async function enterSystem(sys) {
       //   仍然保留 selectedVariant 这个安全闸门（自动选也会写入它），
       //   这样 doWrite 不再因为「未选」拒写。
       const auto = autoPickVariant(mi, coder.lastIdent);
-      state.selectedVariant[mod] = auto.name;
-      log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, auto.how.startsWith('未识别') ? 'warn' : 'ok');
+      // ⚠️ 识别失败时 autoPickVariant 仍会返回默认变体名；不能把它写进
+      //    selectedVariant，否则 doWrite 的「变体未识别 → 拒写」闸门永远失效。
+      if (/未识别|无识别文本/.test(auto.how)) {
+        delete state.selectedVariant[mod];
+        log(`  🧩 ${mod} 变体未识别，保持写入锁定（仅只读显示 ${auto.name}）`, 'warn');
+      } else {
+        state.selectedVariant[mod] = auto.name;
+        log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, 'ok');
+      }
     }
     const got = await loadModuleItems(currentModel, mod);
     items = items.concat(got);
@@ -2376,8 +2434,20 @@ function showParam(p) {
   $('secParam').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function addrSafeForAction() {
+  const st = state.currentAddr?.state;
+  if (st && !['measured', 'probed', 'manual'].includes(st)) {
+    toast('err', '拒绝执行', `当前地址是 ${st}（未实测）；例程/特殊功能可能真的动作，先探测或手工确认 tx/rx`);
+    return false;
+  }
+  return true;
+}
+
 async function doWrite(p, v) {
   if (!needLink()) return;
+  // 地址证据门禁：没有实测/探测/手工证据的候选地址，禁止写入。
+  // 候选地址可能落到相邻 ECU，读都未必对，写更会改错模块。
+  if (!addrSafeForAction()) return;
   if (!coder.seedKeyProvider) {
     toast('err', '拒绝写入', '缺口令算法变体');
     return;
@@ -2884,6 +2954,7 @@ async function showSysExtra(f) {
     rid, sub = 0x01, params = '', label = '', poll = true, confirmText = null,
   }) => {
     if (!needLink()) return;
+    if (!addrSafeForAction()) return;
     if (!Number.isFinite(rid) || rid < 0 || rid > 0xffff) {
       toast('err', 'RID 无效', '请输入 0000–FFFF 的十六进制例程 ID'); return;
     }
@@ -2900,7 +2971,9 @@ async function showSysExtra(f) {
     try {
       await coder.enterSessionFor('routine');            // 10 86，对齐参考诊断仪
       if (coder.seedKeyProvider && sub !== 0x02) {
-        await coder.securityAccessEx({ level: 0x09, kwp: false });
+        // KWP(21/1A) 与 UDS(22) 的安全访问不是一套；readBlock 已记录最近读服务。
+        const kwp = coder.lastReadSid != null && coder.lastReadSid !== 0x22;
+        await coder.securityAccessEx({ level: kwp ? 0x00 : 0x09, kwp });
       }
       const { result: r, polled } = await coder.runRoutine(sub, rid, params, {
         maxMs: 30000, intervalMs: 1500, poll,
@@ -2942,6 +3015,7 @@ async function showSysExtra(f) {
     const f = fnSeqData?.functions?.find((x) => x.name === fnName);
     if (!f) { toast('err', '找不到执行步骤'); return; }
     if (!needLink()) return;
+    if (!addrSafeForAction()) return;
     const cmds = f.cmds || [];
     const isWrite = (c) => /^(2E|3B|2F|14|11)/i.test(c.replace(/\s/g, ''));
     const isRead = (c) => /^(21|22|19|1A)/i.test(c.replace(/\s/g, ''));
@@ -2958,7 +3032,10 @@ async function showSysExtra(f) {
     try {
       await coder.enterSessionFor('routine');
       if (coder.seedKeyProvider) {
-        await coder.securityAccessEx({ level: 0x09, kwp: false }).catch(() => {});
+        // 序列里出现 21/1A 读 = KWP；出现 22 读 = UDS。不能用上一个模块的 lastReadSid。
+        const kwp = cmds.some((c) => /^(21|1A)/i.test(c.replace(/\s/g, '')))
+          && !cmds.some((c) => /^22/i.test(c.replace(/\s/g, '')));
+        await coder.securityAccessEx({ level: kwp ? 0x00 : 0x09, kwp }).catch(() => {});
       }
       for (const c of cmds) {
         const raw = c.replace(/\s/g, '').toUpperCase();

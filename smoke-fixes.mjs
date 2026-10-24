@@ -11,7 +11,7 @@ import { computeVariantKey, INLINE_OTHER_PENDING } from './src/seedkey-registry.
 import { pswCalc } from './src/seedkey-pswcalc.js';
 import { parseDtcPayload } from './src/dtc.js';
 import { parseAddrPair, overrideFor } from './src/addr.js';
-import { LinkDoctor } from './src/link-doctor.js';
+import { LinkDoctor, scanEcuAddresses } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
 import { autoPickVariant } from './src/variant.js';
 import { specialFunctionsFor } from './src/special-catalog.js';
@@ -182,6 +182,14 @@ console.log('\n[6] parseResp ISO-TP');
   ok('单帧声明 5 字节、实收 2 字节 → truncated（不能当成功）',
      tr.kind === 'truncated' && tr.expected === 5 && tr.received === 2,
      `kind=${tr.kind} expected=${tr.expected} received=${tr.received}`);
+  // 单帧前的连续帧：没有首帧，不能拼进 body
+  const orphan = parseResp('7E8 21 06 07 08 09');
+  ok('孤立连续帧被忽略（无首帧）', orphan.kind === 'empty' && orphan.body.length === 0,
+     `kind=${orphan.kind} len=${orphan.body.length}`);
+  // 单帧后再来连续帧：不能把两段不相关载荷拼接
+  const sfThenCf = parseResp('7E8 03 62 F1 90\r7E8 21 11 22 33 44');
+  ok('单帧后的连续帧被忽略（不拼接）', sfThenCf.kind === 'ok' && sfThenCf.body.length === 3,
+     `kind=${sfThenCf.kind} len=${sfThenCf.body.length}`);
 }
 
 // ===== 7. 非 ASAP1A seed/key（真值对拍 真值对拍）=====
@@ -1027,10 +1035,33 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
     ok('parseAddrPair 0x7E0 0x7E8', b && b.tx === 0x7e0 && b.rx === 0x7e8);
     ok('非法地址一律 null（不猜）',
        parseAddrPair('') === null && parseAddrPair('7E0') === null
-       && parseAddrPair('7E0/7E0') === null && parseAddrPair('ZZZ/7E8') === null);
+       && parseAddrPair('7E0/7E0') === null && parseAddrPair('ZZZ/7E8') === null
+       && parseAddrPair('7E0/1') === null && parseAddrPair('7E0/0') === null);
     const o = overrideFor('DME', { DME: { tx: 0x7e0, rx: 0x7e8 } });
     ok('overrideFor 返回 manual 地址', o && o.tx === 0x7e0 && o.rx === 0x7e8 && o.state === 'manual');
     ok('overrideFor 非法条目不采用', overrideFor('DME', { DME: { tx: 0x7e0, rx: 0x7e0 } }) === null);
+    ok('overrideFor 非法 rx 不采用', overrideFor('DME', { DME: { tx: 0x7e0, rx: 0x1 } }) === null);
+  }
+
+  // ③b 地址扫描必须覆盖 7CF / 74F（低 4 位 = F），且不扫 rx===tx
+  {
+    let cur = null;
+    const fake = {
+      cmd: async (line) => {
+        const t = String(line || '').toUpperCase();
+        if (t.startsWith('ATSH')) { cur = t.slice(4); return 'OK'; }
+        if (t.startsWith('ATCRA')) return 'OK';
+        if (t === '1A9F' && (cur === '7CF' || cur === '74F')) {
+          return `${cur === '7CF' ? '7D7' : '757'} 03 5A 9F 01`;
+        }
+        return '';
+      },
+    };
+    const found = await scanEcuAddresses(fake, () => {});
+    const txs = found.map((x) => x.tx);
+    ok('地址扫描覆盖 PDC 7CF', txs.includes(0x7cf), JSON.stringify(txs));
+    ok('地址扫描覆盖后 BCM 74F', txs.includes(0x74f), JSON.stringify(txs));
+    ok('地址扫描不产生 rx===tx', found.every((x) => x.rx !== x.tx));
   }
 
   // ④ BigInt 宽字段（>53 位）不能走 Number

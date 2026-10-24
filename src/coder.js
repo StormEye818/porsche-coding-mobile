@@ -150,6 +150,10 @@ export function parseResp(hexStr, reqEcho = '') {
     const pci = f[0];
     const type = pci & 0xf0;
     if (type === 0x00) {                       // 单帧
+      // 新单帧必须重置多帧状态；否则前面的重组结果会被覆盖，
+      // 或后续迟到连续帧被拼到这段单帧载荷后面。
+      sawFirstFrame = false;
+      expectedSeq = null;
       const n = pci & 0x0f;
       if (n === 0) {
         // ISO-TP SF_DL=0 非法（CAN FD 除外）；不猜，按空处理。
@@ -171,6 +175,8 @@ export function parseResp(hexStr, reqEcho = '') {
       body = f.slice(2);
       sawFirstFrame = true;
     } else if (type === 0x20) {                // 连续帧
+      // 没有首帧的连续帧是垃圾/迟到帧，不能拼进 body。
+      if (!sawFirstFrame) continue;
       // ⚠️ 0x30-0x3F 是**流控帧**，不是数据帧 —— 必须在类型分派**之前**拦掉。
       //    （早先把 `pci >= 0x30 && pci <= 0x32` 写在 0x20 分支里，永远不成立 = 死代码，
       //      流控帧会掉进「无 PCI」分支被当载荷拼进 body。）
@@ -313,6 +319,9 @@ export class Coder {
   setAddress(tx, rx, name = '') {
     this.tx = tx;
     this.rx = rx;
+    // 29-bit 必须切 ATSP7；否则仍按 11-bit/500k 发帧。
+    this.protocol = tx > 0x7ff ? 7 : 6;
+    this.lastReadSid = null;   // 换模块后不能沿用上一个模块的读服务
     if (name) this.ecuName = name;
     this._say(`  寻址 → ${name || 'ECU'}  tx=0x${tx.toString(16)} rx=0x${rx.toString(16)}`);
   }
@@ -399,6 +408,8 @@ export class Coder {
     if (!data.length) {
       throw new CodingError(`读 0x${idHex} 返回 0 字节数据（响应 ${r.body.length}B）`);
     }
+    // 记住最近一次读服务，供例程/特殊功能判断 KWP(21/1A) 还是 UDS(22)。
+    this.lastReadSid = readSid;
     return data;
   }
 

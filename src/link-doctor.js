@@ -236,7 +236,13 @@ export class LinkDoctor {
     return found;
   }
 
-  /** 全流程 */
+  /**
+   * 全流程 —— 只做 L1-L4（验链路）。
+   * ⚠️ L5 模块探测不再跑在自检里（2026-10-22）：
+   *   ① 自检拖太长（扫 6 个模块 × 8 个探针）
+   *   ② coder 要等 L5 完才赋值 → 自检中点自动搜索必报「未连接」
+   *   ③ 模块触达移到 enterSystem（地址查表 + 自动探测），按需才做
+   */
   async run() {
     this.steps = [];
     const dev = await this.checkAccessory();
@@ -244,12 +250,6 @@ export class LinkDoctor {
     if (!(await this.openSession(dev))) return this.result();
     if (!(await this.checkElm())) return this.result();
     if (!(await this.lockProtocol())) return this.result();
-    const mods = await this.probeModules();
-    if (!mods.length) {
-      this._fail('L6', '总结', '无模块可达', '记录完整日志发回分析，可能是网关路由问题。');
-    } else {
-      this._ok('L6', '总结', `${mods.length} 个模块可达`);
-    }
     return this.result();
   }
 
@@ -281,12 +281,14 @@ export async function scanEcuAddresses(elm, onLog = () => {}) {
   // 保时捷 981 常见请求 ID 段；应答多为 +8，网关例外
   // ⚠️ 扫描结果要**持久化回填 ECU_ADDR**（2026-10-17 审计 A2）：此前只 toast，
   //    扫到也进不了模块，每次都要手改源码 —— 「上车即用」断在这里。
-  const RX_OFFS = [0x08, 0x6A, 0x00];
+  const RX_OFFS = [0x08, 0x6A];   // 0x00 = rx===tx，parseAddrPair 明确拒绝，不能扫
   for (let tx = 0x700; tx <= 0x7F0; tx += 1) {
-    // 只试常见的步进，避免扫太久
-    if (!((tx & 0x0F) === 0 || (tx & 0x0F) === 1 || (tx & 0x0F) === 2)) continue;
+    // 全 0x700–0x7F0 覆盖：PDC=7CF、后 BCM=74F 的低 4 位是 F，
+    // 旧步进 0/1/2 永远扫不到它们。
     for (const off of RX_OFFS) {
       const rx = tx + off;
+      // 11-bit CAN 应答 ID 不能超过 0x7FF（0x7F0 + 0x6A 会溢出）。
+      if (rx > 0x7ff) continue;
       // ⚠️ 三处实车问题（2026-10-17 真车日志）：
       //   ① 800ms 太短 —— 真车 ATSH 就超时，扫描一开头就中断
       //   ② 单次超时会让整个扫描抛错退出 —— 无应答是常态，必须吞掉继续
@@ -303,8 +305,11 @@ export async function scanEcuAddresses(elm, onLog = () => {}) {
       const pr = parseResp(r);
       const body = Array.from(pr.body || []).map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
       if (body.startsWith('5A') && !/NO DATA|ERROR|STOPPED|UNABLE/i.test(r)) {
-        found.push({ tx, rx, sid: '1A9F', raw: r.slice(0, 60) });
-        onLog(`  ✅ 0x${tx.toString(16).toUpperCase()}/0x${rx.toString(16).toUpperCase()} → ${body.slice(0, 32)}`);
+        // 同一 tx 可能被多个 rx 偏移命中（测试/网关回显）；只保留第一条。
+        if (!found.some((x) => x.tx === tx)) {
+          found.push({ tx, rx, sid: '1A9F', raw: r.slice(0, 60) });
+          onLog(`  ✅ 0x${tx.toString(16).toUpperCase()}/0x${rx.toString(16).toUpperCase()} → ${body.slice(0, 32)}`);
+        }
       }
     }
     if ((tx & 0x0F) === 0) onLog(`  … 扫到 0x${tx.toString(16).toUpperCase()}，已发现 ${found.length} 个`);
