@@ -193,42 +193,19 @@ function ecuAddrFromNum(label, sys) {
     }
   }
   if (ecuNum == null) return null;
-  // 如果 431 证据表明确说这个 sysId 没有 tx（candidateCount 0 / 非 proven），
-  // 不要用 ECU_NUM 的标准 OBD 猜测覆盖它 —— 走探测。
-  let sysId = SYSTEM_TO_ECUID[label];
-  if (!sysId && sys?.modules?.length) {
-    for (const m of sys.modules) {
-      if (MODULE_TO_ECUID[m]) { sysId = MODULE_TO_ECUID[m]; break; }
-    }
-  }
-  if (sysId && ecuAddrTable) {
-    const e = (ecuAddrTable.entries || []).find((x) => x.sysId && x.sysId.toLowerCase() === sysId.toLowerCase());
-    if (e && e.confidence !== 'proven' && e.tx == null) {
-      return {
-        tx: null, rx: null, state: 'needs-probe',
-        note: `sysId=${sysId} 431 证据表无 tx，需探测`,
-        probeCmd: e.probeCmd?.[0] || DEFAULT_PROBE_CMD,
-        ecuNum,
-      };
-    }
-  }
+  // ① 已知地址优先（含标准 OBD）—— 431 表说「无 tx」≠「地址错」。
   const hit = ECU_NUM_TO_ADDR[ecuNum];
   if (hit && hit.tx && hit.rx) {
     const tx = parseInt(hit.tx, 16), rx = parseInt(hit.rx, 16);
-    if (!Number.isFinite(tx) || !Number.isFinite(rx)) return null;
-    // ⚠️ ECU_NUM_TO_ADDR 里多数是标准 OBD/431 候选，不是真车实测；
-    //    不能统一标 measured，否则 UI 会把它当成已验证地址。
-    return {
-      tx, rx,
-      state: 'candidate',
-      note: `ecu=${ecuNum}（431 候选，未实测）`,
-    };
+    if (Number.isFinite(tx) && Number.isFinite(rx)) {
+      return { tx, rx, state: 'candidate', note: `ecu=${ecuNum}（候选地址）` };
+    }
   }
-  // ecu 号已知但无地址 → 探测指令路径（431 的 1.2% 方案）
+  // ② 无已知地址 → 探测
   return {
     tx: null, rx: null, state: 'needs-probe',
     note: `ecu=${ecuNum} 需探测寻址`,
-    probeCmd: PROBE_CMD_BY_ECU[ecuNum] || '01 04 21 01 00 01',
+    probeCmd: PROBE_CMD_BY_ECU[ecuNum] || DEFAULT_PROBE_CMD,
     ecuNum,
   };
 }
@@ -241,16 +218,46 @@ function ecuAddrFromNum(label, sys) {
  */
 async function probeAddressFor(label, probeCmd, model) {
   if (!coder) return null;
+  // ⚠️ 只跳过「已实测确认属于别的模块」的地址（state=measured/manual）。
+  //    ECU_ADDR 里大量 state=candidate 是猜测值，跳过它们反而会
+  //    把 IC 的正确地址 0x7E4 也跳掉（0x7E4 在 ECU_ADDR 里是 candidate）。
+  //    DME=0x7E0 是 measured → 必须跳过（DME 对任何 1A9F 都回 "P200"）。
+  const known = new Set();
+  for (const v of Object.values(ECU_ADDR)) {
+    if (v.tx != null && v.state === 'measured') known.add(v.tx);
+  }
+  const all = loadAddrOverrides();
+  for (const v of Object.values(all)) {
+    if (v.tx != null) known.add(v.tx);  // 手工保存的一定是实测
+  }
+  // 该模块的标准 OBD 地址优先（ecu 号 → 0x7E0+(ecu-1) 映射表）
+  const STD_OBD = { 1:0x7E0, 2:0x7E1, 3:0x7E2, 4:0x7E3, 5:0x7E2, 7:0x7E5, 8:0x7E4, 55:0x7E7 };
+  const ecuNum = LABEL_TO_ECU_NUM[label];
+  const preferred = ecuNum != null ? STD_OBD[ecuNum] : null;
   const probes = [];
-  // 标准 OBD-II 诊断地址（DME/TCM/ABS/SRS/IC/AC/TPMS 等）
+  // 优先：该模块的标准 OBD 地址（如果没被占用）
+  if (preferred && !known.has(preferred)) {
+    probes.push({ tx: preferred, rx: preferred + 8 });
+  }
+  // 标准 OBD-II 全段
   for (let tx = 0x7E0; tx <= 0x7E7; tx++) {
+    if (known.has(tx) || tx === preferred) continue;
     probes.push({ tx, rx: tx + 8 });
   }
-  // 保时捷扩展地址（Gateway/PASM/BCM/PDC 等已知）
+  // 保时捷已知扩展地址（跳过已占用）
   for (const [tx, rx] of [[0x710,0x77A],[0x7CF,0x7D7],[0x7D0,0x7D8],[0x7D1,0x7D9],
                            [0x74F,0x757],[0x730,0x738],[0x719,0x721],[0x71A,0x722],
                            [0x76D,0x775],[0x7D9,0x7E1],[0x7DA,0x7E2],[0x7E2,0x7EA]]) {
+    if (known.has(tx)) continue;
     probes.push({ tx, rx });
+  }
+  // ⚠️ 全量 0x700–0x7FF 兜底（2026-10-27）：129 个 ecu 无已知地址，
+  //    保时捷模块散布在整个 0x7xx 诊断段。已知/优先地址全部试完后
+  //    扫剩余地址（排除已试过的）。
+  const tried = new Set(probes.map((p) => p.tx));
+  for (let tx = 0x700; tx <= 0x7F8; tx++) {
+    if (known.has(tx) || tried.has(tx)) continue;
+    probes.push({ tx, rx: tx + 8 });
   }
   showLoading(`正在探测 ${label}`, `试 ${probes.length} 个候选地址…`);
   try {
@@ -260,9 +267,10 @@ async function probeAddressFor(label, probeCmd, model) {
       try {
         await coder.elm.cmd(`ATSH${p.tx.toString(16).toUpperCase()}`, 1500);
         await coder.elm.cmd(`ATCRA${p.rx.toString(16).toUpperCase()}`, 1500);
-        // 发识别探针：KWP 1A9F（DSN）为主，UDS 22F190（VIN）为辅
-        for (const cmd of (probeCmd ? [probeCmd] : ['1A9F', '22F190'])) {
-          const r = (await coder.elm.cmd(cmd, 4000) || '').trim();
+        // 发识别探针：KWP 1A9F 为主（快速）；probeCmd 可指定特定命令
+        // ⚠️ 22F190 不做默认探针 —— 太慢且多数 ECU 不支持，只在 probeCmd 指定时用
+        for (const cmd of (probeCmd ? [probeCmd] : ['1A9F'])) {
+          const r = (await coder.elm.cmd(cmd, 2500) || '').trim();
           const p2 = parseResp(r);
           const body = Array.from(p2.body || [])
             .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
@@ -1021,6 +1029,8 @@ function guessModelFromVin(vin, year) {
     { code: '982', label: 'Boxster（982）' },
     { code: '987', label: 'Boxster（987）' },
     { code: '986', label: 'Boxster（986）' },
+    { code: '983', label: 'Cayman（981）' },
+    { code: '984', label: 'Cayman（982）' },
     { code: '98B', label: 'Cayman（981）' },
     { code: '98C', label: 'Cayman（982）' },
     { code: '98D', label: 'Cayman（987）' },
@@ -1925,7 +1935,31 @@ async function enterSystem(sys) {
       //    selectedVariant，否则 doWrite 的「变体未识别 → 拒写」闸门永远失效。
       if (/未识别|无识别文本/.test(auto.how)) {
         delete state.selectedVariant[mod];
-        log(`  🧩 ${mod} 变体未识别，保持写入锁定（仅只读显示 ${auto.name}）`, 'warn');
+        log(`  🧩 ${mod} 变体未识别（${auto.how}）`, 'warn');
+        // ★ 2026-10-27：手动选变体兜底 —— 自动识别失败时让用户确认。
+        //   选了变体就解锁写入；不选保持只读。
+        const variantNames = (mi.variants || []).map((v) => v.name || String(v.file||'').replace(/\.json$/i,''));
+        if (variantNames.length > 1 && typeof prompt === 'function') {
+          const hint = `「${mod}」变体未自动识别（识别串="${coder.lastIdent||'空'}"）。
+
+可选变体：
+${variantNames.map((n,i)=>`${i+1}. ${n}`).join('
+')}
+
+输入序号或变体名确认（留空=保持只读）：`;
+          const raw = prompt(hint, '');
+          if (raw && raw.trim()) {
+            const idx = parseInt(raw.trim(), 10);
+            const picked = (idx >= 1 && idx <= variantNames.length) ? variantNames[idx-1]
+              : variantNames.find((n) => n.toLowerCase() === raw.trim().toLowerCase());
+            if (picked) {
+              state.selectedVariant[mod] = picked;
+              log(`  🧩 ${mod} 变体手动选定：${picked}（写入解锁）`, 'ok');
+            } else {
+              log(`  🧩 ${mod} 变体「${raw.trim()}」不在列表里，保持只读`, 'warn');
+            }
+          }
+        }
       } else {
         state.selectedVariant[mod] = auto.name;
         log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, 'ok');
