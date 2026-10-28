@@ -291,7 +291,10 @@ export class Coder {
     this.lastIdent = '';
     const identParts = [];
     // 参考诊断仪 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
-    for (const cmd of ['1A9F', '1A94']) {
+    // ★ 2026-10-28：全套 1A xx 识别（对齐 431 ODX 识别链）。
+    //   此前只读 9F(DSN)+94(软件号)，识别串太短匹配不上变体名。
+    //   431 用 9F/87/84/91/92/93/95/97/9A 全套识别做变体匹配。
+    for (const cmd of ['1A9F', '1A87', '1A84', '1A94', '1A95', '1A91', '1A92', '1A93', '1A97', '1A9A']) {
       try {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
         let b = Array.from(id.body || []);
@@ -341,7 +344,7 @@ export class Coder {
     this._trace(`  << ${raw || '(空)'}`);
     const p = parseResp(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''));
     if (p.kind === 'nrc') {
-      throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒`, p.code);
+      throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒（NRC 0x${(p.code||0).toString(16)}）`, p.code);
     }
     // 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU）
     if (p.kind === 'truncated') {
@@ -378,6 +381,23 @@ export class Coder {
    * @param {number} readSid 读服务
    */
   async readBlock(id, readSid = 0x21) {
+    // ★ 2026-10-28：SID 自动回退 —— UDS 22 被 NRC 0x12 拒时重试 KWP 21，反之亦然。
+    //   431 的模块协议族各异（IC 可能是 UDS 也可能是 KWP），参数表写死的 SID
+    //   不一定对。被拒时换 SID 重试一次，比让用户改参数表友好。
+    try {
+      return await this._readBlockImpl(id, readSid);
+    } catch (e) {
+      const alt = readSid === 0x22 ? 0x21 : 0x22;
+      if (e instanceof CodingError && e.code === 0x12) {
+        this._say(`  SID 0x${readSid.toString(16)} 被拒(NRC 0x12)，回退 0x${alt.toString(16)} 重试`);
+        return await this._readBlockImpl(id, alt);
+      }
+      throw e;
+    }
+  }
+
+  /** readBlock 的实际实现 */
+  async _readBlockImpl(id, readSid = 0x21) {
     // ⚠️ 标识符位宽必须校验（2026-10-18 审计）：0x21/0x1A 是 1 字节 LID，
     //    0x22 是 2 字节 DID。传超宽会 padStart 出畸形请求（如 0x1234 发给 0x21）。
     if (!Number.isFinite(id) || id < 0) throw new CodingError(`非法标识符 ${id}`);

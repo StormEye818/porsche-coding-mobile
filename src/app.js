@@ -275,9 +275,20 @@ async function probeAddressFor(label, probeCmd, model) {
           const body = Array.from(p2.body || [])
             .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
           // 只认正响应（5A9F/62F190）。NRC 7F 只证明「这个地址有某个模块」，
-          // 不能证明它就是目标模块 —— 旧代码把 7F 当命中，会把别的 ECU
-          // 的地址保存给当前系统，之后读到的全是错模块数据。
+          // 不能证明它就是目标模块。
           if (body.startsWith('5A') || body.startsWith('62')) {
+            // ★ 2026-10-28：探测身份验证 —— 已知模块签名不匹配就跳过。
+            //   DME=0x7E0 对任何 1A9F 都回 "P200"，不验证就把 IC/空调等
+            //   全部错误定位到 0x7E0。
+            const respText = Array.from(p2.body || [])
+              .filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim();
+            const KNOWN_SIGS = { 'P200': 'DME', '98161864015': 'DME' };
+            const sigHit = Object.entries(KNOWN_SIGS).find(([sig]) => respText.includes(sig));
+            const isDmeTarget = /DME|ECM|发动机/i.test(label);
+            if (sigHit && !isDmeTarget) {
+              log(`  · 0x${p.tx.toString(16).toUpperCase()} 是 ${sigHit[1]}（识别"${respText}"），跳过`, 'info');
+              continue;  // 不是目标模块，继续扫下一个地址
+            }
             log(`  探测命中 0x${p.tx.toString(16).toUpperCase()}/0x${p.rx.toString(16).toUpperCase()} (${cmd} → ${body.slice(0,16)})`, 'ok');
             return { tx: p.tx, rx: p.rx };
           }
@@ -1753,6 +1764,61 @@ async function enterSystem(sys) {
     log(`  ${sys.label} 地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()}（标准顺序；进模块后核验）`, 'info');
   }
   coder.setAddress(addr.tx, addr.rx, sys.label);
+  // ★ 2026-10-28：进模块后做身份验证（对齐 431 的「识别→核对→不匹配拒绝」）。
+  //   此前不验证，探测存的错地址（IC→0x7E0=DME）会导致整条读写链路走错 ECU。
+  {
+    // 先发 1A9F 读 DSN，跟已知模块签名比对
+    let dsn = '';
+    try {
+      const r = await coder.uds('1A9F', 3000, { allowEmpty: true });
+      const b = Array.from(r.body || []);
+      const payload = b[0] === 0x5a ? b.slice(2) : b;
+      dsn = payload.filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim();
+    } catch { /* 不致命 */ }
+    if (dsn) {
+      // 已知模块签名（DSN 或零件号 → 模块名）。从实车日志 + 431 数据积累。
+      const KNOWN_SIGS = [
+        { sig: 'P200', module: 'DME/ECM' },       // DME 的 DSN（实车验证）
+        { sig: '98161864015', module: 'DME/ECM' }, // DME 的零件号（实车验证）
+      ];
+      const hit = KNOWN_SIGS.find((s) => dsn.includes(s.sig));
+      if (hit && !sys.label.toUpperCase().includes(hit.module.split('/')[1])
+          && !sys.label.includes('DME') && !sys.label.includes('发动机')) {
+        log(`  ❌ 身份不匹配：「${sys.label}」在 0x${addr.tx.toString(16).toUpperCase()} 识别到 ${hit.module} 的签名「${dsn}」`, 'err');
+        log(`  清除该模块的错误地址覆盖，建议重新探测或跑地址扫描`, 'warn');
+        // 清除 stale override
+        try {
+          const all = loadAddrOverrides();
+          const k1 = addrKey(sys.label, currentModel), k2 = sys.label;
+          if (all[k1]) delete all[k1];
+          if (all[k2]) delete all[k2];
+          localStorage.setItem('porsche-addr-overrides', JSON.stringify(all));
+        } catch {}
+        // 清完 override 后自动重探测，不用用户手动再进
+        log(`  🔄 自动重新探测 ${sys.label} 的正确地址…`, 'info');
+        const reprobed = await probeAddressFor(sys.label, null, currentModel);
+        if (reprobed && (reprobed.tx !== addr.tx)) {
+          saveAddrOverride(sys.label, reprobed, currentModel);
+          log(`  ✅ 重探测到 0x${reprobed.tx.toString(16).toUpperCase()}/0x${reprobed.rx.toString(16).toUpperCase()}，继续进入`, 'ok');
+          addr = { ...reprobed, state: 'probed', note: '身份验证后重探测' };
+          coder.setAddress(addr.tx, addr.rx, sys.label);
+          // 重识别
+          dsn = '';
+          try {
+            const r2 = await coder.uds('1A9F', 3000, { allowEmpty: true });
+            const b2 = Array.from(r2.body || []);
+            const p2 = b2[0] === 0x5a ? b2.slice(2) : b2;
+            dsn = p2.filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim();
+          } catch {}
+        } else {
+          hideLoading();
+          toast('err', `${sys.label} 身份不匹配且重探测失败`,
+            `请跑「地址扫描」实测该模块的 tx/rx`);
+          return false;
+        }
+      }
+    }
+  }
   // ⚠️ 换模块必须重选 seed/key 变体（2026-10-17 审计 D1）：
   //    此前只在连接时选一次，换 ECU 后仍是旧变体 → 算错 key → NRC 0x35 → 可能锁死。
   try {
