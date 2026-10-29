@@ -1406,6 +1406,15 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
   ok('L5 用 CAF1 解析', ld.includes('parseRespCaf1'));
   ok('L5 不再把任意 ok 当 alive', !/kind === 'ok' && body\.length\) \{\s*row\.alive/.test(ld));
 
+  // ⑤b 流程分层：自检不探模块 / 进模块读全量
+  ok('updateLoading 有定义（此前只有调用、无定义）',
+     app.includes('function updateLoading('));
+  ok('进模块读全部编码块（不再只读前 8 个）',
+     !app.includes('lids.slice(0, 8)') && app.includes('for (const lid of lids)'));
+  ok('读块带进度 n/total', app.includes('${readDone}/${lids.length}'));
+  ok('自检不调用 probeModules（L1–L4 只验链路）',
+     !ld.includes('await this.probeModules()'));
+
   // ⑥ 入口文件必须入库（P0-4）
   const idx = readFileSync('./index.html', 'utf8');
   ok('仓库根 index.html 存在且含安全区',

@@ -475,6 +475,24 @@ function hideLoading() {
   document.body.style.overflow = '';
 }
 
+/**
+ * 更新已有 loading 的文案（不重建 DOM），可同时挂取消回调。
+ * ⚠️ 2026-10-29：这个函数在 5637dad 之后就被调用、却从未定义 ——
+ *    enterSystem 一进模块就 ReferenceError（被 catch 吞掉后返回 false），
+ *    runSequence 执行到第一个命令也断。必须存在。
+ */
+function updateLoading(title, detail = '', onCancel = null) {
+  const el = $('loadingMask');
+  if (!el) { showLoading(title, detail, onCancel); return; }
+  _loadingCancel = onCancel;
+  const btn = el.querySelector('.lmCancel');
+  if (btn) btn.style.display = onCancel ? 'inline-block' : 'none';
+  el.querySelector('.lmTitle').textContent = title;
+  el.querySelector('.lmDetail').textContent = detail;
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
 // ---------- ① 连接 ----------
 $('btnDoctor').onclick = async () => {
   $('btnDoctor').disabled = true;
@@ -1769,18 +1787,25 @@ ${variantNames.map((n,i)=>`${i+1}. ${n}`).join('\n')}
   items = items.filter((p) => validateParam(p).length === 0 && p.lid != null);
   coding = items;
 
-  // ★ 懒加载读取（对齐参考诊断仪）：不全量读，按需读对应块
-  // 参考诊断仪 是按锁定的变体读对应块，不是全量扫
+  // ★ 2026-10-29：进模块读**全部**编码块（对齐参考诊断仪「进模块即读全量」）。
+  //   此前只预读前 8 个，其余等用户滚到分组才补 —— 列表里大半项没有当前值，
+  //   与「读取全部设码项的数据情况」不符。块多时给进度，并允许中途取消。
   const lids = [...new Set(items.map((p) => p.lid))];
-  updateLoading(`正在读取 ${sys.label}`, `按需加载 ${lids.length} 个编码块…`);
-
-  // 只读用户当前会看的块（按分组懒加载，进设码列表时再批量读）
   currentBlocks = {};
-  // 预读前几个高频块（提升体验），其余按需
-  const priorityLids = lids.slice(0, 8);
+  let enterAbort = false;
   let readFail = 0;
-  for (const lid of priorityLids) {
+  let readDone = 0;
+  showLoading(`正在读取 ${sys.label}`, `0/${lids.length} 个编码块…`,
+    () => { enterAbort = true; });
+  for (const lid of lids) {
+    if (enterAbort) {
+      log(`  · 已取消，剩余 ${lids.length - readDone} 个块未读`, 'warn');
+      break;
+    }
+    readDone++;
     const sample = items.find((p) => p.lid === lid);
+    updateLoading(`正在读取 ${sys.label}`, `${readDone}/${lids.length} 个编码块…`,
+      () => { enterAbort = true; });
     try {
       currentBlocks[lid] = await coder.readBlock(lid, sample.readSid ?? 0x21);
     } catch (e) {
@@ -1791,8 +1816,8 @@ ${variantNames.map((n,i)=>`${i+1}. ${n}`).join('\n')}
     }
   }
   if (readFail) {
-    toast('warn', `${readFail}/${priorityLids.length} 个编码块读取失败`,
-      '当前值显示为空 —— 请检查连接/地址，或跑地址扫描确认 ECU 可达');
+    toast('warn', `${readFail}/${lids.length} 个编码块读取失败`,
+      '对应项当前值为空 —— 请检查连接/地址，或跑地址扫描确认 ECU 可达');
   }
   // 提取已读块的当前值
   for (const p of items) {
@@ -1803,7 +1828,7 @@ ${variantNames.map((n,i)=>`${i+1}. ${n}`).join('\n')}
   }
 
   hideLoading();
-  toast('ok', `${sys.label} 就绪`, `${items.length} 个参数 / ${lids.length} 个编码块（按需加载）`);
+  toast('ok', `${sys.label} 就绪`, `${items.length} 个参数 / ${lids.length} 个编码块已读`);
   return true;
   } catch (e) {
     // ⚠️ enterSystem **永不抛异常**，只返回 true/false。
