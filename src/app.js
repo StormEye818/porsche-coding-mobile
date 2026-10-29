@@ -486,6 +486,26 @@ function updateLoading(title, detail = '', onCancel = null) {
   document.body.style.overflow = 'hidden';
 }
 
+// ---------- 状态 ----------
+// ⚠️ 2026-10-29：这一整块声明在重写 loading 时被误删。ESM 是严格模式，
+//    给未声明变量赋值会直接抛 `Can't find variable: xxx` —— 表现就是
+//    启动即「载入失败: Can't find variable: tree」。新增模块级状态一律加在这里。
+let doctor = null, elm = null, coder = null;
+let tree = null;          // menu-tree-v3.json
+let coding = [];          // coding-v2.json params
+let stack = [];           // 导航栈 [{level, title, data}]
+let currentParam = null;
+let simMode = false;
+let modelsCatalog = null;
+let currentModel = null;
+const loadedVariants = new Map();   // 缓存已加载的变体
+// 运行期状态（此前也随声明块一起被删，`state.xxx` 会直接 ReferenceError）
+const state = {
+  multiVariantModules: new Set(),
+  selectedVariant: {},        // { [module]: 变体名 }
+  currentAddr: null,          // 当前进入模块的地址证据
+};
+
 // ---------- ① 连接 ----------
 $('btnDoctor').onclick = async () => {
   $('btnDoctor').disabled = true;

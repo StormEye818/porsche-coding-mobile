@@ -1415,6 +1415,23 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
   ok('自检不调用 probeModules（L1–L4 只验链路）',
      !ld.includes('await this.probeModules()'));
 
+  // ⑤c 模块级状态必须有声明（ESM 严格模式：未声明赋值 = Can't find variable）
+  {
+    const decl = new Set(
+      [...app.matchAll(/^(?:let|const|var|function|class|async function)\s+(.+)$/gm)]
+        .flatMap((m) => m[1].split(',').map((x) => (x.match(/^\s*([A-Za-z_$][\w$]*)/) || [])[1]))
+        .filter(Boolean),
+    );
+    const badAssign = [...app.matchAll(/^([A-Za-z_$][\w$]*)\s*=/gm)]
+      .map((m) => m[1]).filter((n) => !decl.has(n));
+    ok('顶层没有未声明赋值（严格模式下会抛 Can\'t find variable）',
+       badAssign.length === 0, badAssign.join(','));
+    for (const n of ['doctor', 'elm', 'coder', 'tree', 'coding', 'stack',
+      'currentParam', 'simMode', 'modelsCatalog', 'currentModel', 'loadedVariants', 'state']) {
+      ok(`状态变量已声明：${n}`, decl.has(n));
+    }
+  }
+
   // ⑥ 入口文件必须入库（P0-4）
   const idx = readFileSync('./index.html', 'utf8');
   ok('仓库根 index.html 存在且含安全区',

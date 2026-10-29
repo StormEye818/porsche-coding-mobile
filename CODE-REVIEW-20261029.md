@@ -418,3 +418,49 @@ L4 协议锁定会向 DME（`ATSH7E0/ATCRA7E8`）发一条 `1A9F`：
 
 代价：真车上块多的模块（20–40 块）进模块会多花十几秒，这是对齐「进模块即读全量」的必要成本；
 嫌慢可以中途取消，已读部分照常显示。
+
+---
+
+# 运行时回归：启动即 `Can't find variable: tree`（2026-10-29 14:30）
+
+## 根因
+
+`1c3271c` 重写 loading（`showLoading`/`hideLoading`/`updateLoading`）时，替换区间一直覆盖到
+`// ---------- ① 连接 ----------`，把夹在中间的**整块模块级状态声明**一起删掉了。
+`e649014` 里原本有：
+
+```js
+let doctor = null, elm = null, coder = null;
+let tree = null;
+let coding = [];
+let stack = [];
+let currentParam = null;
+let simMode = false;
+let modelsCatalog = null;
+let currentModel = null;
+const loadedVariants = new Map();
+const state = { multiVariantModules, selectedVariant, currentAddr };
+```
+
+ESM 是严格模式，`loadAll()` 里 `tree = t` 对**未声明的标识符赋值**会直接抛
+`ReferenceError: Can't find variable: tree`（Safari 文案），被
+`loadAll().catch(...)` 捕获后打印「载入失败: Can't find variable: tree」——
+所以一启动就报，什么都还没做。
+
+`node --check` 只查语法、esbuild 只做打包，两者都不会发现未声明赋值，所以整轮测试全绿也没拦住。
+
+## 修复
+
+- 补回上述 10 个声明 + `state` 对象（放在 `// ---------- ① 连接 ----------` 之前）；
+- smoke 新增 14 条断言：
+  - 「顶层没有未声明赋值」（用声明集合与 `^name =` 赋值做差集，通用兜底）；
+  - 12 个状态变量逐个断言已声明（防止再次被整段替换误删）。
+
+## 回归
+
+`smoke 314/314`、`e2e 33/33`、`walkthrough 38/38`、`sync` 212KB。
+
+## 教训
+
+`1c3271c` 之后任何一次装机都会启动即崩——这类「严格模式未声明变量」只能靠运行时暴露。
+后续再动 app.js 的大段结构，除了跑 smoke，至少要人工看一眼被替换区间的**起止锚点**是否吃掉了声明。
