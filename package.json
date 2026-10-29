@@ -6,7 +6,7 @@
   "description": "Porsche 981 编码工具（vLinker MS 专用）",
   "scripts": {
     "sync": "node scripts/sync.mjs",
-    "test": "node smoke-fixes.mjs && node e2e-flow.mjs && node tools/verify-pending.mjs && node tools/walkthrough.mjs && node tools/name-map-coverage.mjs",
+    "test": "npm run sync && node smoke-fixes.mjs && node tools/boot-smoke.mjs && node e2e-flow.mjs && node tools/verify-pending.mjs && node tools/walkthrough.mjs && node tools/name-map-coverage.mjs",
     "walkthrough": "node tools/walkthrough.mjs",
     "coverage": "node tools/coverage.mjs && node tools/name-map-coverage.mjs",
     "ios": "npm run sync && npx cap sync ios && npx cap open ios",
