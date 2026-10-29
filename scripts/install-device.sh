@@ -29,31 +29,61 @@ if [ -n "$LEAK" ]; then
 fi
 echo "   ✅ 干净"
 
-echo "── 3/5 编真机包 ──"
+echo "── 3/5 找设备 ──"
+# ⚠️ 默认装到 iPhone Duo（iPhone19,4）。2026-10-25 起用户换了新机，
+#    不要再「取第一台物理机」——本机同时接着旧 iPhone 15 Pro Max，
+#    会装错设备。要临时装旧机：DEVICE_UDID=<旧机UDID> ./scripts/install-device.sh
+#
+# ⚠️ 状态字可能是 connected/available 等，别写死一种（2026-10-17 装机时踩过：
+#    写死 /available/ 但真机报 connected，导致误报「无可用物理 iPhone」）
+DEFAULT_UDID="00008160-000C043A1420000A"   # iPhone Duo (iPhone19,4)
+PHYSICAL=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ {print $3; exit}')
+if [ -n "$DEVICE_UDID" ]; then
+  UDID="$DEVICE_UDID"
+elif xcrun devicectl list devices 2>/dev/null | grep -q "$DEFAULT_UDID"; then
+  UDID="$DEFAULT_UDID"
+else
+  # 默认机不在线就回落到当前第一台物理机（换机/换线时不必改脚本）
+  UDID="$PHYSICAL"
+  [ -n "$UDID" ] && echo "   ⚠️ 默认机 (Duo) 不在线，回落到 $UDID"
+fi
+if [ -z "$UDID" ] || ! xcrun devicectl list devices 2>/dev/null | grep -q "$UDID"; then
+  echo "❌ 没有可用的物理 iPhone。请插线并解锁。"
+  echo "   当前在线的物理机："
+  xcrun devicectl list devices 2>/dev/null | awk '/physical/'
+  echo "   （模拟器可先用：npm run ios）"
+  exit 1
+fi
+echo "   ✅ $UDID"
+
+# Developer Mode 关着装不上，先把话说明白（devicectl 只给一句很绕的报错）
+if xcrun devicectl device info details --device "$UDID" 2>&1 | grep -q "Developer Mode is turned off"; then
+  echo "❌ iPhone Duo 的开发者模式没开，装不进去。"
+  echo "   手机上：设置 → 隐私与安全性 → 开发者模式 → 打开，重启后再跑本脚本。"
+  exit 1
+fi
+
+echo "── 4/5 编真机包 ──"
 # ⚠️ 2026-10-17 踩过：SourcePackages 的 checkout 会烂掉，xcodebuild 报
 #    "Package.swift doesn't exist in file system"。构建前清掉缓存即可。
 #    （直接换 -derivedDataPath 也能绕，但会一直堆垃圾，还是清干净。）
 rm -rf /tmp/pc-build-device/SourcePackages
+#
+# ⚠️ 2026-10-25 踩过：换新机后装机报 0xe8008012「provisioning profile cannot
+#    be installed on this device」——团队 profile 里只有旧机的 UDID。
+#    两个开关缺一不可，而且 -destination 必须写具体 id=UDID：
+#      · 写 generic/platform=iOS 时「destination device」不存在，
+#        -allowProvisioningDeviceRegistration 等于没开
+#      · 该开关才会把这台机注册到开发者门户并重出团队 profile
 xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
-  -destination 'generic/platform=iOS' \
+  -destination "id=$UDID" \
   -derivedDataPath /tmp/pc-build-device \
-  -allowProvisioningUpdates \
+  -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
   build 2>&1 | tail -5
 
 APP=/tmp/pc-build-device/Build/Products/Debug-iphoneos/App.app
 [ -d "$APP" ] || { echo "❌ 构建产物缺失"; exit 1; }
 echo "   ✅ $APP"
-
-echo "── 4/5 找设备 ──"
-# ⚠️ 状态字可能是 connected/available 等，别写死一种（2026-10-17 装机时踩过：
-#    写死 /available/ 但真机报 connected，导致误报「无可用物理 iPhone」）
-UDID=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && ($0 ~ /connected|available|busy/) {print $3; exit}')
-if [ -z "$UDID" ]; then
-  echo "❌ 无可用物理 iPhone。请插线并解锁。"
-  echo "   （模拟器可先用：npm run ios）"
-  exit 1
-fi
-echo "   ✅ $UDID"
 
 if [ "$BUILD_ONLY" = 1 ]; then
   echo "── 5/5 跳过安装（--build-only）──"

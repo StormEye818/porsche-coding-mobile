@@ -366,33 +366,26 @@ function addrFor(label, model = currentModel, sys = null) {
 
 import { registerPlugin } from '@capacitor/core';
 
-// 状态栏留白：WebView 里 env(safe-area-inset-top) 常为 0，
-// 所以用显式 spacer + JS 量测，保证刘海/灵动岛下内容不被遮。
-function fitSafeTop() {
-  const el = document.getElementById('safeTop');
-  if (!el) return;
-  // 优先用真正的安全区；没有就按机型估（刘海 47-59px，老机型 20px）
-  const sat = window.visualViewport?.offsetTop
-    ?? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0', 10);
-  const isNotch = window.innerHeight / window.innerWidth > 2.0;   // 全面屏长宽比
-  el.style.height = (sat > 0 ? sat : (isNotch ? 50 : 22)) + 'px';
-}
-fitSafeTop();
-window.addEventListener('resize', fitSafeTop);
-window.addEventListener('orientationchange', fitSafeTop);
-
-// 状态栏：让 webview 避开状态栏（刘海/灵动岛下不遮内容）。
-// ⚠️ 只在 capacitor.config.json 里写不够，必须运行时再设一次才生效。
+// 安全区留白全部走 CSS 的 env(safe-area-inset-*)（见 index.html），不再用 JS 量/猜。
+// 旧实现两处都错，2026-10-25 真机 iPhone Duo 内屏横屏截图实测：
+//   ① 用 innerHeight/innerWidth > 2.0 判刘海——Duo 封面 466×678(1.46)、内屏 669×951(1.42)
+//      比 iPhone 8(1.78) 还矮胖，被判成「无刘海」只留 22px；
+//   ② 只让 top，没让左右——Duo 内屏横屏传感器区在角落，水平 inset 是常驻的，
+//      header 右侧徽标顶进状态栏。
+// env() 随折叠/旋转/换屏自动跟随，不需要 resize 监听，也没有缓存失效问题。
+//
+// ⚠️ 不要再调 StatusBar.setOverlaysWebView({overlay:false})：
+//    它把 webview 从状态栏下方起排，会让 env() 全变 0，页面反而没法量安全区；
+//    而且它只改 frame.origin.y，横屏时状态栏高度常为 0，等于没让开。
+//    保持默认（overlay=true，webview 满屏）+ env() 让位，是本项目验证过可用的组合。
 const StatusBar = registerPlugin('StatusBar');
 (async () => {
   try {
-    await StatusBar.setOverlaysWebView({ overlay: false });
     await StatusBar.setStyle({ style: 'DARK' });
     await StatusBar.setBackgroundColor({ color: '#0e1116' });
   } catch (e) {
     console.warn('StatusBar 配置失败', e);
   }
-  fitSafeTop();
 })();
 
 const $ = (id) => document.getElementById(id);
