@@ -12,17 +12,17 @@
  *
  * 连接与适配器通信参考同门工具；车上的读写走本项目协议层（coder.js）。
  */
-import { Coder, CodingError, MissingSeedKeyError, parseResp } from './coder.js';
+import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1 } from './coder.js';
 import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
 import { ECU_NUM_TO_ADDR, LABEL_TO_ECU_NUM } from './ecu-num-addr.js';
 
-// 431 探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
+// 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
 const PROBE_CMD_BY_ECU = {
-  // 已知需要探测的 ecu（431 的 1.2%）
+  // 已知需要探测的 ecu（1.2% 的 ecu）
   // 其余走默认 KWP 1A9F 识别
 };
 const DEFAULT_PROBE_CMD = '1A9F';
@@ -179,7 +179,7 @@ function ecuAddrFromTable(label, sys) {
 }
 
 /**
- * ecu 号桥接：label → ecu 号 → CAN 地址（2026-10-22，431 数据驱址）。
+ * ecu 号桥接：label → ecu 号 → CAN 地址（2026-10-22，数据驱址）。
  * 覆盖 systemCatalog 全量 177 label / 152 ecu 号。
  * 已知地址（proven/标准 OBD/ECU_ADDR）直接返回；未知 ecu 返回 needs-probe。
  */
@@ -193,7 +193,7 @@ function ecuAddrFromNum(label, sys) {
     }
   }
   if (ecuNum == null) return null;
-  // ① 已知地址优先（含标准 OBD）—— 431 表说「无 tx」≠「地址错」。
+  // ① 已知地址优先（含标准 OBD）—— 参考表说「无 tx」≠「地址错」。
   const hit = ECU_NUM_TO_ADDR[ecuNum];
   if (hit && hit.tx && hit.rx) {
     const tx = parseInt(hit.tx, 16), rx = parseInt(hit.rx, 16);
@@ -211,112 +211,152 @@ function ecuAddrFromNum(label, sys) {
 }
 
 /**
- * 431 探测指令：对候选 CAN 地址逐个发识别探针，找模块地址。
- * 对齐 431 的运行时探测逻辑（ECU-ADDRESSING-20261019.md §8）。
+ * 地址探测指令：对候选 CAN 地址逐个发识别探针，找模块地址。
+ * 对齐参考诊断仪的运行时探测逻辑（ECU-ADDRESSING-20261019.md §8）。
  * 探测顺序：先试标准 OBD 范围（7E0-7E7），再试保时捷扩展范围（700-7EF）。
  * 返回 {tx, rx} 或 null。
  */
-async function probeAddressFor(label, probeCmd, model) {
+// 保时捷诊断段里已知的「非 +8」地址对（网关 / PDC / PASM / 前后 BCM…）
+const EXT_ADDRS = [
+  [0x710, 0x77A], [0x7CF, 0x7D7], [0x7D0, 0x7D8], [0x7D1, 0x7D9], [0x74F, 0x757],
+  [0x730, 0x738], [0x719, 0x721], [0x71A, 0x722], [0x76D, 0x775], [0x7D9, 0x7E1],
+  [0x7DA, 0x7E2],
+];
+
+let probeAbort = false;
+
+/**
+ * 探测模块地址（两阶段）。
+ *
+ * 阶段 1：常用地址（标准 OBD 7E0–7E7 + 已知扩展对，约 20 个），命中即停。
+ * 阶段 2：用户确认后深度扫 0x700–0x7F8 的剩余地址（真车十几分钟）。
+ *
+ * 返回 { tx, rx, cmd, ident, confidence:'probed-unverified' } 或 null。
+ *
+ * ⚠️ 探测只能证明「该地址有模块回了正响应」，**不能证明它是目标模块**
+ *    （除 DME 的 P200 外没有可靠签名）。所以调用方必须让用户确认，
+ *    确认后才 saveAddrOverride —— 不能静默把邻居 ECU 存成目标地址。
+ */
+async function probeAddressFor(label, probeCmd) {
   if (!coder) return null;
-  // ⚠️ 只跳过「已实测确认属于别的模块」的地址（state=measured/manual）。
-  //    ECU_ADDR 里大量 state=candidate 是猜测值，跳过它们反而会
-  //    把 IC 的正确地址 0x7E4 也跳掉（0x7E4 在 ECU_ADDR 里是 candidate）。
-  //    DME=0x7E0 是 measured → 必须跳过（DME 对任何 1A9F 都回 "P200"）。
+
+  // 只跳过「已实测确认」的地址；candidate 是猜的，跳过反而会漏掉 IC 0x7E4
   const known = new Set();
   for (const v of Object.values(ECU_ADDR)) {
     if (v.tx != null && v.state === 'measured') known.add(v.tx);
   }
-  const all = loadAddrOverrides();
-  for (const v of Object.values(all)) {
-    if (v.tx != null) known.add(v.tx);  // 手工保存的一定是实测
+  for (const v of Object.values(loadAddrOverrides())) {
+    if (v.tx != null) known.add(v.tx);
   }
-  // 该模块的标准 OBD 地址优先（ecu 号 → 0x7E0+(ecu-1) 映射表）
-  const STD_OBD = { 1:0x7E0, 2:0x7E1, 3:0x7E2, 4:0x7E3, 5:0x7E2, 7:0x7E5, 8:0x7E4, 55:0x7E7 };
+
   const ecuNum = LABEL_TO_ECU_NUM[label];
-  const preferred = ecuNum != null ? STD_OBD[ecuNum] : null;
-  const probes = [];
-  // 优先：该模块的标准 OBD 地址（如果没被占用）
-  if (preferred && !known.has(preferred)) {
-    probes.push({ tx: preferred, rx: preferred + 8 });
-  }
-  // 标准 OBD-II 全段
-  for (let tx = 0x7E0; tx <= 0x7E7; tx++) {
-    if (known.has(tx) || tx === preferred) continue;
-    probes.push({ tx, rx: tx + 8 });
-  }
-  // 保时捷已知扩展地址（跳过已占用）
-  for (const [tx, rx] of [[0x710,0x77A],[0x7CF,0x7D7],[0x7D0,0x7D8],[0x7D1,0x7D9],
-                           [0x74F,0x757],[0x730,0x738],[0x719,0x721],[0x71A,0x722],
-                           [0x76D,0x775],[0x7D9,0x7E1],[0x7DA,0x7E2],[0x7E2,0x7EA]]) {
-    if (known.has(tx)) continue;
-    probes.push({ tx, rx });
-  }
-  // ⚠️ 全量 0x700–0x7FF 兜底（2026-10-27）：129 个 ecu 无已知地址，
-  //    保时捷模块散布在整个 0x7xx 诊断段。已知/优先地址全部试完后
-  //    扫剩余地址（排除已试过的）。
-  const tried = new Set(probes.map((p) => p.tx));
-  for (let tx = 0x700; tx <= 0x7F8; tx++) {
-    if (known.has(tx) || tried.has(tx)) continue;
-    probes.push({ tx, rx: tx + 8 });
-  }
-  showLoading(`正在探测 ${label}`, `试 ${probes.length} 个候选地址…`);
-  try {
-    // 候选都是 11-bit；上一个模块可能是 29-bit，先切回 ATSP6。
-    await coder.elm.cmd('ATSP6', 1500).catch(() => {});
-    for (const p of probes) {
-      try {
-        await coder.elm.cmd(`ATSH${p.tx.toString(16).toUpperCase()}`, 1500);
-        await coder.elm.cmd(`ATCRA${p.rx.toString(16).toUpperCase()}`, 1500);
-        // 发识别探针：KWP 1A9F 为主（快速）；probeCmd 可指定特定命令
-        // ⚠️ 22F190 不做默认探针 —— 太慢且多数 ECU 不支持，只在 probeCmd 指定时用
-        for (const cmd of (probeCmd ? [probeCmd] : ['1A9F'])) {
-          const r = (await coder.elm.cmd(cmd, 2500) || '').trim();
-          const p2 = parseResp(r);
-          const body = Array.from(p2.body || [])
-            .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-          // 只认正响应（5A9F/62F190）。NRC 7F 只证明「这个地址有某个模块」，
-          // 不能证明它就是目标模块。
-          if (body.startsWith('5A') || body.startsWith('62')) {
-            // ★ 2026-10-28：探测身份验证 —— 已知模块签名不匹配就跳过。
-            //   DME=0x7E0 对任何 1A9F 都回 "P200"，不验证就把 IC/空调等
-            //   全部错误定位到 0x7E0。
-            const respText = Array.from(p2.body || [])
-              .filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim();
-            const KNOWN_SIGS = { 'P200': 'DME', '98161864015': 'DME' };
-            const sigHit = Object.entries(KNOWN_SIGS).find(([sig]) => respText.includes(sig));
-            const isDmeTarget = /DME|ECM|发动机/i.test(label);
-            if (sigHit && !isDmeTarget) {
-              log(`  · 0x${p.tx.toString(16).toUpperCase()} 是 ${sigHit[1]}（识别"${respText}"），跳过`, 'info');
-              continue;  // 不是目标模块，继续扫下一个地址
-            }
-            log(`  探测命中 0x${p.tx.toString(16).toUpperCase()}/0x${p.rx.toString(16).toUpperCase()} (${cmd} → ${body.slice(0,16)})`, 'ok');
-            return { tx: p.tx, rx: p.rx };
+  const pref = ecuNum != null ? ECU_NUM_TO_ADDR[ecuNum] : null;
+  const prefTx = pref && pref.tx ? parseInt(pref.tx, 16) : null;
+
+  const seen = new Set();
+  const add = (list, tx, rx) => {
+    // rx 溢出会被 ATCRA 当成非法 ID（0x7F8+8=0x800），必须挡掉
+    if (!Number.isFinite(tx) || !Number.isFinite(rx)) return;
+    if (tx < 0x700 || tx > 0x7FF) return;
+    if (rx < 0x700 || rx > 0x7FF || rx === tx) return;
+    if (known.has(tx) || seen.has(tx)) return;
+    seen.add(tx);
+    list.push({ tx, rx });
+  };
+
+  const quick = [];
+  if (prefTx) add(quick, prefTx, prefTx + 8);
+  for (let tx = 0x7E0; tx <= 0x7E7; tx++) add(quick, tx, tx + 8);
+  for (const [tx, rx] of EXT_ADDRS) add(quick, tx, rx);
+
+  const deep = [];
+  for (let tx = 0x700; tx <= 0x7F8; tx++) add(deep, tx, tx + 8);
+
+  const hex = (n) => n.toString(16).toUpperCase();
+
+  const tryAddr = async (p) => {
+    try {
+      await coder.elm.cmd(`ATSH${hex(p.tx)}`, 1200);
+      await coder.elm.cmd(`ATCRA${hex(p.rx)}`, 1200);
+      // 先发指定探针（没有就 1A9F）；纯 UDS 模块再补一发 22F190
+      const cmds = probeCmd ? [probeCmd] : ['1A9F'];
+      for (let ci = 0; ci < cmds.length; ci++) {
+        const cmd = cmds[ci];
+        const r = (await coder.elm.cmd(cmd, 2000) || '').trim();
+        const pr = parseRespCaf1(r);
+        const body = Array.from(pr.body || [])
+          .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+        // 只认正响应；7F 只说明「地址上有模块」，不能当目标
+        if (body.startsWith('5A') || body.startsWith('62')) {
+          const text = Array.from(pr.body || [])
+            .filter((c) => c >= 0x20 && c < 0x7f)
+            .map((c) => String.fromCharCode(c)).join('').trim();
+          // DME 对任何 1A9F 都回 P200：非 DME 目标直接跳过
+          if (/P200|98161864015/.test(text) && !/DME|ECM|发动机/i.test(label)) {
+            log(`  · 0x${hex(p.tx)} 是 DME（识别"${text.slice(0, 16)}"），跳过`, 'info');
+            return null;
           }
-          if (body.startsWith('7F')) {
-            log(`  · 0x${p.tx.toString(16).toUpperCase()} 有模块但回 NRC（${body.slice(0,8)}），不作为目标地址`, 'info');
+          return {
+            tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32),
+            confidence: 'probed-unverified',
+          };
+        }
+        if (body.startsWith('7F')) {
+          const nrc = parseInt(body.slice(4, 6), 16);
+          if (!probeCmd && ci === 0 && (nrc === 0x11 || nrc === 0x12)) {
+            cmds.push('22F190');   // 该地址可能只支持 UDS
           }
         }
-      } catch { /* 超时/无应答，继续 */ }
+      }
+    } catch { /* 超时/无应答，继续 */ }
+    return null;
+  };
+
+  const scan = async (list, title) => {
+    for (let i = 0; i < list.length; i++) {
+      if (probeAbort) return null;
+      showLoading(`正在探测 ${label}`,
+        `${title} ${i + 1}/${list.length} · 0x${hex(list[i].tx)}`,
+        () => { probeAbort = true; });
+      const hit = await tryAddr(list[i]);
+      if (hit) return hit;
     }
     return null;
+  };
+
+  probeAbort = false;
+  try {
+    // 上一个模块可能是 29-bit，先切回 11-bit/500k
+    await coder.elm.cmd('ATSP6', 1500).catch(() => {});
+    let hit = await scan(quick, '常用地址');
+    if (!hit && !probeAbort && deep.length) {
+      const mins = Math.max(1, Math.round(deep.length * 4.4 / 60));
+      if (confirm(`常用 ${quick.length} 个地址没探测到「${label}」。\n\n`
+        + `要继续深度扫描剩余 ${deep.length} 个地址吗？\n`
+        + `真车约需 ${mins} 分钟，扫描中可以点「取消」。`)) {
+        hit = await scan(deep, '深度扫描');
+      }
+    }
+    return hit;
   } finally {
     hideLoading();
+    probeAbort = false;
   }
 }
 
 function addrFor(label, model = currentModel, sys = null) {
   // 手工覆盖优先于内置表。
-  // 2026-10-22：接入 ecu→addr 全量查表（431 数据驱址），label→ecu→CAN 三层。
+  // 2026-10-22：接入 ecu→addr 全量查表（数据驱址），label→ecu→CAN 三层。
   const all = loadAddrOverrides();
   const override = overrideFor(addrKey(label, model), all) || overrideFor(label, all);
   if (override) return override;
   const fromRe = ecuAddrFromTable(label, sys);
   if (fromRe && fromRe.state === 'measured') return fromRe;
-  // 地址扫描回填的 ECU_ADDR（measured）优先于 431 的 needs-probe；
+  // 地址扫描回填的 ECU_ADDR（measured）优先于参考表的 needs-probe；
   // 已经扫到的实测地址不需要再探测。
   const builtin = ECU_ADDR[label];
   if (builtin && builtin.state === 'measured') return builtin;
-  // 431 明确要求探测的 sysId，必须走 probe；不能被 ECU_NUM 的通用候选覆盖。
+  // 参考表明确要求探测的 sysId，必须走 probe；不能被 ECU_NUM 的通用候选覆盖。
   if (fromRe && fromRe.state === 'needs-probe') return fromRe;
   // ecu 号桥接：label → ecu → CAN 地址（全量覆盖 177 label / 152 ecu）
   const ecuAddr = ecuAddrFromNum(label, sys);
@@ -398,7 +438,8 @@ function needLink() {
 }
 
 // ---------- 全屏加载遮罩（读取期间锁定操作） ----------
-function showLoading(title, detail = '') {
+let _loadingCancel = null;
+function showLoading(title, detail = '', onCancel = null) {
   let el = $('loadingMask');
   if (!el) {
     el = document.createElement('div');
@@ -408,8 +449,19 @@ function showLoading(title, detail = '') {
         <div class="lmSpinner"></div>
         <div class="lmTitle"></div>
         <div class="lmDetail"></div>
+        <button type="button" class="lmCancel">取消</button>
       </div>`;
     document.body.appendChild(el);
+    el.querySelector('.lmCancel').addEventListener('click', () => {
+      if (_loadingCancel) _loadingCancel();
+    });
+  }
+  _loadingCancel = onCancel;
+  const btn = el.querySelector('.lmCancel');
+  if (btn) {
+    btn.style.display = onCancel ? 'inline-block' : 'none';
+    btn.style.cssText = 'margin-top:12px;padding:8px 20px;border-radius:10px;'
+      + 'border:1px solid #2a3140;background:#21262d;color:#e6edf3;font-size:14px';
   }
   el.querySelector('.lmTitle').textContent = title;
   el.querySelector('.lmDetail').textContent = detail;
@@ -417,337 +469,11 @@ function showLoading(title, detail = '') {
   document.body.style.overflow = 'hidden';
 }
 function hideLoading() {
+  _loadingCancel = null;
   const el = $('loadingMask');
   if (el) el.style.display = 'none';
   document.body.style.overflow = '';
 }
-function updateLoading(title, detail = '') {
-  const el = $('loadingMask');
-  if (!el) return;
-  el.querySelector('.lmTitle').textContent = title;
-  el.querySelector('.lmDetail').textContent = detail;
-}
-
-/** 规则编码：批量查看和修改多个设码值 */
-function showRuleCoding(allItems, sysLabel) {
-  // ★ 参考诊断仪的做法：先显示一级分组目录（和刷隐藏一样），点进去再批量编辑
-  const groups = {};
-  for (const p of allItems) {
-    const g = p.path?.[0] || '（未命名）';
-    (groups[g] = groups[g] || []).push(p);
-  }
-  const groupItems = Object.entries(groups)
-    .sort((a, b) => b[1].length - a[1].length)
-    .map(([name, items]) => ({
-      kind: 'ruleGroup', raw: { name, items, sysLabel },
-      lbl: name, meta: `${items.length} 个参数`, cnt: items.length,
-    }));
-  stack.push({ level: 'ruleGroupList', title: `规则编码 · ${sysLabel}`, data: { items: groupItems, allItems, sysLabel } });
-  renderNav();
-}
-
-function showRuleGroup(g) {
-  // ★ 参考诊断仪的做法：有 L3 子组就先显示子组列表，没有才直接显示条目
-  const hasSubgroups = g.items.some((p) => (p.path?.length || 0) >= 3);
-  if (hasSubgroups) {
-    // 按 L3 子分组
-    const subgroups = {};
-    for (const p of g.items) {
-      const sg = (p.path?.length >= 3) ? p.path[1] : '（直接条目）';
-      (subgroups[sg] = subgroups[sg] || []).push(p);
-    }
-    const sgItems = Object.entries(subgroups)
-      .sort((a, b) => b[1].length - a[1].length)
-      .map(([name, items]) => ({
-        kind: 'ruleSubgroup', raw: { name, items, parentGroup: g.name },
-        lbl: name, meta: `${items.length} 个参数`, cnt: items.length,
-      }));
-    stack.push({ level: 'ruleSubgroupList', title: g.name, data: { items: sgItems, allItems: g.items, sysLabel: g.sysLabel } });
-    renderNav();
-    return;
-  }
-  // 无子组 → 直接批量编辑
-  showRuleBatchEdit(g.name, g.items);
-}
-
-function showRuleSubgroup(sg) {
-  // 显示 L3 子组的批量编辑
-  showRuleBatchEdit(`${sg.parentGroup} > ${sg.name}`, sg.items);
-}
-
-function showRuleBatchEdit(title, items) {
-  const rows = items.map((p) => {
-    const curVal = p.currentValue !== undefined ? decodeValue(p, p.currentValue) : '?';
-    const en = p.enum ? Object.entries(p.enum)
-      : (p.kind === 'switch' ? [[0, '关'], [1, '开']] : []);
-    let inputHtml;
-    if (p.kind === 'switch' || p.kind === 'enum') {
-      // ⚠️ enum key 是**十进制**字符串（"0".."255"/"16777215"），不是十六进制！
-      // 曾用 parseInt(k,16)：`"255"→597`、`"10"→16`，3802 条枚举里 4194 个 key≥10 全写错值。
-      inputHtml = `<select class="ruleVal" data-id="${p.id}" data-touched="0" onchange="this.dataset.touched='1'">${en.map(([k, v]) =>
-        `<option value="${Number(k)}" ${Number(k) === p.currentValue ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
-    } else {
-      const wide = (p.bitsize | 0) > 53;
-      inputHtml = `<input class="ruleVal" data-id="${p.id}" data-touched="0" oninput="this.dataset.touched='1'" type="${wide ? 'text' : 'number'}" inputmode="numeric" value="${p.currentValue ?? 0}" min="${p.min ?? 0}" max="${p.max ?? ''}" style="width:${wide ? 150 : 70}px">`;
-    }
-    // 显示完整路径（含 L3 上下文）
-    const pathStr = (p.path || []).slice(1).join(' › ');
-    return `<div class="ruleRow">
-      <div class="ruleName">${p.name}<br><small>${pathStr} · byte ${p.byte} bit ${p.bit} · 当前: ${curVal}</small></div>
-      <div class="ruleInput">${inputHtml}</div>
-    </div>`;
-  }).join('');
-
-  $('navList').innerHTML = `
-    <div class="ruleCoding">
-      <div class="hint">${title}：修改后点「批量写入」一次性写入。</div>
-      <div class="ruleGroup">
-        ${rows}
-      </div>
-      <div class="acts" style="margin-top:16px">
-        <button id="ruleBatchWrite" class="primary">批量写入</button>
-      </div>
-    </div>`;
-
-  $('ruleBatchWrite').onclick = async () => {
-    const changes = [];
-    const rejected = [];
-    $('navList').querySelectorAll('.ruleVal').forEach((el) => {
-      const p = items.find((x) => x.id === el.dataset.id);
-      if (!p) return;
-      const newVal = parseFieldInput(p, el.value);
-      if (newVal == null) { rejected.push(`${p.name}: 值无效（${el.value}）`); return; }
-      // ⚠️ 当前值未读到时不能一律跳过（2026-10-18 审计）：此前 `currentValue===undefined`
-      //    直接 return，用户明明改了值也不会进 changes，批量写入静默少项。
-      //    现在只有「用户真的动过」才纳入；未动过仍跳过，避免把第一项当目标值写进去。
-      if (p.currentValue === undefined) {
-        if (el.dataset.touched !== '1') return;
-      } else if (newVal === p.currentValue) {
-        return;
-      }
-      // ⚠️ 批量写入必须与单项写入**同一套闸门**：
-      //   ① canWrite（只读项 / 无 LID / 严格门禁开关）
-      //   ② min/max 范围 —— 此前批量路径不查，injectField 对越界值
-      //      `& mask` 静默截断后照写（2026-10-16 复查 P11）
-      if (!canWrite(p)) { rejected.push(`${p.name}: 不可写（只读/无 LID/门禁）`); return; }
-      if (!fieldInRange(p, newVal)) {
-        rejected.push(`${p.name}: ${newVal} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}`);
-        return;
-      }
-      changes.push({ p, newVal });
-    });
-    if (rejected.length) {
-      alert(`有 ${rejected.length} 项未通过校验，已跳过：\n\n${rejected.slice(0, 10).join('\n')}`);
-    }
-    if (!changes.length) {
-      toast('info', '没有可写入的变更', rejected.length ? '全部被校验拦下' : '所有值与当前值一致');
-      return;
-    }
-    const okBatch = confirm(`确认批量写入 ${changes.length} 个变更？\n\n`
-      + changes.slice(0, 8).map((c) => `· ${c.p.name} = ${decodeValue(c.p, c.newVal)}`).join('\n')
-      + (changes.length > 8 ? `\n…等 ${changes.length} 项` : '')
-      + '\n\n会改变车辆配置，请确认已导出备份。');
-    if (!okBatch) return;
-    showLoading('批量写入中…', `${changes.length} 个变更`);
-    let ok = 0, fail = 0;
-    const failWhy = [];
-    for (const { p, newVal } of changes) {
-      try {
-        await coder.applyChange(p, newVal, { dryRun: false, session: 0x89, secLevel: 0x09 });
-        p.currentValue = newVal;
-        if (p.lid != null) delete currentBlocks[p.lid];   // 块缓存失效
-        ok++;
-      } catch (e) {
-        fail++;
-        // ⚠️ 失败原因必须留下来（2026-10-18 审计）：此前 `catch {}` 空吞，
-        //    用户只看到「成功 3 / 失败 2」，不知道哪一项为什么失败、要不要重试。
-        failWhy.push(`${p.name}：${e.message}`);
-        log(`  ❌ ${p.name} 写入失败：${e.message}`, 'err');
-      }
-    }
-    hideLoading();
-    if (fail) alert(`批量写入：成功 ${ok} / 失败 ${fail}\n\n${failWhy.slice(0, 12).join('\n\n')}`);
-    // ⚠️ 批量写入本身与「每次只改一项」的项目红线有张力：失败项之后的项会继续写，
-    //    且中途失败时车上是**部分变更**状态。保留功能但明确告知（2026-10-18 审计）。
-    toast(fail ? 'warn' : 'ok', '批量写入完成', `成功 ${ok} / 失败 ${fail}`);
-    showRuleBatchEdit(title, items); // 刷新显示新值
-  };
-}
-
-/** 备份所有编码 */
-async function backupAllCoding(allItems, sysLabel) {
-  // ⚠️ lid=0 是**合法 LID**（6383 条里有 1088 条 lid=0，22↔2E 且 sidPairOk），
-  //    不能用 filter(Boolean) —— 那会把这些块全丢掉不备份。
-  //    （若将来确认 0 是提取缺省值，应在数据侧标 writeBlockedReason，而不是在这里过滤。）
-  const lids = [...new Set(allItems.map((p) => p.lid).filter((v) => v != null))];
-  if (!lids.length) {
-    toast('warn', '无可备份数据', '该模块无编码块');
-    return;
-  }
-  showLoading('正在备份编码', `0 / ${lids.length} 个块`);
-  const backup = { sysLabel, timestamp: new Date().toISOString(), blocks: {} };
-  for (let i = 0; i < lids.length; i++) {
-    const lid = lids[i];
-    try {
-      const sample = allItems.find((p) => p.lid === lid);
-      const readSid = sample?.readSid ?? 0x21;
-      const blk = await coder.readBlock(lid, readSid);
-      // 同时记下读写 SID —— 恢复时按备份原样写回，不猜 SID
-      backup.blocks[lid] = {
-        bytes: Array.from(blk),
-        readSid,
-        writeSid: sample?.writeSid ?? (readSid === 0x22 ? 0x2E : 0x3B),
-        session: 0x89,
-      };
-    } catch (e) {
-      // ⚠️ 备份失败必须记账（2026-10-17 审计）：静默跳过会让用户以为备份完整，
-      //    写坏后恢复才发现缺块。备份不全 → **拒绝让用户以为可以安全写入**。
-      (backup.failed = backup.failed || []).push({ lid, error: e.message });
-    }
-    updateLoading('正在备份编码', `${i + 1} / ${lids.length} 个块`);
-  }
-  if (backup.failed && backup.failed.length) {
-    toast('warn', '⚠️ 备份不完整',
-      `${backup.failed.length} 个块备份失败：${backup.failed.slice(0, 3).map((f) => 'LID ' + f.lid).join('、')}`
-      + ' —— 写入前请确认这些块已另有备份，否则写坏无法恢复。');
-  }
-  // 保存到本地
-  const key = `pc_backup_${sysLabel}_${Date.now()}`;
-  try {
-    localStorage.setItem(key, JSON.stringify(backup));
-  } catch (e) {
-    hideLoading();
-    toast('err', '备份写入本地存储失败', `${e.message} —— 请改用「分享/导出」保存这次备份，别直接写入。`);
-    return;
-  }
-  hideLoading();
-  toast('ok', '备份完成', `${Object.keys(backup.blocks).length} 个块已保存`);
-}
-
-/** 恢复编码 */
-async function restoreCoding(sysLabel) {
-  // 查找备份
-  const backups = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k?.startsWith('pc_backup_')) {
-      try {
-        const b = JSON.parse(localStorage.getItem(k));
-        backups.push({ key: k, ...b });
-      } catch {}
-    }
-  }
-  if (!backups.length) {
-    toast('warn', '无备份', '请先使用「备份所有编码」');
-    return;
-  }
-  // 显示备份列表
-  const html = backups.map((b, i) => `
-    <div class="item" onclick="window._restoreBackup(${i})">
-      <div class="lbl">${b.sysLabel}</div>
-      <div class="meta">${new Date(b.timestamp).toLocaleString()} · ${Object.keys(b.blocks).length} 个块</div>
-    </div>`).join('');
-  $('navList').innerHTML = `
-    <div class="paramDetail">
-      <div class="pdHeader"><div class="pdName">选择备份恢复</div></div>
-      ${html}
-    </div>`;
-  window._restoreBackup = async (idx) => {
-    if (!needLink()) return;
-    const b = backups[idx];
-    const entries = Object.entries(b.blocks);
-    showLoading('恢复编码中…', `0 / ${entries.length} 个块`);
-    let ok = 0, fail = 0;
-    const failed = [];
-    for (const [lid, rec] of entries) {
-      // 兼容旧格式：旧备份 blocks[lid] 直接是字节数组
-      const bytes = Array.isArray(rec) ? rec : rec?.bytes;
-      const readSid = (Array.isArray(rec) ? 0x21 : rec?.readSid) ?? 0x21;
-      const writeSid = (Array.isArray(rec) ? 0x3B : rec?.writeSid) ?? (readSid === 0x22 ? 0x2E : 0x3B);
-      // 旧备份没有 session 字段；新备份写入 0x89（与 applyChange 默认一致）
-      const session = (Array.isArray(rec) ? 0x89 : rec?.session) ?? 0x89;
-      try {
-        if (!bytes || !bytes.length) throw new Error('备份块为空');
-        // ⚠️ 恢复必须**整块原样写回**，不要走 applyChange 的字段路径 ——
-        //    那条路径需要 byte/bit/bitsize，备份里没有，必然抛"参数超出编码块长度"。
-        //    此前就是这样把备份写废的（2026-10-16 复查 P3）。
-        const hex = bytes.map((x) => x.toString(16).padStart(2, '0')).join('');
-        const idHex = Number(lid).toString(16).toUpperCase().padStart(writeSid === 0x2E ? 4 : 2, '0');
-        await coder.enterSession(session);
-        // ⚠️ 不能吞解锁失败（审计 D6）：算法缺失/NRC 都必须中止，不能照写。
-        //    ⚠️ 2026-10-18 审计：这里原来引用了不存在的 `bk.writeSid`（ReferenceError），
-        //    导致「读取备份编码 → 恢复」**每一块都必然失败**。用本块的 writeSid 判 KWP。
-        await coder.securityAccess(0x09, writeSid !== 0x2E);
-        await coder.uds(`${writeSid.toString(16).toUpperCase().padStart(2, '0')}${idHex}${hex}`, 8000);
-        // 回读校验
-        const back = await coder.readBlock(Number(lid), readSid);
-        const same = back.length === bytes.length && back.every((x, i) => x === bytes[i]);
-        if (!same) throw new Error('回读与备份不一致');
-        ok++;
-      } catch (e) {
-        fail++;
-        failed.push(`LID ${lid}: ${e.message}`);
-      }
-      updateLoading('恢复编码中…', `${ok + fail} / ${entries.length} 个块`);
-    }
-    hideLoading();
-    if (failed.length) log('恢复失败明细：\n' + failed.slice(0, 8).join('\n'), 'err');
-    toast(fail ? 'warn' : 'ok', '恢复完成', `成功 ${ok} / 失败 ${fail}`);
-  };
-}
-
-/** 懒加载：按需读取指定条目所需的编码块，并提取当前值 */
-async function readBlocksForItems(items) {
-  const needLids = new Set();
-  for (const p of items) {
-    if (p.lid != null && !currentBlocks[p.lid]) needLids.add(p.lid);
-  }
-  if (!needLids.size) return;
-  showLoading('正在读取数据', `${needLids.size} 个编码块`);
-  const failed = [];
-  for (const lid of needLids) {
-    const sample = items.find((p) => p.lid === lid);
-    try {
-      currentBlocks[lid] = await coder.readBlock(lid, sample?.readSid ?? 0x21);
-    } catch (e) {
-      // ⚠️ 不能静默吞（2026-10-18 审计）：读失败会让当前值显示成「?」，
-      //    用户会以为只是没读到；批量写入时又会在 applyChange 里重新读一次，
-      //    真正失败时错误更晚、更难归因。这里至少把失败块记下来并提示。
-      failed.push({ lid, error: e.message });
-    }
-    updateLoading('正在读取数据', `LID 0x${lid.toString(16)}`);
-  }
-  for (const p of items) {
-    const block = currentBlocks[p.lid];
-    if (block) {
-      try { p.currentValue = extractField(block, p); } catch { p.currentValue = undefined; }
-    }
-  }
-  hideLoading();
-  if (failed.length) {
-    toast('warn', `${failed.length}/${needLids.size} 个编码块读取失败`,
-      failed.slice(0, 3).map((f) => `LID 0x${f.lid.toString(16)}: ${f.error}`).join('；'));
-  }
-}
-
-// ---------- 状态 ----------
-let doctor = null, elm = null, coder = null;
-let tree = null;          // menu-tree-v3.json
-let coding = [];          // coding-v2.json params
-let stack = [];           // 导航栈 [{level, title, data}]
-let currentParam = null;
-let simMode = false;
-let modelsCatalog = null;
-let currentModel = null;
-const loadedVariants = new Map();   // 缓存已加载的变体
-// ⚠️ 2026-10-17 修：`state` 在 4 处被用（multiVariantModules / selectedVariant）
-//    但**从未定义** → 进模块必炸 `Can't find variable: state`。
-//    补在这里，别再散着用。
-const state = {
-  multiVariantModules: new Set(),
-  selectedVariant: {},        // { [module]: 变体名 }
-  currentAddr: null,          // 当前进入模块的地址证据（measured/probed/manual/candidate）
-};
 
 // ---------- ① 连接 ----------
 $('btnDoctor').onclick = async () => {
@@ -1040,8 +766,8 @@ function guessModelFromVin(vin, year) {
     { code: '982', label: 'Boxster（982）' },
     { code: '987', label: 'Boxster（987）' },
     { code: '986', label: 'Boxster（986）' },
-    { code: '983', label: 'Cayman（981）' },
-    { code: '984', label: 'Cayman（982）' },
+    { code: '983', label: 'Cayman（983，待核对）' },
+    { code: '984', label: 'Cayman（984，待核对）' },
     { code: '98B', label: 'Cayman（981）' },
     { code: '98C', label: 'Cayman（982）' },
     { code: '98D', label: 'Cayman（987）' },
@@ -1724,21 +1450,33 @@ async function enterSystem(sys) {
       // 模拟模式：任何模块都能进，给个占位地址
       addr = { tx: 0x7E0, rx: 0x7E8, note: '模拟' };
     } else {
-      // 2026-10-22：未知 ecu 走 431 探测指令路径（替代手工输入）。
-      // 对候选 CAN 地址逐个发识别探针（KWP 1A9F / UDS 22F190），
-      // 有正响应的地址就是模块地址，保存后下次直接用。
+      // 未知地址：两阶段探测 → 人工确认 → 再持久化。
       const why = addr?.note ? `（${addr.note}）` : '';
-      log(`  ${sys.label} 地址未知${why}，启动 431 探测…`, 'info');
-      const probed = await probeAddressFor(sys.label, addr?.probeCmd, currentModel);
+      log(`  ${sys.label} 地址未知${why}，启动地址探测…`, 'info');
+      const probed = await probeAddressFor(sys.label, addr?.probeCmd);
+      let useProbe = false;
       if (probed) {
-        saveAddrOverride(sys.label, probed, currentModel);
-        addr = { ...probed, state: 'probed', note: '431 探测命中' };
-        log(`  ✅ ${sys.label} 探测到 0x${probed.tx.toString(16).toUpperCase()}/0x${probed.rx.toString(16).toUpperCase()}（已保存）`, 'ok');
-      } else {
-        // 探测失败 → 仍允许手工输入兜底
-        log(`  ❌ ${sys.label} 探测未命中${why}，可手工输入地址`, 'warn');
+        const txh = probed.tx.toString(16).toUpperCase();
+        const rxh = probed.rx.toString(16).toUpperCase();
+        // ⚠️ 探测只能证明「地址上有模块」，不能证明归属（除 DME 签名外没有可靠标识）。
+        //    必须人工确认后再保存，否则会把邻居 ECU 当成目标模块存下来。
+        useProbe = confirm(`在 0x${txh}/0x${rxh} 探测到应答`
+          + (probed.ident ? `（识别串「${probed.ident}」）` : '')
+          + `。\n\n确认这就是「${sys.label}」吗？\n`
+          + '点「取消」= 不保存，改为手工输入。');
+        if (useProbe) {
+          saveAddrOverride(sys.label, probed, currentModel);
+          addr = { ...probed, state: 'probed', note: '探测命中（人工确认）' };
+          log(`  ✅ ${sys.label} 探测到 0x${txh}/0x${rxh}（已确认并保存）`, 'ok');
+        } else {
+          log('  · 探测结果未采用', 'warn');
+        }
+      }
+      if (!useProbe) {
+        // 探测失败 / 用户不确认 → 手工输入兜底
+        log(`  ${sys.label} 未采用探测地址${why}，可手工输入`, 'warn');
         const raw = (typeof prompt === 'function')
-          ? prompt(`探测未找到「${sys.label}」的 CAN 地址${why}。\n\n`
+          ? prompt(`没有可用的「${sys.label}」CAN 地址${why}。\n\n`
             + '若已用「地址扫描」或参考设备查到 tx/rx，请输入一对地址（如 7E0/7E8）。\n'
             + '留空 = 取消。')
           : null;
@@ -1759,34 +1497,28 @@ async function enterSystem(sys) {
   // ⚠️ 候选地址（未实测）必须让用户知情（2026-10-17 审计 C2）：
   //    直接用未验证地址发请求，可能把别的 ECU 的数据当目标模块显示。
   if (addr.state === 'candidate') {
-    // 参考诊断仪 不在进模块时弹「地址未实测」；地址来自 参考诊断仪/标准顺序，进模块后用 1A9F/读块核验。
-    // 只在日志提示，不再阻塞用户（此前 confirm 让模拟模式也每次弹，且真车点取消就进不去）。
     log(`  ${sys.label} 地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()}（标准顺序；进模块后核验）`, 'info');
   }
-  coder.setAddress(addr.tx, addr.rx, sys.label);
-  // ★ 2026-10-28：进模块后做身份验证（对齐 431 的「识别→核对→不匹配拒绝」）。
-  //   此前不验证，探测存的错地址（IC→0x7E0=DME）会导致整条读写链路走错 ECU。
+  // ★ 2026-10-29 审计 P0-2：setAddress 内部已下发 ATSP/ATSH/ATCRA，必须 await。
+  //   此前只改属性，紧接着的 1A9F 还打在上一个模块/探测遗留地址上。
+  await coder.setAddress(addr.tx, addr.rx, sys.label);
+  // ★ 身份验证：读 1A9F 比对已知签名；通过后把地址证据提升为 verified（解锁写入）。
   {
-    // 先发 1A9F 读 DSN，跟已知模块签名比对
     let dsn = '';
     try {
       const r = await coder.uds('1A9F', 3000, { allowEmpty: true });
       const b = Array.from(r.body || []);
       const payload = b[0] === 0x5a ? b.slice(2) : b;
-      dsn = payload.filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim();
+      dsn = payload.filter((c) => c >= 0x20 && c < 0x7f)
+        .map((c) => String.fromCharCode(c)).join('').trim();
     } catch { /* 不致命 */ }
+
     if (dsn) {
-      // 已知模块签名（DSN 或零件号 → 模块名）。从实车日志 + 431 数据积累。
-      const KNOWN_SIGS = [
-        { sig: 'P200', module: 'DME/ECM' },       // DME 的 DSN（实车验证）
-        { sig: '98161864015', module: 'DME/ECM' }, // DME 的零件号（实车验证）
-      ];
-      const hit = KNOWN_SIGS.find((s) => dsn.includes(s.sig));
-      if (hit && !sys.label.toUpperCase().includes(hit.module.split('/')[1])
-          && !sys.label.includes('DME') && !sys.label.includes('发动机')) {
-        log(`  ❌ 身份不匹配：「${sys.label}」在 0x${addr.tx.toString(16).toUpperCase()} 识别到 ${hit.module} 的签名「${dsn}」`, 'err');
-        log(`  清除该模块的错误地址覆盖，建议重新探测或跑地址扫描`, 'warn');
-        // 清除 stale override
+      const isDme = /P200|98161864015/.test(dsn);
+      const targetIsDme = /DME|ECM|发动机/i.test(sys.label);
+      if (isDme && !targetIsDme) {
+        log(`  ❌ 身份不匹配：「${sys.label}」在 0x${addr.tx.toString(16).toUpperCase()} 识别到 DME 的签名「${dsn}」`, 'err');
+        // 清掉这条错误地址覆盖
         try {
           const all = loadAddrOverrides();
           const k1 = addrKey(sys.label, currentModel), k2 = sys.label;
@@ -1794,29 +1526,30 @@ async function enterSystem(sys) {
           if (all[k2]) delete all[k2];
           localStorage.setItem('porsche-addr-overrides', JSON.stringify(all));
         } catch {}
-        // 清完 override 后自动重探测，不用用户手动再进
-        log(`  🔄 自动重新探测 ${sys.label} 的正确地址…`, 'info');
-        const reprobed = await probeAddressFor(sys.label, null, currentModel);
-        if (reprobed && (reprobed.tx !== addr.tx)) {
+        log(`  🔄 重新探测 ${sys.label}…`, 'info');
+        const reprobed = await probeAddressFor(sys.label, null);
+        const okRe = !!(reprobed && reprobed.tx !== addr.tx
+          && confirm(`重新探测到 0x${reprobed.tx.toString(16).toUpperCase()}/0x${reprobed.rx.toString(16).toUpperCase()}`
+            + (reprobed.ident ? `（「${reprobed.ident}」）` : '')
+            + `。\n\n确认这是「${sys.label}」吗？`));
+        if (okRe) {
           saveAddrOverride(sys.label, reprobed, currentModel);
-          log(`  ✅ 重探测到 0x${reprobed.tx.toString(16).toUpperCase()}/0x${reprobed.rx.toString(16).toUpperCase()}，继续进入`, 'ok');
-          addr = { ...reprobed, state: 'probed', note: '身份验证后重探测' };
-          coder.setAddress(addr.tx, addr.rx, sys.label);
-          // 重识别
-          dsn = '';
-          try {
-            const r2 = await coder.uds('1A9F', 3000, { allowEmpty: true });
-            const b2 = Array.from(r2.body || []);
-            const p2 = b2[0] === 0x5a ? b2.slice(2) : b2;
-            dsn = p2.filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim();
-          } catch {}
+          addr = { ...reprobed, state: 'probed', note: '身份验证后重探测（人工确认）' };
+          state.currentAddr = addr;
+          await coder.setAddress(addr.tx, addr.rx, sys.label);
+          log(`  ✅ 改用 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()}，继续进入`, 'ok');
         } else {
           hideLoading();
-          toast('err', `${sys.label} 身份不匹配且重探测失败`,
-            `请跑「地址扫描」实测该模块的 tx/rx`);
+          toast('err', `${sys.label} 身份不匹配且未能确认新地址`,
+            '请跑「地址扫描」实测该模块的 tx/rx，或确认该模块是否在车上');
           return false;
         }
+      } else {
+        log(`  ✅ 身份核验通过（识别串「${dsn.slice(0, 24)}」）`, 'ok');
+        state.currentAddr = { ...addr, state: 'verified', note: '身份验证通过' };
       }
+    } else {
+      log(`  · 该模块未返回 1A9F，地址证据保持 ${addr.state || 'candidate'}（写入前会再确认）`, 'warn');
     }
   }
   // ⚠️ 换模块必须重选 seed/key 变体（2026-10-17 审计 D1）：
@@ -2009,8 +1742,7 @@ async function enterSystem(sys) {
           const hint = `「${mod}」变体未自动识别（识别串="${coder.lastIdent||'空'}"）。
 
 可选变体：
-${variantNames.map((n,i)=>`${i+1}. ${n}`).join('
-')}
+${variantNames.map((n,i)=>`${i+1}. ${n}`).join('\n')}
 
 输入序号或变体名确认（留空=保持只读）：`;
           const raw = prompt(hint, '');
@@ -2534,13 +2266,26 @@ function showParam(p) {
   $('secParam').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+/**
+ * 动作前的地址证据门禁。
+ *
+ * 放行：measured（实测）/ probed（探测+人工确认）/ manual（手工）/ verified（身份核验通过）
+ * 候选地址：弹确认——用户明确知道风险后可继续（不能硬拒，否则 129 个模块永远写不了）
+ * 未知地址：直接拒
+ */
 function addrSafeForAction() {
   const st = state.currentAddr?.state;
-  if (st && !['measured', 'probed', 'manual'].includes(st)) {
-    toast('err', '拒绝执行', `当前地址是 ${st}（未实测）；例程/特殊功能可能真的动作，先探测或手工确认 tx/rx`);
-    return false;
+  if (!st) return true;
+  if (['measured', 'probed', 'manual', 'verified'].includes(st)) return true;
+  if (st === 'candidate' || st === 'probed-unverified') {
+    const a = state.currentAddr;
+    const at = a?.tx != null ? `0x${a.tx.toString(16).toUpperCase()}/0x${a.rx.toString(16).toUpperCase()}` : '未定';
+    return confirm(`当前地址 ${at} 是「${st}」（未实测确认）。\n\n`
+      + '写入/例程会真的动作，可能作用到相邻 ECU。\n'
+      + '确认地址正确后再继续。\n\n点「确定」= 我已确认地址正确，继续');
   }
-  return true;
+  toast('err', '拒绝执行', `当前地址状态是 ${st}（未知）；先跑地址扫描或手工指定 tx/rx`);
+  return false;
 }
 
 async function doWrite(p, v) {

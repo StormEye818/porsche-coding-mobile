@@ -207,7 +207,7 @@ console.log('\n[7] 回读不一致 → 触发恢复，且错误要说清');
   const origWrite = Object.getOwnPropertyNames(MockAdapter.prototype);
   ecu.hooks.uds = (cmd) => {
     const c = cmd.replace(/\s+/g, '').toUpperCase();
-    if (c.startsWith('3B21') && !tampered) { tampered = true; return '7E8 02 7B 21'; }  // 假称成功
+    if (c.startsWith('3B21') && !tampered) { tampered = true; return '7E8 7B 21'; }  // 假称成功（CAF1：纯数据，无 PCI）
     return undefined;
   };
   const { coder } = await link(ecu);

@@ -1,7 +1,7 @@
-// ECU 号 → CAN 地址映射（431 数据驱址）
+// ECU 号 → CAN 地址映射（数据驱址）
 // 2026-10-22：消歧规则 6/6 锚点验证通过（attr/proto/idx）
 // 来源优先级：RE proven > 标准 OBD-II > ECU_ADDR 实测
-// 剩余 ecu 号在 enterSystem 时走 431 探测指令
+// 剩余 ecu 号在 enterSystem 时走 参考诊断仪 探测指令
 
 export const ECU_NUM_TO_ADDR = {
   1: { tx: '0x7E0', rx: '0x7E8' },
@@ -15,18 +15,18 @@ export const ECU_NUM_TO_ADDR = {
   18: { tx: '0x7CF', rx: '0x7D7' },
   19: { tx: '0x7D0', rx: '0x7D8' },
   32: { tx: '0x7D1', rx: '0x7D9' },
-  34: { tx: '0X7D0', rx: '0X7D8' },
+  34: { tx: '0x7D0', rx: '0x7D8' },
   35: { tx: '0x74F', rx: '0x757' },
-  47: { tx: '0X719', rx: '0X721' },
-  48: { tx: '0X71A', rx: '0X722' },
+  47: { tx: '0x719', rx: '0x721' },
+  48: { tx: '0x71A', rx: '0x722' },
   55: { tx: '0x7E7', rx: '0x7EF' },
-  69: { tx: '0X730', rx: '0X738' },
-  72: { tx: '0X7E5', rx: '0X7ED' },
-  74: { tx: '0X7E2', rx: '0X7EA' },
-  76: { tx: '0X7D9', rx: '0X7E1' },
-  78: { tx: '0X7DA', rx: '0X7E2' },
-  81: { tx: '0X76D', rx: '0X775' },
-  88: { tx: '0X719', rx: '0X721' },
+  69: { tx: '0x730', rx: '0x738' },
+  72: { tx: '0x7E5', rx: '0x7ED' },
+  74: { tx: '0x7E2', rx: '0x7EA' },
+  76: { tx: '0x7D9', rx: '0x7E1' },
+  78: { tx: '0x7DA', rx: '0x7E2' },
+  81: { tx: '0x76D', rx: '0x775' },
+  88: { tx: '0x719', rx: '0x721' },
 };
 
 export const LABEL_TO_ECU_NUM = {

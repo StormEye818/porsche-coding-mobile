@@ -87,6 +87,10 @@ export class CodingError extends Error {
     super(nrc != null ? `${msg}（NRC 0x${nrc.toString(16)} ${NRC[nrc] || '未知'}）` : msg);
     this.name = 'CodingError';
     this.nrc = nrc;
+    // ★ 2026-10-29 审计：CodingError 一直只有 .nrc，但 readBlock 的 SID 回退
+    //   写的是 `e.code === 0x12` —— 条件永远不成立，回退从未生效。
+    //   两个名字都留着，避免再踩。
+    this.code = nrc;
   }
 }
 
@@ -211,6 +215,54 @@ export function parseResp(hexStr, reqEcho = '') {
   return { kind: 'ok', body };
 }
 
+/**
+ * CAF1 应答解析 —— 适配器已自动加/剥 PCI 并自行重组多帧，输出是**纯数据**。
+ *
+ * ⚠️ 不能复用 parseResp 的 ISO-TP 分派（2026-10-29 审计 P0-1）：
+ *    ATCAF1 后数据行首字节可能正好是 0x10/0x20/0x30，会被误判成首帧/
+ *    连续帧/流控 —— 连续帧因「无首帧」被整行丢弃，首帧则算错长度。
+ *    27 字节实测只解析出 5 字节。这里按原样拼接，只保留 NRC 判定。
+ */
+export function parseRespCaf1(hexStr, reqEcho = '') {
+  const raw = String(hexStr || '');
+  // 适配器明确报错 = 数据不完整。CAF1 下没有 PCI 长度可核对，
+  // 只能靠这些状态字兜底，绝不能把半截块当成功交给上层（会被写回 ECU）。
+  if (/STOPPED|BUFFER FULL|UNABLE TO CONNECT|\bERROR\b/i.test(raw)) {
+    return {
+      kind: 'truncated', body: [], expected: 0, received: 0,
+      reason: raw.trim().slice(0, 60),
+    };
+  }
+  const cleaned = raw
+    .replace(/searching\.*/gi, ' ')
+    .replace(/\b(AT|ST|OK|RV)\b/gi, ' ')
+    .replace(/[>]/g, ' ');
+  const lines = cleaned.split(/[\r\n]+/).filter((l) => l.trim());
+  const body = [];
+  for (const ln of lines) {
+    const bare = ln.replace(/[^0-9A-Fa-f]/g, '');
+    if (bare && bare === reqEcho) continue;          // 回显行
+    const rawToks = ln.trim().split(/\s+/).filter((x) => /^[0-9A-Fa-f]+$/.test(x));
+    if (!rawToks.length) continue;
+    for (const t of rawToks) {
+      if (t.length === 2) { body.push(parseInt(t, 16)); continue; }
+      // 独立 CAN ID（11bit=3hex / 29bit=8hex）：不是载荷
+      if (t.length === 3 || t.length === 8) continue;
+      // 无空格连写（ATS0）：剥掉前缀 ID 再按字节切
+      let rest = t, idLen = 0;
+      if ((t.length - 8) % 2 === 0 && (t.length - 8) >= 2) idLen = 8;
+      else if ((t.length - 3) % 2 === 0 && (t.length - 3) >= 2) idLen = 3;
+      if (idLen) rest = t.slice(idLen);
+      for (let i = 0; i + 1 < rest.length; i += 2) body.push(parseInt(rest.substr(i, 2), 16));
+    }
+  }
+  if (!body.length) return { kind: 'empty', body };
+  if (body[0] === 0x7f) {
+    return { kind: 'nrc', body, service: body[1], code: body[2] };
+  }
+  return { kind: 'ok', body };
+}
+
 export class Coder {
   /**
    * @param {Elm327} elm   已锁定协议的 ELM327
@@ -291,9 +343,12 @@ export class Coder {
     this.lastIdent = '';
     const identParts = [];
     // 参考诊断仪 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
-    // ★ 2026-10-28：全套 1A xx 识别（对齐 431 ODX 识别链）。
+    // ★ 2026-10-28：全套 1A xx 识别（对齐 参考诊断仪 ODX 识别链）。
     //   此前只读 9F(DSN)+94(软件号)，识别串太短匹配不上变体名。
-    //   431 用 9F/87/84/91/92/93/95/97/9A 全套识别做变体匹配。
+    //   参考诊断仪 用 9F/87/84/91/92/93/95/97/9A 全套识别做变体匹配。
+    // 连续 3 条没有任何数据就提前收手：老 ECU 只支持 9F/94，
+    // 挨个等 3s 超时会把「进模块」拖到 30 秒（2026-10-29 审计 P2-4）。
+    let identMiss = 0;
     for (const cmd of ['1A9F', '1A87', '1A84', '1A94', '1A95', '1A91', '1A92', '1A93', '1A97', '1A9A']) {
       try {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
@@ -303,12 +358,22 @@ export class Coder {
           .map((c) => String.fromCharCode(c)).join('').trim();
         this._say(`  识别 ${cmd} → ${id.body.map((x) => x.toString(16).padStart(2, '0')).join(' ')}`
           + (txt ? `  「${txt}」` : ''));
-        if (txt) identParts.push(txt);   // 9F/94 的 ASCII 都留着给 autoPickVariant 匹配
+        if (txt) { identParts.push(txt); identMiss = 0; } else { identMiss++; }
       } catch (e) {
+        identMiss++;
         this._say(`  (识别 ${cmd}：${e.message})`);
+      }
+      if (identMiss >= 3) {
+        this._say('  (连续 3 条识别无数据，提前结束识别)');
+        break;
       }
     }
     this.lastIdent = identParts.join(' ').trim();
+    // ★ 2026-10-29 审计 P1-3：这一轮读的全是 1A（KWP 识别服务），
+    //   记下来供例程/特殊功能判断 KWP(21/1A) 还是 UDS(22)。
+    //   此前只靠 readBlock 赋值，进模块后直接点例程时 lastReadSid 仍是 null，
+    //   KWP 模块会被发成 27 09（应为 17 00）→ NRC。
+    if (identParts.length) this.lastReadSid = 0x1A;
     // ④ 目标会话 —— **硬要求**，失败才报错
     await this.uds(`10${session.toString(16).toUpperCase().padStart(2, '0')}`);
     this._say(`  ✅ 会话 10 ${session.toString(16)} 就绪`);
@@ -319,7 +384,16 @@ export class Coder {
    * 切换到某个 ECU 的物理地址。
    * ⚠️ 每个 ECU 的 tx/rx 不同 —— 硬编码一个地址读所有模块是读不到的（实车教训）。
    */
-  setAddress(tx, rx, name = '') {
+  /**
+   * 设定物理寻址并**立即下发** AT 命令。
+   *
+   * ⚠️ 2026-10-29 审计 P0-2：此前只改 this.tx/rx/protocol 三个属性，
+   *    真正发 ATSP/ATSH/ATCRA 的是 address()。调用方 setAddress 后直接发
+   *    uds()，请求其实还打在**上一个模块/探测遗留地址**上 —— 身份验证因此
+   *    永远读到别的 ECU，误判后还会清掉正确地址。
+   *    现在 setAddress 内部就把寻址落实，调用方必须 await。
+   */
+  async setAddress(tx, rx, name = '') {
     this.tx = tx;
     this.rx = rx;
     // 29-bit 必须切 ATSP7；否则仍按 11-bit/500k 发帧。
@@ -327,6 +401,7 @@ export class Coder {
     this.lastReadSid = null;   // 换模块后不能沿用上一个模块的读服务
     if (name) this.ecuName = name;
     this._say(`  寻址 → ${name || 'ECU'}  tx=0x${tx.toString(16)} rx=0x${rx.toString(16)}`);
+    await this.address();
   }
 
   /**
@@ -342,7 +417,7 @@ export class Coder {
     // 调试：原始收发都记下来
     this._trace(`  >> ${payloadHex}`);
     this._trace(`  << ${raw || '(空)'}`);
-    const p = parseResp(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''));
+    const p = parseRespCaf1(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''));
     if (p.kind === 'nrc') {
       throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒（NRC 0x${(p.code||0).toString(16)}）`, p.code);
     }
@@ -382,7 +457,7 @@ export class Coder {
    */
   async readBlock(id, readSid = 0x21) {
     // ★ 2026-10-28：SID 自动回退 —— UDS 22 被 NRC 0x12 拒时重试 KWP 21，反之亦然。
-    //   431 的模块协议族各异（IC 可能是 UDS 也可能是 KWP），参数表写死的 SID
+    //   参考模块协议族各异（IC 可能是 UDS 也可能是 KWP），参数表写死的 SID
     //   不一定对。被拒时换 SID 重试一次，比让用户改参数表友好。
     try {
       return await this._readBlockImpl(id, readSid);

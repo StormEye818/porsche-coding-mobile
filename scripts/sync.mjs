@@ -69,6 +69,17 @@ if (!process.argv.includes('--refill')) {
   const kb = (fs.statSync(path.join(WWW, 'app.bundle.js')).size / 1024).toFixed(0);
   console.log(`[sync] www/app.bundle.js  ${kb}KB`);
 
+  // ★ 入口页必须从仓库根的 index.html 拷过来（2026-10-29 审计 P0-4）：
+  //   此前 www/ 整目录被 .gitignore 排除，而 index.html 是手写源文件 ——
+  //   仓库里一个 index.html 都没有，新 clone 直接构建不出可运行的 app。
+  //   现在源头在根目录（受版本控制），www/ 只放产物。
+  const INDEX_SRC = path.join(MOBILE, 'index.html');
+  if (!fs.existsSync(INDEX_SRC)) {
+    throw new Error('缺少 index.html（仓库根）—— 入口页是源文件，不能被忽略');
+  }
+  fs.copyFileSync(INDEX_SRC, path.join(WWW, 'index.html'));
+  console.log('[sync] www/index.html  ← index.html');
+
   // ★ data/ → www/data/ 必须每次同步。
   //   早先靠手动 cp，改了 data/ 忘了同步就发旧数据（2026-10-12 实测踩过：
   //   清洗了 data/measure.json 的内部格式描述，www/data/ 里还是旧的，差点打包出去去）。

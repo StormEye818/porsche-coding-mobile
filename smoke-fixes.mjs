@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { Elm327 } from './src/elm327.js';
-import { Coder, parseResp, CodingError } from './src/coder.js';
+import { Coder, parseResp, parseRespCaf1, CodingError } from './src/coder.js';
 import { resolveKey, resolveKeyByName, makeResolverProvider } from './src/seedkey-resolver.js';
 import { computeVariantKey, INLINE_OTHER_PENDING } from './src/seedkey-registry.js';
 import { pswCalc } from './src/seedkey-pswcalc.js';
@@ -15,6 +15,7 @@ import { LinkDoctor, scanEcuAddresses } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
 import { autoPickVariant } from './src/variant.js';
 import { specialFunctionsFor } from './src/special-catalog.js';
+import { MockAdapter } from './src/mock-adapter.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => {
@@ -632,8 +633,10 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
     c.elm.cmd = async () => resp;   // 固定应答
     return c;
   };
-  // 单帧 `04 67 09 12 34` → body=[67 09 12 34] → seed=[12 34]（非零）
-  const SEED_SF = '04 67 09 12 34';
+  // 真车 ATCAF1：适配器已剥 PCI，应答就是纯数据 `67 09 12 34`（seed=[12 34]，非零）。
+  // ⚠️ 2026-10-29：此前写成 `04 67 09 12 34`（CAF0 带 PCI），测的是旧解析口径，
+  //    与真车不符 —— 换 CAF1 后 body[0] 会变成 0x04，直接误报「响应异常」。
+  const SEED_SF = '67 09 12 34';
 
   // ① 无 case mode（0x83，DRIVELINKS 里 29 条）：必须拒写，且**一条 key 都不许发**
   {
@@ -1052,7 +1055,8 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
         if (t.startsWith('ATSH')) { cur = t.slice(4); return 'OK'; }
         if (t.startsWith('ATCRA')) return 'OK';
         if (t === '1A9F' && (cur === '7CF' || cur === '74F')) {
-          return `${cur === '7CF' ? '7D7' : '757'} 03 5A 9F 01`;
+          // 真车 ATCAF1：只有 CAN ID + 纯数据，没有 `03` 这个 PCI 长度字节
+          return `${cur === '7CF' ? '7D7' : '757'} 5A 9F 01`;
         }
         return '';
       },
@@ -1273,6 +1277,141 @@ console.log('\n[19] 特殊功能显示守卫');
   ok('addrFor 走 ecuAddrFromTable', app.includes('ecuAddrFromTable'));
   // ⑥ RE 表在 loadAll 预取（不在 enterSystem 懒加载导致首点失败）
   ok('ecu-addresses.json 在 loadAll 预取', /loadAll[\s\S]*ecu-addresses\.json/.test(app));
+}
+
+
+// ===== 20. 真车链路回归（ATCAF1 / 寻址 / 协议分派 / 门禁） =====
+console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
+{
+  // ① CAF1：多行纯数据，首字节故意落在 0x10/0x20/0x30（旧解析器的三个坑）
+  const rows = [
+    '7E8 59 0A 01 02 03 04 05',
+    '7E8 20 21 22 23 24 25 26',
+    '7E8 10 11 12 13 14 15 16',
+    '7E8 30 31 32 33 34 35 36',
+  ].join('\r');
+  const p1 = parseRespCaf1(rows);
+  ok('CAF1：28 字节纯数据完整拼接（4 行 × 7）', p1.kind === 'ok' && p1.body.length === 28,
+     `kind=${p1.kind} len=${p1.body.length}`);
+  ok('CAF1：0x20 开头的行没被当连续帧丢弃', p1.body[7] === 0x20 && p1.body[8] === 0x21);
+  ok('CAF1：0x10 开头的行没被当首帧截断', p1.body[14] === 0x10);
+  ok('CAF1：0x30 开头的行没被当流控跳过', p1.body[21] === 0x30);
+  const p0 = parseResp(rows);
+  ok('CAF0 解析器对纯数据会错（两套口径不能混用）',
+     p0.kind !== 'ok' || p0.body.length !== 28, `kind=${p0.kind} len=${p0.body.length}`);
+  ok('CAF1：7F 判 NRC', parseRespCaf1('7E8 7F 22 12').kind === 'nrc');
+  ok('CAF1：空应答', parseRespCaf1('').kind === 'empty');
+  ok('CAF1：STOPPED 判截断', parseRespCaf1('7E8 59 0A\rSTOPPED').kind === 'truncated');
+
+  // ② mock 按真车输出：32 字节块必须完整读回
+  {
+    const port = new MockAdapter({ latencyMs: 1 });
+    const elm = new Elm327(port, { timeoutMs: 400 });
+    const c = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, verbose: false });
+    await c.setAddress(0x7E0, 0x7E8);
+    const blk = await c.readBlock(0x46, 0x21);   // KWP LID 是 1 字节
+    ok('mock CAF1：32 字节编码块完整读回', blk.length === 32, `${blk.length}B`);
+  }
+
+  // ③ setAddress 必须真的下发 AT 命令（P0-2 的根因）
+  {
+    const port = new MockAdapter({ latencyMs: 1 });
+    const elm = new Elm327(port, { timeoutMs: 400 });
+    const c = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, verbose: false });
+    await c.setAddress(0x7E4, 0x7EC);
+    const sent = port.txLog.join('|');
+    ok('setAddress 立即下发 ATSP', /\|?ATSP6/.test(sent), sent.slice(-60));
+    ok('setAddress 立即下发 ATSH7E4', /ATSH7E4/.test(sent));
+    ok('setAddress 立即下发 ATCRA7EC', /ATCRA7EC/.test(sent));
+    const r = await c.uds('1A9F', 800);
+    ok('换址后请求落在新地址（mock 记录 tx）',
+       port.address.tx === 0x7E4 && r.body[0] === 0x5a);
+  }
+
+  // ④ 严格拓扑：真车只有装了的 ECU 才应答；协议族不匹配回 NRC 0x11
+  {
+    const topo = new MockAdapter({
+      latencyMs: 1, strictAddress: true, caf: 1,
+      ecus: {
+        0x7E0: { name: 'DME', dsn: 'P200', kwp: false },
+        0x7E4: { name: 'IC', dsn: 'KOMBI981', kwp: true },
+      },
+    });
+    const elm = new Elm327(topo, { timeoutMs: 400 });
+    const c = new Coder(elm, { tx: 0x7E4, rx: 0x7EC, verbose: false });
+    await c.setAddress(0x7E4, 0x7EC);
+    const r = await c.uds('1A9F', 800);
+    const txt = String.fromCharCode(...r.body.slice(2));
+    ok('严格拓扑：0x7E4 回 IC 自己的 DSN', txt.includes('KOMBI981'), txt);
+    let nrc = null;
+    try { await c.uds('22F190', 800); } catch (e) { nrc = e.nrc; }
+    ok('KWP 模块收到 22 → NRC 0x11', nrc === 0x11, String(nrc));
+
+    const c2 = new Coder(elm, { tx: 0x7E1, rx: 0x7E9, verbose: false });
+    await c2.setAddress(0x7E1, 0x7E9);
+    let msg = '';
+    try { await c2.uds('1A9F', 300); } catch (e) { msg = e.message; }
+    ok('拓扑外的地址 → 无应答', /无应答/.test(msg), msg.slice(0, 30));
+
+    const c3 = new Coder(elm, { tx: 0x7E4, rx: 0x7EC, verbose: false });
+    await c3.setAddress(0x7E4, 0x7EC);
+    await c3.enterSession(0x89);
+    ok('enterSession 后 lastReadSid=0x1A（KWP 判定有依据）', c3.lastReadSid === 0x1A);
+  }
+
+  // ④b SID 回退必须真的生效（CodingError.code 之前是 undefined）
+  {
+    const seen = [];
+    const port = new MockAdapter({
+      latencyMs: 1, caf: 1,
+      hooks: {
+        uds: (cmd) => {
+          const t = String(cmd).toUpperCase();
+          seen.push(t);
+          if (t.startsWith('22')) return '7E8 7F 22 12';     // 子功能不支持
+          if (t.startsWith('21')) return '7E8 61 46 01 02 03'; // KWP 正响应（21→61，含 LID）
+          return undefined;
+        },
+      },
+    });
+    const elm = new Elm327(port, { timeoutMs: 400 });
+    const c = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, verbose: false });
+    await c.setAddress(0x7E0, 0x7E8);
+    const data = await c.readBlock(0x46, 0x22);
+    ok('NRC 0x12 时自动回退 22→21', data.length === 3 && seen.includes('2146'),
+       `${data.length}B / ${seen.filter((x) => /^2[12]/.test(x)).join(',')}`);
+    ok('回退后记录 lastReadSid=0x21', c.lastReadSid === 0x21, String(c.lastReadSid));
+  }
+
+  // ⑤ 源码级断言：本轮修复的硬约束
+  const app = readFileSync('./src/app.js', 'utf8');
+  ok('地址门禁放行 verified', /\['measured', 'probed', 'manual', 'verified'\]/.test(app));
+  ok('candidate 走 confirm 而不是硬拒',
+     /st === 'candidate'[\s\S]{0,400}return confirm/.test(app));
+  ok('身份验证通过后提升 verified',
+     /state\.currentAddr = \{ \.\.\.addr, state: 'verified'/.test(app));
+  ok('探测命中先 confirm 再 saveAddrOverride',
+     /const probed = await probeAddressFor[\s\S]{0,500}confirm[\s\S]{0,300}saveAddrOverride/.test(app));
+  ok('探测两阶段 + 可取消', /probeAbort/.test(app) && /深层|深度扫描/.test(app));
+  ok('探测挡掉 rx 溢出', /rx > 0x7FF/.test(app));
+  ok('无 431 字样（UI 与源码）', !app.includes('431'));
+
+  const coderSrc = readFileSync('./src/coder.js', 'utf8');
+  ok('setAddress 内部 await address()',
+     /async setAddress\(tx, rx, name = ''\)[\s\S]{0,400}await this\.address\(\)/.test(coderSrc));
+  ok('识别循环连续 3 条无数据提前结束', /identMiss >= 3/.test(coderSrc));
+  ok('coder 无 431 字样', !coderSrc.includes('431'));
+
+  const ld = readFileSync('./src/link-doctor.js', 'utf8');
+  ok('L5 用 CAF1 解析', ld.includes('parseRespCaf1'));
+  ok('L5 不再把任意 ok 当 alive', !/kind === 'ok' && body\.length\) \{\s*row\.alive/.test(ld));
+
+  // ⑥ 入口文件必须入库（P0-4）
+  const idx = readFileSync('./index.html', 'utf8');
+  ok('仓库根 index.html 存在且含安全区',
+     idx.includes('id="safeTop"') && idx.includes('env(safe-area-inset-top'));
+  const sync = readFileSync('./scripts/sync.mjs', 'utf8');
+  ok('sync 从根 index.html 拷贝入口', /copyFileSync\(INDEX_SRC/.test(sync));
 }
 
 console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed =====');

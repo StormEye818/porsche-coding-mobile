@@ -22,19 +22,19 @@
 
 import { MfiPort } from './mfi-port.js';
 import { Elm327 } from './elm327.js';
-import { parseResp } from './coder.js';
+import { parseRespCaf1 } from './coder.js';
 
-// 保时捷 981 已知地址 —— 6 条 proven（431 锚点验证，见 ECU-ADDRESSING-20261019.md §2）
+// 保时捷 981 已知地址 —— 6 条 proven（参考诊断仪 锚点验证，见 ECU-ADDRESSING-20261019.md §2）
 export const KNOWN_ADDRS = [
   { name: 'Gateway 网关', tx: 0x710, rx: 0x77A, note: '实测 710/77A，rx≠tx+8' },
   { name: 'DME 发动机',   tx: 0x7E0, rx: 0x7E8, note: '实测 7E0/7E8' },
-  { name: 'PDC 驻车',     tx: 0x7CF, rx: 0x7D7, note: '431 proven' },
-  { name: 'PASM 悬架',    tx: 0x7D0, rx: 0x7D8, note: '431 proven' },
-  { name: '前端电子',     tx: 0x7D1, rx: 0x7D9, note: '431 proven BCM_vorne' },
-  { name: '后端电子',     tx: 0x74F, rx: 0x757, note: '431 proven BCM_hinten' },
+  { name: 'PDC 驻车',     tx: 0x7CF, rx: 0x7D7, note: '参考诊断仪 proven' },
+  { name: 'PASM 悬架',    tx: 0x7D0, rx: 0x7D8, note: '参考诊断仪 proven' },
+  { name: '前端电子',     tx: 0x7D1, rx: 0x7D9, note: '参考诊断仪 proven BCM_vorne' },
+  { name: '后端电子',     tx: 0x74F, rx: 0x757, note: '参考诊断仪 proven BCM_hinten' },
 ];
 
-// 识别探针：KWP + UDS 双栈（431 主力是 UDS 22，GAG 2050 条 vs KWP 1A 只 55 条）
+// 识别探针：KWP + UDS 双栈（参考诊断仪 主力是 UDS 22，GAG 2050 条 vs KWP 1A 只 55 条）
 // 判定放宽：正响应 OR 负响应(7F) 都算「模块在」—— 7F=模块活着但不支持该服务
 export const KWP_PROBES = [
   { hex: '1A9F', label: 'DSN',         positive: '5A9F' },
@@ -182,7 +182,13 @@ export class LinkDoctor {
     return null;
   }
 
-  /** L5 —— 模块可达（KWP 1A9F 读 DSN） */
+  /**
+   * L5 —— 模块可达（KWP 1A9F / UDS 22F190 读 DSN）。
+   *
+   * @deprecated 2026-10-22 起不再从 run() 调用：自检只做 L1–L4，
+   *   模块触达移到 enterSystem（地址查表 + 按需探测）。
+   *   保留此方法仅供手动排查；新代码不要依赖它。
+   */
   async probeModules() {
     const found = [];
     const allProbes = [...KWP_PROBES, ...UDS_PROBES];
@@ -198,23 +204,18 @@ export class LinkDoctor {
         // ⚠️ ATS0（无空格）时应答是 `7E8035A9F…` 连写 —— 必须先剥 CAN ID 再判前缀，
         //    否则 startsWith('5A9F') 永远不命中 → 误报「无 KWP 应答」（2026-10-17 实车日志）
         // 用 parseResp 统一剥 CAN ID + ISO-TP PCI（ATS0/ATS1 两种格式都认）
-        const p2 = parseResp(r);
+        const p2 = parseRespCaf1(r);
         const body = Array.from(p2.body || [])
           .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-        // 正响应 → 记录识别信息
+        // 正响应才记录识别信息
         if (body.startsWith(pr.positive)) {
           row.idents[pr.label] = body.slice(0, 48);
           row.alive = true;
-        }
-        // ⚠️ 负响应 7F 也算「模块在」（2026-10-22 对齐 431）：
-        //    7F <SID> <NRC> = 模块活着但不支持该服务（如 Gateway 不支持 KWP 1A），
-        //    此前只认正响应导致 Gateway/PDC/PASM 等全误报「无应答」。
-        if (p2.kind === 'nrc' || body.startsWith('7F')) {
-          row.alive = true;
-        }
-        // parseResp 的 kind 非 empty 也说明有字节回来
-        if (p2.kind === 'ok' && body.length) {
-          row.alive = true;
+        } else if (p2.kind === 'nrc' || body.startsWith('7F')) {
+          // 7F 只能说明「地址上有模块」，不能算识别成功。
+          // 2026-10-29 审计 P1-5：此前 7F 与任意 ok 字节都置 alive，
+          // 任何噪声都会让 L5 全绿，模块可达判定形同虚设。
+          row.nrcOnly = (row.nrcOnly || 0) + 1;
         }
       }
       const n = Object.keys(row.idents).length;
@@ -223,11 +224,10 @@ export class LinkDoctor {
         this._ok('L5', `模块 ${a.name}`,
           `${a.tx.toString(16).toUpperCase()}/${a.rx.toString(16).toUpperCase()} → ` +
           Object.entries(row.idents).map(([k, v]) => `${k}=${v}`).join('  '));
-      } else if (row.alive) {
-        // 模块活着但没采到识别信息（全 NRC）—— 不算失败
-        found.push(row);
+      } else if (row.nrcOnly) {
+        // 模块活着但只回 NRC——不算「可达」，也不能当识别成功
         this._ok('L5', `模块 ${a.name}`,
-          `${a.tx.toString(16).toUpperCase()}/${a.rx.toString(16).toUpperCase()} → 有应答（NRC），无识别数据`);
+          `${a.tx.toString(16).toUpperCase()}/${a.rx.toString(16).toUpperCase()} → 有应答但只回 NRC（${row.nrcOnly} 条），无识别数据`);
       } else {
         this._fail('L5', `模块 ${a.name}`, '无应答',
           '该模块不在诊断 CAN 上（五条主 CAN 在网关后面），或地址需调整。');
@@ -302,7 +302,7 @@ export async function scanEcuAddresses(elm, onLog = () => {}) {
       try { r = (await elm.cmd('1A9F', 3000) || '').trim(); } catch (e) { continue; }
       if (!r) continue;
       // 用 parseResp 统一剥 CAN ID + ISO-TP PCI（ATS0/ATS1 都认，见审计 A2）
-      const pr = parseResp(r);
+      const pr = parseRespCaf1(r);
       const body = Array.from(pr.body || []).map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
       if (body.startsWith('5A') && !/NO DATA|ERROR|STOPPED|UNABLE/i.test(r)) {
         // 同一 tx 可能被多个 rx 偏移命中（测试/网关回显）；只保留第一条。

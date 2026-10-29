@@ -45,6 +45,13 @@ export class MockAdapter extends Emitter {
     this.txLog = [];
     this.at = { echo: false, headers: true, protocol: 6 };
     this.address = { tx: 0x7E0, rx: 0x7E8 };
+    // ★ 2026-10-29：默认按真车行为（ATCAF1：适配器自动加/剥 PCI）。
+    //   caf=0 保留旧的「带 PCI」输出，供 parseResp(CAF0) 的回归用。
+    this.caf = opts.caf ?? 1;
+    // 严格地址拓扑：给了 ecus 就只回应表里的 tx（真车上不存在的地址就是 NO DATA）。
+    //   ecus = { 0x7E0: { name:'DME', dsn:'P200', kwp:false }, ... }
+    this.strictAddress = !!opts.strictAddress;
+    this.ecus = opts.ecus || null;
     this.name = 'vLinker MS (模拟)';
   }
 
@@ -99,6 +106,26 @@ export class MockAdapter extends Emitter {
     for (let i = 0; i < clean.length; i += 2) bytes.push(parseInt(clean.substr(i, 2), 16));
     if (!bytes.length) return 'NO DATA';
     const sid = bytes[0];
+
+    // ── 地址拓扑（真车只有装了的 ECU 才应答）──
+    const ecu = this.ecus ? this.ecus[this.address.tx] : null;
+    if (this.ecus && this.strictAddress && !ecu) return '';   // 这个 tx 上没有模块
+    if (ecu) {
+      // 协议族不匹配 → 服务不支持（真车就是这样回 NRC 0x11）
+      const kwpSids = [0x21, 0x3B, 0x17, 0x1A];
+      const udsSids = [0x22, 0x2E, 0x27, 0x2F, 0x19, 0x18, 0x14];
+      if (ecu.kwp === true && udsSids.includes(sid) && sid !== 0x14) {
+        return this.#frame([0x7F, sid, 0x11]);
+      }
+      if (ecu.kwp === false && kwpSids.includes(sid) && sid !== 0x1A) {
+        return this.#frame([0x7F, sid, 0x11]);
+      }
+      // 1A9F 回该模块自己的 DSN（用于身份验证/探测归属）
+      if (sid === 0x1A && bytes[1] === 0x9F && ecu.dsn) {
+        const asc = [...ecu.dsn].map((c) => c.charCodeAt(0) & 0xff);
+        return this.#frame([0x5A, 0x9F, ...asc]);
+      }
+    }
 
     // 注入故障
     const lidKey = bytes.length > 1 ? bytes[1] : 0;
@@ -231,9 +258,18 @@ export class MockAdapter extends Emitter {
    * 单帧 ≤7 字节；更长走首帧 + 连续帧。
    */
   #frame(payload) {
-    const id = this.address.rx.toString(16).padStart(8, '0');
+    // 11-bit 用 3 位 CAN ID、29-bit 用 8 位 —— 与真车 ELM 的输出一致
+    const id = this.address.rx.toString(16).padStart(this.address.rx > 0x7ff ? 8 : 3, '0');
     const b = (v) => (v & 0xff).toString(16).padStart(2, '0');
     const line = (arr) => id + ' ' + arr.map(b).join(' ');
+    // ★ 真车 ATCAF1：适配器已剥离 PCI、自行重组，输出是「每行 ≤7 字节的纯数据」。
+    //   这正是 2026-10-29 审计 P0-1 的场景：旧解析器会把数据首字节当 PCI。
+    if (this.caf === 1) {
+      if (!payload.length) return '';
+      const rows = [];
+      for (let i = 0; i < payload.length; i += 7) rows.push(line(payload.slice(i, i + 7)));
+      return rows.join('\r');
+    }
     if (payload.length <= 7) {
       return line([payload.length, ...payload]);
     }
