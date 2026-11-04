@@ -1,0 +1,1345 @@
+{
+ "model": "Cayenne-9PA（至2010年款止）",
+ "module": "BKE",
+ "variant": "Vier_Zonen_Climatronic_A2_20",
+ "items": [
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0x40000277$0xF001F4A8:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0x40000277$0xF001F4A8",
+   "path": [
+    "启动网络能源管理",
+    "防止唤醒_强制关闭"
+   ],
+   "name": "防止唤醒_强制关闭",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 240,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "停用",
+    "0x01": "已启用"
+   },
+   "risk": "low"
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF0021DA1$0xF0021DA2:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF0021DA1$0xF0021DA2",
+   "path": [
+    "电子压缩器磨合动作值（混合）",
+    "新风鼓风机动作值"
+   ],
+   "name": "新风鼓风机动作值",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 0,
+   "max": 65535,
+   "maxText": null,
+   "lid": 20,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF0021DA1$0xF0021DA3:2.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF0021DA1$0xF0021DA3",
+   "path": [
+    "电子压缩器磨合动作值（混合）",
+    "散热器风扇动作值"
+   ],
+   "name": "散热器风扇动作值",
+   "byte": 2,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 20,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF0021DA1$0xF0021DA4:4.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF0021DA1$0xF0021DA4",
+   "path": [
+    "电子压缩器磨合动作值（混合）",
+    "电子压缩器速度动作值"
+   ],
+   "name": "电子压缩器速度动作值",
+   "byte": 4,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 0,
+   "max": 65535,
+   "maxText": null,
+   "lid": 20,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40000D59:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40000D59",
+   "path": [
+    "编码值",
+    "值",
+    "有效性"
+   ],
+   "name": "有效性",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "有效",
+    "0x01": "无效"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0xF000BB4D:1.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0xF000BB4D",
+   "path": [
+    "编码值",
+    "值",
+    "转向类型"
+   ],
+   "name": "转向类型",
+   "byte": 1,
+   "bit": 0,
+   "bitsize": 4,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "左侧驾驶",
+    "0x01": "右侧驾驶"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x200014F7:1.4",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x200014F7",
+   "path": [
+    "编码值",
+    "值",
+    "发动机型号"
+   ],
+   "name": "发动机型号",
+   "byte": 1,
+   "bit": 4,
+   "bitsize": 3,
+   "min": 0,
+   "max": 4,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "V6",
+    "0x01": "V8 涡轮",
+    "0x02": "V8 自然吸气发动机",
+    "0x03": "Hybrid",
+    "0x04": "柴油"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40000D61:1.7",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40000D61",
+   "path": [
+    "编码值",
+    "值",
+    "编码参考"
+   ],
+   "name": "编码参考",
+   "byte": 1,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "从 CAN 总线读取",
+    "0x01": "使用自身编码"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40000D62:2.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40000D62",
+   "path": [
+    "编码值",
+    "值",
+    "国家车型"
+   ],
+   "name": "国家车型",
+   "byte": 2,
+   "bit": 0,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "其它国家和地区",
+    "0x01": "美国",
+    "0x02": "日本",
+    "0x03": "未定义"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40003F91:2.2",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40003F91",
+   "path": [
+    "编码值",
+    "值",
+    "车顶类型"
+   ],
+   "name": "车顶类型",
+   "byte": 2,
+   "bit": 2,
+   "bitsize": 3,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "正常",
+    "0x01": "滑动车顶",
+    "0x02": "玻璃天窗",
+    "0x03": "视频链接到 SV 右侧摄像头 - 对端子 30 短路"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40000D64:2.5",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40000D64",
+   "path": [
+    "编码值",
+    "值",
+    "玻璃型号"
+   ],
+   "name": "玻璃型号",
+   "byte": 2,
+   "bit": 5,
+   "bitsize": 3,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "无色",
+    "0x01": "有色"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF0022768$0x20001500:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF0022768$0x20001500",
+   "path": [
+    "功能校验 - 新风鼓风机动作值",
+    "CAN 超时错误，PDCC"
+   ],
+   "name": "CAN 超时错误，PDCC",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 17,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF0022769$0xF0028329:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF0022769$0xF0028329",
+   "path": [
+    "功能校验 - 压缩器动作值",
+    "压缩机启用"
+   ],
+   "name": "压缩机启用",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 8,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF002276A$0xF5014425:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF002276A$0xF5014425",
+   "path": [
+    "功能校验 - 温度预选安装校验",
+    "Temperaturvorwahl"
+   ],
+   "name": "Temperaturvorwahl",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 5000,
+   "max": 5000,
+   "maxText": null,
+   "lid": 9,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x1388": "无效测量值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40005631:0.1",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40005631",
+   "path": [
+    "编码值",
+    "值",
+    "起动/停止"
+   ],
+   "name": "起动/停止",
+   "byte": 0,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "已启用",
+    "0x01": "停用"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x4000101E:0.2",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x4000101E",
+   "path": [
+    "编码值",
+    "值",
+    "水泵"
+   ],
+   "name": "水泵",
+   "byte": 0,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40000F67:0.3",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40000F67",
+   "path": [
+    "编码值",
+    "值",
+    "水阀"
+   ],
+   "name": "水阀",
+   "byte": 0,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40004050:0.5",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40004050",
+   "path": [
+    "编码值",
+    "值",
+    "唤醒"
+   ],
+   "name": "唤醒",
+   "byte": 0,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40005631:0.6",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40005631",
+   "path": [
+    "编码值",
+    "值",
+    "起动/停止"
+   ],
+   "name": "起动/停止",
+   "byte": 0,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF001F517$0xF0021DA6$0x40000D5F:0.7",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF001F517$0xF0021DA6$0x40000D5F",
+   "path": [
+    "编码值",
+    "值",
+    "失速保护"
+   ],
+   "name": "失速保护",
+   "byte": 0,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF002350C$0xF0022853:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF002350C$0xF0022853",
+   "path": [
+    "功能校验 - 电子压缩器动作值（混合）",
+    "电子压缩器动作值"
+   ],
+   "name": "电子压缩器动作值",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 0,
+   "max": 65535,
+   "maxText": null,
+   "lid": 21,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014427$0xF001A308:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014427$0xF001A308",
+   "path": [
+    "Tastenkombination-Links",
+    "数据记录"
+   ],
+   "name": "数据记录",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 64,
+   "min": 0,
+   "max": 0,
+   "maxText": "18446744073709551615",
+   "lid": 1,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x0000000000000000": "未编码"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014428$0xF001A308:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014428$0xF001A308",
+   "path": [
+    "Tastenkombination-Rechts",
+    "数据记录"
+   ],
+   "name": "数据记录",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 64,
+   "min": 0,
+   "max": 4606130000000000,
+   "maxText": "18446744073709551615",
+   "lid": 2,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "2604080000000000": "扰流板",
+    "2804080900000000": "扰流器，辅助加热器",
+    "3204080600000000": "扰流器，运动型排气系统",
+    "3604080906000000": "扰流器，辅助加热器，运动型排气系统",
+    "4006000000000000": "假盖",
+    "4606130000000000": "车道变换辅助系统",
+    "0x0000000000000000": "未编码"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000EC2:0.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000EC2",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "冲压进气风门"
+   ],
+   "name": "冲压进气风门",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x2000178D:2.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x2000178D",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "再循环风门"
+   ],
+   "name": "再循环风门",
+   "byte": 2,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000EC4:4.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000EC4",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "除霜器风门"
+   ],
+   "name": "除霜器风门",
+   "byte": 4,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000D74:6.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000D74",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "扩展通风区"
+   ],
+   "name": "扩展通风区",
+   "byte": 6,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x20001790:8.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x20001790",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "中央出风口分层布置"
+   ],
+   "name": "中央出风口分层布置",
+   "byte": 8,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x20001791:10.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x20001791",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左前温度混合阀"
+   ],
+   "name": "左前温度混合阀",
+   "byte": 10,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x500017E3:12.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x500017E3",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右前温度混合阀"
+   ],
+   "name": "右前温度混合阀",
+   "byte": 12,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40001036:14.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40001036",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左前中央出风口"
+   ],
+   "name": "左前中央出风口",
+   "byte": 14,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40001037:16.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40001037",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右前中央出风口"
+   ],
+   "name": "右前中央出风口",
+   "byte": 16,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000E6B:18.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000E6B",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左前侧出风口"
+   ],
+   "name": "左前侧出风口",
+   "byte": 18,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000E6F:20.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000E6F",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右前侧出风口"
+   ],
+   "name": "右前侧出风口",
+   "byte": 20,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000E6D:22.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000E6D",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左前脚坑"
+   ],
+   "name": "左前脚坑",
+   "byte": 22,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000E71:24.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000E71",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右前脚坑"
+   ],
+   "name": "右前脚坑",
+   "byte": 24,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000D7E:26.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000D7E",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左后 B 柱脚坑风量分配"
+   ],
+   "name": "左后 B 柱脚坑风量分配",
+   "byte": 26,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000D7F:28.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000D7F",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右后 B 柱脚坑风量分配"
+   ],
+   "name": "右后 B 柱脚坑风量分配",
+   "byte": 28,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x2000179A:30.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x2000179A",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "气流，左后侧"
+   ],
+   "name": "气流，左后侧",
+   "byte": 30,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000D81:32.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000D81",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右后侧气流"
+   ],
+   "name": "右后侧气流",
+   "byte": 32,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x2000179C:34.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x2000179C",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左后温度混合阀"
+   ],
+   "name": "左后温度混合阀",
+   "byte": 34,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x2000179D:36.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x2000179D",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右后温度混合阀"
+   ],
+   "name": "右后温度混合阀",
+   "byte": 36,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000FB5:38.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000FB5",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右侧扩展通风区"
+   ],
+   "name": "右侧扩展通风区",
+   "byte": 38,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000FB6:40.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000FB6",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "左后中央出风口"
+   ],
+   "name": "左后中央出风口",
+   "byte": 40,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xF5014426$0x40000FB7:42.0",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xF5014426$0x40000FB7",
+   "path": [
+    "Funktionsprüfung - Stellung Verstellklappe",
+    "右后中央出风口"
+   ],
+   "name": "右后中央出风口",
+   "byte": 42,
+   "bit": 0,
+   "bitsize": 16,
+   "min": 2000,
+   "max": 2000,
+   "maxText": null,
+   "lid": 19,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "enum": {
+    "0x7D0": "无效值"
+   }
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0xA00005F0:0.8",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0xA00005F0",
+   "path": [
+    "车辆识别号"
+   ],
+   "name": "车辆识别号",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 144,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined"
+  },
+  {
+   "id": "Cayenne-9PA（至2010年款止）:Vier_Zonen_Climatronic_A2_20:0x40000D45:0.21",
+   "model": "Cayenne-9PA（至2010年款止）",
+   "platform": "G1",
+   "module": "BKE",
+   "variant": "Vier_Zonen_Climatronic_A2_20",
+   "chain": "0x40000D45",
+   "path": [
+    "前部生产编号"
+   ],
+   "name": "前部生产编号",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 239,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined"
+  }
+ ]
+}

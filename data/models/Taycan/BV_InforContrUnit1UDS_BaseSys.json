@@ -1,0 +1,4562 @@
+{
+ "model": "Taycan",
+ "module": "BV_InforContrUnit1UDS",
+ "variant": "BV_InforContrUnit1UDS_BaseSys",
+ "items": [
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001A833$0xF001E82A:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001A833$0xF001E82A",
+   "path": [
+    "开发报文激活",
+    "信息娱乐系统CAN报文"
+   ],
+   "name": "信息娱乐系统CAN报文",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 2,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001A833$0xF001E82B:0.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001A833$0xF001E82B",
+   "path": [
+    "开发报文激活",
+    "MIB（信息娱乐系统平台）CAN报文"
+   ],
+   "name": "MIB（信息娱乐系统平台）CAN报文",
+   "byte": 0,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 2,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001A831$0xF002A575:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001A831$0xF002A575",
+   "path": [
+    "生产模式",
+    "芯片 1 的内部输出级"
+   ],
+   "name": "芯片 1 的内部输出级",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 24,
+   "min": 0,
+   "max": 16777215,
+   "maxText": null,
+   "lid": 254,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF0000FB7$0xF000FA50:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF0000FB7$0xF000FA50",
+   "path": [
+    "高级安全访问",
+    "激活状态"
+   ],
+   "name": "激活状态",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 209,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "禁用",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0x200048E3$0xF002A575:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0x200048E3$0xF002A575",
+   "path": [
+    "代码容器，零件号",
+    "芯片 1 的内部输出级"
+   ],
+   "name": "芯片 1 的内部输出级",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 88,
+   "min": 0,
+   "max": null,
+   "maxText": "309485009821345068724781055",
+   "lid": 160,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0x50003A07$0xF0007B3C:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0x50003A07$0xF0007B3C",
+   "path": [
+    "代码容器，版本",
+    "版本"
+   ],
+   "name": "版本",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 32,
+   "min": 0,
+   "max": 4294967295,
+   "maxText": null,
+   "lid": 161,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB0E:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB0E",
+   "path": [
+    "所需安装",
+    "字节0",
+    "多媒体操作单元"
+   ],
+   "name": "多媒体操作单元",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB0F:0.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB0F",
+   "path": [
+    "所需安装",
+    "字节0",
+    "多媒体系统显示单元1"
+   ],
+   "name": "多媒体系统显示单元1",
+   "byte": 0,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EC7D:0.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EC7D",
+   "path": [
+    "所需安装",
+    "字节0",
+    "用于多媒体系统的显示单元2"
+   ],
+   "name": "用于多媒体系统的显示单元2",
+   "byte": 0,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB10:0.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB10",
+   "path": [
+    "所需安装",
+    "字节0",
+    "芯片卡读卡器控制模块"
+   ],
+   "name": "芯片卡读卡器控制模块",
+   "byte": 0,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB11:0.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB11",
+   "path": [
+    "所需安装",
+    "字节0",
+    "交通数据天线"
+   ],
+   "name": "交通数据天线",
+   "byte": 0,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB14:0.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB14",
+   "path": [
+    "所需安装",
+    "字节0",
+    "操作和显示单元1"
+   ],
+   "name": "操作和显示单元1",
+   "byte": 0,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB15:0.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB15",
+   "path": [
+    "所需安装",
+    "字节0",
+    "操作和显示单元2"
+   ],
+   "name": "操作和显示单元2",
+   "byte": 0,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB4A$0xF001EB16:0.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB4A$0xF001EB16",
+   "path": [
+    "所需安装",
+    "字节0",
+    "数据媒体"
+   ],
+   "name": "数据媒体",
+   "byte": 0,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF001EB17:1.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF001EB17",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "光盘数据库"
+   ],
+   "name": "光盘数据库",
+   "byte": 1,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF001EB18:1.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF001EB18",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "媒体播放器1"
+   ],
+   "name": "媒体播放器1",
+   "byte": 1,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF001EB19:1.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF001EB19",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "多媒体系统的显示单元5"
+   ],
+   "name": "多媒体系统的显示单元5",
+   "byte": 1,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF00246AF:1.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF00246AF",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "音量控制_1"
+   ],
+   "name": "音量控制_1",
+   "byte": 1,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF00246B0:1.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF00246B0",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "预留_字节 1_位 4"
+   ],
+   "name": "预留_字节 1_位 4",
+   "byte": 1,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF00246B1:1.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF00246B1",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "预留_字节 1_位 5"
+   ],
+   "name": "预留_字节 1_位 5",
+   "byte": 1,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF00246B2:1.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF00246B2",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "后视摄像头_低"
+   ],
+   "name": "后视摄像头_低",
+   "byte": 1,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AB8C$0xF00246B3:1.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AB8C$0xF00246B3",
+   "path": [
+    "所需安装",
+    "字节 1",
+    "多媒体连接器"
+   ],
+   "name": "多媒体连接器",
+   "byte": 1,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246B4:2.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246B4",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "增压器"
+   ],
+   "name": "增压器",
+   "byte": 2,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246B5:2.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246B5",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "预留_字节 2_位 1"
+   ],
+   "name": "预留_字节 2_位 1",
+   "byte": 2,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246B6:2.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246B6",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "多媒体系统显示单元3"
+   ],
+   "name": "多媒体系统显示单元3",
+   "byte": 2,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246B7:2.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246B7",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "预留_字节 2_位 3"
+   ],
+   "name": "预留_字节 2_位 3",
+   "byte": 2,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246B8:2.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246B8",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "预留_字节 2_位 4"
+   ],
+   "name": "预留_字节 2_位 4",
+   "byte": 2,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246B9:2.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246B9",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "预留_字节 2_位 5"
+   ],
+   "name": "预留_字节 2_位 5",
+   "byte": 2,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246BA:2.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246BA",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "预留_字节 2_位 6"
+   ],
+   "name": "预留_字节 2_位 6",
+   "byte": 2,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF000F0F6$0xF001AD06$0xF00246BB:2.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF000F0F6$0xF001AD06$0xF00246BB",
+   "path": [
+    "所需安装",
+    "字节 2",
+    "预留_字节 2_位 7"
+   ],
+   "name": "预留_字节 2_位 7",
+   "byte": 2,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 26,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001DA21:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001DA21",
+   "path": [
+    "VW编码值",
+    "字节0品牌"
+   ],
+   "name": "字节0品牌",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 4,
+   "min": 0,
+   "max": 9,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "没有品牌",
+    "0x02": "VW",
+    "0x03": "SKODA",
+    "0x04": "座椅",
+    "0x05": "BENTLEY",
+    "0x01": "AUDI",
+    "0x06": "VW-NFZ",
+    "0x07": "PORSCHE",
+    "0x08": "MAN",
+    "0x09": "LAMBORGHINI"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA3:1.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA3",
+   "path": [
+    "VW编码值",
+    "字节1车辆类别"
+   ],
+   "name": "字节1车辆类别",
+   "byte": 1,
+   "bit": 0,
+   "bitsize": 4,
+   "min": 0,
+   "max": 15,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA4:1.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA4",
+   "path": [
+    "VW编码值",
+    "字节1车辆代"
+   ],
+   "name": "字节1车辆代",
+   "byte": 1,
+   "bit": 4,
+   "bitsize": 4,
+   "min": 0,
+   "max": 15,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA5:2.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA5",
+   "path": [
+    "VW编码值",
+    "字节2车辆派生"
+   ],
+   "name": "字节2车辆派生",
+   "byte": 2,
+   "bit": 0,
+   "bitsize": 4,
+   "min": 0,
+   "max": 15,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA6:2.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA6",
+   "path": [
+    "VW编码值",
+    "字节2车辆派生补充"
+   ],
+   "name": "字节2车辆派生补充",
+   "byte": 2,
+   "bit": 4,
+   "bitsize": 4,
+   "min": 0,
+   "max": 15,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA7:3.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA7",
+   "path": [
+    "VW编码值",
+    "字节3国家导航"
+   ],
+   "name": "字节3国家导航",
+   "byte": 3,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 19,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "no_country",
+    "0x01": "EU",
+    "0x02": "NAR",
+    "0x03": "MSA",
+    "0x04": "韩语",
+    "0x05": "China",
+    "0x06": "日本",
+    "0x07": "AsiaPacific",
+    "0x08": "澳大利亚",
+    "0x09": "南非",
+    "0x0A": "NEAST",
+    "0x0B": "NMAfrica",
+    "0x0C": "MEAST",
+    "0x0D": "CentralAsia",
+    "0x0E": "India",
+    "0x0F": "Israel",
+    "0x10": "Chinese Taiwan",
+    "0x11": "Chile",
+    "0x12": "China_2",
+    "0x13": "China_3"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA8:4.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA8",
+   "path": [
+    "VW编码值",
+    "字节4通道1 HT"
+   ],
+   "name": "字节4通道1 HT",
+   "byte": 4,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBA9:4.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBA9",
+   "path": [
+    "VW编码值",
+    "字节4通道1 TT"
+   ],
+   "name": "字节4通道1 TT",
+   "byte": 4,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBAA:4.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBAA",
+   "path": [
+    "VW编码值",
+    "字节4通道2 HT"
+   ],
+   "name": "字节4通道2 HT",
+   "byte": 4,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBAB:4.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBAB",
+   "path": [
+    "VW编码值",
+    "字节4通道2 TT"
+   ],
+   "name": "字节4通道2 TT",
+   "byte": 4,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBAC:4.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBAC",
+   "path": [
+    "VW编码值",
+    "字节4通道3 HT"
+   ],
+   "name": "字节4通道3 HT",
+   "byte": 4,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBAD:4.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBAD",
+   "path": [
+    "VW编码值",
+    "字节4通道3 TT"
+   ],
+   "name": "字节4通道3 TT",
+   "byte": 4,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBAE:4.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBAE",
+   "path": [
+    "VW编码值",
+    "字节4通道4 HT"
+   ],
+   "name": "字节4通道4 HT",
+   "byte": 4,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBAF:4.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBAF",
+   "path": [
+    "VW编码值",
+    "字节4通道4 TT"
+   ],
+   "name": "字节4通道4 TT",
+   "byte": 4,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB0:5.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB0",
+   "path": [
+    "VW编码值",
+    "字节5通道5 HT"
+   ],
+   "name": "字节5通道5 HT",
+   "byte": 5,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB1:5.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB1",
+   "path": [
+    "VW编码值",
+    "字节5通道5 TT"
+   ],
+   "name": "字节5通道5 TT",
+   "byte": 5,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB2:5.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB2",
+   "path": [
+    "VW编码值",
+    "字节5通道6 HT"
+   ],
+   "name": "字节5通道6 HT",
+   "byte": 5,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB3:5.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB3",
+   "path": [
+    "VW编码值",
+    "字节5通道6 TT"
+   ],
+   "name": "字节5通道6 TT",
+   "byte": 5,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB4:5.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB4",
+   "path": [
+    "VW编码值",
+    "字节5通道7 HT"
+   ],
+   "name": "字节5通道7 HT",
+   "byte": 5,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB5:5.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB5",
+   "path": [
+    "VW编码值",
+    "字节5通道7 TT"
+   ],
+   "name": "字节5通道7 TT",
+   "byte": 5,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB6:5.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB6",
+   "path": [
+    "VW编码值",
+    "字节5通道8 HT"
+   ],
+   "name": "字节5通道8 HT",
+   "byte": 5,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB7:5.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB7",
+   "path": [
+    "VW编码值",
+    "字节5通道8 TT"
+   ],
+   "name": "字节5通道8 TT",
+   "byte": 5,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB8:6.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB8",
+   "path": [
+    "VW编码值",
+    "字节6通道9 HT"
+   ],
+   "name": "字节6通道9 HT",
+   "byte": 6,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBB9:6.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBB9",
+   "path": [
+    "VW编码值",
+    "字节6通道9 TT"
+   ],
+   "name": "字节6通道9 TT",
+   "byte": 6,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBBA:6.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBBA",
+   "path": [
+    "VW编码值",
+    "字节6通道10 HT"
+   ],
+   "name": "字节6通道10 HT",
+   "byte": 6,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBBB:6.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBBB",
+   "path": [
+    "VW编码值",
+    "字节6通道10 TT"
+   ],
+   "name": "字节6通道10 TT",
+   "byte": 6,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBBC:6.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBBC",
+   "path": [
+    "VW编码值",
+    "字节6通道11 HT"
+   ],
+   "name": "字节6通道11 HT",
+   "byte": 6,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBBD:6.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBBD",
+   "path": [
+    "VW编码值",
+    "字节6通道11 TT"
+   ],
+   "name": "字节6通道11 TT",
+   "byte": 6,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBBE:6.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBBE",
+   "path": [
+    "VW编码值",
+    "字节6通道12 HT"
+   ],
+   "name": "字节6通道12 HT",
+   "byte": 6,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBBF:6.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBBF",
+   "path": [
+    "VW编码值",
+    "字节6通道12 TT"
+   ],
+   "name": "字节6通道12 TT",
+   "byte": 6,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC0:7.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC0",
+   "path": [
+    "VW编码值",
+    "字节7通道13 HT"
+   ],
+   "name": "字节7通道13 HT",
+   "byte": 7,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC1:7.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC1",
+   "path": [
+    "VW编码值",
+    "字节7通道13 TT"
+   ],
+   "name": "字节7通道13 TT",
+   "byte": 7,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC2:7.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC2",
+   "path": [
+    "VW编码值",
+    "字节7通道14 HT"
+   ],
+   "name": "字节7通道14 HT",
+   "byte": 7,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC3:7.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC3",
+   "path": [
+    "VW编码值",
+    "字节7通道14 TT"
+   ],
+   "name": "字节7通道14 TT",
+   "byte": 7,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC4:7.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC4",
+   "path": [
+    "VW编码值",
+    "字节7通道15 HT"
+   ],
+   "name": "字节7通道15 HT",
+   "byte": 7,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC5:7.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC5",
+   "path": [
+    "VW编码值",
+    "字节7通道15 TT"
+   ],
+   "name": "字节7通道15 TT",
+   "byte": 7,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC6:7.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC6",
+   "path": [
+    "VW编码值",
+    "字节7通道16 HT"
+   ],
+   "name": "字节7通道16 HT",
+   "byte": 7,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC7:7.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC7",
+   "path": [
+    "VW编码值",
+    "字节7通道16 TT"
+   ],
+   "name": "字节7通道16 TT",
+   "byte": 7,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC8:8.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC8",
+   "path": [
+    "VW编码值",
+    "字节8麦克风1"
+   ],
+   "name": "字节8麦克风1",
+   "byte": 8,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBC9:8.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBC9",
+   "path": [
+    "VW编码值",
+    "字节8麦克风2"
+   ],
+   "name": "字节8麦克风2",
+   "byte": 8,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBCA:8.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBCA",
+   "path": [
+    "VW编码值",
+    "字节8耳机输出1"
+   ],
+   "name": "字节8耳机输出1",
+   "byte": 8,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBCB:8.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBCB",
+   "path": [
+    "VW编码值",
+    "字节8耳机输出2"
+   ],
+   "name": "字节8耳机输出2",
+   "byte": 8,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBCC:8.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBCC",
+   "path": [
+    "VW编码值",
+    "字节8辅助输入接口"
+   ],
+   "name": "字节8辅助输入接口",
+   "byte": 8,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBCD:8.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBCD",
+   "path": [
+    "VW编码值",
+    "字节8 AMI（音乐输入接口）"
+   ],
+   "name": "字节8 AMI（音乐输入接口）",
+   "byte": 8,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBCE:8.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBCE",
+   "path": [
+    "VW编码值",
+    "字节8_VDA-NF_IN"
+   ],
+   "name": "字节8_VDA-NF_IN",
+   "byte": 8,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBCF:8.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBCF",
+   "path": [
+    "VW编码值",
+    "字节8 通过ECL唤醒"
+   ],
+   "name": "字节8 通过ECL唤醒",
+   "byte": 8,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD0:9.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD0",
+   "path": [
+    "VW编码值",
+    "字节9波段设置FM调谐器"
+   ],
+   "name": "字节9波段设置FM调谐器",
+   "byte": 9,
+   "bit": 0,
+   "bitsize": 4,
+   "min": 0,
+   "max": 8,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x01": "EU_RdW",
+    "0x02": "NAR",
+    "0x03": "JP",
+    "0x04": "KOR",
+    "0x00": "no_set",
+    "0x05": "CN",
+    "0x06": "BRA",
+    "0x07": "KOR_2",
+    "0x08": "JP_2"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD1:9.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD1",
+   "path": [
+    "VW编码值",
+    "字节9波段设置AM调谐器"
+   ],
+   "name": "字节9波段设置AM调谐器",
+   "byte": 9,
+   "bit": 4,
+   "bitsize": 4,
+   "min": 0,
+   "max": 5,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x01": "EU_RdW",
+    "0x02": "NAR",
+    "0x03": "JP",
+    "0x04": "EU",
+    "0x05": "结束",
+    "0x00": "no_set"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD2:10.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD2",
+   "path": [
+    "VW编码值",
+    "字节10波段设置DAB调谐器波段1"
+   ],
+   "name": "字节10波段设置DAB调谐器波段1",
+   "byte": 10,
+   "bit": 0,
+   "bitsize": 4,
+   "min": 0,
+   "max": 7,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x01": "EU_Band_III-N",
+    "0x02": "EU_Band_III",
+    "0x03": "Canada_L_Band",
+    "0x04": "Korea_Band_III",
+    "0x05": "China_Band_III",
+    "0x06": "Download_Table_1",
+    "0x00": "关闭",
+    "0x07": "New_Zealand_Band_III"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD3:10.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD3",
+   "path": [
+    "VW编码值",
+    "字节10波段设置DAB调谐器波段2"
+   ],
+   "name": "字节10波段设置DAB调谐器波段2",
+   "byte": 10,
+   "bit": 4,
+   "bitsize": 4,
+   "min": 0,
+   "max": 2,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x01": "L_Band",
+    "0x02": "Download_Table_2",
+    "0x00": "关闭"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD4:11.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD4",
+   "path": [
+    "VW编码值",
+    "字节11音频系统"
+   ],
+   "name": "字节11音频系统",
+   "byte": 11,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 6,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "Sound_System_no_Allocation",
+    "0x01": "Sound_System_internal",
+    "0x02": "Sound_System_external_MOST",
+    "0x03": "Sound_System_external_BAP",
+    "0x04": "Sound_System_internal_individual",
+    "0x05": "Sound_System_external_BOOSTER",
+    "0x06": "Sound_System_external_BAP_with_presets"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD5:12.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD5",
+   "path": [
+    "VW编码值",
+    "字节12 FM天线"
+   ],
+   "name": "字节12 FM天线",
+   "byte": 12,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "可用",
+    "0x01": "测量值不可用的"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD6:12.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD6",
+   "path": [
+    "VW编码值",
+    "字节12 HD FM 天线模式"
+   ],
+   "name": "字节12 HD FM 天线模式",
+   "byte": 12,
+   "bit": 1,
+   "bitsize": 3,
+   "min": 0,
+   "max": 4,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "AM_FM_ANT",
+    "0x02": "Switching",
+    "0x01": "FM_ANT",
+    "0x03": "MRC",
+    "0x04": "测试模式"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD7:12.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD7",
+   "path": [
+    "VW编码值",
+    "字节12 麦克风3"
+   ],
+   "name": "字节12 麦克风3",
+   "byte": 12,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD8:12.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD8",
+   "path": [
+    "VW编码值",
+    "字节12 麦克风4"
+   ],
+   "name": "字节12 麦克风4",
+   "byte": 12,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBD9:12.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBD9",
+   "path": [
+    "VW编码值",
+    "字节12 DAB天线1"
+   ],
+   "name": "字节12 DAB天线1",
+   "byte": 12,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBDA:12.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBDA",
+   "path": [
+    "VW编码值",
+    "字节12 AM FM DAB天线"
+   ],
+   "name": "字节12 AM FM DAB天线",
+   "byte": 12,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBDB:13.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBDB",
+   "path": [
+    "VW编码值",
+    "字节13 RDS（收音机数据系统）"
+   ],
+   "name": "字节13 RDS（收音机数据系统）",
+   "byte": 13,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x01": "not_deactivated",
+    "0x00": "deactivated"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBDC:13.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBDC",
+   "path": [
+    "VW编码值",
+    "字节13 AF"
+   ],
+   "name": "字节13 AF",
+   "byte": 13,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "persistent",
+    "0x01": "temporary"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBDD:13.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBDD",
+   "path": [
+    "VW编码值",
+    "字节13 高清收音机编码"
+   ],
+   "name": "字节13 高清收音机编码",
+   "byte": 13,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBDE:13.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBDE",
+   "path": [
+    "VW编码值",
+    "字节13 收音机文本+"
+   ],
+   "name": "字节13 收音机文本+",
+   "byte": 13,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBDF:13.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBDF",
+   "path": [
+    "VW编码值",
+    "字节13 PI忽略"
+   ],
+   "name": "字节13 PI忽略",
+   "byte": 13,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x01": "打开",
+    "0x00": "关闭"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE0:13.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE0",
+   "path": [
+    "VW编码值",
+    "字节13 BWS"
+   ],
+   "name": "字节13 BWS",
+   "byte": 13,
+   "bit": 5,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x01": "BWS_restricted",
+    "0x02": "BWS_unrestricted",
+    "0x03": "BWS_restricted_unrestricted",
+    "0x00": "no_BWS"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE1:13.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE1",
+   "path": [
+    "VW编码值",
+    "字节13 DAB报警公告"
+   ],
+   "name": "字节13 DAB报警公告",
+   "byte": 13,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE2:14.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE2",
+   "path": [
+    "VW编码值",
+    "字节14 FM PTY31报警"
+   ],
+   "name": "字节14 FM PTY31报警",
+   "byte": 14,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE3:14.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE3",
+   "path": [
+    "VW编码值",
+    "字节14 AM禁用"
+   ],
+   "name": "字节14 AM禁用",
+   "byte": 14,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE4:14.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE4",
+   "path": [
+    "VW编码值",
+    "字节14高清收音机编码am"
+   ],
+   "name": "字节14高清收音机编码am",
+   "byte": 14,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE5:14.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE5",
+   "path": [
+    "VW编码值",
+    "字节14多输入开关"
+   ],
+   "name": "字节14多输入开关",
+   "byte": 14,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE6:14.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE6",
+   "path": [
+    "VW编码值",
+    "字节14 RDS（收音机数据系统）解除"
+   ],
+   "name": "字节14 RDS（收音机数据系统）解除",
+   "byte": 14,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE7:14.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE7",
+   "path": [
+    "VW编码值",
+    "字节14 AF解除"
+   ],
+   "name": "字节14 AF解除",
+   "byte": 14,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE8:15.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE8",
+   "path": [
+    "VW编码值",
+    "字节15底座"
+   ],
+   "name": "字节15底座",
+   "byte": 15,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x01": "已安装",
+    "0x00": "未安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBE9:15.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBE9",
+   "path": [
+    "VW编码值",
+    "字节15天线底座"
+   ],
+   "name": "字节15天线底座",
+   "byte": 15,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x01": "已安装",
+    "0x00": "未安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBEA:15.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBEA",
+   "path": [
+    "VW编码值",
+    "字节15托架力"
+   ],
+   "name": "字节15托架力",
+   "byte": 15,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBEB:15.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBEB",
+   "path": [
+    "VW编码值",
+    "字节_15_Handy_in_Cradle_Force"
+   ],
+   "name": "字节_15_Handy_in_Cradle_Force",
+   "byte": 15,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBEC:15.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBEC",
+   "path": [
+    "VW编码值",
+    "字节15电话 NAD（网络接入设备）"
+   ],
+   "name": "字节15电话 NAD（网络接入设备）",
+   "byte": 15,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBED:15.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBED",
+   "path": [
+    "VW编码值",
+    "字节15 无线充电可用性"
+   ],
+   "name": "字节15 无线充电可用性",
+   "byte": 15,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未安装",
+    "0x01": "已安装"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBEE:15.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBEE",
+   "path": [
+    "VW编码值",
+    "字节15媒体播放器1"
+   ],
+   "name": "字节15媒体播放器1",
+   "byte": 15,
+   "bit": 6,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "not_connected",
+    "0x01": "connected_without_USB_hub",
+    "0x02": "connected_with_USB_hub",
+    "0x03": "-"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBEF:16.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBEF",
+   "path": [
+    "VW编码值",
+    "字节16蓝牙可用性"
+   ],
+   "name": "字节16蓝牙可用性",
+   "byte": 16,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "测量值不可用的",
+    "0x01": "可用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF0:16.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF0",
+   "path": [
+    "VW编码值",
+    "字节_16_蓝牙_多媒体_功能性"
+   ],
+   "name": "字节_16_蓝牙_多媒体_功能性",
+   "byte": 16,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "测量值不可用的",
+    "0x01": "可用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF1:16.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF1",
+   "path": [
+    "VW编码值",
+    "字节_16_蓝牙_电话"
+   ],
+   "name": "字节_16_蓝牙_电话",
+   "byte": 16,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "测量值不可用的",
+    "0x01": "可用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF2:16.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF2",
+   "path": [
+    "VW编码值",
+    "字节_16_蓝牙_音频"
+   ],
+   "name": "字节_16_蓝牙_音频",
+   "byte": 16,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "测量值不可用的",
+    "0x01": "可用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF3:16.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF3",
+   "path": [
+    "VW编码值",
+    "字节_16_蓝牙_可见性"
+   ],
+   "name": "字节_16_蓝牙_可见性",
+   "byte": 16,
+   "bit": 4,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "自动",
+    "0x02": "打开",
+    "0x03": "受限"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF4:16.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF4",
+   "path": [
+    "VW编码值",
+    "字节_16_蓝牙_耳机"
+   ],
+   "name": "字节_16_蓝牙_耳机",
+   "byte": 16,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF5:16.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF5",
+   "path": [
+    "VW编码值",
+    "字节16 合法的RVC"
+   ],
+   "name": "字节16 合法的RVC",
+   "byte": 16,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF6:17.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF6",
+   "path": [
+    "VW编码值",
+    "字节_17_外壳"
+   ],
+   "name": "字节_17_外壳",
+   "byte": 17,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 8,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "no_Skin",
+    "0x01": "Skin_1",
+    "0x02": "Skin_2",
+    "0x03": "Skin_3",
+    "0x04": "Skin_4",
+    "0x05": "Skin_5",
+    "0x06": "Skin_6",
+    "0x07": "Skin_7",
+    "0x08": "Skin_8"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF7:18.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF7",
+   "path": [
+    "VW编码值",
+    "字节_18_屏蔽"
+   ],
+   "name": "字节_18_屏蔽",
+   "byte": 18,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 255,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number"
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF8:19.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF8",
+   "path": [
+    "VW编码值",
+    "字节_19_日志_簿"
+   ],
+   "name": "字节_19_日志_簿",
+   "byte": 19,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "not_displayed",
+    "0x01": "displayed"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBF9:19.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBF9",
+   "path": [
+    "VW编码值",
+    "字节_19_悬架_臂_侧"
+   ],
+   "name": "字节_19_悬架_臂_侧",
+   "byte": 19,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "左侧驾驶",
+    "0x01": "右侧驾驶"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBFA:19.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBFA",
+   "path": [
+    "VW编码值",
+    "字节19_Kombi轨道站点信息"
+   ],
+   "name": "字节19_Kombi轨道站点信息",
+   "byte": 19,
+   "bit": 2,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x01": "long_info",
+    "0x02": "short_info",
+    "0x00": "测量值不可用的",
+    "0x03": "reserved_text"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBFB:19.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBFB",
+   "path": [
+    "VW编码值",
+    "字节_19_后_视_低"
+   ],
+   "name": "字节_19_后_视_低",
+   "byte": 19,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBFC:19.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBFC",
+   "path": [
+    "VW编码值",
+    "字节_19_Most"
+   ],
+   "name": "字节_19_Most",
+   "byte": 19,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBFD:19.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBFD",
+   "path": [
+    "VW编码值",
+    "字节_19_USB"
+   ],
+   "name": "字节_19_USB",
+   "byte": 19,
+   "bit": 6,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "charge",
+    "0x02": "full",
+    "0x03": "usb_ipod"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBFE:20.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBFE",
+   "path": [
+    "VW编码值",
+    "字节_20_显示_1"
+   ],
+   "name": "字节_20_显示_1",
+   "byte": 20,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EBFF:20.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EBFF",
+   "path": [
+    "VW编码值",
+    "字节_20_显示_2"
+   ],
+   "name": "字节_20_显示_2",
+   "byte": 20,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC00:20.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC00",
+   "path": [
+    "VW编码值",
+    "字节_20_显示_3"
+   ],
+   "name": "字节_20_显示_3",
+   "byte": 20,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC01:20.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC01",
+   "path": [
+    "VW编码值",
+    "字节_20_显示_4"
+   ],
+   "name": "字节_20_显示_4",
+   "byte": 20,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "没有连接",
+    "0x01": "连接"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC02:20.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC02",
+   "path": [
+    "VW编码值",
+    "字节_20_仪表板_音频_滑动"
+   ],
+   "name": "字节_20_仪表板_音频_滑动",
+   "byte": 20,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC03:20.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC03",
+   "path": [
+    "VW编码值",
+    "字节_20_仪表板_电话_滑动"
+   ],
+   "name": "字节_20_仪表板_电话_滑动",
+   "byte": 20,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC04:20.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC04",
+   "path": [
+    "VW编码值",
+    "字节_20_仪表板_导航_滑动"
+   ],
+   "name": "字节_20_仪表板_导航_滑动",
+   "byte": 20,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC05:20.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC05",
+   "path": [
+    "VW编码值",
+    "字节_20_仪表板_通讯"
+   ],
+   "name": "字节_20_仪表板_通讯",
+   "byte": 20,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "BAP",
+    "0x01": "DDP2"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC06:21.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC06",
+   "path": [
+    "VW编码值",
+    "字节21 VIWI"
+   ],
+   "name": "字节21 VIWI",
+   "byte": 21,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC07:21.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC07",
+   "path": [
+    "VW编码值",
+    "字节_21_滚动"
+   ],
+   "name": "字节_21_滚动",
+   "byte": 21,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC08:21.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC08",
+   "path": [
+    "VW编码值",
+    "字节_21_短讯功能_通过_地图"
+   ],
+   "name": "字节_21_短讯功能_通过_地图",
+   "byte": 21,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC09:21.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC09",
+   "path": [
+    "VW编码值",
+    "字节_21_Pagewise_滚动"
+   ],
+   "name": "字节_21_Pagewise_滚动",
+   "byte": 21,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC0A:21.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC0A",
+   "path": [
+    "VW编码值",
+    "字节21 GPS天线可用性"
+   ],
+   "name": "字节21 GPS天线可用性",
+   "byte": 21,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC0B:22.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC0B",
+   "path": [
+    "VW编码值",
+    "字节_22_仪表板_图表_变量"
+   ],
+   "name": "字节_22_仪表板_图表_变量",
+   "byte": 22,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "MOST",
+    "0x01": "通过CAN"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC0C:22.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC0C",
+   "path": [
+    "VW编码值",
+    "字节_22_仪表板_文本_更换"
+   ],
+   "name": "字节_22_仪表板_文本_更换",
+   "byte": 22,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC0D:22.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC0D",
+   "path": [
+    "VW编码值",
+    "字节22_bap_sds_sd"
+   ],
+   "name": "字节22_bap_sds_sd",
+   "byte": 22,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC0E:22.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC0E",
+   "path": [
+    "VW编码值",
+    "字节22 BAP在线功能辅助显示"
+   ],
+   "name": "字节22 BAP在线功能辅助显示",
+   "byte": 22,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC0F:22.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC0F",
+   "path": [
+    "VW编码值",
+    "字节22触摸屏遥控器"
+   ],
+   "name": "字节22触摸屏遥控器",
+   "byte": 22,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC10:22.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC10",
+   "path": [
+    "VW编码值",
+    "字节22 键盘后键"
+   ],
+   "name": "字节22 键盘后键",
+   "byte": 22,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "测量值不可用的",
+    "0x01": "可用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC11:22.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC11",
+   "path": [
+    "VW编码值",
+    "字节_22_车轮_驱动"
+   ],
+   "name": "字节_22_车轮_驱动",
+   "byte": 22,
+   "bit": 6,
+   "bitsize": 2,
+   "min": 0,
+   "max": 3,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "前部",
+    "0x01": "后",
+    "0x02": "all",
+    "0x03": "reserved_text"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC12:23.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC12",
+   "path": [
+    "VW编码值",
+    "字节_23_Speller"
+   ],
+   "name": "字节_23_Speller",
+   "byte": 23,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC13:23.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC13",
+   "path": [
+    "VW编码值",
+    "字节_23_初始_免责声明"
+   ],
+   "name": "字节_23_初始_免责声明",
+   "byte": 23,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC14:23.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC14",
+   "path": [
+    "VW编码值",
+    "字节_23_法律_免责声明"
+   ],
+   "name": "字节_23_法律_免责声明",
+   "byte": 23,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC15:23.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC15",
+   "path": [
+    "VW编码值",
+    "字节23 显示翻转速度"
+   ],
+   "name": "字节23 显示翻转速度",
+   "byte": 23,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "正常",
+    "0x01": "fast"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC16:24.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC16",
+   "path": [
+    "VW编码值",
+    "字节_24_紧急_呼叫"
+   ],
+   "name": "字节_24_紧急_呼叫",
+   "byte": 24,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "关闭",
+    "0x01": "打开"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC17:24.1",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC17",
+   "path": [
+    "VW编码值",
+    "字节_24_语音_控制_系统"
+   ],
+   "name": "字节_24_语音_控制_系统",
+   "byte": 24,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC18:24.2",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC18",
+   "path": [
+    "VW编码值",
+    "字节_24_导航_系统"
+   ],
+   "name": "字节_24_导航_系统",
+   "byte": 24,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC19:24.3",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC19",
+   "path": [
+    "VW编码值",
+    "字节_24_WLAN_模块"
+   ],
+   "name": "字节_24_WLAN_模块",
+   "byte": 24,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC1A:24.4",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC1A",
+   "path": [
+    "VW编码值",
+    "字节_24_导入_媒体_数据"
+   ],
+   "name": "字节_24_导入_媒体_数据",
+   "byte": 24,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC1B:24.5",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC1B",
+   "path": [
+    "VW编码值",
+    "字节_24_Ripping_媒体_数据"
+   ],
+   "name": "字节_24_Ripping_媒体_数据",
+   "byte": 24,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC1C:24.6",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC1C",
+   "path": [
+    "VW编码值",
+    "字节_24_vza"
+   ],
+   "name": "字节_24_vza",
+   "byte": 24,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001EBA2$0xF001EC1D:24.7",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001EBA2$0xF001EC1D",
+   "path": [
+    "VW编码值",
+    "字节_24_psd"
+   ],
+   "name": "字节_24_psd",
+   "byte": 24,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "未激活",
+    "0x01": "已启用"
+   }
+  },
+  {
+   "id": "Taycan:BV_InforContrUnit1UDS_BaseSys:0xF001A80F$0xF001A9F8:0.0",
+   "model": "Taycan",
+   "platform": "J1",
+   "module": "BV_InforContrUnit1UDS",
+   "variant": "BV_InforContrUnit1UDS_BaseSys",
+   "chain": "0xF001A80F$0xF001A9F8",
+   "path": [
+    "车辆设备代码和生产编号组合",
+    "车辆设备代码和PR编号组合"
+   ],
+   "name": "车辆设备代码和PR编号组合",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 96,
+   "min": 0,
+   "max": null,
+   "maxText": "79228162514264337593543950335",
+   "lid": 164,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "risk": "low"
+  }
+ ]
+}

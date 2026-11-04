@@ -1,0 +1,478 @@
+{
+ "model": "Macan",
+ "module": "BV_ECM_UDS",
+ "variant": "Cajun_V6T_HP_USA",
+ "items": [
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A006$0xF001A831:0.0",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A006$0xF001A831",
+   "path": [
+    "生产模式",
+    "生产模式"
+   ],
+   "name": "生产模式",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 24,
+   "min": 0,
+   "max": 16777215,
+   "maxText": null,
+   "lid": 254,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "enum",
+   "enum": {
+    "0x00": "关闭",
+    "0xFFFFFF": "打开"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF0021BDB:0.0",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF0021BDB",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "巡航控制"
+   ],
+   "name": "巡航控制",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0x40003DED:0.1",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0x40003DED",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "ACC（自适应巡航控制）"
+   ],
+   "name": "ACC（自适应巡航控制）",
+   "byte": 0,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF0021BDC:0.2",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF0021BDC",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "变速箱类型"
+   ],
+   "name": "变速箱类型",
+   "byte": 0,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "手动变速器",
+    "0x01": "PDK"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF0021BDD:0.3",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF0021BDD",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "启停激活"
+   ],
+   "name": "启停激活",
+   "byte": 0,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF0021BDE:0.4",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF0021BDE",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "全轮驱动"
+   ],
+   "name": "全轮驱动",
+   "byte": 0,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF0021BDF:0.5",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF0021BDF",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "废气阀门"
+   ],
+   "name": "废气阀门",
+   "byte": 0,
+   "bit": 5,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF0021F2F:0.6",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF0021F2F",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "启停+模式"
+   ],
+   "name": "启停+模式",
+   "byte": 0,
+   "bit": 6,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A305$0xF001C3EA:0.7",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A305$0xF001C3EA",
+   "path": [
+    "设码值",
+    "编码字节1",
+    "限速器"
+   ],
+   "name": "限速器",
+   "byte": 0,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A306$0xF0021BE1:1.1",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A306$0xF0021BE1",
+   "path": [
+    "设码值",
+    "编码字节2",
+    "巴西燃油"
+   ],
+   "name": "巴西燃油",
+   "byte": 1,
+   "bit": 1,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A306$0xF0021BE2:1.2",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A306$0xF0021BE2",
+   "path": [
+    "设码值",
+    "编码字节2",
+    "亚洲噪音典型"
+   ],
+   "name": "亚洲噪音典型",
+   "byte": 1,
+   "bit": 2,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A306$0xF0021F30:1.3",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A306$0xF0021F30",
+   "path": [
+    "设码值",
+    "编码字节2",
+    "油箱极微小泄露的泄露诊断已解除"
+   ],
+   "name": "油箱极微小泄露的泄露诊断已解除",
+   "byte": 1,
+   "bit": 3,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A306$0xF0021BE4:1.4",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A306$0xF0021BE4",
+   "path": [
+    "设码值",
+    "编码字节2",
+    "燃油市场"
+   ],
+   "name": "燃油市场",
+   "byte": 1,
+   "bit": 4,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "A",
+    "0x01": "B"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A0F8$0xF001A306$0xF0021BE5:1.7",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A0F8$0xF001A306$0xF0021BE5",
+   "path": [
+    "设码值",
+    "编码字节2",
+    "编码有效"
+   ],
+   "name": "编码有效",
+   "byte": 1,
+   "bit": 7,
+   "bitsize": 1,
+   "min": 0,
+   "max": 1,
+   "maxText": null,
+   "lid": 0,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "switch",
+   "enum": {
+    "0x00": "否",
+    "0x01": "是"
+   }
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A307$0xF001A308:0.0",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A307$0xF001A308",
+   "path": [
+    "EOL（下线测试）文档",
+    "数据记录"
+   ],
+   "name": "数据记录",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 40,
+   "min": 0,
+   "max": 1099511627775,
+   "maxText": null,
+   "lid": 40,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "risk": "low"
+  },
+  {
+   "id": "Macan:Cajun_V6T_HP_USA:0xF001A309$0xF001A308:0.0",
+   "model": "Macan",
+   "platform": "CAJUN",
+   "module": "BV_ECM_UDS",
+   "variant": "Cajun_V6T_HP_USA",
+   "chain": "0xF001A309$0xF001A308",
+   "path": [
+    "EOL（下线测试）标志字节",
+    "数据记录"
+   ],
+   "name": "数据记录",
+   "byte": 0,
+   "bit": 0,
+   "bitsize": 8,
+   "min": 0,
+   "max": 255,
+   "maxText": null,
+   "lid": 41,
+   "readSid": 34,
+   "writeSid": 46,
+   "sidPairOk": true,
+   "level": "source-defined",
+   "kind": "number",
+   "risk": "low"
+  }
+ ]
+}
