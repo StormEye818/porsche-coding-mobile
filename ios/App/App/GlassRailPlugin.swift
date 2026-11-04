@@ -50,7 +50,12 @@ public class GlassRailPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         activeTabId = id
-        onActiveChanged?(id)
+        // ★ 2026-11-04：插件方法跑在 GCD 工作线程（真机崩溃栈底 start_wqthread），
+        //   回调动 UIKit 必须回主线程 —— 否则 UIBarButtonItem.isEnabled 触发
+        //   UIButton/UIImageView 主线程断言直接 SIGTRAP（真机 7 连崩实测）。
+        DispatchQueue.main.async { [weak self] in
+            self?.onActiveChanged?(id)
+        }
         call.resolve()
     }
 
@@ -58,7 +63,10 @@ public class GlassRailPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func setCanGoBack(_ call: CAPPluginCall) {
         let canGoBack = call.getBool("canGoBack") ?? false
         self.canGoBack = canGoBack
-        onCanGoBackChanged?(canGoBack)
+        // 同 setActive：回调必须回主线程（真机「进模块/规则编码必闪退」元凶）
+        DispatchQueue.main.async { [weak self] in
+            self?.onCanGoBackChanged?(canGoBack)
+        }
         call.resolve()
     }
 

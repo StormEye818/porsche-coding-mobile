@@ -143,3 +143,70 @@ final class SidebarLogicTests: XCTestCase {
                        "退栈后返回键应恢复禁用")
     }
 }
+
+// MARK: - 闪退回归：模拟模式 → 进模块 → 设码 → 规则编码
+/// 回归 2026-11-04 真机 7 连崩（EXC_BREAKPOINT @ UIBarButtonItem.isEnabled 后台线程）。
+final class SimModeCrashRegressionTests: XCTestCase {
+
+    private var app: XCUIApplication!
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        app = XCUIApplication(bundleIdentifier: "cn.bigmiao.porschecoder")
+        app.launch()
+    }
+
+    private func settle(_ seconds: Double = 1.2) {
+        RunLoop.current.run(until: Date().addingTimeInterval(seconds))
+    }
+
+    private func find(_ label: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    /// 闪退回归 + 模拟模式零提问体感：
+    /// 模拟模式 → 车型自动识别（免确认）→ 系统 → AC → 设码 → 规则编码，
+    /// 全程无弹窗、app 存活。
+    /// 回归 2026-11-04 真机 7 连崩（EXC_BREAKPOINT @ UIBarButtonItem.isEnabled
+    /// 后台线程改 UI）与「进模块手动选变体」两坑。
+    func testSimModeRuleCodingFlow() throws {
+        let sim = find("模拟模式")
+        XCTAssertTrue(sim.waitForExistence(timeout: 15), "模拟模式按钮未找到\n\(app.debugDescription)")
+        sim.tap()
+
+        // ① 模拟车自动进入：识别车型、零弹窗
+        XCTAssertTrue(find("退出模拟").waitForExistence(timeout: 8), "模拟模式未开启\n\(app.debugDescription)")
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS '991'")).firstMatch
+            .waitForExistence(timeout: 10), "模拟车未自动识别车型\n\(app.debugDescription)")
+        XCTAssertEqual(app.alerts.count, 0, "模拟车自动进入不该弹窗\n\(app.debugDescription)")
+
+        // ② 进系统选择 → 进 AC 模块（不该弹变体选择）
+        XCTAssertTrue(find("系统选择").waitForExistence(timeout: 8), "系统选择未出现")
+        find("系统选择").tap()
+        let ac = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS '空调'")).firstMatch
+        XCTAssertTrue(ac.waitForExistence(timeout: 10), "AC 系统未找到\n\(app.debugDescription)")
+        ac.tap()
+        settle(3.0)
+        XCTAssertEqual(app.alerts.count, 0, "进模块不该弹变体选择（参考诊断仪体感：零提问）\n\(app.debugDescription)")
+
+        // ③ 设码 → 规则编码（真机必闪退点）
+        let coding = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS '设码'")).firstMatch
+        XCTAssertTrue(coding.waitForExistence(timeout: 8), "设码入口未找到\n\(app.debugDescription)")
+        coding.tap()
+        settle(2.5)
+        let rule = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS '规则编码'")).firstMatch
+        XCTAssertTrue(rule.waitForExistence(timeout: 8), "规则编码入口未找到\n\(app.debugDescription)")
+        rule.tap()
+        settle(2.5)
+
+        XCTAssertTrue(app.state == .runningForeground, "app 不在前台 —— 闪退了！")
+        XCTAssertEqual(app.alerts.count, 0, "规则编码页不该弹窗\n\(app.debugDescription)")
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS '设码值'")).firstMatch.exists,
+            "规则编码内容未渲染\n\(app.debugDescription)")
+    }
+}

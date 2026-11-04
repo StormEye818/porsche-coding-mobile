@@ -52,6 +52,9 @@ export class MockAdapter extends Emitter {
     //   ecus = { 0x7E0: { name:'DME', dsn:'P200', kwp:false }, ... }
     this.strictAddress = !!opts.strictAddress;
     this.ecus = opts.ecus || null;
+    // ★ 识别链文本：设置后 1A xx 一律回 ASCII —— 自动选变体靠它命中变体名
+    //   （对齐真车 ODX 识别链，进模块不弹变体选择，2026-11-04）
+    this.identText = opts.identText || '';
     this.name = 'vLinker MS (模拟)';
   }
 
@@ -106,6 +109,12 @@ export class MockAdapter extends Emitter {
     for (let i = 0; i < clean.length; i += 2) bytes.push(parseInt(clean.substr(i, 2), 16));
     if (!bytes.length) return 'NO DATA';
     const sid = bytes[0];
+
+    // ── 识别链：identText 设置后 1A xx 回 ASCII（自动选变体用）──
+    if (sid === 0x1A && this.identText) {
+      const asc = [...this.identText].map((c) => c.charCodeAt(0) & 0xff);
+      return this.#frame([0x5A, bytes[1] ?? 0x9F, ...asc]);
+    }
 
     // ── 地址拓扑（真车只有装了的 ECU 才应答）──
     const ecu = this.ecus ? this.ecus[this.address.tx] : null;

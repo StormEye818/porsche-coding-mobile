@@ -514,6 +514,7 @@ let coding = [];          // coding-v2.json params
 let stack = [];           // 导航栈 [{level, title, data}]
 let currentParam = null;
 let simMode = false;
+let simMock = null;   // 模拟适配器（进模块时喂识别串用，2026-11-04）
 let modelsCatalog = null;
 let currentModel = null;
 const loadedVariants = new Map();   // 缓存已加载的变体
@@ -629,7 +630,7 @@ $('btnScan').onclick = async () => {;
 $('btnSim').onclick = async () => {;
   if (coder && simMode) {
     // 已在模拟 → 退出
-    doctor = elm = coder = null; simMode = false;
+    doctor = elm = coder = null; simMode = false; simMock = null;
     $('linkBadge').textContent = '未连接';
     $('linkBadge').className = 'badge';
     $('btnDisc').disabled = true; $('btnScan').disabled = true;
@@ -644,6 +645,7 @@ $('btnSim').onclick = async () => {;
   if (elm && typeof elm.close === 'function') { try { await elm.close(); } catch {} }
   elm = null; coder = null;
   const mock = new MockAdapter({ latencyMs: 30 });
+  simMock = mock;
   elm = new Elm327(mock, { timeoutMs: 2000 });   // ← MockAdapter 是 PortLike，包进 Elm327
   simMode = true;
   coder = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, ecuName: '模拟ECU' });
@@ -656,6 +658,8 @@ $('btnSim').onclick = async () => {;
   $('btnSim').textContent = '退出模拟';
   $('btnSim').classList.add('primary');
   toast('ok', '模拟模式已开启', '所有车型/功能都能点，读写走模拟车 —— 不碰真车');
+  // ★ 模拟车自动进入（对齐真车体感：免手动选车，2026-11-04）
+  await autoSearch({ autoAccept: true }).catch(() => {});
 };
 
 // 返回上一级（二级菜单也能退出来）
@@ -699,7 +703,7 @@ function decodeVinYear(vin) {
 }
 
 // ---------- 自动搜索（读 VIN 判车型年款）----------
-async function autoSearch() {
+async function autoSearch(opts = {}) {
   log('—— 自动搜索：读 VIN ——', 'info');
   if (!coder) {
     toast('err', '未连接适配器', '请先点「连接自检」，接上 vLinker 后再自动搜索');
@@ -784,6 +788,12 @@ async function autoSearch() {
     log(`  ${vinPrefix ? 'VIN 前缀' : 'VIN'}=${vin} · 年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：${modelGuess ? modelGuess.label : '未识别'}`,
       modelGuess ? 'ok' : 'info');
     if (modelGuess) {
+      if (opts.autoAccept) {
+        // ★ 模拟车 VIN 恒真，免确认直接进（对齐真车体感，2026-11-04）
+        pushModel(modelGuess);
+        toast('ok', `已选 ${modelGuess.label}`, `${year ?? '?'} 年款（模拟车自动识别）`);
+        return;
+      }
       const ok = confirm(`识别为：${modelGuess.label}\n`
         + `${vinPrefix ? 'VIN 前缀' : 'VIN'}：${vin}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认这个车型？`);
       if (ok) { pushModel(modelGuess); toast('ok', `已选 ${modelGuess.label}`, `${year ?? '?'} 年款`); return; }
@@ -1837,6 +1847,16 @@ let fnSeqData = null;
  */
 async function enterSystem(sys) {
   if (!needLink()) return false;
+  // ★ 模拟模式：mock 回出候选模块的默认变体识别串 —— 对齐真车 ODX 识别链，
+  //   自动识别变体、进模块不弹选择（对齐 参考诊断仪 体感，2026-11-04）。
+  if (simMode && simMock) {
+    const cat0 = modelsCatalog?.models?.[currentModel];
+    const names = [...new Set((sys.modules || [])
+      .map((mod) => (cat0?.modules || []).find((m) => m.module === mod))
+      .filter(Boolean)
+      .map((mi) => autoPickVariant(mi, '').name))].filter(Boolean);
+    if (names.length) simMock.identText = names.join(' ');
+  }
   state.currentAddr = null;   // 进模块失败时不能沿用上一个模块的地址证据
   let addr = addrFor(sys.label, currentModel, sys);
   // 地址缺失两种情况：①表里没这模块 ②表里有但 tx/rx 未知（如 IC，原填 0x7E8 与 DME 应答冲突已作废）
@@ -2145,28 +2165,9 @@ async function enterSystem(sys) {
         const auto = autoPickVariant(mi, coder.lastIdent);
         if (/未识别|无识别文本/.test(auto.how)) {
           delete state.selectedVariant[mod];
-          log(`  🧩 ${mod} 变体未识别（${auto.how}）`, 'warn');
-          const variantNames = catMods.map((v) => v.name || String(v.file || '').replace(/\.json$/i, ''));
-          if (variantNames.length > 1 && typeof prompt === 'function') {
-            const hint = `「${mod}」变体未自动识别（识别串="${coder.lastIdent || '空'}"）。
-
-可选变体：
-${variantNames.map((n, i) => `${i + 1}. ${n}`).join('\n')}
-
-输入序号或变体名确认（留空=保持只读）：`;
-            const raw = prompt(hint, '');
-            if (raw && raw.trim()) {
-              const idx = parseInt(raw.trim(), 10);
-              const picked = (idx >= 1 && idx <= variantNames.length) ? variantNames[idx - 1]
-                : variantNames.find((n) => n.toLowerCase() === raw.trim().toLowerCase());
-              if (picked) {
-                state.selectedVariant[mod] = picked;
-                log(`  🧩 ${mod} 变体手动选定：${picked}（写入解锁）`, 'ok');
-              } else {
-                log(`  🧩 ${mod} 变体「${raw.trim()}」不在列表里，保持只读`, 'warn');
-              }
-            }
-          }
+          // ★ 2026-11-04：不再弹窗问变体（对齐 参考诊断仪：进模块零提问）。
+          //   未识别 → 用默认变体显示、写入锁定（写入时有清晰拒绝提示兜底）。
+          log(`  🧩 ${mod} 变体未识别（${auto.how}）—— 已用默认变体显示，写入锁定`, 'warn');
         } else {
           state.selectedVariant[mod] = auto.name;
           log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, 'ok');

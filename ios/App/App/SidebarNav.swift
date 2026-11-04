@@ -52,10 +52,13 @@ class SidebarNav: UITabBarController, UITabBarControllerDelegate {
         selectedTab = homeTab
 
         glassRail?.onActiveChanged = { [weak self] id in
-            self?.setSelectedTab(id)
+            // 防御性主线程归位：插件回调可能来自 GCD 工作线程（2026-11-04 闪退教训）
+            DispatchQueue.main.async { [weak self] in self?.setSelectedTab(id) }
         }
         glassRail?.onCanGoBackChanged = { [weak self] canGoBack in
-            self?.backItems.forEach { $0.isEnabled = canGoBack }
+            DispatchQueue.main.async { [weak self] in
+                self?.backItems.forEach { $0.isEnabled = canGoBack }
+            }
         }
 
         let app = UITabBarAppearance()
