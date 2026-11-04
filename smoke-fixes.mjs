@@ -339,7 +339,8 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
   ok('INLINE_OTHER_PENDING 仍在收窄（当前 ' + INLINE_OTHER_PENDING.length + '）', INLINE_OTHER_PENDING.length < 38);
   {
     const { readFileSync } = await import('node:fs');
-    const samp = JSON.parse(readFileSync('/tmp/pend-samples.json', 'utf8'));
+    // ★ 2026-11-04：/tmp 路径重启即丢（本机实测 npm test 挂），统一走仓库内向量
+    const samp = JSON.parse(readFileSync('./tools/vectors/pend-samples.json', 'utf8'));
     let okN = 0, badN = 0, bads = [];
     for (const id of Object.keys(INLINE_MULADD)) {
       for (const r of (samp[id] || [])) {
@@ -366,7 +367,7 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
     const { pswCalc, PENDING_MODES } = await import('./src/seedkey-pswcalc.js');
     ok('mode 0x48 已收编（不再 PENDING）', !(0x48 in PENDING_MODES));
     const { readFileSync } = await import('node:fs');
-    const MS = JSON.parse(readFileSync('/tmp/mode-samples.json', 'utf8'));
+    const MS = JSON.parse(readFileSync('./tools/vectors/mode-samples.json', 'utf8'));
     const rows = (MS['0x48'] || []).filter((r) => r.key != null);
     let okN = 0, badN = 0;
     for (const r of rows) {
@@ -1424,13 +1425,18 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
        .every((n) => new RegExp(`function ${n}\\(`).test(app)));
   {
     const sidebar = readFileSync('./ios/App/App/SidebarNav.swift', 'utf8');
-    ok('原生侧栏“返回”不是 tab（走 header 动作）',
-       /headerContentConfiguration/.test(sidebar) && /BackHeaderView/.test(sidebar)
-       && !/\("back",\s*"返回"/.test(sidebar));
-    ok('原生侧栏动作与页面分离（底部动作栏）',
-       /bottomBarView = makeBottomActions\(\)/.test(sidebar)
-       && /tabs = pages/.test(sidebar)
-       && !/sidebarActions = makeSidebarActions/.test(sidebar));
+    // ★ 2026-11-04 断言更新：旧设计（header 返回 + 底部动作栏）从未落地，且
+    //   headerContentConfiguration/bottomBarView 是 sidebar 模式专属 API，
+    //   竖栏（tab bar 面）不渲染。落地设计 = bar items 独立按钮 + 根级 tabs 双区
+    //   （用户要求「三个按键独立、单独按键、在上方」）。
+    ok('原生侧栏 action 不是 tab（UIBarButtonItem 独立按钮）',
+       /UIBarButtonItem\(primaryAction:/.test(sidebar)
+       && /makeActionItems/.test(sidebar)
+       && !/UITab\(title: "返回"/.test(sidebar));
+    ok('原生侧栏动作与页面分离（bar items 与 tabs 双区）',
+       /rightBarButtonItems = makeActionItems\(\)/.test(sidebar)
+       && /tabs = \[homeTab, selectTab\]/.test(sidebar)
+       && !/\.sidebarActions =/.test(sidebar));
   }
   ok('自检不调用 probeModules（L1–L4 只验链路）',
      !ld.includes('await this.probeModules()'));

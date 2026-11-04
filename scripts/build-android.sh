@@ -8,8 +8,10 @@ npm run sync
 npx cap sync android
 
 echo "── 2/4 发版面泄漏检查 ──"
+# 口径与 install-device.sh 一致：发版面=代码（bundle+html），data 不扫 ——
+# 车件参数名（如「逆向阈值」）会误触发，那是车件语义不是逆向描述（2026-11-04）
 LEAK=$(grep -rniE "X431|YZJM|DSTREAM|Unicorn|oracle|逆向|破解|libPORSCHE|flat-six|0x1e2b0|0x1e348|rijndael|反汇编" \
-       android/app/src/main/assets/public/ 2>/dev/null || true)
+       android/app/src/main/assets/public/*.js android/app/src/main/assets/public/*.html 2>/dev/null || true)
 if [ -n "$LEAK" ]; then
   echo "❌ 发版面有泄漏，中止"
   echo "$LEAK" | head -5

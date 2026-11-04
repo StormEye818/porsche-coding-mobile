@@ -105,20 +105,33 @@ if (!process.argv.includes('--refill')) {
   //   清洗了 data/measure.json 的内部格式描述，www/data/ 里还是旧的，差点打包出去去）。
   const DATA_SRC = path.join(MOBILE, 'data');
   const DATA_DST = path.join(WWW, 'data');
+  // ★ 2026-11-04：先清空再拷 —— copyDir 只增不删，旧中间产物会永远留在
+  //   www/data 里（实测排除规则生效后 www/data 仍 1.5G）
+  fs.rmSync(DATA_DST, { recursive: true, force: true });
   fs.mkdirSync(DATA_DST, { recursive: true });
   let n = 0;
   // ⚠️ models/ 子目录也要递归拷（按车型×模块×变体的懒加载文件）
   //   只拷顶层 json 会让 app 取不到车型数据（2026-10-13 踩过）
+  // ★ 2026-11-04：只同步运行时引用的数据。中间产物（rebuild-all.py 生成，
+  //   运行时从不 fetch）此前被整个拷进安装包，app 体积 1.4G；排除后 ≈700M。
+  const SKIP = new Set([
+    'coding-models.json',    // 403M 全量中间表
+    'coding-by-model.json',  // 207M 全量中间表
+    'menu-tree.json',        // v1，已被 menu-tree-v3.json 取代
+    'platforms.json',        // RE 中间表
+    'so-exports.json',       // .so 研究产物
+  ]);
+  const skip = (name) => SKIP.has(name) || /^x431-tree/.test(name);
   const copyDir = (src, dst) => {
     fs.mkdirSync(dst, { recursive: true });
     for (const e of fs.readdirSync(src, { withFileTypes: true })) {
       const s = path.join(src, e.name), d = path.join(dst, e.name);
       if (e.isDirectory()) copyDir(s, d);
-      else if (e.name.endsWith('.json')) { fs.copyFileSync(s, d); n++; }
+      else if (e.name.endsWith('.json') && !skip(e.name)) { fs.copyFileSync(s, d); n++; }
     }
   };
   copyDir(DATA_SRC, DATA_DST);
-  console.log(`[sync] www/data/  同步 ${n} 个 json（含 models/ 递归）`);
+  console.log(`[sync] www/data/  同步 ${n} 个 json（含 models/ 递归，已排除中间产物）`);
 }
 
 refill();
