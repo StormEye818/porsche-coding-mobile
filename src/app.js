@@ -324,6 +324,17 @@ function addrCandsFor(label, sys = null) {
 }
 
 /**
+ * 文档 §5 三级寻址（2026-11-04 收官）：
+ *   proven / table-unique（唯一候选）→ 直接进，零探测；
+ *   candidate（多候选）→ 定向探测（参考诊断仪 探报文 + flags + 识别串终审）；
+ *   歧义 → 禁写（宁可拒写不猜，文档原话）。
+ */
+function addrTableUnique(label, sys = null) {
+  const cs = addrCandsFor(label, sys);
+  return cs.length === 1 ? cs[0] : null;
+}
+
+/**
  * 探测模块地址（两阶段）。
  *
  * 阶段 1：常用地址（标准 OBD 7E0–7E7 + 已知扩展对，约 20 个），命中即停。
@@ -2036,6 +2047,13 @@ async function enterSystem(sys) {
       }
     }
   }
+  // ★ table-unique 直进（文档 §5 第二级）：候选唯一就不再探测
+  if (!addr || addr.state === 'needs-probe' || addr.state === 'candidate') {
+    const uniq = addrTableUnique(sys.label, sys);
+    if (uniq) {
+      addr = { ...uniq, state: 'table', note: '表唯一候选（免探测）' };
+    }
+  }
   state.currentAddr = addr;
   showLoading(`正在进入 ${sys.label}`, `地址 0x${addr.tx.toString(16).toUpperCase()}/0x${addr.rx.toString(16).toUpperCase()} · 建立会话中…`);
   // ⚠️⚠️ 从这里到函数末尾**整段 try/finally**：loading 必然被关掉。
@@ -2314,9 +2332,11 @@ async function enterSystem(sys) {
     active = recognized[0] || entries[0] || null;
   }
   let items = [];
+  let activeMod = '', activeMi = null;   // 变体落定用（2026-11-04 提升作用域）
   state.multiVariantModules.clear();
   if (active) {
     const { mod, mi } = active;
+    activeMod = mod; activeMi = mi;
     const catMods = mi.variants || [];
     if (catMods.length > 1) {
       state.multiVariantModules.add(mod);
@@ -2379,6 +2399,31 @@ async function enterSystem(sys) {
     const block = currentBlocks[p.lid];
     if (block) {
       try { p.currentValue = extractField(block, p); } catch { p.currentValue = undefined; }
+    }
+  }
+  // ★ 变体落定（2026-11-04）：名字匹配之后，用实测块做确定性确认。
+  //   同构 → 默认变体即可（映射全同）；异构 → 唯一满足全部值域/枚举者才认；
+  //   歧义/不适配 → 保持未确认（写入闸门 = 文档 §5「宁可拒写不猜」）。
+  const mod = activeMod, mi = activeMi;
+  if (mod && state.multiVariantModules?.has(mod) && !state.selectedVariant[mod]) {
+    if (simMode) {
+      state.selectedVariant[mod] = autoPickVariant(mi, '').name;
+      log(`  🧩 ${mod} 模拟车免检落定：${state.selectedVariant[mod]}`, 'ok');
+    } else if (await variantMapsIdentical(mod)) {
+      state.selectedVariant[mod] = autoPickVariant(mi, '').name;
+      log(`  🧩 ${mod} 各变体映射全同 —— 默认变体落定（读写一致）`, 'ok');
+    } else {
+      const fits = [];
+      for (const v of (mi.variants || [])) {
+        const vit = await loadVariantItems(cat.slug, v.file);
+        if (vit.length && variantFitsBlocks(vit, currentBlocks)) fits.push(v.name);
+      }
+      if (fits.length === 1) {
+        state.selectedVariant[mod] = fits[0];
+        log(`  🧩 ${mod} 变体约束确认：${fits[0]}（唯一满足全部值域/枚举）`, 'ok');
+      } else {
+        log(`  🧩 ${mod} 变体歧义（${fits.length} 个适配）—— 保持未确认，写入按规拒`, 'warn');
+      }
     }
   }
   hideLoading();
@@ -3861,6 +3906,31 @@ async function loadVariantItems(slug, file) {
   } catch {
     return [];
   }
+}
+
+/**
+ * 块约束适配判定（2026-11-04，文档 §5「宁可拒写不猜」的正向应用）：
+ * 变体映射的值域/枚举与实测块内容全部吻合才算适配。
+ * 用于唯一适配时的确定性变体确认 —— 不猜、不唯一不认。
+ */
+function variantFitsBlocks(items, blocks) {
+  for (const p of items) {
+    const b = blocks[p.lid];
+    if (!b) continue;
+    try {
+      const v = extractField(b, p);
+      if (v == null) continue;
+      const num = Number(v);
+      if (!Number.isFinite(num)) continue;
+      if (p.min != null && num < Number(p.min)) return false;
+      if (p.max != null && num > Number(p.max)) return false;
+      const keys = Array.isArray(p.enum)
+        ? p.enum.map((e) => Number(typeof e === 'object' ? e.value : e)).filter((k) => Number.isFinite(k))
+        : [];
+      if (keys.length >= 2 && !keys.includes(num)) return false;
+    } catch { return false; }
+  }
+  return true;
 }
 
 /**
