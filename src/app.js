@@ -226,6 +226,31 @@ const EXT_ADDRS = [
 let probeAbort = false;
 
 /**
+ * 表驱动定向探测短名单（2026-11-04）：ecu-addresses.json 的 cands
+ * （SYS_DATA 候选集收敛到 11 位诊断段，锚点 attr 组排序）。
+ * 参考诊断仪 的做法就是候选集探测裁剪，不是全网段盲扫。
+ */
+function addrCandsFor(label, sys = null) {
+  try {
+    if (!ecuAddrTable) return [];
+    let sysId = SYSTEM_TO_ECUID[label];
+    if (!sysId && typeof MODULE_TO_ECUID !== 'undefined') sysId = MODULE_TO_ECUID[label];
+    if (!sysId && sys?.modules?.length) {
+      for (const m of sys.modules) {
+        const k = MODULE_TO_ECUID[m];
+        if (k) { sysId = k; break; }
+      }
+    }
+    if (!sysId) return [];
+    const hit = (ecuAddrTable.entries || []).find(
+      (e) => e.sysId && e.sysId.toLowerCase() === sysId.toLowerCase());
+    return (hit?.cands || [])
+      .map((c) => ({ tx: parseInt(c.tx, 16), rx: parseInt(c.rx, 16) }))
+      .filter((c) => Number.isFinite(c.tx) && Number.isFinite(c.rx));
+  } catch { return []; }
+}
+
+/**
  * 探测模块地址（两阶段）。
  *
  * 阶段 1：常用地址（标准 OBD 7E0–7E7 + 已知扩展对，约 20 个），命中即停。
@@ -265,6 +290,8 @@ async function probeAddressFor(label, probeCmd) {
   };
 
   const quick = [];
+  // ★ 表驱动短名单优先（2026-11-04）：SYS_DATA 候选集收敛，替换「一个地址一个地址试」
+  for (const c of addrCandsFor(label)) add(quick, c.tx, c.rx);
   if (prefTx) add(quick, prefTx, prefTx + 8);
   for (let tx = 0x7E0; tx <= 0x7E7; tx++) add(quick, tx, tx + 8);
   for (const [tx, rx] of EXT_ADDRS) add(quick, tx, rx);
