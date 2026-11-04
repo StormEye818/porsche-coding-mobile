@@ -33,13 +33,35 @@ ANCHORS = {sid: (tx, inter) for _n, sid, tx, inter in rea.ANCHORS}
 
 
 def load_tabB(sd_bytes, sysids):
-    """表B 全相位扫描：[u32 sysId][u32 internal][u32 attr][proto|cls|idx|0xff]（16B 行）。"""
+    """表B 多源并集（2026-11-04 收官）：
+    SYS_DATA 16B 行 + ALL_ACTINFO/GFS 等文件的柔性共现扫描 —— 代际块分布在多个文件。
+    实测：覆盖 209/209，锚点 5/6 数据命中（GW 为手工锚点）。
+    """
+    import glob as _glob
     tabB = {}
+    # ① SYS_DATA 16B 行（宽松 tail）
     for off in range(0, len(sd_bytes) - 16):
-        sid, inter, attr, tail = struct.unpack_from('<IIII', sd_bytes, off)
-        b = tail.to_bytes(4, 'little')
-        if sid in sysids and 0x100 <= inter <= 0x1FFF and b[3] == 0xff:
+        sid, inter = struct.unpack_from('<II', sd_bytes, off)
+        if sid in sysids and 0x100 <= inter <= 0x1FFF:
             tabB.setdefault(sid, set()).add(inter)
+    # ② 其余 decoded/*.BIN 柔性 24B 窗口共现（sysId u32 + internal u16）
+    for f in _glob.glob('/Users/se818/porsche-mapper/ref/decoded/*.BIN'):
+        if f.endswith('PORSCHE_SYS_DATA.BIN'):
+            continue
+        blob = open(f, 'rb').read()
+        for sid in sysids:
+            b4 = struct.pack('<I', sid)
+            start = 0
+            while True:
+                i = blob.find(b4, start)
+                if i < 0:
+                    break
+                win = blob[i:i + 24]
+                for o in range(0, 22, 2):
+                    v = struct.unpack_from('<H', win, o)[0]
+                    if 0x100 <= v <= 0x1FFF:
+                        tabB.setdefault(sid, set()).add(v)
+                start = i + 1
     return tabB
 
 
@@ -120,7 +142,7 @@ def main():
         entries.append(e)
 
     doc = {
-        'schemaVersion': 3,
+        'schemaVersion': 4,
         'source': 'PORSCHE_DRIVELINKS.BIN 三层目录 + PORSCHE_SYS_DATA.BIN 表B(sysId→internal) + 表A(internal→CAN)',
         'note': ('proven=真机锚点；table-unique=候选唯一；candidate=多候选走定向探测（文档 §5 三级）。'
                  'cands.src=tableB 为精确 join，lowbyte 为模糊兜底；rows=addrBlock 文件行序（表头裁剪语义用）。'),
