@@ -23,7 +23,9 @@ echo "── 3/4 构建 APK ──"
 cd android
 ./gradlew assembleDebug 2>&1 | tail -10
 
-APK=android/app/build/outputs/apk/debug/app-debug.apk
+# ⚠️ 2026-11-04：已在 android/ 目录里，路径不能再带 android/ 前缀
+#   （旧写法永远「APK 未生成」假阴性，产物其实好好地在）
+APK=app/build/outputs/apk/debug/app-debug.apk
 if [ -f "$APK" ]; then
   echo "── 4/4 构建完成 ──"
   echo "   ✅ $APK"

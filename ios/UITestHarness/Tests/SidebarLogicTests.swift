@@ -174,12 +174,17 @@ final class SimModeCrashRegressionTests: XCTestCase {
         XCTAssertTrue(sim.waitForExistence(timeout: 15), "模拟模式按钮未找到\n\(app.debugDescription)")
         sim.tap()
 
-        // ① 模拟车自动进入：识别车型、零弹窗
+        // ① 模拟车自动进入：识别车型、零弹窗、不许穿透进快速测试
         XCTAssertTrue(find("退出模拟").waitForExistence(timeout: 8), "模拟模式未开启\n\(app.debugDescription)")
         XCTAssertTrue(app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS '991'")).firstMatch
             .waitForExistence(timeout: 10), "模拟车未自动识别车型\n\(app.debugDescription)")
         XCTAssertEqual(app.alerts.count, 0, "模拟车自动进入不该弹窗\n\(app.debugDescription)")
+        // 回归 2026-11-04「自动搜索直跳快速测试」：confirm 弹窗 OK 的 ghost-click
+        // 穿透网页砸中列表第一项 —— 模拟模式免确认 + 导航锁后，落点必须是车型页
+        XCTAssertFalse(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS '快速测试：'")).firstMatch.exists,
+            "ghost-click 穿透进了快速测试页\n\(app.debugDescription)")
 
         // ② 进系统选择 → 进 AC 模块（不该弹变体选择）
         XCTAssertTrue(find("系统选择").waitForExistence(timeout: 8), "系统选择未出现")

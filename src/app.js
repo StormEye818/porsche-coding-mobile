@@ -512,6 +512,7 @@ let doctor = null, elm = null, coder = null;
 let tree = null;          // menu-tree-v3.json
 let coding = [];          // coding-v2.json params
 let stack = [];           // 导航栈 [{level, title, data}]
+let _navLockTs = 0;       // 程序化导航后短窗口内吞掉 ghost-click（2026-11-04）
 let currentParam = null;
 let simMode = false;
 let simMock = null;   // 模拟适配器（进模块时喂识别串用，2026-11-04）
@@ -788,8 +789,11 @@ async function autoSearch(opts = {}) {
     log(`  ${vinPrefix ? 'VIN 前缀' : 'VIN'}=${vin} · 年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：${modelGuess ? modelGuess.label : '未识别'}`,
       modelGuess ? 'ok' : 'info');
     if (modelGuess) {
-      if (opts.autoAccept) {
-        // ★ 模拟车 VIN 恒真，免确认直接进（对齐真车体感，2026-11-04）
+      if (opts.autoAccept || simMode) {
+        // ★ 模拟车 VIN 恒真，免确认直接进（对齐真车体感，2026-11-04）。
+        //   另：confirm() 的 OK 在 iOS 会把点击穿透到网页内容（ghost-click），
+        //   砸中重绘后列表第一项 —— 真机「自动搜索直跳快速测试」即此病，
+        //   模拟模式彻底不弹窗即根治。
         pushModel(modelGuess);
         toast('ok', `已选 ${modelGuess.label}`, `${year ?? '?'} 年款（模拟车自动识别）`);
         return;
@@ -2236,6 +2240,10 @@ async function enterSystem(sys) {
 
 
 async function onSelect(it) {
+  // ★ 2026-11-04：程序化导航（pushModel/confirm 收尾）后 500ms 内的点击一律吞掉。
+  //   iOS 上 confirm() 的 OK 会把点击穿透进网页，砸中重绘后列表第一项
+  //   （真机「自动搜索直跳快速测试」）。
+  if (Date.now() - _navLockTs < 500) return;
   // ruleGroup: 规则编码分组点击
   if (it.kind === 'ruleGroup') {
     await readBlocksForItems(it.raw.items || []);
@@ -2432,6 +2440,7 @@ function pushModel(m) {
   // ⚠️ 必须用**树里的真 model 对象**（带 functions/modules），不能用 VIN 码表 stub
   //    （stub 只有 {code,label}，fnItems(m) 会读 m.functions || [] → 0 项 → 进不了系统选择）。
   //    2026-10-17 审计 B1：自动搜索识别成功却走到死胡同。
+  _navLockTs = Date.now();   // 短窗口吞掉弹窗穿透/重绘后的 ghost-click（2026-11-04）
   currentModel = m.label;
   const g = (tree?.groups || []).find((x) => (x.models || []).some((y) => y.label === m.label));
   const real = g?.models?.find((y) => y.label === m.label) || m;
