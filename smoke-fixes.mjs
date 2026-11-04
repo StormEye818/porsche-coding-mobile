@@ -333,6 +333,26 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
     return hex(r.key) === '0010';
   })());
 
+  // —— 响应解析自适应（2026-11-04 实车总根因回归）——
+  {
+    const { parseRespAuto } = await import('./src/coder.js');
+    // ① 裸 ISO-TP 多帧（vLinker 不认 ATCAF1 的实车原始输出）：PCI 必须剥干净
+    const vin = parseRespAuto(
+      '7E810135A9057503041\n7E8214232393833454B\n7E822313930303833AA', '1A90', 0x1A);
+    const txtOf = (p) => (p.body || []).slice(2).filter((c) => c >= 0x20 && c < 0x7f)
+      .map((c) => String.fromCharCode(c)).join('');
+    ok('CAF0 多帧重组剥 PCI（1A 90 出完整 VIN）', txtOf(vin) === 'WP0AB2983EK190083');
+    // ② 裸帧单帧 NRC：body[0] 必须是 7F（此前被 PCI 顶掉 → SID 回退/报错全失灵）
+    const nrc = parseRespAuto('7E8037F2212', '220000', 0x22);
+    ok('CAF0 单帧 NRC 识别（7F 22 12）', nrc.kind === 'nrc' && nrc.service === 0x22 && nrc.code === 0x12);
+    // ③ 合规 CAF1 纯数据输出照常解析
+    const caf = parseRespAuto('7E8 5A 9F 50 32 30 30', '1A9F', 0x1A);
+    ok('CAF1 纯数据照常解析（识别串 P200）', txtOf(caf) === 'P200');
+    // ④ 裸帧单帧识别串不得带 PCI 污染（'Z' 前缀即污染）
+    const idn = parseRespAuto('7E8065A9F50323030', '1A9F', 0x1A);
+    ok('CAF0 单帧识别串无污染（P200 不是 ZP200）', txtOf(idn) === 'P200');
+  }
+
   // —— 内联 MULADD（32 点 真值对拍 合成 + 独立复核）——
   const { computeVariantKey, INLINE_MULADD, INLINE_OTHER_PENDING } = await import('./src/seedkey-registry.js');
   ok('INLINE_MULADD 已收编（当前 ' + Object.keys(INLINE_MULADD).length + '）', Object.keys(INLINE_MULADD).length >= 6);

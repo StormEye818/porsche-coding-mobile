@@ -263,6 +263,43 @@ export function parseRespCaf1(hexStr, reqEcho = '') {
   return { kind: 'ok', body };
 }
 
+/**
+ * 自适应解析 —— 兼容两种适配器输出（2026-11-04 实车定根因）：
+ *
+ *   ① 裸 ISO-TP（CAF0）：vLinker MS 经 EA 通道**不执行 ATCAF1**，输出带
+ *      PCI 的原始帧（`7E8 10 13 5A 90 …` / `7E8 21 …`）→ 走 parseResp 完整重组；
+ *   ② 纯数据（CAF1）：合规适配器已剥 PCI 自行重组 → 走 parseRespCaf1。
+ *
+ * 之前 uds() 固定用 parseRespCaf1 解析裸帧输出：PCI 当数据留在 body 里，
+ * 识别串脏（"ZWP0A!B2983EK\"190083"）、NRC 识别不出（body[0]=03≠7F）、
+ * VIN/变体识别/读码回退/SID 回退全部级联失败。真机 7 连坑的总根。
+ *
+ * 判定：按请求 SID 期望的正响应（req+0x40）或 NRC(0x7F) 落在 body[0] 为准，
+ * 两种解释都像时优先 ISO-TP（长度可核对）。
+ */
+export function parseRespAuto(hexStr, reqEcho = '', reqSid = null) {
+  const iso = parseResp(hexStr, reqEcho);
+  const caf = parseRespCaf1(hexStr, reqEcho);
+  const want = reqSid == null ? null : ((reqSid + 0x40) & 0xFF);
+  const matches = (p) => {
+    if (!p.body || !p.body.length) return false;
+    return want == null ? p.body[0] === 0x7f : (p.body[0] === want || p.body[0] === 0x7f);
+  };
+  const isoOk = matches(iso), cafOk = matches(caf);
+  if (isoOk && !cafOk) return iso;
+  if (cafOk && !isoOk) return caf;
+  if (isoOk && cafOk) {
+    // 都像：① 截断互斥时取未截断；② CAF1 多行时 ISO 解释会丢「无首帧的连续行」，
+    //    取载荷更完整的解释（CAF0 场景 caf 的 body[0] 是 PCI，匹配不上，不会走到这里）
+    if (iso.kind === 'truncated' && caf.kind !== 'truncated') return caf;
+    return caf.body.length > iso.body.length ? caf : iso;
+  }
+  // 都不像：保留更有诊断价值的结果（截断 > 有数据 > 空）
+  if (iso.kind === 'truncated') return iso;
+  if (caf.kind === 'truncated') return caf;
+  return (iso.kind === 'empty' && caf.kind !== 'empty') ? caf : iso;
+}
+
 export class Coder {
   /**
    * @param {Elm327} elm   已锁定协议的 ELM327
@@ -423,7 +460,9 @@ export class Coder {
     // 调试：原始收发都记下来
     this._trace(`  >> ${payloadHex}`);
     this._trace(`  << ${raw || '(空)'}`);
-    const p = parseRespCaf1(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''));
+    // ★ 2026-11-04：自适应解析（裸 ISO-TP / 纯数据两种适配器输出通吃）
+    const reqSid = parseInt(String(payloadHex).replace(/[^0-9A-Fa-f]/g, '').slice(0, 2), 16) & 0xff;
+    const p = parseRespAuto(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''), reqSid);
     if (p.kind === 'nrc') {
       throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒（NRC 0x${(p.code||0).toString(16)}）`, p.code);
     }

@@ -12,7 +12,7 @@
  *
  * 连接与适配器通信参考同门工具；车上的读写走本项目协议层（coder.js）。
  */
-import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1 } from './coder.js';
+import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1, parseRespAuto } from './coder.js';
 import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant } from './variant.js';
@@ -283,7 +283,10 @@ async function probeAddressFor(label, probeCmd) {
       for (let ci = 0; ci < cmds.length; ci++) {
         const cmd = cmds[ci];
         const r = (await coder.elm.cmd(cmd, 2000) || '').trim();
-        const pr = parseRespCaf1(r);
+        // ★ 2026-11-04：裸帧适配器下 parseRespCaf1 认不出 5A/62 起头 → 探测全瞎。
+        //   自适应解析后，正响应判定才可靠。
+        const pr = parseRespAuto(r, String(cmd).replace(/[^0-9A-Fa-f]/g, ''),
+          parseInt(String(cmd).slice(0, 2), 16) & 0xff);
         const body = Array.from(pr.body || [])
           .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
         // 只认正响应；7F 只说明「地址上有模块」，不能当目标
@@ -1849,6 +1852,24 @@ let fnSeqData = null;
 /**
  * 进模块：切地址 → 进会话 → 编码块按需读（打开参数/点读取时才读）。
  */
+/**
+ * 探测命中识别串是否像目标系统（自动确认用，2026-11-04）。
+ * 匹配 label / 模块名的词元；命中 → 自动接受探测地址，免二次询问。
+ */
+function identMatchesSys(ident, sys) {
+  const t = String(ident || '').toUpperCase();
+  if (!t) return false;
+  const keys = new Set();
+  const add = (s) => String(s || '')
+    .split(/[^\w一-龥]+/)
+    .filter((x) => x.length >= 2)
+    .forEach((x) => keys.add(x.toUpperCase()));
+  add(sys.label);
+  (sys.modules || []).forEach(add);
+  for (const k of keys) if (t.includes(k)) return true;
+  return false;
+}
+
 async function enterSystem(sys) {
   if (!needLink()) return false;
   // ★ 模拟模式：mock 回出候选模块的默认变体识别串 —— 对齐真车 ODX 识别链，
@@ -2127,6 +2148,23 @@ async function enterSystem(sys) {
       await coder.enterSession(0x03);
       log('  ✅ 已进 10 03 扩展会话（只读；写入仍需 10 89）', 'warn');
     } catch (e2) {
+      // ★ 2026-11-04：会话全灭（NO DATA）→ 自动重探测地址后重试一次，
+      //   对齐参考诊断仪「直接进入」体感（此前 IC/转向盘 就卡死在这里）。
+      const dead = /无应答|NO DATA/i.test(`${e.message} ${e2.message}`);
+      if (dead && !sys._retried) {
+        log(`  🔄 会话无应答 —— 自动重探测「${sys.label}」地址…`, 'warn');
+        hideLoading();
+        const hit = await probeAddressFor(sys.label, null);
+        const matchOk = hit && (identMatchesSys(hit.ident, sys)
+          || confirm(`探测到 0x${hit.tx.toString(16).toUpperCase()}/0x${hit.rx.toString(16).toUpperCase()}`
+            + (hit.ident ? `（识别「${hit.ident}」）` : '')
+            + `。\n\n确认这是「${sys.label}」吗？`));
+        if (hit && matchOk) {
+          saveAddrOverride(sys.label, hit, currentModel);
+          log(`  ✅ 探测到 0x${hit.tx.toString(16).toUpperCase()}/0x${hit.rx.toString(16).toUpperCase()}（${hit.ident || '无识别串'}）—— 自动重试进入`, 'ok');
+          return await enterSystem({ ...sys, _retried: true });
+        }
+      }
       hideLoading();
       toast('err', `${sys.label} 会话失败`, `${e.message}；回退 10 03 也失败：${e2.message}`);
       return false;
@@ -2209,7 +2247,12 @@ async function enterSystem(sys) {
       }
     }
   }
-  if (readFail) {
+  if (readFail === lids.length && lids.length > 0) {
+    // ★ 2026-11-04：全挂还报「✅ 就绪」是假成功（实车日志 5/5 失败仍报就绪）
+    toast('err', `${sys.label} 读码失败`,
+      `${readFail}/${lids.length} 个编码块没读到 —— 当前值不可用，请核对地址/协议后再读`);
+    log(`  ❌ ${sys.label}：${readFail}/${lids.length} 个编码块读取失败 —— 不视为就绪`, 'err');
+  } else if (readFail) {
     toast('warn', `${readFail}/${lids.length} 个编码块读取失败`,
       '对应项当前值为空 —— 请检查连接/地址，或跑地址扫描确认 ECU 可达');
   }
@@ -2220,7 +2263,9 @@ async function enterSystem(sys) {
     }
   }
   hideLoading();
-  toast('ok', `${sys.label} 就绪`, `${items.length} 个参数 / ${lids.length} 个编码块已读`);
+  if (readFail === 0) {
+    toast('ok', `${sys.label} 就绪`, `${items.length} 个参数 / ${lids.length} 个编码块已读`);
+  }
   return true;
   } catch (e) {
     // ⚠️ enterSystem **永不抛异常**，只返回 true/false。
@@ -2742,9 +2787,16 @@ async function doWrite(p, v) {
   // ⚠️ 变体未确认则拒绝写入（2026-10-17 审计）：多变体模块的 byte/bit 映射因变体而异，
   //    用错变体会写到错误字节。参考诊断仪靠版本信息（1A 92/94）识别变体。
   if (state.multiVariantModules?.has(p.module) && !state.selectedVariant?.[p.module]) {
-    toast('err', `「${p.name}」变体未自动识别`,
-      `${p.module} 存在多个变体，且没有匹配到当前 ECU 的识别串 —— 已用默认变体显示，但为防写错字节，写入被拒绝。请重新进模块或核对模块地址。`);
-    return;
+    // ★ 2026-11-04：同构变体（字节映射全同）不该锁写 —— 参考诊断仪直接写。
+    //   按需比对全部变体映射：一致 → 解锁（默认映射即可用）；不一致 → 保持拒绝。
+    const same = await variantMapsIdentical(p.module);
+    if (same) {
+      log(`  🧩 ${p.module} 各变体字节映射一致 —— 解锁写入（默认变体映射即可用）`, 'ok');
+    } else {
+      toast('err', `「${p.name}」变体未自动识别`,
+        `${p.module} 存在多个变体且映射不同，没有匹配到当前 ECU 的识别串 —— 为防写错字节，写入被拒绝。请重新进模块或核对模块地址。`);
+      return;
+    }
   }
   // canWrite 是**总闸**：含 WRITE_ENABLED 严格门禁开关 + 只读项 + 无 LID。
   // 此前它零调用，文档说「改 WRITE_ENABLED=false 可恢复严格门禁」实际无效。
@@ -3672,9 +3724,14 @@ async function loadModuleItems(modelLabel, module) {
     delete state.selectedVariant[module];
   }
   const want = selRec?.file || mod.default;
-  const key = `${modelLabel}::${module}::${want}`;
+  return await loadVariantItems(cat.slug, want);
+}
+
+/** 按 (slug, 变体文件) 加载编码条目（缓存）。 */
+async function loadVariantItems(slug, file) {
+  const key = `file::${slug}::${file}`;
   if (loadedVariants.has(key)) return loadedVariants.get(key);
-  const url = `data/models/${cat.slug}/${want}`;
+  const url = `data/models/${slug}/${file}`;
   try {
     const r = await fetch(url);
     if (!r.ok) return [];
@@ -3684,5 +3741,37 @@ async function loadModuleItems(modelLabel, module) {
     return items;
   } catch {
     return [];
+  }
+}
+
+/**
+ * 同构判定（2026-11-04）：该模块所有变体的字节映射是否完全一致。
+ * 实证：BV_ECM_UDS 的 36 个变体 (lid,byte,bit,bitLength,name) 全同 —— 纯标定副本，
+ * 读写与选哪个变体无关。同构 → 默认变体即可读写（解锁写入闸门）；
+ * 不同构 → 保持闸门（防写错字节）。结果缓存。
+ */
+async function variantMapsIdentical(module) {
+  const key = `sameMap::${currentModel}::${module}`;
+  if (loadedVariants.has(key)) return loadedVariants.get(key);
+  try {
+    const cat = modelsCatalog?.models?.[currentModel];
+    const mi = (cat?.modules || []).find((m) => m.module === module);
+    const recs = mi?.variants || [];
+    if (recs.length <= 1) { loadedVariants.set(key, true); return true; }
+    const sigOf = (items) => items
+      .map((p) => [p.lid, p.byte, p.bit, p.bitLength, p.name].join(','))
+      .sort().join(';');
+    let base = null;
+    for (const v of recs) {
+      const items = await loadVariantItems(cat.slug, v.file);
+      if (!items.length) { loadedVariants.set(key, false); return false; }
+      const s = sigOf(items);
+      if (base == null) base = s;
+      else if (s !== base) { loadedVariants.set(key, false); return false; }
+    }
+    loadedVariants.set(key, true);
+    return true;
+  } catch {
+    return false;
   }
 }
