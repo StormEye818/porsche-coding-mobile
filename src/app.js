@@ -2413,17 +2413,16 @@ async function enterSystem(sys) {
       state.selectedVariant[mod] = autoPickVariant(mi, '').name;
       log(`  🧩 ${mod} 各变体映射全同 —— 默认变体落定（读写一致）`, 'ok');
     } else {
+      // ★ 2026-11-04 风险收口：约束拟合只做提示，**不解锁写入**（解锁仅认
+      //   名字识别/映射全同两种零风险路径，其余一律宁可拒写 = 参考诊断仪 规格）。
       const fits = [];
       for (const v of (mi.variants || [])) {
         const vit = await loadVariantItems(cat.slug, v.file);
         if (vit.length && variantFitsBlocks(vit, currentBlocks)) fits.push(v.name);
       }
-      if (fits.length === 1) {
-        state.selectedVariant[mod] = fits[0];
-        log(`  🧩 ${mod} 变体约束确认：${fits[0]}（唯一满足全部值域/枚举）`, 'ok');
-      } else {
-        log(`  🧩 ${mod} 变体歧义（${fits.length} 个适配）—— 保持未确认，写入按规拒`, 'warn');
-      }
+      log(fits.length === 1
+        ? `  🧩 ${mod} 约束拟合提示：${fits[0]}（仅供参考，写入仍按规拒）`
+        : `  🧩 ${mod} 变体未确认（约束适配 ${fits.length} 个）—— 写入按规拒`, 'warn');
     }
   }
   hideLoading();

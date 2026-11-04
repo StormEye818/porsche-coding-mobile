@@ -374,9 +374,10 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
        /sigOf[\s\S]{0,400}enum/.test(app));
     ok('三级寻址落地（唯一候选免探测直进）',
        /addrTableUnique/.test(app) && /表唯一候选（免探测）/.test(app));
-    ok('变体约束确认（唯一适配才落定，歧义禁写）',
-       /variantFitsBlocks/.test(app) && /变体约束确认/.test(app)
-       && /变体歧义（\$\{fits.length\} 个适配）/.test(app));
+    ok('约束拟合只提示不解锁（风险收口：解锁只认名字/全同构）',
+       /variantFitsBlocks/.test(app) && /约束拟合提示/.test(app)
+       && /仅供参考，写入仍按规拒/.test(app)
+       && !/变体约束确认：/.test(app));
     ok('模拟车免检落定（sim 免约束确认）',
        /模拟车免检落定/.test(app));
   }
