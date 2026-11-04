@@ -37,17 +37,18 @@ echo "── 3/5 找设备 ──"
 # ⚠️ 状态字可能是 connected/available 等，别写死一种（2026-10-17 装机时踩过：
 #    写死 /available/ 但真机报 connected，导致误报「无可用物理 iPhone」）
 DEFAULT_UDID="00008160-000C043A1420000A"   # iPhone Duo (iPhone19,4)
-PHYSICAL=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ {print $3; exit}')
-if [ -n "$DEVICE_UDID" ]; then
+DEVICES=$(xcrun devicectl list devices 2>/dev/null || true)
+PHYSICAL=$(printf '%s\n' "$DEVICES" | awk '/physical/ {print $2; exit}' || true)
+if [ -n "${DEVICE_UDID:-}" ]; then
   UDID="$DEVICE_UDID"
-elif xcrun devicectl list devices 2>/dev/null | grep -q "$DEFAULT_UDID"; then
+elif [[ "$DEVICES" == *"$DEFAULT_UDID"* ]]; then
   UDID="$DEFAULT_UDID"
 else
   # 默认机不在线就回落到当前第一台物理机（换机/换线时不必改脚本）
   UDID="$PHYSICAL"
   [ -n "$UDID" ] && echo "   ⚠️ 默认机 (Duo) 不在线，回落到 $UDID"
 fi
-if [ -z "$UDID" ] || ! xcrun devicectl list devices 2>/dev/null | grep -q "$UDID"; then
+if [[ -z "$UDID" || "$DEVICES" != *"$UDID"* ]]; then
   echo "❌ 没有可用的物理 iPhone。请插线并解锁。"
   echo "   当前在线的物理机："
   xcrun devicectl list devices 2>/dev/null | awk '/physical/'

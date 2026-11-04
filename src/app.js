@@ -388,7 +388,24 @@ const StatusBar = registerPlugin('StatusBar');
   }
 })();
 
-const $ = (id) => document.getElementById(id);
+function $(id) {
+  var el = document.getElementById(id);
+  if (el !== null && el !== undefined) return el;
+  var cache = globalThis.__nsCache = globalThis.__nsCache || {};
+  if (!cache[id]) {
+    var d = {};
+    d.style = {};
+    d.classList = { add: function(){}, remove: function(){}, toggle: function(){}, contains: function(){ return false; } };
+    d.querySelectorAll = function() { return []; };
+    d.querySelector = function() { return d; };
+    d.addEventListener = function() {};
+    d.appendChild = function() {};
+    d.insertAdjacentHTML = function() {};
+    d.scrollIntoView = function() {};
+    cache[id] = d;
+  }
+  return cache[id];
+}
 const logEl = $('log');
 const log = (m, cls = 'info') => {
   const d = document.createElement('div');
@@ -433,7 +450,8 @@ function needLink() {
 // ---------- 全屏加载遮罩（读取期间锁定操作） ----------
 let _loadingCancel = null;
 function showLoading(title, detail = '', onCancel = null) {
-  let el = $('loadingMask');
+  // 必须用真实 DOM 判断：$() 的 headless fallback 是普通对象，没有 querySelector。
+  let el = document.getElementById('loadingMask');
   if (!el) {
     el = document.createElement('div');
     el.id = 'loadingMask';
@@ -463,7 +481,7 @@ function showLoading(title, detail = '', onCancel = null) {
 }
 function hideLoading() {
   _loadingCancel = null;
-  const el = $('loadingMask');
+  const el = document.getElementById('loadingMask');
   if (el) el.style.display = 'none';
   document.body.style.overflow = '';
 }
@@ -475,7 +493,7 @@ function hideLoading() {
  *    runSequence 执行到第一个命令也断。必须存在。
  */
 function updateLoading(title, detail = '', onCancel = null) {
-  const el = $('loadingMask');
+  const el = document.getElementById('loadingMask');
   if (!el) { showLoading(title, detail, onCancel); return; }
   _loadingCancel = onCancel;
   const btn = el.querySelector('.lmCancel');
@@ -507,7 +525,7 @@ const state = {
 };
 
 // ---------- ① 连接 ----------
-$('btnDoctor').onclick = async () => {
+$('btnDoctor').onclick = async () => {;
   $('btnDoctor').disabled = true;
   // ⚠️ 自检期间屏蔽其它操作（2026-10-22）：此前用户在自检中点「自动搜索」，
   //    coder 还没建（doctor.run() 才返回），误报「未连接适配器」——
@@ -567,12 +585,13 @@ $('btnDoctor').onclick = async () => {
 };
 
 // 地址扫描：实测车上哪些 ECU 有应答（比查表猜靠谱）
-$('btnScan').onclick = async () => {
+$('btnScan').onclick = async () => {;
   if (!needLink()) return;
   toast('info', 'ECU 地址扫描中', '逐个试 0x700–0x7F0；真车无应答多，需数分钟，请勿断开');
   $('btnScan').disabled = true;
   try {
     const found = await scanEcuAddresses(elm, (m) => log(m, 'info'));
+    if (coder) coder._addressReady = false;   // 扫描直接改了 ATSH/ATCRA
     if (found.length) {
       // ⚠️ 扫到就回填 ECU_ADDR 并标 measured（审计 A2）—— 否则扫了也用不上
       for (const f of found) {
@@ -607,7 +626,7 @@ $('btnScan').onclick = async () => {
 };
 
 // 模拟模式：没接头也能完整体验（读写走模拟车，不碰真车）
-$('btnSim').onclick = async () => {
+$('btnSim').onclick = async () => {;
   if (coder && simMode) {
     // 已在模拟 → 退出
     doctor = elm = coder = null; simMode = false;
@@ -640,9 +659,9 @@ $('btnSim').onclick = async () => {
 };
 
 // 返回上一级（二级菜单也能退出来）
-$('btnBack').onclick = () => goBack();
+try { const _bb = $('btnBack'); if (_bb) _bb.onclick = () => goBack(); } catch {}
 
-$('btnDisc').onclick = async () => {
+$('btnDisc').onclick = async () => {;
   if (doctor) { try { await doctor.close(); } catch {} }
   if (elm && typeof elm.close === 'function') { try { await elm.close(); } catch {} }
   doctor = elm = coder = null;
@@ -823,6 +842,171 @@ function guessModelFromVin(vin, year) {
   if (hit && year != null && hit.yearFrom != null && (year < hit.yearFrom)) hit = null;
   if (hit && year != null && hit.yearTo != null && (year > hit.yearTo)) hit = null;
   return hit || null;
+}
+
+// ===== 侧边栏布局（参考 AlfaProxi 三态 rail/dock）=====
+// ★ 2026-10-31：Duo 展开 → rail（右侧竖栏）；手机/窄屏 → dock（底部横栏）。
+//   所有返回操作集中到侧边栏 sbBack 按钮。
+//   ⚠️ 全部防御式写法 —— $() 返回 null 时不抛异常，否则整个模块不执行。
+function applySideBarMode() {
+  try {
+    // 原生 UITabBarController 侧栏已接管时隐藏 CSS 侧边栏
+    if (window.innerWidth >= 720) {
+      document.body.classList.add('native-rail');
+      var sb = $('sideBar');
+      if (sb) { sb.style.cssText = 'display:none !important'; }
+      return;
+    }
+    const rail = window.innerWidth >= 720 && window.innerHeight >= 560;
+    document.body.classList.toggle('sb-rail', rail);
+    document.body.classList.toggle('sb-dock', !rail);
+    // ★ 直接设置 display，不依赖 CSS body class 选择器（Capacitor WebView 可能缓存旧 CSS）
+    // display 由 CSS class 控制，不直接设 style
+  } catch {}
+}
+applySideBarMode();
+let _sbResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_sbResizeTimer);
+  _sbResizeTimer = setTimeout(applySideBarMode, 120);
+});
+window.addEventListener('orientationchange', () => setTimeout(applySideBarMode, 120));
+
+// ★ 2026-10-31：接收原生 UITabBarController 侧栏事件（GlassRailPlugin）
+// ★ 2026-11-01：插件桥必须走 registerPlugin('GlassRail')（同 MfiSerial 模式）。
+//   window.GlassRail 是老写法，Capacitor 8 里不存在——真机实测返回键永远灰，
+//   所有上报被 `if (window.GlassRail)` 静默跳过。
+const GlassRail = registerPlugin('GlassRail');
+
+window.APXRail = {
+  select: (id) => {
+    try {
+      switch (id) {
+        // === action 按钮：只触发动作，不切页、不打断当前操作 ===
+        case 'back':
+          goBack();
+          return;
+        case 'search':
+          // 聚焦搜索框（不切页，不丢上下文）
+          const si = document.getElementById('searchIn');
+          if (si) { si.focus(); si.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          return;
+        case 'log':
+          // 滚到日志区（不切页）
+          const logEl = document.querySelector('.log') || document.getElementById('log');
+          if (logEl) logEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        // === 导航 tab：正常切页 ===
+        case 'home':
+          stack = [];
+          try { if (typeof exitSystem === 'function') exitSystem(); } catch {}
+          renderNav();
+          return;
+        case 'select':
+          stack = [];
+          renderNav();
+          return;
+        case 'doctor':
+          try { $('btnDoctor')?.click(); } catch {}
+          return;
+        case 'sim':
+          try { $('btnSim')?.click(); } catch {}
+          return;
+      }
+    } catch {}
+  }
+};
+
+// 网页导航栈变化时同步原生返回按钮可用性
+function syncRailBackState() {
+  try {
+    if (GlassRail && GlassRail.setCanGoBack) {
+      GlassRail.setCanGoBack({ canGoBack: stack.length > 0 }).catch(() => {});
+    }
+  } catch {}
+}
+
+// 网页切页时通知原生侧栏高亮
+function syncNativeRail(id) {
+  try {
+    if (GlassRail && GlassRail.setActive) {
+      GlassRail.setActive({ id }).catch(() => {});
+    }
+  } catch {}
+}
+
+// ★ 原生侧栏检测：宽屏（≥720px）= Duo/iPad → 原生 UITabBarController 侧栏
+function detectNativeRail() {
+  try {
+    // Duo 合盖时窗口只有 466pt，但系统仍然渲染右侧原生 side rail。
+    // 只要 Capacitor 的 GlassRail 插件存在，就说明是原生侧栏设备；
+    // 此时必须隐藏网页 CSS dock，否则会出现“底部按键模块 + 原生侧栏”两套。
+    const cap = window.Capacitor;
+    const nativeApp = !!(cap && (
+      (typeof cap.isNativePlatform === 'function' && cap.isNativePlatform())
+      || cap.platform === 'ios'
+      || cap.getPlatform?.() === 'ios'
+    ));
+    // 注：历史写法是 `window.GlassRail || nativeApp`，而 window.GlassRail 恒为
+    // undefined（见上方 ★ 2026-11-01），此条件实际一直等价 nativeApp，行为保持不变。
+    if (nativeApp) {
+      document.body.classList.add('native-rail');
+      return true;
+    }
+    if (window.innerWidth >= 720) {
+      document.body.classList.add('native-rail');
+      return true;
+    }
+    document.body.classList.remove('native-rail');
+  } catch {}
+  return false;
+}
+detectNativeRail();
+setTimeout(detectNativeRail, 500);
+setTimeout(detectNativeRail, 1500);
+setTimeout(detectNativeRail, 2500);
+window.addEventListener('resize', detectNativeRail);
+
+// 侧边栏按钮事件（防御式绑定，null 不抛）
+function _sbBind(id, fn) {
+  try { const el = $(id); if (el) el.onclick = fn; } catch {}
+}
+_sbBind('sbBack', () => goBack());
+_sbBind('sbHome', () => {
+  stack = [];
+  try { if (typeof exitSystem === 'function') exitSystem(); } catch {}
+  try { $('secParam').style.display = 'none'; } catch {}
+  renderNav();
+});
+_sbBind('sbDoctor', () => { try { $('btnDoctor')?.click(); } catch {} });
+_sbBind('sbSearch', () => { try { $('btnScan')?.click(); } catch {} });
+_sbBind('sbLog', () => {
+  try { document.querySelector('.log')?.scrollIntoView({ behavior: 'smooth' }); } catch {}
+});
+_sbBind('sbSim', () => { try { $('btnSim')?.click(); } catch {} });
+
+/** 渲染侧边栏面包屑（竖排导航栈） */
+function renderSideBarCrumbs() {
+  try {
+    const box = $('sbCrumbs');
+    const back = $('sbBack');
+    if (!box) return;
+    if (back) back.style.display = stack.length ? '' : 'none';
+    const parts = stack.map((s) => s.title || '');
+    box.innerHTML = parts.map((t, i) =>
+      `<button class="sb-crumb${i === parts.length - 1 ? ' active' : ''}" data-i="${i}">${t}</button>`
+    ).join('');
+    box.querySelectorAll('.sb-crumb').forEach((b) => {
+      b.onclick = () => {
+        const i = +b.dataset.i;
+        const leavingSys = stack.slice(i + 1).some((s) => s.level === 'sys');
+        if (leavingSys) { try { if (typeof exitSystem === 'function') exitSystem(); } catch {} }
+        stack = stack.slice(0, i + 1);
+        try { $('secParam').style.display = 'none'; } catch {}
+        renderNav();
+      };
+    });
+  } catch {}
 }
 
 // ---------- 导航栈 ----------
@@ -1241,7 +1425,9 @@ function crumb() {
   });
 
   // 显式返回键 —— 栈里只要有东西就显示
-  $('btnBack').style.display = stack.length ? '' : 'none';
+  try { const bb = $('btnBack'); if (bb) bb.style.display = stack.length ? '' : 'none'; } catch {}
+  renderSideBarCrumbs();
+  syncRailBackState();
 }
 
 function renderNav() {
@@ -1444,9 +1630,188 @@ function renderNav() {
 }
 
 /**
- * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐参考诊断仪）。
- * 参考诊断仪 是进模块就读全量，不是一个一个进去读。
+ * 进模块：切地址 → 进会话 → 编码块按需读（打开参数/点读取时才读）。
  */
+
+
+function showRuleCoding(allItems, sysLabel) {
+  // ★ 参考诊断仪的做法：先显示一级分组目录（和刷隐藏一样），点进去再批量编辑
+  const groups = {};
+  for (const p of allItems) {
+    const g = p.path?.[0] || '（未命名）';
+    (groups[g] = groups[g] || []).push(p);
+  }
+  const groupItems = Object.entries(groups)
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([name, items]) => ({
+      kind: 'ruleGroup', raw: { name, items, sysLabel },
+      lbl: name, meta: `${items.length} 个参数`, cnt: items.length,
+    }));
+  stack.push({ level: 'ruleGroupList', title: `规则编码 · ${sysLabel}`, data: { items: groupItems, allItems, sysLabel } });
+  renderNav();
+}
+
+function showRuleGroup(g) {
+  // ★ 参考诊断仪的做法：有 L3 子组就先显示子组列表，没有才直接显示条目
+  const hasSubgroups = g.items.some((p) => (p.path?.length || 0) >= 3);
+  if (hasSubgroups) {
+    // 按 L3 子分组
+    const subgroups = {};
+    for (const p of g.items) {
+      const sg = (p.path?.length >= 3) ? p.path[1] : '（直接条目）';
+      (subgroups[sg] = subgroups[sg] || []).push(p);
+    }
+    const sgItems = Object.entries(subgroups)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([name, items]) => ({
+        kind: 'ruleSubgroup', raw: { name, items, parentGroup: g.name },
+        lbl: name, meta: `${items.length} 个参数`, cnt: items.length,
+      }));
+    stack.push({ level: 'ruleSubgroupList', title: g.name, data: { items: sgItems, allItems: g.items, sysLabel: g.sysLabel } });
+    renderNav();
+    return;
+  }
+  // 无子组 → 直接批量编辑
+  showRuleBatchEdit(g.name, g.items);
+}
+
+function showRuleSubgroup(sg) {
+  // 显示 L3 子组的批量编辑
+  showRuleBatchEdit(`${sg.parentGroup} > ${sg.name}`, sg.items);
+}
+
+function showRuleBatchEdit(title, items) {
+  const rows = items.map((p) => {
+    const curVal = p.currentValue !== undefined ? decodeValue(p, p.currentValue) : '?';
+    const en = p.enum ? Object.entries(p.enum)
+      : (p.kind === 'switch' ? [[0, '关'], [1, '开']] : []);
+    let inputHtml;
+    if (p.kind === 'switch' || p.kind === 'enum') {
+      // ⚠️ enum key 是**十进制**字符串（"0".."255"/"16777215"），不是十六进制！
+      // 曾用 parseInt(k,16)：`"255"→597`、`"10"→16`，3802 条枚举里 4194 个 key≥10 全写错值。
+      inputHtml = `<select class="ruleVal" data-id="${p.id}" data-touched="0" onchange="this.dataset.touched='1'">${en.map(([k, v]) =>
+        `<option value="${Number(k)}" ${Number(k) === p.currentValue ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+    } else {
+      const wide = (p.bitsize | 0) > 53;
+      inputHtml = `<input class="ruleVal" data-id="${p.id}" data-touched="0" oninput="this.dataset.touched='1'" type="${wide ? 'text' : 'number'}" inputmode="numeric" value="${p.currentValue ?? 0}" min="${p.min ?? 0}" max="${p.max ?? ''}" style="width:${wide ? 150 : 70}px">`;
+    }
+    // 显示完整路径（含 L3 上下文）
+    const pathStr = (p.path || []).slice(1).join(' › ');
+    return `<div class="ruleRow">
+      <div class="ruleName">${p.name}<br><small>${pathStr} · byte ${p.byte} bit ${p.bit} · 当前: ${curVal}</small></div>
+      <div class="ruleInput">${inputHtml}</div>
+    </div>`;
+  }).join('');
+
+  $('navList').innerHTML = `
+    <div class="ruleCoding">
+      <div class="hint">${title}：修改后点「批量写入」一次性写入。</div>
+      <div class="ruleGroup">
+        ${rows}
+      </div>
+      <div class="acts" style="margin-top:16px">
+        <button id="ruleBatchWrite" class="primary">批量写入</button>
+      </div>
+    </div>`;
+
+  $('ruleBatchWrite').onclick = async () => {
+    const changes = [];
+    const rejected = [];
+    $('navList').querySelectorAll('.ruleVal').forEach((el) => {
+      const p = items.find((x) => x.id === el.dataset.id);
+      if (!p) return;
+      const newVal = parseFieldInput(p, el.value);
+      if (newVal == null) { rejected.push(`${p.name}: 值无效（${el.value}）`); return; }
+      // ⚠️ 当前值未读到时不能一律跳过（2026-10-18 审计）：此前 `currentValue===undefined`
+      //    直接 return，用户明明改了值也不会进 changes，批量写入静默少项。
+      //    现在只有「用户真的动过」才纳入；未动过仍跳过，避免把第一项当目标值写进去。
+      if (p.currentValue === undefined) {
+        if (el.dataset.touched !== '1') return;
+      } else if (newVal === p.currentValue) {
+        return;
+      }
+      // ⚠️ 批量写入必须与单项写入**同一套闸门**：
+      //   ① canWrite（只读项 / 无 LID / 严格门禁开关）
+      //   ② min/max 范围 —— 此前批量路径不查，injectField 对越界值
+      //      `& mask` 静默截断后照写（2026-10-16 复查 P11）
+      if (!canWrite(p)) { rejected.push(`${p.name}: 不可写（只读/无 LID/门禁）`); return; }
+      if (!fieldInRange(p, newVal)) {
+        rejected.push(`${p.name}: ${newVal} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}`);
+        return;
+      }
+      changes.push({ p, newVal });
+    });
+    if (rejected.length) {
+      alert(`有 ${rejected.length} 项未通过校验，已跳过：\n\n${rejected.slice(0, 10).join('\n')}`);
+    }
+    if (!changes.length) {
+      toast('info', '没有可写入的变更', rejected.length ? '全部被校验拦下' : '所有值与当前值一致');
+      return;
+    }
+    const okBatch = confirm(`确认批量写入 ${changes.length} 个变更？\n\n`
+      + changes.slice(0, 8).map((c) => `· ${c.p.name} = ${decodeValue(c.p, c.newVal)}`).join('\n')
+      + (changes.length > 8 ? `\n…等 ${changes.length} 项` : '')
+      + '\n\n会改变车辆配置，请确认已导出备份。');
+    if (!okBatch) return;
+    showLoading('批量写入中…', `${changes.length} 个变更`);
+    let ok = 0, fail = 0;
+    const failWhy = [];
+    for (const { p, newVal } of changes) {
+      try {
+        await coder.applyChange(p, newVal, { dryRun: false, session: 0x89, secLevel: 0x09 });
+        p.currentValue = newVal;
+        if (p.lid != null) delete currentBlocks[p.lid];   // 块缓存失效
+        ok++;
+      } catch (e) {
+        fail++;
+        // ⚠️ 失败原因必须留下来（2026-10-18 审计）：此前 `catch {}` 空吞，
+        //    用户只看到「成功 3 / 失败 2」，不知道哪一项为什么失败、要不要重试。
+        failWhy.push(`${p.name}：${e.message}`);
+        log(`  ❌ ${p.name} 写入失败：${e.message}`, 'err');
+      }
+    }
+    hideLoading();
+    if (fail) alert(`批量写入：成功 ${ok} / 失败 ${fail}\n\n${failWhy.slice(0, 12).join('\n\n')}`);
+    // ⚠️ 批量写入本身与「每次只改一项」的项目红线有张力：失败项之后的项会继续写，
+    //    且中途失败时车上是**部分变更**状态。保留功能但明确告知（2026-10-18 审计）。
+    toast(fail ? 'warn' : 'ok', '批量写入完成', `成功 ${ok} / 失败 ${fail}`);
+    showRuleBatchEdit(title, items); // 刷新显示新值
+  };
+}
+
+
+async function readBlocksForItems(items) {
+  const needLids = new Set();
+  for (const p of items) {
+    if (p.lid != null && !currentBlocks[p.lid]) needLids.add(p.lid);
+  }
+  if (!needLids.size) return;
+  showLoading('正在读取数据', `${needLids.size} 个编码块`);
+  const failed = [];
+  for (const lid of needLids) {
+    const sample = items.find((p) => p.lid === lid);
+    try {
+      currentBlocks[lid] = await coder.readBlock(lid, sample?.readSid ?? 0x21);
+    } catch (e) {
+      // ⚠️ 不能静默吞（2026-10-18 审计）：读失败会让当前值显示成「?」，
+      //    用户会以为只是没读到；批量写入时又会在 applyChange 里重新读一次，
+      //    真正失败时错误更晚、更难归因。这里至少把失败块记下来并提示。
+      failed.push({ lid, error: e.message });
+    }
+    updateLoading('正在读取数据', `LID 0x${lid.toString(16)}`);
+  }
+  for (const p of items) {
+    const block = currentBlocks[p.lid];
+    if (block) {
+      try { p.currentValue = extractField(block, p); } catch { p.currentValue = undefined; }
+    }
+  }
+  hideLoading();
+  if (failed.length) {
+    toast('warn', `${failed.length}/${needLids.size} 个编码块读取失败`,
+      failed.slice(0, 3).map((f) => `LID 0x${f.lid.toString(16)}: ${f.error}`).join('；'));
+  }
+}
 
 
 /** 退出模块：回到系统列表（参考诊断仪的做法是断开模块会话） */
@@ -1468,8 +1833,7 @@ let currentBlocks = {};
 let fnSeqData = null;
 
 /**
- * 进模块：切地址 → 进会话 → **一次性读完该模块所有编码**（对齐参考诊断仪）。
- * 参考诊断仪 是进模块就读全量，不是一个一个进去读。
+ * 进模块：切地址 → 进会话 → 编码块按需读（打开参数/点读取时才读）。
  */
 async function enterSystem(sys) {
   if (!needLink()) return false;
@@ -1745,101 +2109,111 @@ async function enterSystem(sys) {
     }
   }
 
-  // ★ 加载该车型×模块×变体的编码条目
-  const mods = sys.modules || [];
+  // ★ 2026-10-31：只加载“当前选中的变体模块”，不再把 sys.modules 里所有候选模块/
+  //   所有变体拼在一起读。参考诊断仪的做法是：识别到哪个变体，就只读这个变体的全部编码块。
+  const cat = modelsCatalog?.models?.[currentModel];
+  const entries = (sys.modules || [])
+    .map((mod) => ({ mod, mi: (cat?.modules || []).find((m) => m.module === mod) }))
+    .filter((e) => e.mi);
+  if (!entries.length) {
+    log(`  ${sys.label} 没有可加载的模块数据`, 'warn');
+  }
+  // 已有用户/自动选择 → 只认这个模块；否则优先选识别串能命中的模块，
+  // 都不命中才退回第一个候选（不把全部候选都读一遍）。
+  let active = entries.find((e) => state.selectedVariant[e.mod]) || null;
+  if (!active) {
+    const recognized = [];
+    for (const e of entries) {
+      const a = autoPickVariant(e.mi, coder.lastIdent);
+      if (!/未识别|无识别文本/.test(a.how)) recognized.push({ ...e, auto: a });
+    }
+    if (recognized.length > 1) {
+      log(`  ${sys.label} 有 ${recognized.length} 个候选模块命中识别串，按第一个加载：${recognized[0].mod}`, 'warn');
+    }
+    active = recognized[0] || entries[0] || null;
+  }
   let items = [];
   state.multiVariantModules.clear();
-  for (const mod of mods) {
-    const cat = modelsCatalog?.models?.[currentModel];
-    const mi = (cat?.modules || []).find((m) => m.module === mod);
-    if (mi && (mi.variants || []).length > 1) {
+  if (active) {
+    const { mod, mi } = active;
+    const catMods = mi.variants || [];
+    if (catMods.length > 1) {
       state.multiVariantModules.add(mod);
-      // ★ 2026-10-18：参考诊断仪 **不弹变体选择**。它靠 ECU 识别（1A 9F/94/92）
-      //   匹配 ODX 变体名；我们之前反过来让用户手选，既不像 参考诊断仪，也把
-      //   大多数模块的写入锁死。现在自动选：识别串命中变体名 → 精确；
-      //   命中模块名 → BaseSys；都不中 → 参考诊断仪 默认变体（default）。
-      //   仍然保留 selectedVariant 这个安全闸门（自动选也会写入它），
-      //   这样 doWrite 不再因为「未选」拒写。
-      const auto = autoPickVariant(mi, coder.lastIdent);
-      // ⚠️ 识别失败时 autoPickVariant 仍会返回默认变体名；不能把它写进
-      //    selectedVariant，否则 doWrite 的「变体未识别 → 拒写」闸门永远失效。
-      if (/未识别|无识别文本/.test(auto.how)) {
-        delete state.selectedVariant[mod];
-        log(`  🧩 ${mod} 变体未识别（${auto.how}）`, 'warn');
-        // ★ 2026-10-27：手动选变体兜底 —— 自动识别失败时让用户确认。
-        //   选了变体就解锁写入；不选保持只读。
-        const variantNames = (mi.variants || []).map((v) => v.name || String(v.file||'').replace(/\.json$/i,''));
-        if (variantNames.length > 1 && typeof prompt === 'function') {
-          const hint = `「${mod}」变体未自动识别（识别串="${coder.lastIdent||'空'}"）。
+      if (state.selectedVariant[mod]) {
+        log(`  🧩 ${mod} 使用已选变体：${state.selectedVariant[mod]}`, 'ok');
+      } else {
+        const auto = autoPickVariant(mi, coder.lastIdent);
+        if (/未识别|无识别文本/.test(auto.how)) {
+          delete state.selectedVariant[mod];
+          log(`  🧩 ${mod} 变体未识别（${auto.how}）`, 'warn');
+          const variantNames = catMods.map((v) => v.name || String(v.file || '').replace(/\.json$/i, ''));
+          if (variantNames.length > 1 && typeof prompt === 'function') {
+            const hint = `「${mod}」变体未自动识别（识别串="${coder.lastIdent || '空'}"）。
 
 可选变体：
-${variantNames.map((n,i)=>`${i+1}. ${n}`).join('\n')}
+${variantNames.map((n, i) => `${i + 1}. ${n}`).join('\n')}
 
 输入序号或变体名确认（留空=保持只读）：`;
-          const raw = prompt(hint, '');
-          if (raw && raw.trim()) {
-            const idx = parseInt(raw.trim(), 10);
-            const picked = (idx >= 1 && idx <= variantNames.length) ? variantNames[idx-1]
-              : variantNames.find((n) => n.toLowerCase() === raw.trim().toLowerCase());
-            if (picked) {
-              state.selectedVariant[mod] = picked;
-              log(`  🧩 ${mod} 变体手动选定：${picked}（写入解锁）`, 'ok');
-            } else {
-              log(`  🧩 ${mod} 变体「${raw.trim()}」不在列表里，保持只读`, 'warn');
+            const raw = prompt(hint, '');
+            if (raw && raw.trim()) {
+              const idx = parseInt(raw.trim(), 10);
+              const picked = (idx >= 1 && idx <= variantNames.length) ? variantNames[idx - 1]
+                : variantNames.find((n) => n.toLowerCase() === raw.trim().toLowerCase());
+              if (picked) {
+                state.selectedVariant[mod] = picked;
+                log(`  🧩 ${mod} 变体手动选定：${picked}（写入解锁）`, 'ok');
+              } else {
+                log(`  🧩 ${mod} 变体「${raw.trim()}」不在列表里，保持只读`, 'warn');
+              }
             }
           }
+        } else {
+          state.selectedVariant[mod] = auto.name;
+          log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, 'ok');
         }
-      } else {
-        state.selectedVariant[mod] = auto.name;
-        log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, 'ok');
       }
     }
     const got = await loadModuleItems(currentModel, mod);
-    items = items.concat(got);
+    items = got;
   }
   items = items.filter((p) => validateParam(p).length === 0 && p.lid != null);
   coding = items;
 
-  // ★ 2026-10-29：进模块读**全部**编码块（对齐参考诊断仪「进模块即读全量」）。
-  //   此前只预读前 8 个，其余等用户滚到分组才补 —— 列表里大半项没有当前值，
-  //   与「读取全部设码项的数据情况」不符。块多时给进度，并允许中途取消。
+  // ★ 2026-10-31：只读当前变体的全部编码块（参考诊断仪的做法），不读其他变体/候选模块。
   const lids = [...new Set(items.map((p) => p.lid))];
   currentBlocks = {};
   let enterAbort = false;
   let readFail = 0;
   let readDone = 0;
-  showLoading(`正在读取 ${sys.label}`, `0/${lids.length} 个编码块…`,
-    () => { enterAbort = true; });
-  for (const lid of lids) {
-    if (enterAbort) {
-      log(`  · 已取消，剩余 ${lids.length - readDone} 个块未读`, 'warn');
-      break;
-    }
-    readDone++;
-    const sample = items.find((p) => p.lid === lid);
-    updateLoading(`正在读取 ${sys.label}`, `${readDone}/${lids.length} 个编码块…`,
-      () => { enterAbort = true; });
-    try {
-      currentBlocks[lid] = await coder.readBlock(lid, sample.readSid ?? 0x21);
-    } catch (e) {
-      // ⚠️ 读失败必须让用户看见（2026-10-17 审计 C1）：静默吞掉会让用户以为
-      //    "326 个参数" 只是没值，实际是块根本没读到。
-      readFail++;
-      log(`  ❌ LID 0x${lid.toString(16)} 读取失败：${e.message}`, 'err');
+  if (lids.length) {
+    showLoading(`正在读取 ${sys.label}`, `0/${lids.length} 个编码块…`, () => { enterAbort = true; });
+    for (const lid of lids) {
+      if (enterAbort) {
+        log(`  · 已取消，剩余 ${lids.length - readDone} 个块未读`, 'warn');
+        break;
+      }
+      readDone++;
+      const sample = items.find((p) => p.lid === lid);
+      updateLoading(`正在读取 ${sys.label}`, `${readDone}/${lids.length} 个编码块…`,
+        () => { enterAbort = true; });
+      try {
+        currentBlocks[lid] = await coder.readBlock(lid, sample.readSid ?? 0x21);
+      } catch (e) {
+        readFail++;
+        log(`  ❌ LID 0x${lid.toString(16)} 读取失败：${e.message}`, 'err');
+      }
     }
   }
   if (readFail) {
     toast('warn', `${readFail}/${lids.length} 个编码块读取失败`,
       '对应项当前值为空 —— 请检查连接/地址，或跑地址扫描确认 ECU 可达');
   }
-  // 提取已读块的当前值
   for (const p of items) {
     const block = currentBlocks[p.lid];
     if (block) {
       try { p.currentValue = extractField(block, p); } catch { p.currentValue = undefined; }
     }
   }
-
   hideLoading();
   toast('ok', `${sys.label} 就绪`, `${items.length} 个参数 / ${lids.length} 个编码块已读`);
   return true;
@@ -2104,6 +2478,10 @@ function showMultiGroup(g) {
 // ---------- 参数详情（独立页面） ----------
 function renderParamDetail(p) {
   currentParam = p;
+  // 进模块不再全量读；打开详情时按需读该 LID（只读一次，写完/读完都会缓存）。
+  if (p?.lid != null && coder && currentBlocks[p.lid] === undefined) {
+    setTimeout(() => { if (currentParam?.id === p.id) doRead(p); }, 0);
+  }
   const ro = p.sidPairOk === false;
   const en = p.enum ? Object.entries(p.enum) : [];
   const curVal = p.currentValue !== undefined ? decodeValue(p, p.currentValue) : null;
@@ -2543,7 +2921,7 @@ $('vmOk').onclick = async () => {
 };
 
 // ---------- 备份 / 导出 / 分享 ----------
-$('btnBackup').onclick = async () => {
+$('btnBackup').onclick = async () => {;
   if (!needLink()) return;
   const p = currentParam;
   const lid = p && (p.lid ?? p.did);
@@ -2579,7 +2957,7 @@ $('mCopy').onclick = async () => {
 $('mShare').onclick = async () => {
   try { await navigator.share({ text: $('shareTa').value }); } catch { }
 };
-$('btnCopy').onclick = async () => {
+$('btnCopy').onclick = async () => {;
   try { await navigator.clipboard.writeText(logEl.textContent); log('日志已复制', 'ok'); } catch { }
 };
 $('btnShare').onclick = () => openShare(logEl.textContent);
@@ -2621,7 +2999,7 @@ async function loadAll() {
   renderNav();
 }
 
-loadAll().catch((e) => log('载入失败: ' + e.message, 'err'));
+loadAll().then(() => { window.__appBooted = true; }).catch((e) => log('载入失败: ' + e.message, 'err'));
 
 // ---------- 模块扩展功能（读故障码 / 数据流 / 执行器 / 特殊功能）----------
 async function showSysExtra(f) {

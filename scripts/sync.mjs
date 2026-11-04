@@ -60,10 +60,10 @@ if (!process.argv.includes('--refill')) {
     entryPoints: [path.join(MOBILE, 'src', 'app.js')],
     outfile: path.join(WWW, 'app.bundle.js'),
     bundle: true,
-    format: 'esm',
+    format: 'iife',
     platform: 'browser',
     target: 'es2022',
-    minify: true,
+    minify: false,
     logLevel: 'info',
   });
   const kb = (fs.statSync(path.join(WWW, 'app.bundle.js')).size / 1024).toFixed(0);
@@ -77,7 +77,27 @@ if (!process.argv.includes('--refill')) {
   if (!fs.existsSync(INDEX_SRC)) {
     throw new Error('缺少 index.html（仓库根）—— 入口页是源文件，不能被忽略');
   }
-  fs.copyFileSync(INDEX_SRC, path.join(WWW, 'index.html'));
+  // ★ 2026-10-31：bundle 内联到 index.html —— 消除外部 script 加载失败问题。
+  //   Capacitor WKWebView 的 file:// 对外部 script 加载有兼容性问题。
+  const bundleCode = fs.readFileSync(path.join(WWW, 'app.bundle.js'), 'utf8');
+  let htmlContent = fs.readFileSync(INDEX_SRC, 'utf8');
+  // 替换动态加载块和静态 script 标签为内联
+  htmlContent = htmlContent.replace(
+    /<script>[\s\S]*?document\.head\.appendChild\(s\)[\s\S]*?<\/script>/,
+    '<script>/* bundle inlined below */</script>'
+  );
+  htmlContent = htmlContent.replace(
+    /<script src="app\.bundle\.js"><\/script>/,
+    '<script>\ntry {\n' + bundleCode + '\n} catch(e) { window.__bundleError = (e.message||"?") + " | " + (e.stack||"").split("\\n").slice(0,3).join(" | "); }\n</script>'
+  );
+  // 如果动态加载块没被替换（格式变了），兜底再试一次
+  if (!htmlContent.includes('__bundleLoaded')) {
+    htmlContent = htmlContent.replace(
+      /<script src="app\.bundle\.js"><\/script>/,
+      '<script>\n' + bundleCode + '\n</script>'
+    );
+  }
+  fs.writeFileSync(path.join(WWW, 'index.html'), htmlContent);
   console.log('[sync] www/index.html  ← index.html');
 
   // ★ data/ → www/data/ 必须每次同步。

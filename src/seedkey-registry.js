@@ -393,7 +393,7 @@ export const INLINE_BYTELOOP = {
 };
 
 /** 32 位 线性反馈移位：`x = rol1(x)`，若**移位前**的 MSB 为 1 则异或 poly */
-export const INLINE_LFSR32 = {
+export const INLINE_KEY32 = {
   '76F77EB427B6238B2536CC4B6A8A13DE': { rounds: 9, poly: 0x0e442763, outlen: 4 },
   // 与 76F77EB4 完全同骨架，只有 poly 差一个字节（0x44 → 0x4a）
   '9316E2B47FC693876FA1EA72F38CA015': { rounds: 9, poly: 0x0e4a2763, outlen: 4 },
@@ -605,8 +605,8 @@ export function computeVariantKey(id, seed) {
     const k = INLINE_BYTELOOP[id](seed);
     return { key: k, algo: 'BYTELOOP', outlen: k.length };
   }
-  if (id in INLINE_LFSR32) {
-    const t = INLINE_LFSR32[id];
+  if (id in INLINE_KEY32) {
+    const t = INLINE_KEY32[id];
     let x = s32;
     for (let i = 0; i < t.rounds; i++) {
       const old = x;

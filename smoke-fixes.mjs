@@ -1409,9 +1409,29 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
   // ⑤b 流程分层：自检不探模块 / 进模块读全量
   ok('updateLoading 有定义（此前只有调用、无定义）',
      app.includes('function updateLoading('));
-  ok('进模块读全部编码块（不再只读前 8 个）',
-     !app.includes('lids.slice(0, 8)') && app.includes('for (const lid of lids)'));
-  ok('读块带进度 n/total', app.includes('${readDone}/${lids.length}'));
+  ok('loading 用真实 DOM（headless fallback 没有 querySelector）',
+     /function showLoading[\s\S]{0,160}document\.getElementById\('loadingMask'\)/.test(app)
+     && /function updateLoading[\s\S]{0,160}document\.getElementById\('loadingMask'\)/.test(app));
+  ok('只加载当前变体模块（不遍历全部候选模块）',
+     app.includes('let active = entries.find') && app.includes('const got = await loadModuleItems(currentModel, mod)')
+     && !app.includes('items = items.concat(got)'));
+  ok('进模块读当前变体的全部编码块（不是零读，也不是所有变体）',
+     app.includes('for (const lid of lids)') && app.includes('个编码块已读'));
+  ok('参数详情打开时按需补读该 LID',
+     /function renderParamDetail[\s\S]{0,500}doRead\(p\)/.test(app));
+  ok('规则编码入口/批量编辑存在（此前被删导致点击无反应）',
+     ['showRuleCoding', 'showRuleBatchEdit', 'readBlocksForItems']
+       .every((n) => new RegExp(`function ${n}\\(`).test(app)));
+  {
+    const sidebar = readFileSync('./ios/App/App/SidebarNav.swift', 'utf8');
+    ok('原生侧栏“返回”不是 tab（走 header 动作）',
+       /headerContentConfiguration/.test(sidebar) && /BackHeaderView/.test(sidebar)
+       && !/\("back",\s*"返回"/.test(sidebar));
+    ok('原生侧栏动作与页面分离（底部动作栏）',
+       /bottomBarView = makeBottomActions\(\)/.test(sidebar)
+       && /tabs = pages/.test(sidebar)
+       && !/sidebarActions = makeSidebarActions/.test(sidebar));
+  }
   ok('自检不调用 probeModules（L1–L4 只验链路）',
      !ld.includes('await this.probeModules()'));
 
@@ -1437,7 +1457,7 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
   ok('仓库根 index.html 存在且含安全区',
      idx.includes('id="safeTop"') && idx.includes('env(safe-area-inset-top'));
   const sync = readFileSync('./scripts/sync.mjs', 'utf8');
-  ok('sync 从根 index.html 拷贝入口', /copyFileSync\(INDEX_SRC/.test(sync));
+  ok('sync 从根 index.html 读入口', /readFileSync\(INDEX_SRC/.test(sync));
 }
 
 console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed =====');

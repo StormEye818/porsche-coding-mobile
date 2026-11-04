@@ -176,6 +176,89 @@ select{appearance:none;-webkit-appearance:none}
 .scroll-x{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px;-webkit-overflow-scrolling:touch}
 .scroll-x button{flex:0 0 auto;min-height:38px;padding:8px 13px;font-size:13px}
 .scroll-x button.sel{background:var(--acc);border-color:var(--acc);color:#fff}
+
+/* ===== 侧边栏（AlfaProxi 同款：原生 UITabBarController 或 CSS 兜底）===== */
+:root {
+  --rail-w: 88px;
+  --dock-h: 64px;
+}
+#sideBar {
+  display: none !important;
+  position: fixed;
+  z-index: 100;
+  flex-direction: column;
+  gap: 6px;
+}
+.sb-section { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.sb-btn {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  border: none; border-radius: 14px; cursor: pointer;
+  font-size: 15px; color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.06); padding: 10px 8px;
+  min-width: 48px; min-height: 48px;
+  transition: all 0.15s;
+}
+.sb-btn:hover { background: rgba(255,255,255,0.12); }
+.sb-btn:active { background: rgba(255,255,255,0.18); }
+.sb-back { background: rgba(229,57,53,0.2); color: #ff6b6b; font-size: 16px; font-weight: 700; }
+.sb-back:active { background: rgba(229,57,53,0.3); }
+.sb-back span { display: none; }
+.sb-icon { font-size: 18px; }
+.sb-crumbs {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 50vh; overflow-y: auto;
+}
+.sb-crumb {
+  padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  font-size: 11px; color: rgba(255,255,255,0.7); text-align: center;
+  background: transparent; border: none; width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-crumb:active, .sb-crumb.active { background: rgba(255,255,255,0.12); color: #fff; }
+
+body:not(.native-rail).sb-rail #sideBar {
+  display: flex !important;
+  right: calc(env(safe-area-inset-right, 0px) + 10px);
+  top: calc(env(safe-area-inset-top, 0px) + 60px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  width: var(--rail-w);
+  padding: 10px 6px;
+  background: rgba(30,32,38,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+}
+body.sb-rail .sb-nav { margin-bottom: auto; }
+body.sb-rail .sb-actions { margin-top: auto; }
+body.sb-rail main { margin-right: calc(var(--rail-w) + 22px); }
+body.sb-rail header { margin-right: calc(var(--rail-w) + 22px); }
+
+body:not(.native-rail).sb-dock #sideBar {
+  display: flex !important; flex-direction: row;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  width: auto; max-width: 90vw;
+  padding: 8px 14px;
+  background: rgba(30,32,38,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  align-items: center; gap: 6px;
+}
+body.sb-dock .sb-section { flex-direction: row; gap: 4px; }
+body.sb-dock .sb-nav { margin-right: auto; }
+body.sb-dock .sb-actions { margin-left: auto; }
+body.sb-dock .sb-crumbs { flex-direction: row; max-height: none; }
+body.sb-dock .sb-crumb { padding: 6px 10px; width: auto; }
+body.sb-dock .sb-back span { display: inline; }
+body.sb-dock main { padding-bottom: calc(var(--dock-h) + 20px); }
+
+body.native-rail #sideBar { display: none !important; }
+body.native-rail main { margin-right: 0; }
+body.native-rail header { margin-right: 0; }
+
 </style>
 </head>
 <body>
@@ -186,6 +269,22 @@ select{appearance:none;-webkit-appearance:none}
   <h1>Porsche Coder</h1>
   <span class="badge" id="linkBadge">未连接</span>
 </header>
+
+<nav id="sideBar">
+  <div class="sb-section sb-nav">
+    <button id="sbBack" class="sb-btn sb-back" title="返回上一级">‹ <span>返回</span></button>
+    <div id="sbCrumbs" class="sb-crumbs"></div>
+  </div>
+  <div class="sb-section sb-actions">
+    <button id="sbHome" class="sb-btn sb-icon" title="首页">⌂</button>
+    <button id="sbDoctor" class="sb-btn sb-icon" title="连接自检">⚡</button>
+    <button id="sbSearch" class="sb-btn sb-icon" title="自动搜索">🔍</button>
+  </div>
+  <div class="sb-section sb-bottom">
+    <button id="sbLog" class="sb-btn sb-icon" title="日志">📋</button>
+    <button id="sbSim" class="sb-btn sb-icon" title="模拟模式">▶</button>
+  </div>
+</nav>
 
 <main>
 
@@ -213,9 +312,7 @@ select{appearance:none;-webkit-appearance:none}
 
   <!-- ② 功能导航（参考诊断仪层级：功能 → 车系组 → 车型 → 二级功能 → 系统 → 功能 → 条目）-->
   <section id="secNav">
-    <h2><span class="num">2</span><span id="navTitle">请选择车型</span>
-      <button id="btnBack" class="backBtn" style="display:none">‹ 返回</button>
-    </h2>
+    <h2><span class="num">2</span><span id="navTitle">请选择车型</span></h2>
     <div class="crumb" id="crumb"></div>
     <div id="searchWrap">
       <input id="searchIn" placeholder="搜索 …" autocomplete="off">

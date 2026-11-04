@@ -278,6 +278,7 @@ export class Coder {
     this.protocol = 6;             // CAN 11bit/500k（保时捷实证）。link-doctor 锁定后可覆盖
     this.backups = [];
     this.lastIdent = '';          // 1A 9F/1A 94/1A 92 的 ASCII 识别串（自动选变体用）
+    this._addressReady = false;   // 当前 ATSP/ATSH/ATCRA 是否已下发到适配器
     this._writeBusy = false;   // 写事务排他（审计 #20）
     this.log = [];
   }
@@ -289,6 +290,9 @@ export class Coder {
 
   /** 设定物理寻址 */
   async address() {
+    // 同一地址/协议已经下发过就不要再发 4 条 AT 命令 —— 逐块读 55 块时
+    // 这是主要延迟来源（每次读块都重复 ATSP/ATSH/ATCRA/ATFCSH）。
+    if (this._addressReady) return;
     // ⚠️ 每次寻址都显式固定协议 —— 不能依赖 link-doctor L4 留下的状态。
     //    2026-10-17 真车实测：L4 试完 ATSP6/7/8/9 失败后停在 ATSP9（250k），
     //    保时捷是 500k，之后所有请求全是 CAN ERROR。参考诊断仪 能连、我们连不上就是这个。
@@ -299,6 +303,7 @@ export class Coder {
     // 流控头随模块地址走：多帧读写时适配器内建 FC 要用**当前模块的请求 ID**。
     // （只在 init 里设一次不够 —— 换模块后 FC 头是上一个模块的）
     await this.elm.cmd(`ATFCSH${this.tx.toString(16).toUpperCase()}`, 1500).catch(() => {});
+    this._addressReady = true;
   }
 
   /**
@@ -398,6 +403,7 @@ export class Coder {
     this.rx = rx;
     // 29-bit 必须切 ATSP7；否则仍按 11-bit/500k 发帧。
     this.protocol = tx > 0x7ff ? 7 : 6;
+    this._addressReady = false;
     this.lastReadSid = null;   // 换模块后不能沿用上一个模块的读服务
     if (name) this.ecuName = name;
     this._say(`  寻址 → ${name || 'ECU'}  tx=0x${tx.toString(16)} rx=0x${rx.toString(16)}`);
