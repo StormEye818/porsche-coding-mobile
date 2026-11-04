@@ -353,6 +353,27 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
     ok('CAF0 单帧识别串无污染（P200 不是 ZP200）', txtOf(idn) === 'P200');
   }
 
+  // —— 431 探测协议 / 地址缓存自校验（2026-11-04 对齐）——
+  {
+    const appSrc = (await import('node:fs')).readFileSync('./src/app.js', 'utf8');
+    const app = appSrc;
+    ok('431 探测命令按 blockKey 映射（§8.1 payload 形态）',
+       /'0x0b40': \['21010001'\]/.test(app) && /'0x2040': \['21010102'\]/.test(app)
+       && /'0x2340': \['21010001', '21010601'\]/.test(app));
+    ok('探测 flags 解析（§8.3 bVar22/local164/local178）',
+       /probeFlagsFromResp/.test(app) && /\(b1 & 0x30\) === 0x30/.test(app));
+    ok('431 表头裁剪字节级对齐（!bVar22→3 / 其余→2 / 0x2340 族不裁）',
+       /pruneRowsByFlags/.test(app) && /flags\.bit2 \? 2 : 0/.test(app)
+       && /!flags\.bVar22\) drop = 3/.test(app) && /fam === 0x2340\) return rows/.test(app));
+    ok('地址缓存按 VIN 键控 + 识别串快照核对',
+       /state\.vin \|\| model/.test(app) && /saved\.ident !== dsn/.test(app));
+    ok('身份漂移清缓存用同一 key（回归：写读 key 不一致从没清掉）',
+       /localStorage\.setItem\(ADDR_OVERRIDE_KEY/.test(app)
+       && !/porsche-addr-overrides'/.test(app));
+    ok('同构签名含值域/枚举（防同位置不同取值表误解锁）',
+       /sigOf[\s\S]{0,400}enum/.test(app));
+  }
+
   // —— 内联 MULADD（32 点 真值对拍 合成 + 独立复核）——
   const { computeVariantKey, INLINE_MULADD, INLINE_OTHER_PENDING } = await import('./src/seedkey-registry.js');
   ok('INLINE_MULADD 已收编（当前 ' + Object.keys(INLINE_MULADD).length + '）', Object.keys(INLINE_MULADD).length >= 6);

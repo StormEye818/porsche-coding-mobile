@@ -127,14 +127,20 @@ function loadAddrOverrides() {
 }
 
 function addrKey(label, model = currentModel) {
-  return model ? `${model}::${label}` : String(label);
+  // ★ 2026-11-04：优先按 VIN 键控 —— 同型号不同车的地址缓存互相污染是真实风险；
+  //   无 VIN（手选车型）退化到车型键，靠进入时的识别串快照核对兜底。
+  const scope = state.vin || model;
+  return scope ? `${scope}::${label}` : String(label);
 }
 
 function saveAddrOverride(label, pair, model = currentModel) {
   try {
     if (typeof localStorage === 'undefined') return false;
     const all = loadAddrOverrides();
-    all[addrKey(label, model)] = { tx: pair.tx, rx: pair.rx, savedAt: new Date().toISOString() };
+    all[addrKey(label, model)] = {
+      tx: pair.tx, rx: pair.rx, savedAt: new Date().toISOString(),
+      ident: pair.ident || '', vin: state.vin || '',   // 识别串快照（自校验用）
+    };
     localStorage.setItem(ADDR_OVERRIDE_KEY, JSON.stringify(all));
     return true;
   } catch { return false; }
@@ -226,13 +232,76 @@ const EXT_ADDRS = [
 let probeAbort = false;
 
 /**
+ * 参考诊断仪 探测协议（ECU-ADDRESSING §8，2026-11-04 对齐）：
+ *   blockKey → 探测命令（payload 形态，剥掉 [01][len] 缓冲头后上总线）。
+ *   1.2% 的 blockKey 在 参考诊断仪 里也是运行时探针，不是静态解析。
+ *   ⚠️ §8.4 的「表头丢 2/3 条」数组序已实证 = addrBlock 文件行序；行→CAN 的 join 未闭环，
+ *      不拿未闭环映射做最终裁决；此处对齐报文 + flags 解析 + 裁剪规则。
+ */
+const PROBE_CMDS_BY_BLOCKKEY = {
+  '0x0b40': ['21010001'], '0x0b41': ['21010001'],
+  '0x2040': ['21010102'], '0x2041': ['21010102'],
+  '0x2340': ['21010001', '21010601'], '0x2341': ['21010001', '21010601'],
+  '0x2342': ['21010001', '21010601'], '0x2343': ['21010001', '21010601'],
+  '0x2344': ['21010001', '21010601'], '0x2345': ['21010001', '21010601'],
+};
+
+/**
+ * 解析探测响应 flags（§8.3）：响应缓冲 byte1/byte2。
+ * 2026-11-04 反汇编字节级验证（libPORSCHE_LINK.so probe-fn 0x183f6-0x18418）。
+ */
+function probeFlagsFromResp(body) {
+  const b1 = body?.[1] ?? 0, b2 = body?.[2] ?? 0;
+  return {
+    bVar22: (b1 & 0x30) === 0x30,
+    local178: (b2 & 0x3f) >> 5,
+    local164: (b2 & 0x0f) >> 3,
+    bit2: (b1 >> 2) & 1,          // 0x0B40 族裁剪位（0x18378-0x18382）
+    posBit: (b1 & 0x10) >> 4,     // 0x2340 族单值选择低位
+  };
+}
+
+/**
+ * 参考诊断仪 表头裁剪（§8.4，2026-11-04 反汇编字节级验证）：
+ *   !bVar22                        → 丢 3 条（[sb] += 0xfffd @0x18738）
+ *   bVar22 && local_164==1         → 丢 2 条（0x18636）
+ *   bVar22 && local_178==1         → 丢 2 条
+ *   bVar22 && 两 bit 皆 0           → 丢 2 条
+ *   sel 0x0B40 族：byte1 bit2==0    → 丢 2 条
+ *   sel 0x2340 族：走单值选择（TOKEN+0x360d68 = 0x30086b + (byte1&0x10)>>4），不裁表头
+ * 数组序 = DRIVELINKS addrBlock 文件行序（Xml_GetDriveLinksAddress 填充循环 @FILE.so 0x18aec 实证）。
+ * ⚠️ 旁证过滤用：行→CAN 的内部坐标 join 未闭环（GetSubSysDataAddr 的 SearchID 表），
+ *   主路径仍以识别串验证为准 —— 不拿未闭环的映射做最终裁决。
+ */
+function pruneRowsByFlags(rows, flags, sel = 0) {
+  const fam = sel & 0xFFF0;
+  if (fam === 0x2340) return rows;               // 单值选择族，不裁表头
+  let drop = 0;
+  if (fam === 0x0B40) drop = flags.bit2 ? 2 : 0;   // bit2 置位 → [sp+0x4c]==0 → 丢 2
+  else if (!flags.bVar22) drop = 3;
+  else drop = 2;
+  return rows.slice(drop);
+}
+
+/** 某寻址表条目的 参考诊断仪 探测命令（按 blockKey 映射）。 */
+function probeCmdsForEntry(entry) {
+  const out = [];
+  for (const bk of (entry?.blockKeys || [])) {
+    for (const c of PROBE_CMDS_BY_BLOCKKEY[String(bk).toLowerCase()] || []) {
+      if (!out.includes(c)) out.push(c);
+    }
+  }
+  return out;
+}
+
+/**
  * 表驱动定向探测短名单（2026-11-04）：ecu-addresses.json 的 cands
  * （SYS_DATA 候选集收敛到 11 位诊断段，锚点 attr 组排序）。
  * 参考诊断仪 的做法就是候选集探测裁剪，不是全网段盲扫。
  */
-function addrCandsFor(label, sys = null) {
+function addrEntryFor(label, sys = null) {
   try {
-    if (!ecuAddrTable) return [];
+    if (!ecuAddrTable) return null;
     let sysId = SYSTEM_TO_ECUID[label];
     if (!sysId && typeof MODULE_TO_ECUID !== 'undefined') sysId = MODULE_TO_ECUID[label];
     if (!sysId && sys?.modules?.length) {
@@ -241,13 +310,17 @@ function addrCandsFor(label, sys = null) {
         if (k) { sysId = k; break; }
       }
     }
-    if (!sysId) return [];
-    const hit = (ecuAddrTable.entries || []).find(
-      (e) => e.sysId && e.sysId.toLowerCase() === sysId.toLowerCase());
-    return (hit?.cands || [])
-      .map((c) => ({ tx: parseInt(c.tx, 16), rx: parseInt(c.rx, 16) }))
-      .filter((c) => Number.isFinite(c.tx) && Number.isFinite(c.rx));
-  } catch { return []; }
+    if (!sysId) return null;
+    return (ecuAddrTable.entries || []).find(
+      (e) => e.sysId && e.sysId.toLowerCase() === sysId.toLowerCase()) || null;
+  } catch { return null; }
+}
+
+function addrCandsFor(label, sys = null) {
+  const hit = addrEntryFor(label, sys);
+  return (hit?.cands || [])
+    .map((c) => ({ tx: parseInt(c.tx, 16), rx: parseInt(c.rx, 16) }))
+    .filter((c) => Number.isFinite(c.tx) && Number.isFinite(c.rx));
 }
 
 /**
@@ -305,8 +378,9 @@ async function probeAddressFor(label, probeCmd) {
     try {
       await coder.elm.cmd(`ATSH${hex(p.tx)}`, 1200);
       await coder.elm.cmd(`ATCRA${hex(p.rx)}`, 1200);
-      // 先发指定探针（没有就 1A9F）；纯 UDS 模块再补一发 22F190
-      const cmds = probeCmd ? [probeCmd] : ['1A9F'];
+      // 先发指定探针；无指定时优先 参考诊断仪 探测报文（blockKey 映射），再 1A9F
+      const cmdsProbe = probeCmdsForEntry(addrEntryFor(label));
+      const cmds = probeCmd ? [probeCmd] : [...cmdsProbe, '1A9F'];
       for (let ci = 0; ci < cmds.length; ci++) {
         const cmd = cmds[ci];
         const r = (await coder.elm.cmd(cmd, 2000) || '').trim();
@@ -318,6 +392,11 @@ async function probeAddressFor(label, probeCmd) {
           .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
         // 只认正响应；7F 只说明「地址上有模块」，不能当目标
         if (body.startsWith('5A') || body.startsWith('62')) {
+          if (cmdsProbe.includes(cmd) && (pr.body || []).length >= 3) {
+            const fl = probeFlagsFromResp(pr.body);
+            log(`    探测 flags: bVar22=${fl.bVar22 ? 1 : 0} local164=${fl.local164} local178=${fl.local178}`
+              + `（§8.3 已解析；裁剪规则已实证，行→CAN 映射闭环后接入最终裁决）`, 'info');
+          }
           const text = Array.from(pr.body || [])
             .filter((c) => c >= 0x20 && c < 0x7f)
             .map((c) => String.fromCharCode(c)).join('').trim();
@@ -553,6 +632,7 @@ const loadedVariants = new Map();   // 缓存已加载的变体
 const state = {
   multiVariantModules: new Set(),
   selectedVariant: {},        // { [module]: 变体名 }
+  vin: '',                    // 实测 VIN（地址缓存按车键控用，2026-11-04）
   currentAddr: null,          // 当前进入模块的地址证据
 };
 
@@ -815,6 +895,7 @@ async function autoSearch(opts = {}) {
 
     const yearCode = vin[9];
     const year = decodeVinYear(vin);
+    state.vin = vin;   // 地址缓存按 VIN 键控（同型号不同车不串台）
     const modelGuess = guessModelFromVin(vin, year);
     log(`  ${vinPrefix ? 'VIN 前缀' : 'VIN'}=${vin} · 年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：${modelGuess ? modelGuess.label : '未识别'}`,
       modelGuess ? 'ok' : 'info');
@@ -1983,15 +2064,26 @@ async function enterSystem(sys) {
     if (dsn) {
       const isDme = /P200|98161864015/.test(dsn);
       const targetIsDme = /DME|ECM|发动机/i.test(sys.label);
-      if (isDme && !targetIsDme) {
-        log(`  ❌ 身份不匹配：「${sys.label}」在 0x${addr.tx.toString(16).toUpperCase()} 识别到 DME 的签名「${dsn}」`, 'err');
-        // 清掉这条错误地址覆盖
+      // ★ 识别串快照核对（2026-11-04）：缓存地址必须与上次实测身份一致，
+      //   漂移（换件/串台/他车污染）→ 缓存失效走重探 —— 让实测记忆自校验
+      let staleIdent = '';
+      try {
+        const all = loadAddrOverrides();
+        const saved = all[addrKey(sys.label, currentModel)] || all[sys.label];
+        if (saved && saved.ident && saved.ident !== dsn) staleIdent = saved.ident;
+      } catch {}
+      if (staleIdent || (isDme && !targetIsDme)) {
+        log(staleIdent
+          ? `  ❌ 身份漂移：缓存「${staleIdent}」≠ 现「${dsn}」（换件/串台）—— 缓存失效`
+          : `  ❌ 身份不匹配：「${sys.label}」在 0x${addr.tx.toString(16).toUpperCase()} 识别到 DME 的签名「${dsn}」`, 'err');
+        // 清掉这条错误地址覆盖（⚠️ key 必须与 loadAddrOverrides 同一个；
+        //   2026-11-04 修：此前写与读用了两套 key，从没清掉过）
         try {
           const all = loadAddrOverrides();
           const k1 = addrKey(sys.label, currentModel), k2 = sys.label;
           if (all[k1]) delete all[k1];
           if (all[k2]) delete all[k2];
-          localStorage.setItem('porsche-addr-overrides', JSON.stringify(all));
+          localStorage.setItem(ADDR_OVERRIDE_KEY, JSON.stringify(all));
         } catch {}
         log(`  🔄 重新探测 ${sys.label}…`, 'info');
         const reprobed = await probeAddressFor(sys.label, null);
@@ -3786,7 +3878,10 @@ async function variantMapsIdentical(module) {
     const recs = mi?.variants || [];
     if (recs.length <= 1) { loadedVariants.set(key, true); return true; }
     const sigOf = (items) => items
-      .map((p) => [p.lid, p.byte, p.bit, p.bitLength, p.name].join(','))
+      // ★ 签名必须含值域/枚举（2026-11-04）：字节位置相同但取值表不同 = 语义不同，
+      //   只比位置会把 A 变体的枚举值写进 B 变体的语义里 —— 同构才许解锁写入
+      .map((p) => [p.lid, p.byte, p.bit, p.bitsize, p.name, p.min, p.max,
+        JSON.stringify(p.enum ?? null)].join(','))
       .sort().join(';');
     let base = null;
     for (const v of recs) {
