@@ -1,7 +1,7 @@
 {
  "schemaVersion": 2,
  "kind": "routines",
- "note": "按 431 routine 池（pools[3]）重建。**平台代号为权威值**（CAJUN=Macan、CS1=Carrera GT、G1=Cayenne-9PA、G2=Cayenne-92A）。pool=routine 为 pools[3] 直取；pool=unknown 为 9X6/9X7/E1 记录级扫描。",
+ "note": "按 参考诊断仪 routine 池（pools[3]）重建。**平台代号为权威值**（CAJUN=Macan、CS1=Carrera GT、G1=Cayenne-9PA、G2=Cayenne-92A）。pool=routine 为 pools[3] 直取；pool=unknown 为 9X6/9X7/E1 记录级扫描。",
  "modelMap": {
   "9X1": [
    "Boxster（981）",

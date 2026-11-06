@@ -1,0 +1,110 @@
+{
+ "source": "参考诊断仪 GetVehicleForVin/GetYearForVin 逐指令转写（参考诊断仪库.so 0x147c80/0x147a70，2026-11-06）",
+ "note": "GetVehicleForVin: (VIN[7],VIN[11])→(平台名,DSN id) 13 分支；strb r0,[r5]=id 入出参、str r1,[r4]=平台名入 sret（0x147e2c/0x147e34 逐指令）。平台名粒度=9X1/G1/G2/G3/E1/E2/E3/CAJUN/992/918S/J1——不含车身型式（Boxster/Cayman 同 9X1，三处字面量同址 0x21bb01 实证）。短VIN(<=12)路径仅打 <VIN= 日志（0x1da390=格式化，无解析）。GetYearForVin: VIN[9]→年款字符串表。",
+ "branches": [
+  {
+   "vin7": "2",
+   "vin11": null,
+   "name": "E2",
+   "id": 11
+  },
+  {
+   "vin7": "5",
+   "vin11": null,
+   "name": "CAJUN",
+   "id": 15
+  },
+  {
+   "vin7": "7",
+   "vin11": "0",
+   "name": "G1",
+   "id": 12
+  },
+  {
+   "vin7": "7",
+   "vin11": "1",
+   "name": "G2",
+   "id": 18
+  },
+  {
+   "vin7": "8",
+   "vin11": "1",
+   "name": "9X1",
+   "id": 13
+  },
+  {
+   "vin7": "8",
+   "vin11": "2",
+   "name": "9X1",
+   "id": 13
+  },
+  {
+   "vin7": "9",
+   "vin11": "1",
+   "name": "9X1",
+   "id": 13
+  },
+  {
+   "vin7": "9",
+   "vin11": "2",
+   "name": "992",
+   "id": 20
+  },
+  {
+   "vin7": "9",
+   "vin11": "8",
+   "name": "918S",
+   "id": 16
+  },
+  {
+   "vin7": "9",
+   "vin11": "A",
+   "name": "J1",
+   "id": 21
+  },
+  {
+   "vin7": "1",
+   "vin11": "8",
+   "name": "918S",
+   "id": 16
+  },
+  {
+   "vin7": "1",
+   "vin11": "A",
+   "name": "J1",
+   "id": 21
+  },
+  {
+   "vin7": "A",
+   "vin11": null,
+   "name": "G3",
+   "id": 22
+  },
+  {
+   "vin7": "P",
+   "vin11": null,
+   "name": "E1",
+   "id": 3
+  },
+  {
+   "vin7": "Y",
+   "vin11": null,
+   "name": "E3",
+   "id": 17
+  }
+ ],
+ "yearCodes": {
+  "9": 2009,
+  "A": 2010,
+  "B": 2011,
+  "C": 2012,
+  "D": 2013,
+  "E": 2014,
+  "F": 2015,
+  "G": 2016,
+  "H": 2017,
+  "J": 2018,
+  "K": 2019,
+  "L": 2020
+ }
+}

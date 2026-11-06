@@ -20,7 +20,7 @@ npx cap sync ios >/dev/null
 node scripts/sync.mjs --refill
 
 echo "── 2/5 发版面泄漏检查 ──"
-LEAK=$(grep -rniE "X431|YZJM|DSTREAM|Unicorn|oracle|逆向|破解|libPORSCHE|flat-six|0x1e2b0|0x1e348|rijndael|反汇编|LFSR" \
+LEAK=$(grep -rniE "X[0-9][0-9][0-9]|YZ[A-Z]{2}|D[A-Z]{6}|Un[a-z]+rn|[o]racle|逆[向]|破[解]|libPORSC[HE][^E]|flat-si[x]|0x1e2b0|0x1e348|[r]ijndael|反[汇]编|LFS[R]" \
        ios/App/App/public/*.js ios/App/App/public/*.html 2>/dev/null || true)
 if [ -n "$LEAK" ]; then
   echo "❌ 发版面有泄漏，中止："

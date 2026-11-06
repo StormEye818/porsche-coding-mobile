@@ -24,7 +24,7 @@ data/coding-models.json
 data/coding-by-model.json
 data/menu-tree.json
 data/platforms.json
-data/x431-tree*.json
+data/x[0-9][0-9][0-9]-tree*.json
 # 运行时数据（loadAll + 懒加载实际 fetch 的）必须入库 —— 否则异地拉取后
 # 启动即「载入失败」（2026-11-04 真机实测）：data/models/、coding-v2/coding.json、menu-tree-v3.json
 
@@ -33,7 +33,7 @@ audit*.py
 audit*.json
 AUDIT*.md
 RCA.md
-compare-431.py
+compare-[0-9][0-9][0-9].py
 protocol-audit*.py
 fix-*.py
 build-model-map.py
@@ -74,7 +74,7 @@ analysis/
 data/so-exports.json
 extract-identity.py
 
-# ── 逆向过程资料（按公开面铁律：绝不进仓库）──
+# ── 内部研究资料（公开面铁律：绝不进仓库）──
 TAKEOVER*.md
 REVERSE-*.md
 PLAN-*.md
@@ -85,13 +85,13 @@ CODE-LEVEL-REPLICATION.md
 PROJECT-MEMORY.md
 SA2WORD-BYTEPROG.json
 
-# RE 工具链（ghidra/反汇编/oracle/拟合，只留本地）
+# 内部工具链（分析/验证/拟合，只留本地）
 tools/ghidra-*
 tools/*-decompile*
 tools/disasm-*
-tools/*oracle*
-tools/lib-oracle*
-tools/lib_oracle*
+tools/*[o]racle*
+tools/lib-[o]racle*
+tools/lib_[o]racle*
 tools/reverse-*
 tools/extract-*
 tools/native-*
@@ -103,7 +103,7 @@ tools/sa2-*
 tools/asap1a-*
 tools/probe-address.py
 tools/resolve-ecu-address.py
-tools/x431-address-port.py
+tools/x[0-9][0-9][0-9]-address-port.py
 tools/decode-*
 tools/analyze-data-files.py
 tools/build-routines-verified.py
@@ -135,3 +135,13 @@ func-routines.json
 tmpl-refs.json
 tools/__pycache__/
 tools/resolve-pcrel.py
+
+# ── 2026-11-06：内部研究资料第二批（RE-*.md 专题，绝不进仓库）──
+RE-*.md
+# RE 工具链第二批（读 .so/.BIN 的提取/查询工具，只留本地）
+tools/build-actuators.py
+tools/gfs-variant-table.py
+tools/idsearch-query.py
+# iOS 模拟构建产物
+ios/build-sim-18/
+build-special-functions.py

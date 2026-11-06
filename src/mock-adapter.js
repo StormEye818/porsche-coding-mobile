@@ -110,8 +110,10 @@ export class MockAdapter extends Emitter {
     if (!bytes.length) return 'NO DATA';
     const sid = bytes[0];
 
-    // ── 识别链：identText 设置后 1A xx 回 ASCII（自动选变体用）──
-    if (sid === 0x1A && this.identText) {
+    // ── 识别链：identText **只回在 0x9F**（DSN/变体名载体，自动选变体用）──
+    //   2026-11-06 用户实测：全 1A xx 同回 identText → 版本信息 16 条全同值；
+    //   其余 1A xx 走下方 IDENT canned 值（每条各自的真实形态）——实车每条本就不同。
+    if (sid === 0x1A && this.identText && (bytes[1] ?? 0x9F) === 0x9F) {
       const asc = [...this.identText].map((c) => c.charCodeAt(0) & 0xff);
       return this.#frame([0x5A, bytes[1] ?? 0x9F, ...asc]);
     }

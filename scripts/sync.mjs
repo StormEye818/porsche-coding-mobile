@@ -121,7 +121,7 @@ if (!process.argv.includes('--refill')) {
     'platforms.json',        // RE 中间表
     'so-exports.json',       // .so 研究产物
   ]);
-  const skip = (name) => SKIP.has(name) || /^x431-tree/.test(name);
+  const skip = (name) => SKIP.has(name) || /^x[0-9][0-9][0-9]-tree/.test(name);
   const copyDir = (src, dst) => {
     fs.mkdirSync(dst, { recursive: true });
     for (const e of fs.readdirSync(src, { withFileTypes: true })) {

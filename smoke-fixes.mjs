@@ -11,7 +11,7 @@ import { computeVariantKey, INLINE_OTHER_PENDING } from './src/seedkey-registry.
 import { pswCalc } from './src/seedkey-pswcalc.js';
 import { parseDtcPayload } from './src/dtc.js';
 import { parseAddrPair, overrideFor } from './src/addr.js';
-import { LinkDoctor, scanEcuAddresses } from './src/link-doctor.js';
+import { LinkDoctor } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
 import { autoPickVariant } from './src/variant.js';
 import { specialFunctionsFor } from './src/special-catalog.js';
@@ -118,17 +118,23 @@ console.log('\n[4] VIN validate / year / model');
   ok('year A -> 2010', decodeVinYear('WP0AA2A99AS123456') === 2010);
   ok('year 1 -> 2001', decodeVinYear('WP0AA2A991S123456') === 2001);
 
-  const t1 = guessModelFromVin('WP0ZZZ970GL000001', 2016);
-  ok('970 / 2016 -> Panamera-970', t1 && t1.label.includes('970'), t1 && t1.label);
-  const t2 = guessModelFromVin('WP0ZZZ970GL000001', 2018);
-  ok('970 but year 2018 -> rejected (out of range)', t2 === null, t2 && t2.label);
-  const t3 = guessModelFromVin('WP0ZZZ971GL000001', 2018);
-  ok('971 / 2018 -> Panamera-971', t3 && t3.label.includes('971'), t3 && t3.label);
-
-  const t4 = guessModelFromVin('WP0ZZZ991GS000001', 2016);
-  ok('991 exact match (duplicate removed)', t4 && t4.code === '991', t4 && t4.label);
-  const t5 = guessModelFromVin('WP0ZZZ99999000001', 2016);
-  ok('unknown model code does not false-match', t5 === null, t5 && t5.label);
+  // 2026-11-05：断言改为 参考诊断仪 `PorscheGetYearAndModel` 分派行为（旧手写码表=自创，已废弃）
+  const g1 = guessModelFromVin('WP0AB2983EK190083', 2014);
+  ok('真机 981 VIN → 分派 id=13（DSN 9x1）', g1 && g1.modelId === 13, g1 && g1.how);
+  ok('9X1 平台含 Boxster（981）', g1 && g1.models.includes('Boxster（981）'), g1 && JSON.stringify(g1.models));
+  const g2 = guessModelFromVin('WP0ZZZ970GL000001', 2016);
+  ok('970 VIN → 分派 id=12（G1/970 件）→ Panamera-970', g2 && g2.modelId === 12 && g2.models.includes('Panamera-970（至2016年款止）'), g2 && g2.how);
+  const g3b = guessModelFromVin('WP0ZZZ9877S7000001', 2016);
+  const g3 = guessModelFromVin('WP0ZZZ991GS000001', 2016);
+  ok('987 分派支路（c7=8,c11=7）→ id=6（9x7）→ 987 系', g3b && g3b.modelId === 6 && g3b.models.includes('Cayman（987）'), g3b && g3b.how);
+  const g4 = guessModelFromVin('WP0ZZZ95BBL000001', 2016);
+  ok('Macan 95B VIN → 分派 id=15（cajun）→ Macan', g4 && g4.modelId === 15 && g4.models.includes('Macan'), g4 && g4.how);
+  const g6 = guessModelFromVin('WP0ZZZ992GS2000001', 2016);
+  ok('992 分派支路（c7=9,c11=2）→ id=20（992）→ 911（992）', g6 && g6.modelId === 20 && g6.models.includes('911（992）'), g6 && g6.how);
+  const g7 = guessModelFromVin('WP0ZZZ991GS000001', 2016);
+  ok('裸 VIN 第 12 字节不吻合车型码位 → null 兜底（不猜）', g7 === null, g7 && g7.how);
+  const g5 = guessModelFromVin('WP0ZZZ99999000001', 2016);
+  ok('unknown model code does not false-match', g5 === null, g5 && g5.modelId);
 }
 
 // ===== 5. ECU address table =====
@@ -353,31 +359,29 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
     ok('CAF0 单帧识别串无污染（P200 不是 ZP200）', txtOf(idn) === 'P200');
   }
 
-  // —— 431 探测协议 / 地址缓存自校验（2026-11-04 对齐）——
+  // —— 参考诊断仪 探测协议 / 地址缓存自校验（2026-11-04 对齐）——
   {
     const appSrc = (await import('node:fs')).readFileSync('./src/app.js', 'utf8');
     const app = appSrc;
-    ok('431 探测命令按 blockKey 映射（§8.1 payload 形态）',
+    ok('参考诊断仪 探测命令按 blockKey 映射（§8.1 payload 形态）',
        /'0x0b40': \['21010001'\]/.test(app) && /'0x2040': \['21010102'\]/.test(app)
        && /'0x2340': \['21010001', '21010601'\]/.test(app));
     ok('探测 flags 解析（§8.3 bVar22/local164/local178）',
        /probeFlagsFromResp/.test(app) && /\(b1 & 0x30\) === 0x30/.test(app));
-    ok('431 表头裁剪字节级对齐（!bVar22→3 / 其余→2 / 0x2340 族不裁）',
+    ok('参考诊断仪 表头裁剪字节级对齐（!bVar22→3 / 其余→2 / 0x2340 族不裁）',
        /pruneRowsByFlags/.test(app) && /flags\.bit2 \? 2 : 0/.test(app)
        && /!flags\.bVar22\) drop = 3/.test(app) && /fam === 0x2340\) return rows/.test(app));
-    ok('地址缓存按 VIN 键控 + 识别串快照核对',
-       /state\.vin \|\| model/.test(app) && /saved\.ident !== dsn/.test(app));
-    ok('身份漂移清缓存用同一 key（回归：写读 key 不一致从没清掉）',
-       /localStorage\.setItem\(ADDR_OVERRIDE_KEY/.test(app)
-       && !/porsche-addr-overrides'/.test(app));
+    ok('地址缓存/手工兜底已退役（终审③，0 自创）',
+       !/saveAddrOverride|loadAddrOverrides|ADDR_OVERRIDE_KEY/.test(app));
+    ok('每次进模块新鲜解析（终审③）',
+       /新鲜解析/.test(app) && !/addrKey\(/.test(app));
     ok('同构签名含值域/枚举（防同位置不同取值表误解锁）',
        /sigOf[\s\S]{0,400}enum/.test(app));
     ok('三级寻址落地（唯一候选免探测直进）',
        /addrTableUnique/.test(app) && /表唯一候选（免探测）/.test(app));
-    ok('约束拟合只提示不解锁（风险收口：解锁只认名字/全同构）',
-       /variantFitsBlocks/.test(app) && /约束拟合提示/.test(app)
-       && /仅供参考，写入仍按规拒/.test(app)
-       && !/变体约束确认：/.test(app));
+    ok('约束拟合不锁写（对齐 参考诊断仪 写政策：唯一落定/默认兜底，回读校验）',
+       /variantFitsBlocks/.test(app) && /约束拟合落定/.test(app)
+       && /写入由回读校验兜底/.test(app));
     ok('模拟车免检落定（sim 免约束确认）',
        /模拟车免检落定/.test(app));
   }
@@ -1111,11 +1115,12 @@ console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方'
         return '';
       },
     };
-    const found = await scanEcuAddresses(fake, () => {});
-    const txs = found.map((x) => x.tx);
-    ok('地址扫描覆盖 PDC 7CF', txs.includes(0x7cf), JSON.stringify(txs));
-    ok('地址扫描覆盖后 BCM 74F', txs.includes(0x74f), JSON.stringify(txs));
-    ok('地址扫描不产生 rx===tx', found.every((x) => x.rx !== x.tx));
+    const appSrc = readFileSync('./src/app.js', 'utf8');
+    ok('系统扫描=参考诊断仪系统扫描法（按系统清单逐个解析，无地址盲扫）',
+       /扫描中\.\.\./.test(appSrc) && /扫描已完成/.test(appSrc) && /未扫描到系统/.test(appSrc)
+       && !/0x700–0x7F0|0x700-0x7F0/.test(appSrc));
+    ok('地址盲扫已退役（scanEcuAddresses 空壳）',
+       /return \[\];/.test(readFileSync('./src/link-doctor.js', 'utf8')));
   }
 
   // ④ BigInt 宽字段（>53 位）不能走 Number
@@ -1409,7 +1414,7 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
     ok('enterSession 后 lastReadSid=0x1A（KWP 判定有依据）', c3.lastReadSid === 0x1A);
   }
 
-  // ④b SID 回退必须真的生效（CodingError.code 之前是 undefined）
+  // ④b SID 0x12 换 SID 重试已删（2026-11-05 错误恢复定案：无参考诊断仪取证的自创恢复）
   {
     const seen = [];
     const port = new MockAdapter({
@@ -1419,7 +1424,6 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
           const t = String(cmd).toUpperCase();
           seen.push(t);
           if (t.startsWith('22')) return '7E8 7F 22 12';     // 子功能不支持
-          if (t.startsWith('21')) return '7E8 61 46 01 02 03'; // KWP 正响应（21→61，含 LID）
           return undefined;
         },
       },
@@ -1427,30 +1431,33 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
     const elm = new Elm327(port, { timeoutMs: 400 });
     const c = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, verbose: false });
     await c.setAddress(0x7E0, 0x7E8);
-    const data = await c.readBlock(0x46, 0x22);
-    ok('NRC 0x12 时自动回退 22→21', data.length === 3 && seen.includes('2146'),
-       `${data.length}B / ${seen.filter((x) => /^2[12]/.test(x)).join(',')}`);
-    ok('回退后记录 lastReadSid=0x21', c.lastReadSid === 0x21, String(c.lastReadSid));
+    let err = null;
+    try { await c.readBlock(0x46, 0x22); } catch (e) { err = e; }
+    ok('NRC 0x12 直接失败、不换 SID 重试（参考诊断仪 同款：记录 SID 发一次）',
+       !!err && !seen.some((t) => t.startsWith('21')),
+       `${err ? (err.nrc ?? err.message) : 'no-err'} / ${seen.join(',')}`);
   }
 
   // ⑤ 源码级断言：本轮修复的硬约束
   const app = readFileSync('./src/app.js', 'utf8');
-  ok('地址门禁放行 verified', /\['measured', 'probed', 'manual', 'verified'\]/.test(app));
-  ok('candidate 走 confirm 而不是硬拒',
-     /st === 'candidate'[\s\S]{0,400}return confirm/.test(app));
+  ok('地址门禁放行 verified/table', /\['measured', 'probed', 'manual', 'verified', 'table'\]/.test(app));
+  ok('candidate 直接放行（无确认弹窗，回读兜底；未知仍拒）',
+     /st === 'candidate'[\s\S]{0,600}return true/.test(app)
+     && !/st === 'candidate'[\s\S]{0,600}return confirm/.test(app));
   ok('身份验证通过后提升 verified',
      /state\.currentAddr = \{ \.\.\.addr, state: 'verified'/.test(app));
-  ok('探测命中先 confirm 再 saveAddrOverride',
-     /const probed = await probeAddressFor[\s\S]{0,500}confirm[\s\S]{0,300}saveAddrOverride/.test(app));
-  ok('探测两阶段 + 可取消', /probeAbort/.test(app) && /深层|深度扫描/.test(app));
+  ok('探测命中静默采纳（文本匹配，终审⑤）',
+     /文本匹配命中（静默采纳）/.test(app) && !/confirm\(`在 0x/.test(app));
+  ok('探测候选序=表行序+可取消（终审①，无深度盲扫）',
+     /probeAbort/.test(app) && !/深度扫描/.test(app) && /candsAux/.test(app));
   ok('探测挡掉 rx 溢出', /rx > 0x7FF/.test(app));
-  ok('无 431 字样（UI 与源码）', !app.includes('431'));
+  ok('无第三方工具字样（UI 与源码）', !app.includes('参考诊断仪'));
 
   const coderSrc = readFileSync('./src/coder.js', 'utf8');
   ok('setAddress 内部 await address()',
      /async setAddress\(tx, rx, name = ''\)[\s\S]{0,400}await this\.address\(\)/.test(coderSrc));
   ok('识别循环连续 3 条无数据提前结束', /identMiss >= 3/.test(coderSrc));
-  ok('coder 无 431 字样', !coderSrc.includes('431'));
+  ok('coder 无 参考诊断仪 字样', !coderSrc.includes('参考诊断仪'));
 
   const ld = readFileSync('./src/link-doctor.js', 'utf8');
   ok('L5 用 CAF1 解析', ld.includes('parseRespCaf1'));
@@ -1513,6 +1520,20 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
      idx.includes('id="safeTop"') && idx.includes('env(safe-area-inset-top'));
   const sync = readFileSync('./scripts/sync.mjs', 'utf8');
   ok('sync 从根 index.html 读入口', /readFileSync\(INDEX_SRC/.test(sync));
+
+  // ⑦ 绑定期连接码换算（2026-11-06 代码级复刻 参考诊断仪 TransCanCalcID，锚点断言）
+  {
+    const coderSrc = readFileSync('./src/coder.js', 'utf8');
+    const m = coderSrc.match(/const _TC_T1[\s\S]*?function calcLinkCode[\s\S]*?\n}/);
+    ok('calcLinkCode 换算复刻存在', !!m);
+    if (m) {
+      const f = new Function(m[0] + '\nreturn calcLinkCode;')();
+      ok('连接码换算：GW 0x710→0x003E', f(0x710) === 0x003E);
+      ok('连接码换算：PASM 0x7D0→0x00FE', f(0x7D0) === 0x00FE);
+      ok('连接码换算：DME 0x7E0→0x00CE', f(0x7E0) === 0x00CE);
+      ok('连接码换算：IC 0x7C0→0x00EE', f(0x7C0) === 0x00EE);
+    }
+  }
 }
 
 console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed =====');

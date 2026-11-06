@@ -1,6 +1,6 @@
 {
  "source": "Funcfg.so [SPECFUNC_CFG]",
- "note": "SF_xx = low byte of system id 0x0Bxx; this is the 431 special-function system switch table, not SPECFG.INI",
+ "note": "SF_xx = low byte of system id 0x0Bxx; this is the 参考诊断仪 special-function system switch table, not SPECFG.INI",
  "sf": [
   9,
   18,

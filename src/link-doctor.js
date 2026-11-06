@@ -276,43 +276,9 @@ export class LinkDoctor {
  * @param {(msg:string)=>void} onLog
  * @returns {Promise<Array<{tx:number,rx:number,sid:string,raw:string}>>}
  */
-export async function scanEcuAddresses(elm, onLog = () => {}) {
-  const found = [];
-  // 保时捷 981 常见请求 ID 段；应答多为 +8，网关例外
-  // ⚠️ 扫描结果要**持久化回填 ECU_ADDR**（2026-10-17 审计 A2）：此前只 toast，
-  //    扫到也进不了模块，每次都要手改源码 —— 「上车即用」断在这里。
-  const RX_OFFS = [0x08, 0x6A];   // 0x00 = rx===tx，parseAddrPair 明确拒绝，不能扫
-  for (let tx = 0x700; tx <= 0x7F0; tx += 1) {
-    // 全 0x700–0x7F0 覆盖：PDC=7CF、后 BCM=74F 的低 4 位是 F，
-    // 旧步进 0/1/2 永远扫不到它们。
-    for (const off of RX_OFFS) {
-      const rx = tx + off;
-      // 11-bit CAN 应答 ID 不能超过 0x7FF（0x7F0 + 0x6A 会溢出）。
-      if (rx > 0x7ff) continue;
-      // ⚠️ 三处实车问题（2026-10-17 真车日志）：
-      //   ① 800ms 太短 —— 真车 ATSH 就超时，扫描一开头就中断
-      //   ② 单次超时会让整个扫描抛错退出 —— 无应答是常态，必须吞掉继续
-      //   ③ /\b5A\b/i 检测应答在 ATS0（无空格）下永远不命中 ——
-      //      应答是 `7E8035A9F…` 连写，5A 没有词边界
-      try {
-        await elm.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 2500);
-        await elm.cmd(`ATCRA${rx.toString(16).toUpperCase()}`, 2500);
-      } catch (e) { continue; }
-      let r = '';
-      try { r = (await elm.cmd('1A9F', 3000) || '').trim(); } catch (e) { continue; }
-      if (!r) continue;
-      // 用 parseResp 统一剥 CAN ID + ISO-TP PCI（ATS0/ATS1 都认，见审计 A2）
-      const pr = parseRespCaf1(r);
-      const body = Array.from(pr.body || []).map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-      if (body.startsWith('5A') && !/NO DATA|ERROR|STOPPED|UNABLE/i.test(r)) {
-        // 同一 tx 可能被多个 rx 偏移命中（测试/网关回显）；只保留第一条。
-        if (!found.some((x) => x.tx === tx)) {
-          found.push({ tx, rx, sid: '1A9F', raw: r.slice(0, 60) });
-          onLog(`  ✅ 0x${tx.toString(16).toUpperCase()}/0x${rx.toString(16).toUpperCase()} → ${body.slice(0, 32)}`);
-        }
-      }
-    }
-    if ((tx & 0x0F) === 0) onLog(`  … 扫到 0x${tx.toString(16).toUpperCase()}，已发现 ${found.length} 个`);
-  }
-  return found;
+export async function scanEcuAddresses() {
+  // ★ 2026-11-05 终审：地址盲扫（0x700-0x7F0 逐地址试）退役 —— 参考诊断仪 的扫描=
+  //   「系统扫描/快速测试」（TEXT_CN UI 文本库实证），按系统清单逐个走
+  //   「表候选+探测+文本匹配」解析（app.js btnScan 已改同款）。本函数留空壳，可整段删除。
+  return [];
 }

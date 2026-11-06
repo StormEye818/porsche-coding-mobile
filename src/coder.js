@@ -29,6 +29,22 @@
 
 import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange } from './schema.js';
 
+// ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
+//   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
+//   idx=连接码高字节在表1 的位置；8 族互逆双射，锚点 7/7 双向唯一咬合
+//   （GW 0x710↔0x003E、PASM 0x7D0↔0x00FE、DME 0x7E0↔0x00CE、IC 0x7C0↔0x00EE 等）。
+//   表2=8 字节混淆串（其 rodata 常量），表1=族序置换表。绑定参数由此计算而得、
+//   非查表注入——本函数与 参考诊断仪 逐字同源，供绑定一致性校验/日志。
+const _TC_T1 = [0x05, 0x07, 0x03, 0x02, 0x04, 0x06, 0x01, 0x00];
+const _TC_T2 = [0x46, 0x75, 0x63, 0x6b, 0x55, 0x53, 0x41, 0x2e];
+function calcLinkCode(can) {
+  for (let idx = 0; idx < 8; idx++) {
+    const x = ((can & 0xffff) ^ _TC_T2[idx]) >>> 0;
+    if ((x & 0xff00) === (idx << 8)) return ((_TC_T1[idx] << 8) | (x & 0xff));
+  }
+  return null;
+}
+
 /**
  * 字段占用的字节闭区间 [lo, hi]。
  * 位域可能跨字节（bit + bitsize > 8），变更闸门要按区间判，不是"恰好 1 字节"。
@@ -315,6 +331,9 @@ export class Coder {
     this.protocol = 6;             // CAN 11bit/500k（保时捷实证）。link-doctor 锁定后可覆盖
     this.backups = [];
     this.lastIdent = '';          // 1A 9F/1A 94/1A 92 的 ASCII 识别串（自动选变体用）
+    this.lastPartNo = '';         // 1A 84 ECU 零件号（参考诊断仪 同款变体落定键，2026-11-05）
+    this.lastHwPart = '';         // 1A 92/1A 91 硬件件号（多市场共用件收窄用）
+    this.lastSwNo = '';           // 1A 94 软件号（SWINFO 消歧键，2026-11-05）
     this._addressReady = false;   // 当前 ATSP/ATSH/ATCRA 是否已下发到适配器
     this._writeBusy = false;   // 写事务排他（审计 #20）
     this.log = [];
@@ -335,6 +354,12 @@ export class Coder {
     //    保时捷是 500k，之后所有请求全是 CAN ERROR。参考诊断仪 能连、我们连不上就是这个。
     //    协议码：6=11bit/500k  7=29bit/500k  8=11bit/250k  9=29bit/250k
     await this.elm.cmd(`ATSP${this.protocol ?? 6}`, 2500);
+    // ★ 绑定期换算同款（2026-11-06）：参考诊断仪 绑定参数=连接码（CAN 的纯函数），
+    //   这里同步计算出同源连接码留档校验；适配器侧 ATSH/ATCRA 直接吃 CAN（等价其 SetAddress/FilterId）。
+    this.linkCodeTx = calcLinkCode(this.tx);
+    this.linkCodeRx = calcLinkCode(this.rx);
+    this._say(`  绑定换算 tx=0x${this.tx.toString(16).toUpperCase()}→码${this.linkCodeTx != null ? '0x' + this.linkCodeTx.toString(16).toUpperCase() : '?'}`
+      + ` rx=0x${this.rx.toString(16).toUpperCase()}→码${this.linkCodeRx != null ? '0x' + this.linkCodeRx.toString(16).toUpperCase() : '?'}`);
     await this.elm.cmd(`ATSH${this.tx.toString(16).toUpperCase()}`, 2000);
     await this.elm.cmd(`ATCRA${this.rx.toString(16).toUpperCase()}`, 2000);
     // 流控头随模块地址走：多帧读写时适配器内建 FC 要用**当前模块的请求 ID**。
@@ -383,6 +408,9 @@ export class Coder {
     //   参考诊断仪 不弹变体选择，它是按 ECU 识别/ODX 变体名自动进模块的；我们之前
     //   只看十六进制、然后 prompt 让用户选，方向反了。
     this.lastIdent = '';
+    this.lastPartNo = '';
+    this.lastHwPart = '';
+    this.lastSwNo = '';
     const identParts = [];
     // 参考诊断仪 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
     // ★ 2026-10-28：全套 1A xx 识别（对齐 参考诊断仪 ODX 识别链）。
@@ -396,11 +424,20 @@ export class Coder {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
         let b = Array.from(id.body || []);
         if (b[0] === 0x5a) b = b.slice(2);           // 5A 9F / 5A 94 / 5A 92
-        const txt = b.filter((c) => c >= 0x20 && c < 0x7f)
-          .map((c) => String.fromCharCode(c)).join('').trim();
+        const txtRaw = b.filter((c) => c >= 0x20 && c < 0x7f)
+          .map((c) => String.fromCharCode(c)).join('');
+        const txt = txtRaw.trim();   // 仅显示用；键留存用原样字节（strcmp 语义）
         this._say(`  识别 ${cmd} → ${id.body.map((x) => x.toString(16).padStart(2, '0')).join(' ')}`
           + (txt ? `  「${txt}」` : ''));
-        if (txt) { identParts.push(txt); identMiss = 0; } else { identMiss++; }
+        if (txt) {
+          identParts.push(txt); identMiss = 0;
+          // ★ 2026-11-05：件号单独留存（参考诊断仪 同款变体落定键）。
+          //   1A 84=零件号（会话库 PARTNUMBER 一一对应）；1A 92 硬件号、1A 91 零件图号做收窄。
+          if (cmd === '1A84') this.lastPartNo = txtRaw;
+          else if (cmd === '1A92') this.lastHwPart = txtRaw;
+          else if (cmd === '1A91' && !this.lastHwPart) this.lastHwPart = txtRaw;
+          else if (cmd === '1A94') this.lastSwNo = txtRaw;
+        } else { identMiss++; }
       } catch (e) {
         identMiss++;
         this._say(`  (识别 ${cmd}：${e.message})`);
@@ -501,19 +538,11 @@ export class Coder {
    * @param {number} readSid 读服务
    */
   async readBlock(id, readSid = 0x21) {
-    // ★ 2026-10-28：SID 自动回退 —— UDS 22 被 NRC 0x12 拒时重试 KWP 21，反之亦然。
-    //   参考模块协议族各异（IC 可能是 UDS 也可能是 KWP），参数表写死的 SID
-    //   不一定对。被拒时换 SID 重试一次，比让用户改参数表友好。
-    try {
-      return await this._readBlockImpl(id, readSid);
-    } catch (e) {
-      const alt = readSid === 0x22 ? 0x21 : 0x22;
-      if (e instanceof CodingError && e.code === 0x12) {
-        this._say(`  SID 0x${readSid.toString(16)} 被拒(NRC 0x12)，回退 0x${alt.toString(16)} 重试`);
-        return await this._readBlockImpl(id, alt);
-      }
-      throw e;
-    }
+    // ★ 2026-11-05 错误恢复定案：**SID 0x12 换 SID 重试已删**（自创恢复，无 参考诊断仪 取证）。
+    //   参考诊断仪 读包装（SendUdsReadSidPidCmd/SysTemReadData）逐指令无 NRC 0x12 重试逻辑：
+    //   SID 由记录自带（readSid），发一次、被拒即失败，结果由 ECU 裁决。
+    //   22↔21 按族选择是数据驱动（GAG 取证），不是运行时回退。
+    return await this._readBlockImpl(id, readSid);
   }
 
   /** readBlock 的实际实现 */
@@ -600,9 +629,14 @@ export class Coder {
     //    重试吃满 → 0x36 锁死。needsKey=false 要给出「原厂无 case」的针对性报错。
     if (!kArr.length) {
       const noAlgo = this.seedKeyProvider && this.seedKeyProvider.needsKey === false;
-      throw new CodingError(noAlgo
-        ? '该模块在原厂 seed/key 表里没有对应算法分支（本不需要密钥），但 ECU 回了非零 seed —— 拒绝猜测 key'
-        : '算法返回空 key —— 拒绝发送（会吃 NRC 0x35）');
+      if (noAlgo) {
+        // ★ 2026-11-05 对齐 参考诊断仪：原厂 该 mode 无 case = **不发 key**，
+        //   直接继续写入流程（备份→写→回读），结果由 ECU 裁决 —— 不发 key 不会
+        //   触发 0x35/0x36 安全计数（那只有发错 key 才会）。此处不再拒写。
+        this._say('  原厂 无 case 不发 key —— 继续写入（结果由 ECU 裁决）', 'warn');
+        return true;
+      }
+      throw new CodingError('算法返回空 key —— 拒绝发送（会吃 NRC 0x35）');
     }
     this._say(`  key  = ${kArr.map((b) => b.toString(16).padStart(2, '0')).join(' ')}` +
               `（算法 ${this.seedKeyProvider.name}）`);
@@ -979,17 +1013,25 @@ async function readDtc(subFunc = 0x02, mask = 0x89, timeoutMs = 10000) {
   }
   // ⚠️ UDS 19 失败要回退 KWP 18（2026-10-17 审计 F6）：GAG 实测 18×10 比 19×5 更常用，
   //    KWP 模块只发 19 会 NRC。实测形态：`18 00 40 00` / `18 00 FF 00`
+  // ★ 2026-11-05 DTC 服务定案（有据，换族回退已删）：
+  //    参考诊断仪 的 18/19 选取 = **每模块记录字段驱动的请求 ID/模板分派**
+  //    （PorscheReadDtc：0xff001407/0xff000619 族请求 ID + SearchID 模板，
+  //      记录字段 cmp 门槛；全文无硬编码 18/19 分支）；NRC 7F = 结果置空、
+  //    **零换族**（0x16710 逐指令实证）——原「19 失败换 18」是自创恢复，已删。
+  //    模板绑定数据（每 ECU ODX 记录）不在提取包 → 按族单发（数据定替代）：
+  //    KWP 族（1A/21 识别）→ 18 族，UDS 族 → 19 族（服务对 18↔58 / 19↔59，
+  //    ISO 14229 / KWP2000，src/dtc.js 应答解析同口径）。
   // ⚠️ mask 默认 0x89 —— **参考诊断仪 真机序列 GAG 里是 `19 02 89` / `19 02 AD`，没有 `19 02 08`**
   //    （2026-10-18 R3 复核）。此前按 REA 的 protocol_native 改成 0x08，反而偏离 参考诊断仪 实例；
   //    0x08 不是错值，但默认必须跟 参考诊断仪 真车证据走。
-  try {
-    const r = await this.uds(`19${subFunc.toString(16).padStart(2, '0')}${mask.toString(16).padStart(2, '0')}`, timeoutMs);
-    return { ...r, dtcProtocol: 'uds' };
-  } catch (e) {
-    this._say(`  (19 ${subFunc.toString(16)} 失败：${e.message} —— 回退 KWP 18)`);
+  // 按族单发（换族回退已删）：KWP 族 → 18 族，UDS 族 → 19 族。
+  const kwpFamily = this.lastReadSid === 0x1A || this.lastReadSid === 0x21;
+  if (kwpFamily) {
     const r = await this.uds('18004000', timeoutMs, { allowEmpty: true });
     return { ...r, dtcProtocol: 'kwp' };
   }
+  const r = await this.uds(`19${subFunc.toString(16).padStart(2, '0')}${mask.toString(16).padStart(2, '0')}`, timeoutMs);
+  return { ...r, dtcProtocol: 'uds' };
 }
 
 /** 清故障码 `14 <group>` 实测 14 FF FF / 14 00 00 */
@@ -1117,7 +1159,10 @@ Object.assign(Coder.prototype, {
  */
 export const SESSION_FOR_SERVICE = {
   coding: 0x89,     // 读写编码
-  routine: 0x86,    // 例程 / 特殊功能
+  routine: 0x40,    // 例程 / 特殊功能 —— ★ 2026-11-06 代码级对齐：.so 执行流实证
+  //   31 01 前会话字节分布（data/function-sequences.json 全平台族）：10 40 × 202 主导
+  //   （P997/P9x1/P992/Macan/Cayenne/E1/E3/BV/DME 全族一致），10 4F × 48 次之（= routine2）。
+  //   此前用 0x86（10 86）是弱证据选择，已纠。
   io: 0x85,         // IOControl / 执行器
   ident: 0x03,      // 识别 / 读
   // 数据流/测量属于「读」，走扩展会话 10 03，不是 10 89。

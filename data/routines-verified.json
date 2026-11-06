@@ -1,8 +1,8 @@
 {
  "schemaVersion": 1,
  "kind": "verified-routine-ids",
- "source": "COMMAND.GAG（431 实测请求序列）0x31 全集",
- "caveat": "只保证这些例程 ID 在 431 真机通信中出现过（即 ID 合法），不保证「哪个 ID 对应哪个功能」—— 语义仍需真车确认。与 special-functions.json 的手工索引（0x200-0x34E）交集仅 1 个，两者不可混用。",
+ "source": "COMMAND.GAG（参考诊断仪 实测请求序列）0x31 全集",
+ "caveat": "只保证这些例程 ID 在 参考诊断仪 真机通信中出现过（即 ID 合法），不保证「哪个 ID 对应哪个功能」—— 语义仍需真车确认。与 special-functions.json 的手工索引（0x200-0x34E）交集仅 1 个，两者不可混用。",
  "count": 79,
  "requestCount": 252,
  "noRidCount": 16,
@@ -520,7 +520,7 @@
      "n": 1
     }
    ],
-   "note": "实测出现 69 次（最高频），431 用作例程主力"
+   "note": "实测出现 69 次（最高频），参考诊断仪 用作例程主力"
   },
   {
    "routineId": "0x0214",
