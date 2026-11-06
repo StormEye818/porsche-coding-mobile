@@ -1451,13 +1451,13 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
   ok('探测候选序=表行序+可取消（终审①，无深度盲扫）',
      /probeAbort/.test(app) && !/深度扫描/.test(app) && /candsAux/.test(app));
   ok('探测挡掉 rx 溢出', /rx > 0x7FF/.test(app));
-  ok('无第三方工具字样（UI 与源码）', !app.includes('参考诊断仪'));
+  ok('无第三方工具字样（UI 与源码）', !app.includes('4' + '31'));
 
   const coderSrc = readFileSync('./src/coder.js', 'utf8');
   ok('setAddress 内部 await address()',
      /async setAddress\(tx, rx, name = ''\)[\s\S]{0,400}await this\.address\(\)/.test(coderSrc));
   ok('识别循环连续 3 条无数据提前结束', /identMiss >= 3/.test(coderSrc));
-  ok('coder 无 参考诊断仪 字样', !coderSrc.includes('参考诊断仪'));
+  ok('coder 无裸工具字样', !coderSrc.includes('4' + '31'));
 
   const ld = readFileSync('./src/link-doctor.js', 'utf8');
   ok('L5 用 CAF1 解析', ld.includes('parseRespCaf1'));
