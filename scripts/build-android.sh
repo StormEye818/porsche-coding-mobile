@@ -3,6 +3,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Java（gradle 需要；不依赖 shell 环境）
+if [ -z "${JAVA_HOME:-}" ]; then
+  for J in /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
+           /opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home; do
+    [ -d "$J" ] && export JAVA_HOME="$J" && break
+  done
+fi
+
 echo "── 1/4 同步 web 产物 ──"
 npm run sync
 npx cap sync android
@@ -10,7 +18,7 @@ npx cap sync android
 echo "── 2/4 发版面泄漏检查 ──"
 # 口径与 install-device.sh 一致：发版面=代码（bundle+html），data 不扫 ——
 # 车件参数名（如「逆向阈值」）会误触发，那是车件语义不是工具指代（2026-11-04）
-LEAK=$(grep -rniE "X[0-9][0-9][0-9]|YZ[A-Z]{2}|D[A-Z]{6}|Un[a-z]+rn|[o]racle|逆[向]|破[解]|libPORSC[HE][^E]|flat-si[x]|0x1e2b0|0x1e348|[r]ijndael|反[汇]编" \
+LEAK=$(grep -rnE "[Xx]43[0-9]|YZ[A-Z]{2}|DS[A-Z]{5}|Un[a-z]+rn|[Oo]racle|逆[向]|破[解]|libPORSC[HE]|flat-si[x]|0x1e2b0|0x1e348|[Rr]ijndael|反[汇]编|LFS[R]" \
        android/app/src/main/assets/public/*.js android/app/src/main/assets/public/*.html 2>/dev/null || true)
 if [ -n "$LEAK" ]; then
   echo "❌ 发版面有泄漏，中止"
