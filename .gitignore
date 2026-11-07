@@ -145,3 +145,4 @@ tools/idsearch-query.py
 # iOS 模拟构建产物
 ios/build-sim-18/
 build-special-functions.py
+scripts/_icprobe*.mjs

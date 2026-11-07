@@ -52,6 +52,11 @@ export class MockAdapter extends Emitter {
     //   ecus = { 0x7E0: { name:'DME', dsn:'P200', kwp:false }, ... }
     this.strictAddress = !!opts.strictAddress;
     this.ecus = opts.ecus || null;
+    // ★ 2026-11-07 wire 级仿真（治本：测试必须走真代码路径）：ecus 项支持
+    //   dsn(1A9F 文本) / noIdent1A(1A 全族不应答=真车 KWP 静默模块) /
+    //   ident22(22 11 02 文本) / ident22b(22 07 05 文本) / vo(22 14 09 应答)。
+    this.identText = null;
+    this.identTextTx = null;
     // ★ 识别链文本：设置后 1A xx 一律回 ASCII —— 自动选变体靠它命中变体名
     //   （对齐真车 ODX 识别链，进模块不弹变体选择，2026-11-04）
     this.identText = opts.identText || '';
@@ -113,7 +118,8 @@ export class MockAdapter extends Emitter {
     // ── 识别链：identText **只回在 0x9F**（DSN/变体名载体，自动选变体用）──
     //   2026-11-06 用户实测：全 1A xx 同回 identText → 版本信息 16 条全同值；
     //   其余 1A xx 走下方 IDENT canned 值（每条各自的真实形态）——实车每条本就不同。
-    if (sid === 0x1A && this.identText && (bytes[1] ?? 0x9F) === 0x9F) {
+    if (sid === 0x1A && this.identText && (bytes[1] ?? 0x9F) === 0x9F
+        && (this.identTextTx == null || this.identTextTx === this.address.tx)) {
       const asc = [...this.identText].map((c) => c.charCodeAt(0) & 0xff);
       return this.#frame([0x5A, bytes[1] ?? 0x9F, ...asc]);
     }
@@ -121,6 +127,7 @@ export class MockAdapter extends Emitter {
     // ── 地址拓扑（真车只有装了的 ECU 才应答）──
     const ecu = this.ecus ? this.ecus[this.address.tx] : null;
     if (this.ecus && this.strictAddress && !ecu) return '';   // 这个 tx 上没有模块
+    if (ecu && ecu.noIdent1A && sid === 0x1A) return '';       // ★ KWP 识别静默（IC 类）
     if (ecu) {
       // 协议族不匹配 → 服务不支持（真车就是这样回 NRC 0x11）
       const kwpSids = [0x21, 0x3B, 0x17, 0x1A];
@@ -172,6 +179,18 @@ export class MockAdapter extends Emitter {
       case 0x21:   // ReadDataByLID
       case 0x22: { // ReadDataByIdentifier
         const id = bytes.slice(1, sid === 0x22 ? 3 : 2);
+        const did = ((id[0] || 0) << 8) | (id[1] || 0);
+        // ★ wire 级：22 14 09=VO 读（探测）/ 22 11 02 · 22 07 05=识别读（探测后取文本）
+        if (sid === 0x22 && did === 0x1409) {
+          if (ecu && ecu.vo === false) return '';               // 静默模块
+          const vo = [...'VO000001'].map((c) => c.charCodeAt(0) & 0xff);
+          return this.#frame([0x62, 0x14, 0x09, ...vo]);
+        }
+        if (sid === 0x22 && (did === 0x1102 || did === 0x0705)) {
+          const t = did === 0x1102 ? (ecu && ecu.ident22) : (ecu && ecu.ident22b || ecu && ecu.ident22);
+          if (!t) return '';
+          return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
+        }
         const data = this.#readBlock(id, sid);
         return this.#frame([sid + 0x40, ...id, ...data]);
       }

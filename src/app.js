@@ -355,44 +355,64 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
 
   const hex = (n) => n.toString(16).toUpperCase();
 
+  // ★ 2026-11-07 真机定案（用户 982 实测：1A9F 探测 16 候选全灭）：探测报文补
+  //   参考诊断仪 同款 **22 14 09**（DriveLinksMode_1001 逐候选发 0xff001409 的总线帧），
+  //   判定=flags/文本匹配；存活（任何应答含 NRC）按表行序采纳，每个候选落日志（自证）。
   const tryAddr = async (p) => {
+    const note = (s) => log(`  · 探 0x${hex(p.tx)}/0x${hex(p.rx)}: ${s}`, 'info');
+    let alive = null;   // {resp} 存活但未确认
     try {
       await coder.elm.cmd(`ATSH${hex(p.tx)}`, 1200);
       await coder.elm.cmd(`ATCRA${hex(p.rx)}`, 1200);
-      // 探测族序：blockKey 族报文优先，再识别串（1A9F → UDS 兜底）
       const cmdsProbe = probeCmdsForEntry(entry);
-      const cmds = probeCmd ? [probeCmd] : [...cmdsProbe, '1A9F'];
+      const cmds = probeCmd ? [probeCmd] : ['221409', ...cmdsProbe, '221102', '220705'];
       for (let ci = 0; ci < cmds.length; ci++) {
         const cmd = cmds[ci];
-        const r = (await coder.elm.cmd(cmd, 2000) || '').trim();
+        let r = '';
+        try { r = (await coder.elm.cmd(cmd, 2000) || '').trim(); } catch { note(`${cmd} → 超时/无应答`); continue; }
         const pr = parseRespAuto(r, String(cmd).replace(/[^0-9A-Fa-f]/g, ''),
           parseInt(String(cmd).slice(0, 2), 16) & 0xff);
         const body = Array.from(pr.body || [])
           .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+        if (!body && !r) { note(`${cmd} → 无应答`); continue; }
+        const text = Array.from(pr.body || [])
+          .filter((c) => c >= 0x20 && c < 0x7f)
+          .map((c) => String.fromCharCode(c)).join('').trim();
+        note(`${cmd} → ${body.slice(0, 24) || r.slice(0, 24) || '(空)'}`);
         if (body.startsWith('5A') || body.startsWith('62')) {
-          if (cmdsProbe.includes(cmd) && (pr.body || []).length >= 3) {
+          if ((pr.body || []).length >= 3 && cmd === '221409') {
             const fl = probeFlagsFromResp(pr.body);
             log(`    探测 flags: bVar22=${fl.bVar22 ? 1 : 0} local164=${fl.local164} local178=${fl.local178}`, 'info');
           }
-          const text = Array.from(pr.body || [])
-            .filter((c) => c >= 0x20 && c < 0x7f)
-            .map((c) => String.fromCharCode(c)).join('').trim();
-          // ★ 终审④⑤：归属 = 文本匹配；命中静默采纳（无 P200 启发式、无确认弹窗）
+          // ① 文本匹配（GetSubSysDataAddr 同款原语）= 归属确认，静默采纳
           if (identTextMatch(text, label, opts.variantNames, opts.modRecords, opts.modules)) {
             return { tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32), confidence: 'probed' };
           }
-          log(`  · 0x${hex(p.tx)} 正响应但文本不匹配「${label}」，试下一命令/候选`, 'info');
-        }
-        if (body.startsWith('7F')) {
-          // ★ 2026-11-05 错误恢复定案：NRC 后追加 22F190 的 UDS 兜底已删（无 参考诊断仪 取证）。
-          //   参考诊断仪 探测 = blockKey 族固定报文 + flags 裁剪 + 文本匹配，不换报文重试。
+          if (text) {
+            // 文本指向其他模块家族 → 排除（同原语反向用：不把邻居 ECU 当目标）
+            const others = (opts.otherLabels || []).filter((L) => L !== label);
+            const hitOther = others.some((L) => {
+              const k = String(L || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+              const N = String(text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+              return k && k.length >= 3 && (N.includes(k) || k.includes(N));
+            });
+            if (hitOther) { note(`文本指向其他模块家族「${text.slice(0, 16)}」，跳过`); alive = null; break; }
+          }
+          alive = alive || { resp: body.slice(0, 24) };
+        } else if (body.startsWith('7F')) {
+          // NRC = 该地址有模块在（存在性应答），记存活
+          alive = alive || { resp: body.slice(0, 8) };
+        } else if (body) {
+          alive = alive || { resp: body.slice(0, 24) };
         }
       }
-    } catch { /* 超时/无应答，继续 */ }
+    } catch (e) { note(`异常 ${e.message || e}`); }
+    if (alive) return { tx: p.tx, rx: p.rx, cmd: 'alive', ident: alive.resp, confidence: 'alive' };
     return null;
   };
 
   probeAbort = false;
+  const alive = [];
   try {
     // 上一个模块可能是 29-bit，先切回 11-bit/500k
     await coder.elm.cmd('ATSP6', 1500).catch(() => {});
@@ -401,7 +421,14 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       showLoading(`正在探测 ${label}`, `候选 ${i + 1}/${quick.length} · 0x${hex(quick[i].tx)}`,
         () => { probeAbort = true; });
       const hit = await tryAddr(quick[i]);
-      if (hit) return hit;
+      // 文本/flags 确认命中 → 立即采纳（参考诊断仪 静默采纳）；存活候选继续扫完按行序取
+      if (hit && hit.confidence === 'probed') return hit;
+      if (hit) alive.push(hit);
+    }
+    if (alive.length) {
+      // ★ 存活候选按表行序取首个（参考诊断仪 行序选行原则），进入后身份校验再确认
+      log(`  · 存活候选 ${alive.length} 个（${alive.map((a) => '0x' + hex(a.tx)).join(' ')}），按行序取首个`, 'info');
+      return alive[0];
     }
     return null;
   } finally {
@@ -570,6 +597,12 @@ let tree = null;          // menu-tree-v3.json
 let coding = [];          // coding-v2.json params
 let stack = [];           // 导航栈 [{level, title, data}]
 let _navLockTs = 0;       // 程序化导航后短窗口内吞掉 ghost-click（2026-11-04）
+let _lastPointerTs = 0;   // ★ 2026-11-07：真点击带 pointerdown；iOS confirm 穿透的合成 click 没有
+try {
+  window.addEventListener('pointerdown', () => { _lastPointerTs = Date.now(); }, true);
+  window.addEventListener('mousedown', () => { _lastPointerTs = Date.now(); }, true);
+  window.addEventListener('touchstart', () => { _lastPointerTs = Date.now(); }, true);
+} catch {}
 let currentParam = null;
 let simMode = false;
 let simMock = null;   // 模拟适配器（进模块时喂识别串用，2026-11-04）
@@ -702,7 +735,16 @@ $('btnSim').onclick = async () => {;
   if (doctor) { try { await doctor.close(); } catch {} doctor = null; }
   if (elm && typeof elm.close === 'function') { try { await elm.close(); } catch {} }
   elm = null; coder = null;
-  const mock = new MockAdapter({ latencyMs: 30 });
+  // ★ 2026-11-07 wire 级仿真拓扑（治本：测试必须走真探测路径，不再占位直进）：
+  //   DME@0x7E0 回识别文本；IC@0x7C0 **不回 1A9F**（真车 KWP 静默模块）但回 22 14 09/22 11 02；
+  //   邻居 BCM 各回各的文本（防误认）；未列地址=NO DATA。
+  const SIM_ECUS = {
+    0x7E0: { name: 'DME', dsn: 'ECM_DME_BDE_Continental_BaseSys', ident22: 'ECM_DME_BDE_Continental_BaseSys' },
+    0x7C0: { name: 'IC', noIdent1A: true, ident22: 'Kombi_IC_9x1', ident22b: 'Kombi_IC_9x1' },
+    0x7D1: { name: 'BCM_vorne', dsn: 'BCM_vorne_9x1_Basis', ident22: 'BCM_vorne_9x1_Basis' },
+    0x74F: { name: 'BCM_hinten', dsn: 'BCM_hinten_9x1', ident22: 'BCM_hinten_9x1' },
+  };
+  const mock = new MockAdapter({ latencyMs: 30, strictAddress: true, ecus: SIM_ECUS });
   simMock = mock;
   elm = new Elm327(mock, { timeoutMs: 2000 });   // ← MockAdapter 是 PortLike，包进 Elm327
   simMode = true;
@@ -1670,27 +1712,55 @@ function renderNav() {
       }
       case 'ruleGroup': {
         // 只渲染，不 push（push 在 onSelect 里做）
+        // ★ 2026-11-07 二级页面全量对齐 参考诊断仪（IC 案例实测形态）：
+        //   二级 = **子索引链行 + 直接编码项行 混排**（无「直接条目」假分组——那不是 参考诊断仪 的页面）。
+        //   链 = chain[1] 名族聚类（"X - Y" 归 X 族；双重显示=同参数双副本天然成两链）；
+        //   行名 = 组名+序（同名编号 …0/…1，参考诊断仪 侧栏观测形态）；点链行 → 该链**全量编码**平铺。
+        //   证据：组名双语条目（性能和扭矩显示/Performance and torque indication 各 1+2 条）、
+        //   双副本 byte 布局（0..42 性能份 / 43..85 扭矩份）、2-segment 链=直接项。
         const g = top.data;
-        const hasSub = g.items.some((p) => (p.path?.length || 0) >= 3);
-        if (hasSub) {
-          const subgroups = {};
-          for (const p of g.items) {
-            const sg = (p.path?.length >= 3) ? p.path[1] : '（直接条目）';
-            (subgroups[sg] = subgroups[sg] || []).push(p);
-          }
-          items = Object.entries(subgroups)
-            .sort((a, b) => b[1].length - a[1].length)
-            .map(([name, its]) => ({
-              kind: 'ruleSubgroup', raw: { name, items: its, parentGroup: g.name },
-              lbl: name, meta: `${its.length} 个参数`, cnt: its.length,
-            }));
-        } else {
-          // 直接渲染批量编辑
+        const ps3 = (g.items || []).filter((p) => (p.path?.length || 0) >= 3);
+        const directs = (g.items || []).filter((p) => (p.path?.length || 0) < 3);
+        if (!ps3.length) {
           showRuleBatchEdit(g.name, g.items);
           return;
         }
+        const fams = new Map();
+        for (const p of ps3) {
+          const c1 = (p.path || ['', '?'])[1] || '?';
+          const fam = String(c1).split(' - ')[0];
+          if (!fams.has(fam)) fams.set(fam, []);
+          fams.get(fam).push(p);
+        }
+        const rowsMix = [];
+        let chIdx = 0;
+        for (const [fam, ps] of fams) {
+          ps.sort((a, b) => (a.byte - b.byte) || (a.bit - b.bit));
+          rowsMix.push({
+            kind: 'ruleChain', minByte: ps[0].byte,
+            raw: { name: `${g.name}${chIdx}`, items: ps, parentGroup: g.name, fam },
+            lbl: `${g.name}${chIdx}`, meta: `${ps.length} 个编码项`, cnt: ps.length,
+          });
+          chIdx++;
+        }
+        for (const p of directs) {
+          rowsMix.push({
+            kind: 'param', minByte: p.byte, raw: p,
+            lbl: p.name || '编码项',
+            meta: `${kindLabel(p)} · byte ${p.byte} bit ${p.bit}`,
+            cnt: null,
+          });
+        }
+        rowsMix.sort((a, b) => (a.minByte ?? 0) - (b.minByte ?? 0));
+        items = rowsMix;
         title = g.name;
         break;
+      }
+      case 'ruleChain': {
+        // 子索引链 → 该链全量编码平铺（参考诊断仪「分别进去就是全量的编码」）
+        const ch = top.data;
+        showRuleBatchEdit(ch.name, ch.items || []);
+        return;
       }
       case 'ruleSubgroup': {
         const sg = top.data;
@@ -2069,7 +2139,10 @@ async function enterSystem(sys) {
     .filter(Boolean);
   const varNames = [...new Set(modRecs.map((mi) => autoPickVariant(mi, '').name))].filter(Boolean);
   if (simMode && simMock) {
-    if (varNames.length) simMock.identText = varNames.join(' ');
+    if (varNames.length) {
+      simMock.identText = varNames.join(' ');
+      simMock.identTextTx = coder && coder.tx != null ? coder.tx : null;   // 只在目标地址回识别串
+    }
   }
   state.currentAddr = null;   // 进模块失败时不能沿用上一个模块的地址证据
   let addr = addrFor(sys.label, currentModel, sys);
@@ -2089,16 +2162,16 @@ async function enterSystem(sys) {
   const needProbe = !addr || addr.tx == null || addr.rx == null
     || (addr.state === 'candidate' && hasShortlist);
   if (needProbe) {
-    if (simMode) {
-      // 模拟模式：任何模块都能进，给个占位地址
-      addr = { tx: 0x7E0, rx: 0x7E8, note: '模拟' };
-    } else {
-      log(`  ${sys.label} 候选解析：表行序短名单探测（文本匹配静默采纳）…`, 'info');
+    {
+      // ★ 2026-11-07 治本：模拟模式不再给占位地址（占位会跳过探测路径，
+      //   真车探测 bug 测不出来——上轮漏检根因）。模拟车按真车拓扑走同一条探测。
+      log(`  ${sys.label} 候选解析：表行序短名单探测（22 14 09 探测 + 文本匹配）…`, 'info');
       const probed = await probeAddressFor(sys.label, addr?.probeCmd, {
         variantNames: varNames, modRecords: modRecs, modules: sys.modules, sys,
+        otherLabels: (modelsCatalog?.models?.[currentModel]?.modules || []).map((m) => m.module),
       });
       if (probed) {
-        addr = { ...probed, state: 'probed', note: '文本匹配命中（静默采纳）' };
+        addr = { ...probed, state: 'probed', note: probed.confidence === 'probed' ? '文本匹配命中（静默采纳）' : '存活候选（行序采纳）' };
         log(`  ✅ ${sys.label} → 0x${probed.tx.toString(16).toUpperCase()}/0x${probed.rx.toString(16).toUpperCase()}`
           + (probed.ident ? `（识别串「${probed.ident}」）` : ''), 'ok');
       } else {
@@ -2500,11 +2573,19 @@ async function onSelect(it) {
   // ★ 2026-11-04：程序化导航（pushModel/confirm 收尾）后 500ms 内的点击一律吞掉。
   //   iOS 上 confirm() 的 OK 会把点击穿透进网页，砸中重绘后列表第一项
   //   （真机「自动搜索直跳快速测试」）。
-  if (Date.now() - _navLockTs < 500) return;
+  // ★ 只吞「程序化导航后 800ms 内到达且无 pointer 事件」的合成点击（ghost-click）；
+  //   真点击带 pointerdown（≤300ms 前）一律放行——旧 500ms 全吞会吃掉用户/自动化的快速连点。
+  if (Date.now() - _navLockTs < 800 && Date.now() - _lastPointerTs > 300) return;
   // ruleGroup: 规则编码分组点击
   if (it.kind === 'ruleGroup') {
     await readBlocksForItems(it.raw.items || []);
     stack.push({ level: 'ruleGroup', title: it.raw.name, data: it.raw });
+    renderNav();
+    return;
+  }
+  if (it.kind === 'ruleChain') {
+    await readBlocksForItems(it.raw.items || []);
+    stack.push({ level: 'ruleChain', title: it.raw.name, data: it.raw });
     renderNav();
     return;
   }
@@ -2601,24 +2682,13 @@ async function onSelect(it) {
         showCurveGroup(g);
         return;
       }
-      // 检查是否有 L3 子分组（path depth >= 3）
+      // ★ 2026-11-07 二级页面全量对齐：有子分组 → 直接走 ruleGroup 页
+      //   （族聚类行=组名+序 …0/…1 + 直接编码项行混排，无「直接条目」假分组）。
+      //   此前这里自造 path[1] 分桶+（直接条目）页 = 用户实测差异的真源头。
       const hasSubgroups = g.items.some((p) => (p.path?.length || 0) >= 3);
       if (hasSubgroups) {
-        // 显示 L3 子分组列表（参考诊断仪 的三级菜单）
-        const subgroups = {};
-        for (const p of g.items) {
-          const sg = (p.path?.length >= 3) ? p.path[1] : '（直接条目）';
-          (subgroups[sg] = subgroups[sg] || []).push(p);
-        }
-        const sgItems = Object.entries(subgroups)
-          .sort((a, b) => b[1].length - a[1].length)
-          .map(([name, items]) => ({
-            kind: 'codsubgroup', raw: { name, items, parentGroup: g.name },
-            lbl: name,
-            meta: `${items.length} 个参数`,
-            cnt: items.length,
-          }));
-        stack.push({ level: 'codsubgroup', title: g.name, data: { groups: sgItems } });
+        stack.push({ level: 'ruleGroup', title: g.name,
+          data: { name: g.name, items: g.items, sysLabel: g.sysLabel || '' } });
         renderNav();
         return;
       }

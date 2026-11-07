@@ -74,15 +74,16 @@ try {
     if (!(await el.count())) return false;
     const before = await navSig();
     const doClick = async () => { try { await el.click({ timeout: 2500 }); return true; } catch { return false; } };
-    for (let a = 0; a < (expectNav ? 2 : 2); a++) {
+    for (let a = 0; a < 2; a++) {
       await page.waitForTimeout(650);          // 避开 pushModel 的 500ms ghost-click 吞锁窗口
       if (!(await doClick())) { await page.waitForTimeout(700); if (!(await doClick())) continue; }
+      if (!expectNav) return true;             // 非导航点击：点到即成功
       for (let i = 0; i < 6; i++) {
         await page.waitForTimeout(500);
-        if (!expectNav || (await navSig()) !== before) return true;
+        if ((await navSig()) !== before) return true;
       }
     }
-    return true;
+    return false;   // ★ 2026-11-07：超时如实报 false（旧实现恒 true 掩盖故障）
   };
   await clickIf(/系统选择/);
   await clickIf(/发动机|ECM|DME/);
@@ -257,6 +258,40 @@ try {
   } else { skip('系统扫描', '车型菜单无系统扫描'); }
   const expBtn = page.locator('#btnExport');
   if (await expBtn.count()) { ok('导出按钮存在', true); } else { skip('导出', '无按钮'); }
+
+  // ★ 末段. IC 案例二级页形态（用户实测基准）：自含导航 从车型层 → 系统选择 → IC → 设码 → PTI
+  {
+    for (let i = 0; i < 6; i++) {           // 退回车型层
+      const tx = await navText();
+      console.log('  [3b退栈]', i, 'title=', await page.locator('#navTitle').innerText().catch(()=>'?'), '|', tx.slice(0,50).replace(/\n/g,' / '));
+      if (/快速测试|系统扫描/.test(tx)) break;
+      await doBack();
+    }
+    await clickIf(/系统选择/);
+    await clickIf(/IC\(仪表\)/);                 // 精确 IC（避免附加仪表抢匹配）
+    // IC 进模块=全量编码块读取，真实耗时 ~17s（真机同）——耐心等进入
+    for (let i = 0; i < 120 && !/IC|仪表/.test(await page.locator('#navTitle').innerText().catch(()=>'')); i++) {
+      await page.waitForTimeout(1000);
+    }
+    const okCoding = await clickIf(/^设码/);
+    await clickIf(/刷隐藏/);                      // 设码首页=类别层，PTI 组在刷隐藏/改装内
+    const grp = page.locator('#navList .item', { hasText: /erformance and torque/i }).first();
+    if (okCoding && await grp.count()) {
+      await grp.click(); await waitNav(1200);
+      const t2 = await navText();
+      ok('二级页无「直接条目」伪组', !t2.includes('直接条目'));
+      const buckets = (t2.match(/ndication\d/gi) || []).length;
+      ok('二级页=族桶编号行（…0/…1 形态）', buckets >= 2, `编号行=${buckets} | ${t2.slice(0, 60).replace(/\n/g, ' / ')}`);
+      const b0 = page.locator('#navList .item', { hasText: /ndication0/i }).first();
+      if (await b0.count()) {
+        await b0.click(); await waitNav(1200);
+        const t3 = await navText();
+        ok('点桶行=该族全量编码平铺', t3.length > 40 && /批量写入|byte/.test(t3), t3.slice(0, 50).replace(/\n/g, ' / '));
+      } else { skip('桶行全量平铺', '无编号桶行'); }
+    } else {
+      skip('IC 二级页形态', okCoding ? '无 Performance and torque 组（变体不同）' : '未到设码层');
+    }
+  }
 
   // 8. 全局健康
   ok('全程零 pageerror', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | '));
