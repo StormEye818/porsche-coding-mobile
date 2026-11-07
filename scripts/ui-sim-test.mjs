@@ -280,14 +280,54 @@ try {
       await grp.click(); await waitNav(1200);
       const t2 = await navText();
       ok('二级页无「直接条目」伪组', !t2.includes('直接条目'));
-      const buckets = (t2.match(/ndication\d/gi) || []).length;
-      ok('二级页=族桶编号行（…0/…1 形态）', buckets >= 2, `编号行=${buckets} | ${t2.slice(0, 60).replace(/\n/g, ' / ')}`);
+      // ★ 行集合恰好=…0/…1 两桶行、无任何多余行（用户打回点：多余行全归桶）
+      const rowsOf = async () => {
+        const rows = [];
+        for (const el of await page.locator('#navList .item').all()) rows.push(await el.innerText());
+        return rows;
+      };
+      let rows = await rowsOf();
+      // ★ 2026-11-08 规则定案：二级页=记录序 50 条分页（…0/…1=页序号），页内平铺
+      const pageCnt = (txt) => { const m = /(\d+)\s*个编码项/.exec(txt); return m ? Number(m[1]) : -1; };
+      const bRows = rows.filter((r) => /ndication\d/i.test(r));
+      const extra = rows.filter((r) => !/ndication\d/i.test(r));
+      ok('PTI 二级页=恰好 …0/…1 两页行', bRows.length === 2 && extra.length === 0,
+        `页行=${bRows.length} 多余=${extra.length} | ${rows.slice(0, 4).join(' / ')}`);
+      const r0 = rows.find((r) => /ndication0/i.test(r)) || '';
+      const r1 = rows.find((r) => /ndication1/i.test(r)) || '';
+      ok('PTI 分页=50+38', pageCnt(r0) === 50 && pageCnt(r1) === 38, `…0=${pageCnt(r0)} …1=${pageCnt(r1)}`);
       const b0 = page.locator('#navList .item', { hasText: /ndication0/i }).first();
       if (await b0.count()) {
         await b0.click(); await waitNav(1200);
         const t3 = await navText();
-        ok('点桶行=该族全量编码平铺', t3.length > 40 && /批量写入|byte/.test(t3), t3.slice(0, 50).replace(/\n/g, ' / '));
-      } else { skip('桶行全量平铺', '无编号桶行'); }
+        ok('…0 页首条=N21（记录序）', /N21/.test(t3.slice(0, 80)), t3.slice(0, 50).replace(/\n/g, ' / '));
+        ok('…0 页平铺含批量写入', /批量写入|byte/.test(t3), '');
+        await doBack(); await waitNav(800);
+      } else { skip('…0 页首条', '无 …0 行'); }
+      const b1 = page.locator('#navList .item', { hasText: /ndication1/i }).first();
+      if (await b1.count()) {
+        await b1.click(); await waitNav(1200);
+        const t4 = await navText();
+        ok('…1 页首条=N08（…0 末=N09）', /N08/.test(t4.slice(0, 80)), t4.slice(0, 50).replace(/\n/g, ' / '));
+        await doBack(); await waitNav(800);
+      } else { skip('…1 页首条', '无 …1 行'); }
+      // ★ 车载电脑菜单配置：63→50+13 两页
+      for (let i = 0; i < 3; i++) {
+        if (await page.locator('#navList .item', { hasText: /车载电脑菜单配置/ }).count()) break;
+        await doBack(); await waitNav(700);
+      }
+      const tc = page.locator('#navList .item', { hasText: /车载电脑菜单配置/ }).first();
+      if (await tc.count()) {
+        await tc.click(); await waitNav(1200);
+        rows = await rowsOf();
+        const b2 = rows.filter((r) => /车载电脑菜单配置\d/.test(r));
+        const x2 = rows.filter((r) => !/车载电脑菜单配置\d/.test(r));
+        ok('菜单配置二级页=恰好 …0/…1', b2.length === 2 && x2.length === 0,
+          `页行=${b2.length} 多余=${x2.length} | ${rows.slice(0, 4).join(' / ')}`);
+        const m0 = rows.find((r) => /车载电脑菜单配置0/.test(r)) || '';
+        const m1 = rows.find((r) => /车载电脑菜单配置1/.test(r)) || '';
+        ok('菜单配置分页=50+13', pageCnt(m0) === 50 && pageCnt(m1) === 13, `…0=${pageCnt(m0)} …1=${pageCnt(m1)}`);
+      } else { skip('菜单配置形态', '组不在当前变体'); }
     } else {
       skip('IC 二级页形态', okCoding ? '无 Performance and torque 组（变体不同）' : '未到设码层');
     }

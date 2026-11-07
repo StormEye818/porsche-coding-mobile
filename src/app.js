@@ -884,13 +884,42 @@ async function autoSearch(opts = {}) {
 
     const yearCode = vin[9];
     const year = decodeVinYear(vin);
+    // ★ 2026-11-07 精确车型识别（参考诊断仪 同款读）：自动搜索链发 0xff00140a
+    //   （PorscheReadVinAndGetVehicleID 实证）= UDS 读 DID 0x140A —— 商品名/trim 级
+    //   识别数据。应答格式未在包内（证据级留白），先原样留日志（下次实测自证），
+    //   含可打印文本则显示为识别信息，不做无证据解析。
+    try {
+      const v140a = await coder.uds('22140A', 3000, { allowEmpty: true });
+      const b140a = Array.from(v140a?.body || []);
+      const hex140a = b140a.map((x) => x.toString(16).padStart(2, '0')).join('');
+      const p140a = b140a[0] === 0x62 ? b140a.slice(3) : b140a;   // 剥 62 14 0A 回显
+      const txt140a = p140a.filter((c) => c >= 0x20 && c < 0x7f)
+        .map((c) => String.fromCharCode(c)).join('').trim();
+      log(`  22 14 0A → ${hex140a.slice(0, 48) || '(空)'}${txt140a ? '  「' + txt140a.slice(0, 24) + '」' : ''}`, 'info');
+      if (txt140a) state.modelDesignation = txt140a.slice(0, 32);
+    } catch (e) { log(`  22 14 0A → 无应答（${e.message || '超时'}）`, 'info'); }
+    // ★ 商品名/trim 级识别（参考诊断仪 同款）：GetVehicleNameID 的 strcmp 入参=0xff001102
+    //   （=UDS 22 11 02）应答文本（PorscheReadVinAndGetVehicleID 逐指令实证）。
+    //   匹配语义=strcmp 精确相等 → 显示文本==应答文本，直接显示即逐字一致（无运行时文本库依赖）。
+    try {
+      const v11 = await coder.uds('221102', 3000, { allowEmpty: true });
+      const b11 = Array.from(v11?.body || []);
+      const p11 = b11[0] === 0x62 ? b11.slice(3) : b11;   // 剥 62 11 02 回显
+      const nameFromCar = p11.filter((c) => c >= 0x20 && c < 0x7f)
+        .map((c) => String.fromCharCode(c)).join('').trim();
+      log(`  22 11 02 → 「${nameFromCar || '(空)'}」`, 'info');
+      if (nameFromCar) state.modelDesignation = nameFromCar.slice(0, 32);
+    } catch (e) { log(`  22 11 02 → 无应答（${e.message || '超时'}）`, 'info'); }
     state.vin = vin;   // 地址缓存按 VIN 键控（同型号不同车不串台）
     const modelGuess = guessModelFromVin(vin, year);
     log(`  ${vinPrefix ? 'VIN 前缀' : 'VIN'}=${vin} · 年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：`
       + `${modelGuess ? `${modelGuess.models.join(' / ')}（${modelGuess.how}）` : '未识别'}`,
       modelGuess ? 'ok' : 'info');
     if (modelGuess && modelGuess.models.length) {
-      const pick = (label) => { pushModel({ label }); toast('ok', `已选 ${label}`, `${year ?? '?'} 年款`); };
+      // ★ 精确识别显示（参考诊断仪 同款）：年款简写 + 车上名字（如「21款 718 Boxster T」）
+      const yy = year != null ? String(year % 100).padStart(2, '0') : '??';
+      const desig = state.modelDesignation ? `${yy}款 ${state.modelDesignation}` : '';
+      const pick = (label) => { pushModel({ label }); toast('ok', `已选 ${desig || label}`, desig || `${year ?? '?'} 年款`); };
       if (opts.autoAccept) {
         // 程序化调用（如测试）免确认；**模拟模式同样弹确认**（2026-11-05 用户实测：
         // 模拟模式读完 VIN 直接进车型，没给确认车型年款的机会）。
@@ -898,8 +927,26 @@ async function autoSearch(opts = {}) {
         pick(modelGuess.models[0]);
         return;
       }
+      // ★ 2026-11-07 数据集相同的候选项合并单确认（实证：981/982 的 Boxster/Cayman
+      //   数据集逐文件全同、变体名一致 → 车身/trim 选择对下游零影响）——两选手动
+      //   由此消灭，由数据事实驱动非猜测。精确商品名待 22 14 0A 格式定案后并入显示。
+      if (modelGuess.models.length > 1 && typeof modelsCatalog !== 'undefined') {
+        const sigOf = (lbl) => {
+          const m = modelsCatalog?.models?.[lbl];
+          return JSON.stringify((m?.modules || []).map((x) => x.module + ':' + (x.count ?? '')));
+        };
+        const sigs = modelGuess.models.map(sigOf);
+        if (sigs[0] && sigs.every((x) => x === sigs[0])) {
+          const joined = modelGuess.models.join(' / ');
+          log(`  候选车型数据集相同（${joined}）——合并单确认`, 'info');
+          const ok2 = confirm(`识别为：${joined}（数据集相同）\n`
+            + `${vinPrefix ? 'VIN 前缀' : 'VIN'}：${vin}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认？`);
+          if (ok2) { pick(modelGuess.models[0]); return; }
+          return;
+        }
+      }
       if (modelGuess.models.length === 1) {
-        const ok = confirm(`识别为：${modelGuess.models[0]}\n`
+        const ok = confirm(`识别为：${desig || modelGuess.models[0]}\n`
           + `${vinPrefix ? 'VIN 前缀' : 'VIN'}：${vin}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认这个车型？`);
         if (ok) { pick(modelGuess.models[0]); return; }
       } else {
@@ -1711,48 +1758,34 @@ function renderNav() {
         break;
       }
       case 'ruleGroup': {
-        // 只渲染，不 push（push 在 onSelect 里做）
-        // ★ 2026-11-07 二级页面全量对齐 参考诊断仪（IC 案例实测形态）：
-        //   二级 = **子索引链行 + 直接编码项行 混排**（无「直接条目」假分组——那不是 参考诊断仪 的页面）。
-        //   链 = chain[1] 名族聚类（"X - Y" 归 X 族；双重显示=同参数双副本天然成两链）；
-        //   行名 = 组名+序（同名编号 …0/…1，参考诊断仪 侧栏观测形态）；点链行 → 该链**全量编码**平铺。
-        //   证据：组名双语条目（性能和扭矩显示/Performance and torque indication 各 1+2 条）、
-        //   双副本 byte 布局（0..42 性能份 / 43..85 扭矩份）、2-segment 链=直接项。
+        // ★ 2026-11-08 规则定案（用户实测四观测，RE-CODING-TREE 终判节）：
+        //   二级页行 = 组内条目**按记录序**（ALLDATA 池链顺序，= data/models JSON items 顺序）
+        //   **每 50 条一页**，行名 = 组名+同名去重编号（…0/…1/…2…）；页内条目平铺（记录序，不重排）。
+        //   ≤50 条组 = 条目直接行（用户原话「直接编码项在二级页直接可点」；备选=单页行，待真机定）。
+        //   证据：PTI 88→50+38（…0 末=N09、…1 首=N08 与用户屏吻合）；警告配置(A2_9) 306→7 行 …0-…6；
+        //   菜单配置 63→50+13；显示配置出厂设置 87→50+36。旧族桶/byte 半分/模块块假说全部作废。
         const g = top.data;
-        const ps3 = (g.items || []).filter((p) => (p.path?.length || 0) >= 3);
-        const directs = (g.items || []).filter((p) => (p.path?.length || 0) < 3);
-        if (!ps3.length) {
-          showRuleBatchEdit(g.name, g.items);
-          return;
-        }
-        const fams = new Map();
-        for (const p of ps3) {
-          const c1 = (p.path || ['', '?'])[1] || '?';
-          const fam = String(c1).split(' - ')[0];
-          if (!fams.has(fam)) fams.set(fam, []);
-          fams.get(fam).push(p);
-        }
-        const rowsMix = [];
-        let chIdx = 0;
-        for (const [fam, ps] of fams) {
-          ps.sort((a, b) => (a.byte - b.byte) || (a.bit - b.bit));
-          rowsMix.push({
-            kind: 'ruleChain', minByte: ps[0].byte,
-            raw: { name: `${g.name}${chIdx}`, items: ps, parentGroup: g.name, fam },
-            lbl: `${g.name}${chIdx}`, meta: `${ps.length} 个编码项`, cnt: ps.length,
-          });
-          chIdx++;
-        }
-        for (const p of directs) {
-          rowsMix.push({
+        const all = g.items || [];   // ⚠️ 保持记录序（勿按 byte 排序）
+        if (all.length <= 50) {
+          items = all.map((p) => ({
             kind: 'param', minByte: p.byte, raw: p,
             lbl: p.name || '编码项',
             meta: `${kindLabel(p)} · byte ${p.byte} bit ${p.bit}`,
             cnt: null,
+          }));
+          title = g.name;
+          break;
+        }
+        const pageRows = [];
+        for (let off = 0, pi = 0; off < all.length; off += 50, pi++) {
+          const page = all.slice(off, off + 50);
+          pageRows.push({
+            kind: 'ruleChain', minByte: pi,
+            raw: { name: `${g.name}${pi}`, items: page, parentGroup: g.name, fam: `第${pi}页` },
+            lbl: `${g.name}${pi}`, meta: `${page.length} 个编码项`, cnt: page.length,
           });
         }
-        rowsMix.sort((a, b) => (a.minByte ?? 0) - (b.minByte ?? 0));
-        items = rowsMix;
+        items = pageRows;
         title = g.name;
         break;
       }

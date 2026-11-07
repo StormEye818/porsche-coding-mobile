@@ -186,8 +186,14 @@ export class MockAdapter extends Emitter {
           const vo = [...'VO000001'].map((c) => c.charCodeAt(0) & 0xff);
           return this.#frame([0x62, 0x14, 0x09, ...vo]);
         }
-        if (sid === 0x22 && (did === 0x1102 || did === 0x0705)) {
-          const t = did === 0x1102 ? (ecu && ecu.ident22) : (ecu && ecu.ident22b || ecu && ecu.ident22);
+        // ★ 0x1102=**车级商品名**（GetVehicleNameID strcmp 对 trim 名，强证据）——所有 ECU 同答车名；
+        //   0x0705=模块识别文本（探测归属用）。旧建模把模块名塞进 0x1102 是错的。
+        if (sid === 0x22 && did === 0x1102) {
+          const t = (this.ecus && this.ecus.vehicleName) || '718 Boxster T';
+          return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
+        }
+        if (sid === 0x22 && did === 0x0705) {
+          const t = (ecu && (ecu.ident22b || ecu.ident22)) || '';
           if (!t) return '';
           return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }
@@ -269,6 +275,14 @@ export class MockAdapter extends Emitter {
     if (key === 0xF190) {
       const vin = 'WP0ZZZ991GS123456';
       return Uint8Array.from([...vin].map((c) => c.charCodeAt(0)));
+    }
+    // ★ 商品名/trim 名（参考诊断仪 22 11 02 应答=名字文本，GetVehicleNameID strcmp 入参）—— sim 固定样例
+    if (key === 0x1102) {
+      return Uint8Array.from([...('718 Boxster T')].map((c) => c.charCodeAt(0)));
+    }
+    // 平台/车辆 ID 附加读（0x140A）—— sim 给文本样例（真车格式留日志观察）
+    if (key === 0x140A) {
+      return Uint8Array.from([...('718 Boxster T')].map((c) => c.charCodeAt(0)));
     }
     if (this.blocks[key]) return this.blocks[key];
     // 造 32 字节假块，bit 模式按 lid 分布，看起来像真的

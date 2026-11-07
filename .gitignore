@@ -146,3 +146,18 @@ tools/idsearch-query.py
 ios/build-sim-18/
 build-special-functions.py
 scripts/_icprobe*.mjs
+
+# ── 2026-11-08：内部研究资料第三批（绝不进仓库）──
+HANDOFF.md
+AUDIT.md
+BUCKET-LISTS-*.md
+tmp-analysis/
+tools/dualkey-*.py
+tools/name-scan*.py
+tools/pool-*.py
+tools/prefix-fields.py
+tools/node-xref.py
+tools/chain-map.py
+tools/so-syms.py
+tools/raw-grep*.py
+tools/dualkey-fullscan.txt
