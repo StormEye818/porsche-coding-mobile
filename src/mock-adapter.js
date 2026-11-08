@@ -60,6 +60,13 @@ export class MockAdapter extends Emitter {
     // ★ 识别链文本：设置后 1A xx 一律回 ASCII —— 自动选变体靠它命中变体名
     //   （对齐真车 ODX 识别链，进模块不弹变体选择，2026-11-04）
     this.identText = opts.identText || '';
+    // ★ 2026-11-08 实车日志重放模式（任务清单⑥）：replay = [{ req:'1089', resp:'7E8 02 50 89' }, …]
+    //   逐条重放用户日志的应答字节（原文上总线，含 PCI/多帧行）；req 归一化 hex 命中
+    //   （按序消费，同 req 可多条）即回对应 resp，未命中回 NO DATA 并记 replayMisses。
+    //   txLog 保留全部发出帧，供「断言我方发出的每帧与规格逐字节一致」。
+    this.replay = opts.replay || null;
+    this.replayUsed = new Set();
+    this.replayMisses = [];
     this.name = 'vLinker MS (模拟)';
   }
 
@@ -100,6 +107,20 @@ export class MockAdapter extends Emitter {
       if (up.startsWith('ATDPN')) return 'A6';
       if (up.startsWith('ATDP')) return 'AUTO, ISO 15765-4 (CAN 11/500)';
       return 'OK';
+    }
+    // ★ 重放模式：非 AT 请求按脚本逐条回放用户日志应答（原文，不再伪造）
+    if (this.replay) {
+      const clean = cmd.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+      for (let i = 0; i < this.replay.length; i++) {
+        if (this.replayUsed.has(i)) continue;
+        const req = String(this.replay[i].req || '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+        if (req === clean) {
+          this.replayUsed.add(i);
+          return String(this.replay[i].resp || '');
+        }
+      }
+      this.replayMisses.push(clean);
+      return 'NO DATA';
     }
     // 外部钩子可接管任意请求（返回 undefined = 走下面的默认实现）
     const hooked = this.hooks.uds ? this.hooks.uds(cmd) : undefined;
@@ -160,8 +181,15 @@ export class MockAdapter extends Emitter {
       case 0x1A: { // ReadECUIdentification —— 真实应答是 **ASCII 字符串**（零件号/版本号），
         // 不是随机二进制。此前 mock 造 32 字节假块 → 界面全是乱码（2026-10-16 实测）。
         const kid = bytes[1];
+        // ★ 块语义（RE-FLOWSPEC §3.2.3）：1A <LID8> 也作编码块读（5A <LID8> <block>）。
+        //   已注入/已写入的块优先返回块数据，否则回识别文本 —— 写入回读（1a/2e 记录）才闭环。
+        if (this.blocks[kid]) {
+          const blk = this.blocks[kid];
+          return this.#frame([0x5A, kid, ...blk]);
+        }
         const IDENT = {
           0x9F: '5A9F5750305A5A5A3939314753',   // 5A 9F "WP0ZZZ991GS"
+          0x90: '5A90' + [...'WP0ZZZ991GS123456'].map((c) => c.charCodeAt(0).toString(16)).join(''), // 1A 90=VIN（真车同款）
           0x87: '5A873030303030303030303030',   // 5A 87 "000000000000"（序列号）
           0x84: '5A843939313634363030313030',   // 5A 84 "99164600100"（零件号）
           0x91: '5A913030303030303030303030',   // 5A 91 "000000000000"（图号）

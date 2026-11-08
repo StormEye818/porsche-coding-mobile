@@ -96,7 +96,12 @@ function asamFinalize(rawKey, outlen) {
 /**
  * 端到端解析：ECU → key。
  *
- * @param {number} mode   DRIVELINKS 的 mode 字节（securityModel 的 param_2）
+ * @param {number} mode   securityModel 的 param_2。真值来源（2026-11-09 收口）：
+ *                        DRIVELINKS 记录 u32 复合（@rec+0）的**低字节**——
+ *                        条目 6B=[u16 blockKey][u32 recOff]，记录复合经
+ *                        SendSysSeedKey→Xml_GetDriveLinksAddress 落 TOKEN+0x360950，
+ *                        PorscheKeySendCmd 低字节=PORSCHESecurityModel 的 mode。
+ *                        旧「m 字段=mode」是记录偏移低字节（已改名 recOffsetLo），勿用。
  * @param {number} seed   32 位无符号 seed
  * @param {object} [ctx]  { ecuId, session, len }
  * @returns {{key: number, algo: string, mode: number, outlen: number}}

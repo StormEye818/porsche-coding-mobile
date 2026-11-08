@@ -27,7 +27,7 @@
  * ⚠️ 超时 ≠ 未执行。结果不明时先重连核验，禁止自动重试写入。
  */
 
-import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange } from './schema.js';
+import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange, READ_SIDS, WRITE_SIDS } from './schema.js';
 
 // ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
 //   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
@@ -55,6 +55,26 @@ function fieldByteSpan(p) {
   const lo = p.byte;
   const hi = p.byte + Math.floor((bit + size - 1) / 8);
   return [lo, hi];
+}
+
+/**
+ * 会话流家族 —— 通用规则（任务清单⑤ / RE-FLOWSPEC §6，零特判）：
+ *   记录 SID 字段（prefix[0]/[1]、尾[7]/[11]）是分派键：21/1A→KWP 流，22→UDS 流。
+ */
+export function familyOfReadSid(readSid) {
+  return readSid === 0x22 ? 'uds' : (readSid === 0x21 || readSid === 0x1A) ? 'kwp' : null;
+}
+
+/** 记录集 → 家族（多数 readSid；混族时 KWP 优先 —— 10 89 主会话两族通用零错，§1.3） */
+export function familyOfItems(items) {
+  let kwp = 0, uds = 0;
+  for (const it of items || []) {
+    const f = familyOfReadSid(it && it.readSid);
+    if (f === 'kwp') kwp++;
+    else if (f === 'uds') uds++;
+  }
+  if (!kwp && !uds) return null;
+  return kwp >= uds ? 'kwp' : 'uds';
 }
 
 /** NRC（负响应码）中文 */
@@ -321,7 +341,7 @@ export class Coder {
    * @param {Elm327} elm   已锁定协议的 ELM327
    * @param {object} opts  { tx, rx, ecuName }
    */
-  constructor(elm, { tx, rx, ecuName = 'ECU', verbose = true } = {}) {
+  constructor(elm, { tx, rx, ecuName = 'ECU', verbose = true, family = null } = {}) {
     this.elm = elm;
     this.tx = tx;
     this.rx = rx;
@@ -332,8 +352,12 @@ export class Coder {
     this.backups = [];
     this.lastIdent = '';          // 1A 9F/1A 94/1A 92 的 ASCII 识别串（自动选变体用）
     this.lastPartNo = '';         // 1A 84 ECU 零件号（参考诊断仪 同款变体落定键，2026-11-05）
+    this.lastPartTokens = [];     // 件号 ASCII token 集（1A 87/91/92/94 + 1A84，按 0x20 分词）
     this.lastHwPart = '';         // 1A 92/1A 91 硬件件号（多市场共用件收窄用）
     this.lastSwNo = '';           // 1A 94 软件号（SWINFO 消歧键，2026-11-05）
+    // ★ 会话流家族（RE-FLOWSPEC §6/§7 + 任务清单⑤）：KWP 流=10 89 直接建会话（不发 10 03），
+    //   UDS 流=10 03。分派键=编码记录 SID 对/ECU 模板（非识别串）。null=家族未证（按规格未覆盖）。
+    this.family = family;         // 'kwp' | 'uds' | null
     this._addressReady = false;   // 当前 ATSP/ATSH/ATCRA 是否已下发到适配器
     this._writeBusy = false;   // 写事务排他（审计 #20）
     this.log = [];
@@ -393,15 +417,29 @@ export class Coder {
    *    而旧实现把这当成致命错误直接抛出 —— 后面的 `1A 9F` / `10 89` 根本没机会发。
    *    现改为：`10 03` **尽力而为**（失败只记日志），`10 <session>` 才是硬要求。
    */
-  async enterSession(session = 0x89) {
+  async enterSession(session = 0x89, opts = {}) {
+    const family = opts.family ?? this.family ?? null;
     await this.address();
+    const sessHex = `10${session.toString(16).toUpperCase().padStart(2, '0')}`;
+    // ★ 会话流（任务清单⑤ / RE-FLOWSPEC §1.3·§7，零特判）：
+    //   KWP 流 = **10 89 直接建会话**（GAG rec#42，不发 10 03 —— KWP ECU 拒 10 03 即实车断点）；
+    //   UDS 流 = 10 03（标准扩展会话，§1.3「UDS ECU 流另含」）后进目标会话；
+    //   家族未证（null）= 按规格未覆盖（ODX SESSIONS 未提取）→ 走 KWP 流同形
+    //   （10 89 = 保时捷编码主会话，全库×4 模板，两族通用零错）。
+    if (family !== 'uds') {
+      // KWP 流 / 未证家族：目标会话直接建（10 89 / 10 40 …），失败即报错（硬要求）
+      await this.uds(sessHex);
+      this._say(`  ✅ 会话 ${sessHex} 就绪（${family === 'kwp' ? 'KWP 流直接建会话' : '家族未证·按规格未覆盖，走主会话 10 89 同形'}）`);
+    } else {
     // ① UDS 扩展会话 —— 尽力而为（部分 ECU 不支持）
     try {
       await this.uds('1003');
     } catch (e) {
       this._say(`  (10 03 未支持：${e.message} —— 继续)`);
     }
-    // ② TesterPresent（有些 ECU 不回，允许空）
+    }
+    // ② TesterPresent 保活 —— 一律 `3E 00`（GAG rec#35；全包无 3E 80 模板）。
+    //   会话建立后发送（实车断点：会话前 3E 00 被拒）。
     await this.uds('3E00', 2000, { allowEmpty: true }).catch(() => {});
     // ③ 识别 ECU（失败不致命，只记日志）
     // ★ 2026-10-18：把 1A 9F/94/92 的 ASCII 文本留下来，用于自动选变体。
@@ -409,17 +447,18 @@ export class Coder {
     //   只看十六进制、然后 prompt 让用户选，方向反了。
     this.lastIdent = '';
     this.lastPartNo = '';
+    this.lastPartTokens = [];
     this.lastHwPart = '';
     this.lastSwNo = '';
     const identParts = [];
     // 参考诊断仪 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
     // ★ 2026-10-28：全套 1A xx 识别（对齐 参考诊断仪 ODX 识别链）。
     //   此前只读 9F(DSN)+94(软件号)，识别串太短匹配不上变体名。
-    //   参考诊断仪 用 9F/87/84/91/92/93/95/97/9A 全套识别做变体匹配。
+    //   ★ 2026-11-08 帧序对齐 RE-FLOWSPEC §2.1：1A 9F→87→84→91→92→93→94→95→97→9A（连续 3 miss 早停）。
     // 连续 3 条没有任何数据就提前收手：老 ECU 只支持 9F/94，
     // 挨个等 3s 超时会把「进模块」拖到 30 秒（2026-10-29 审计 P2-4）。
     let identMiss = 0;
-    for (const cmd of ['1A9F', '1A87', '1A84', '1A94', '1A95', '1A91', '1A92', '1A93', '1A97', '1A9A']) {
+    for (const cmd of ['1A9F', '1A87', '1A84', '1A91', '1A92', '1A93', '1A94', '1A95', '1A97', '1A9A']) {
       try {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
         let b = Array.from(id.body || []);
@@ -431,10 +470,17 @@ export class Coder {
           + (txt ? `  「${txt}」` : ''));
         if (txt) {
           identParts.push(txt); identMiss = 0;
+          // ★ 2026-11-08 件号采集扩到 1A 87/91/92/94（任务清单④ / RE-MODELADDR §3.3-3.4）：
+          //   本车实证件号 98161864015 出现在 1A 87/94（不只 1A84）；按 0x20 分词逐 token 入集，
+          //   供 pickVariantByPart 全等查表（checkPartNumber 分词语义）。
+          for (const tok of String(txtRaw).split(/ +/).filter(Boolean)) {
+            if (tok.length >= 6 && !this.lastPartTokens.includes(tok)) this.lastPartTokens.push(tok);
+          }
           // ★ 2026-11-05：件号单独留存（参考诊断仪 同款变体落定键）。
           //   1A 84=零件号（会话库 PARTNUMBER 一一对应）；1A 92 硬件号、1A 91 零件图号做收窄。
           if (cmd === '1A84') this.lastPartNo = txtRaw;
-          else if (cmd === '1A92') this.lastHwPart = txtRaw;
+          else if (!this.lastPartNo && (cmd === '1A87' || cmd === '1A94')) this.lastPartNo = txtRaw;  // 兜底采（保留 1A84 优先）
+          if (cmd === '1A92') this.lastHwPart = txtRaw;
           else if (cmd === '1A91' && !this.lastHwPart) this.lastHwPart = txtRaw;
           else if (cmd === '1A94') this.lastSwNo = txtRaw;
         } else { identMiss++; }
@@ -453,10 +499,68 @@ export class Coder {
     //   此前只靠 readBlock 赋值，进模块后直接点例程时 lastReadSid 仍是 null，
     //   KWP 模块会被发成 27 09（应为 17 00）→ NRC。
     if (identParts.length) this.lastReadSid = 0x1A;
-    // ④ 目标会话 —— **硬要求**，失败才报错
-    await this.uds(`10${session.toString(16).toUpperCase().padStart(2, '0')}`);
-    this._say(`  ✅ 会话 10 ${session.toString(16)} 就绪`);
+    // ④ 目标会话（UDS 流）—— **硬要求**，失败才报错。
+    //   KWP 流/未证家族已在开头直接建会话，此处不再重复发。
+    if (family === 'uds') {
+      await this.uds(sessHex);
+      this._say(`  ✅ 会话 ${sessHex} 就绪`);
+    }
     return true;
+  }
+
+  /**
+   * 自动搜索链（RE-MODELADDR §2.5 + 任务清单①，逐帧对齐）：
+   *   ① 主/备双请求 `22 11 02`（0xff001102）→ `22 11 01`（0xff001101）——
+   *      fn(0xff001102, 0xff001101, 5)，发给当前链路地址；应答文本=车上识别串（trim 名）。
+   *   ② 备选链（SYSP:0x56a66 模板表，PorscheReadVehicleVin）：
+   *      UDS 流 `10 03`→`22 F1 90`→`1A 90`→`1A 87`→`1A 9B`→`21 50`→`21 51`→`1A 9A`；
+   *      KWP 流去 `10 03`/`22 F1 90`（不发 10 03；候选探测不对 KWP 发 0x22 —— 任务清单②⑤）。
+   *      每步 NRC/无数据 → 下一模板（链步进≠重试）；应答文本灌库（strcmp 语义）。
+   *   返回 { name, vin, nameSrc, vinSrc, steps }。
+   *   ⚠️ `22 14 0A` 支链触发条件（PorscheReadVehicleVin 返回值语义）按规格未覆盖 —— 不发。
+   */
+  async readVehicleIdentity(family = this.family) {
+    const out = { name: '', vin: '', nameSrc: '', vinSrc: '', steps: [] };
+    const asciiOf = (body, skip) => Array.from(body || [])
+      .slice(skip)
+      .filter((c) => c >= 0x20 && c < 0x7f)
+      .map((c) => String.fromCharCode(c)).join('').replace(/[\u0000\u0020]+$/g, '').trim();
+    // VIN 形态：ISO 字符集 11-17 位 + **必含字母** + 排除零件号形态（9+10 位数字串）——
+    // 串号/零填充（如 "000000000000"）不当 VIN（旧 autoSearch 同款启发式，2026-11-08 回归修复）。
+    const VIN_RE = /^[A-HJ-NPR-Z0-9]{11,17}$/;
+    const looksVin = (t) => VIN_RE.test(t) && /[A-Z]/.test(t) && !/^9[0-9]{10}$/.test(t);
+    const step = async (req, vinMode) => {
+      try {
+        const r = await this.uds(req, 3000, { allowEmpty: true });
+        const body = Array.from(r.body || []);
+        // 5A xx / 61 xx / 62 xx xx 头剥离：1A=5A+1B、21=61+1B、22=62+2B
+        let skip = 2;
+        if (body[0] === 0x62) skip = 3;
+        const txt = asciiOf(body, skip);
+        out.steps.push(`${req} → ${(body || []).map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`);
+        if (!out.vin && vinMode && looksVin(txt)) {
+          out.vin = txt.slice(0, 17); out.vinSrc = req;
+        }
+        if (!out.name && txt && !looksVin(txt)) {
+          out.name = txt.slice(0, 32); out.nameSrc = req;
+        }
+      } catch (e) {
+        out.steps.push(`${req} → ${e.message}`);
+      }
+    };
+    // ① 主/备双请求（备仅在主失败/NRC 时发）
+    await step('221102', false);
+    if (!out.name) await step('221101', false);
+    // ② 备选链（SYSP:0x56a66 模板表）：UDS 流全表；KWP 流/未证家族走 KWP 段
+    //   （§2.3「KWP 车 0x22 全拒时走 1A xx/21 xx 段」——未证家族保守取 KWP 段零错，按规格未覆盖）
+    const chain = family === 'uds'
+      ? ['1003', '22F190', '1A90', '1A87', '1A9B', '2150', '2151', '1A9A']
+      : ['1A90', '1A87', '1A9B', '2150', '2151', '1A9A'];
+    for (const req of chain) {
+      if (out.name && out.vin) break;
+      await step(req, true);
+    }
+    return out;
   }
 
   /**
@@ -472,13 +576,14 @@ export class Coder {
    *    永远读到别的 ECU，误判后还会清掉正确地址。
    *    现在 setAddress 内部就把寻址落实，调用方必须 await。
    */
-  async setAddress(tx, rx, name = '') {
+  async setAddress(tx, rx, name = '', opts = {}) {
     this.tx = tx;
     this.rx = rx;
     // 29-bit 必须切 ATSP7；否则仍按 11-bit/500k 发帧。
     this.protocol = tx > 0x7ff ? 7 : 6;
     this._addressReady = false;
     this.lastReadSid = null;   // 换模块后不能沿用上一个模块的读服务
+    if (opts.family !== undefined) this.family = opts.family;   // 会话流家族（kwp/uds/null）
     if (name) this.ecuName = name;
     this._say(`  寻址 → ${name || 'ECU'}  tx=0x${tx.toString(16)} rx=0x${rx.toString(16)}`);
     await this.address();
@@ -492,8 +597,15 @@ export class Coder {
    *
    * @param {boolean} allowEmpty  允许空响应（如 TesterPresent）
    */
-  async uds(payloadHex, timeoutMs = 6000, { allowEmpty = false } = {}) {
-    const raw = (await this.elm.cmd(payloadHex, timeoutMs) || '').trim();
+  async uds(payloadHex, timeoutMs = 6000, { allowEmpty = false, pendingWait = false } = {}) {
+    // ★ NRC `7F xx 78`（responsePending）= **续等**直至正响应或超时（RE-FLOWSPEC §5 /
+    //   Set7F78Ctrl 语义，证据锚=读写包装）；其余 NRC 单发即败（不重试不换 SID，错误上浮）。
+    //   重发帧与原帧逐字节一致（同 payloadHex）。
+    //   ⚠️ 仅读写包装（readBlock/写入帧）传 pendingWait —— 例程层（31）的 78 必须上浮给
+    //   pollRoutineResults 的 31 03 跟随轮询（REA 执行流语义），吞掉会杀掉轮询。
+    const deadline = Date.now() + Math.max(1000, timeoutMs);
+    for (;;) {
+    const raw = (await this.elm.cmd(payloadHex, Math.min(timeoutMs, Math.max(500, deadline - Date.now()))) || '').trim();
     // 调试：原始收发都记下来
     this._trace(`  >> ${payloadHex}`);
     this._trace(`  << ${raw || '(空)'}`);
@@ -501,6 +613,11 @@ export class Coder {
     const reqSid = parseInt(String(payloadHex).replace(/[^0-9A-Fa-f]/g, '').slice(0, 2), 16) & 0xff;
     const p = parseRespAuto(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''), reqSid);
     if (p.kind === 'nrc') {
+      if (pendingWait && (p.code || 0) === 0x78 && Date.now() < deadline) {
+        this._trace('  (7F 78 响应挂起 —— 续等重发原帧)');
+        await new Promise((r) => setTimeout(r, 150));
+        continue;
+      }
       throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒（NRC 0x${(p.code||0).toString(16)}）`, p.code);
     }
     // 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU）
@@ -515,6 +632,7 @@ export class Coder {
         `可能：地址不对 / ECU 不在该 CAN 上 / 未点火 / 需先换会话`);
     }
     return { raw, ...p };
+    }
   }
 
   /** 调试轨迹（可关） */
@@ -539,7 +657,7 @@ export class Coder {
    */
   async readBlock(id, readSid = 0x21) {
     // ★ 2026-11-05 错误恢复定案：**SID 0x12 换 SID 重试已删**（自创恢复，无 参考诊断仪 取证）。
-    //   参考诊断仪 读包装（SendUdsReadSidPidCmd/SysTemReadData）逐指令无 NRC 0x12 重试逻辑：
+    //   参考诊断仪 读包装（参考诊断仪 读包装）逐指令无 NRC 0x12 重试逻辑：
     //   SID 由记录自带（readSid），发一次、被拒即失败，结果由 ECU 裁决。
     //   22↔21 按族选择是数据驱动（GAG 取证），不是运行时回退。
     return await this._readBlockImpl(id, readSid);
@@ -550,6 +668,13 @@ export class Coder {
     // ⚠️ 标识符位宽必须校验（2026-10-18 审计）：0x21/0x1A 是 1 字节 LID，
     //    0x22 是 2 字节 DID。传超宽会 padStart 出畸形请求（如 0x1234 发给 0x21）。
     if (!Number.isFinite(id) || id < 0) throw new CodingError(`非法标识符 ${id}`);
+    // ★ 读帧服务集闸（2026-11-08 覆盖审计②）：参考诊断仪 读包装
+    //   （参考诊断仪 读包装）只打包 21/1A/22 三种读帧，其余 SID（含 0x00）不发。
+    //   记录 readSid=0 的块读走回落读服务（schema.resolveBlockReadSid），不发 00 帧。
+    if (!READ_SIDS.includes(readSid)) {
+      throw new CodingError(
+        `读服务 0x${Number(readSid).toString(16)} 非读帧服务（参考诊断仪 读帧仅 0x21/0x22/0x1A），不发帧`);
+    }
     if (readSid === 0x22) {
       if (id > 0xffff) throw new CodingError(`UDS DID 0x${id.toString(16)} 超出 2 字节`);
     } else if (id > 0xff) {
@@ -559,7 +684,7 @@ export class Coder {
     const idBytes = (readSid === 0x22) ? 4 : 2;    // ← 位宽随 SID
     const idHex = id.toString(16).toUpperCase().padStart(idBytes, '0');
     const sid = readSid.toString(16).toUpperCase().padStart(2, '0');
-    const r = await this.uds(`${sid}${idHex}`);
+    const r = await this.uds(`${sid}${idHex}`, 6000, { pendingWait: true });
 
     // 校验正响应 SID（request SID + 0x40）
     const wantResp = (readSid + 0x40) & 0xFF;
@@ -687,18 +812,20 @@ export class Coder {
     if (!Number.isFinite(lid)) {
       throw new CodingError(`参数 ${p.name} 的 LID/DID 不是数字（${lidRaw}），拒绝写入。`);
     }
-    const readSid = p.readSid ?? 0x21;
+    const readSidRaw = p.readSid ?? 0x21;
     const writeSid = p.writeSid ?? 0x3B;
     if (lid == null) {
       throw new CodingError(
         `参数 ${p.name} 缺 LID/DID，拒绝写入。`);
     }
-    // 读写 SID 必须是已知成对
-    const PAIRS = { 0x21: 0x3B, 0x22: 0x2E, 0x1A: 0x3B };
-    if (PAIRS[readSid] !== writeSid) {
+    // ★ 参考诊断仪 同款闸（2026-11-08 覆盖审计②）：写走记录 writeSid 帧，
+    //   无配对表（参考诊断仪 用记录自带 readSid/writeSid 发帧，RE-FLOWSPEC §3.1）。
+    //   参考诊断仪 写包装（参考诊断仪 写包装）只打包 3B/2E 两种写帧：
+    //     3B <LID8> <data> / 2E <DID16be> <data>；其余 writeSid 不发（=只读项）。
+    if (!WRITE_SIDS.includes(writeSid)) {
       throw new CodingError(
-        `读写 SID 不配对：读 0x${readSid.toString(16)} / 写 0x${writeSid.toString(16)}。` +
-        `合法对：21↔3B、22↔2E、1A↔3B。`);
+        `${p.name} 是只读项（记录 writeSid=0x${writeSid.toString(16)} 非写服务）：` +
+        `参考诊断仪 写帧仅 0x3B/0x2E，禁止写入。`);
     }
     // 标识符位宽校验（与 readBlock 同一口径，避免拼出畸形写请求）
     if (writeSid === 0x2E) {
@@ -708,10 +835,20 @@ export class Coder {
     } else if (!Number.isFinite(lid) || lid < 0 || lid > 0xff) {
       throw new CodingError(`KWP LID 0x${Number(lid).toString(16)} 超出 1 字节`);
     }
-    // 只读项（源数据无写服务）明确拒绝
-    if (p.sidPairOk === false) {
+    // 读服务解析（参考诊断仪 记录语义）：
+    //   readSid∈{21,22,1A} → 按记录发读帧；readSid=0/其他 → 记录无读服务，
+    //   参考诊断仪 不发 0x00 读帧（参考诊断仪 读包装 只打包 1A/21/22），回落表级读服务
+    //   （参考诊断仪 备份读 用表首记录 SID 读整个 PID map，代码实证）。
+    //   表内无任何读服务 → 读不到=不写（RE-FLOWSPEC §4.1 / McrCodeChileWrite 读失败即中止）。
+    let readSid;
+    if (READ_SIDS.includes(Number(readSidRaw))) {
+      readSid = Number(readSidRaw);
+    } else if (READ_SIDS.includes(Number(p.blockReadSid))) {
+      readSid = Number(p.blockReadSid);
+    } else {
       throw new CodingError(
-        `${p.name} 是只读项（${p.writeBlockedReason || '源数据无写服务'}），禁止写入。`);
+        `${p.name} 无读服务（记录 readSid=0x${Number(readSidRaw).toString(16)}，` +
+        `表内无回落读服务）：参考诊断仪 读不到=不写，禁止写入。`);
     }
     // 值域闸门（API 层也要挡）：UI 会查，但直接调 applyChange 的路径不能少；
     // injectField 对越界值是 `& mask` 静默截断，截断后写进车里同样危险。
@@ -785,7 +922,7 @@ export class Coder {
     const lidBytes = (writeSid === 0x2E) ? 4 : 2;
     const wr = await this.uds(
       `${writeSid.toString(16).toUpperCase().padStart(2, '0')}` +
-      `${lid.toString(16).toUpperCase().padStart(lidBytes, '0')}${hex}`, 8000);
+      `${lid.toString(16).toUpperCase().padStart(lidBytes, '0')}${hex}`, 8000, { pendingWait: true });
     // 正响应 SID = 写 SID + 0x40（3B→7B / 2E→6E）。地址错/串线时不能拿别的正响应当写成功。
     const wantWriteSid = (writeSid + 0x40) & 0xff;
     if (!wr.body.length || wr.body[0] !== wantWriteSid) {
@@ -833,7 +970,7 @@ export class Coder {
     //    这里早先一律传 0x09 → 恢复时发 `17 09`，必然 NRC，备份等于没恢复。
     const kwpRestore = (bk.readSid ?? 0x21) !== 0x22;
     await this.securityAccessEx({ level: kwpRestore ? 0x00 : 0x09, kwp: kwpRestore });
-    const wr = await this.uds(`${sid}${idHex}${hex}`, 8000);
+    const wr = await this.uds(`${sid}${idHex}${hex}`, 8000, { pendingWait: true });
     const want = (Number.parseInt(sid, 16) + 0x40) & 0xff;
     if (!wr.body.length || wr.body[0] !== want) {
       throw new CodingError(
@@ -895,7 +1032,7 @@ async function routineControl(subFunc, routineId, params = '', timeoutMs = 15000
 /**
  * 例程结果轮询「跟随服务」—— `31 03 <rid>`（requestRoutineResults）。
  *
- * 依据（REA 复挖 MES 5.4R2，`rea-evidence/REAUDIT-20261017.md` §其他定论）：
+ * 依据（离线实证，证据档 REAUDIT-20261017 §其他定论）：
  *   FUNC 族发 `02 33 00` 跟随服务（KWP 风格，UDS 侧对应 `31 03`），
  *   **轮询直到响应不是 NRC 21 / 23 / 78**（= 例程还在跑）。
  *

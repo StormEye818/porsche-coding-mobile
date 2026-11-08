@@ -161,3 +161,9 @@ tools/chain-map.py
 tools/so-syms.py
 tools/raw-grep*.py
 tools/dualkey-fullscan.txt
+data/coverage-audit.json
+data/module-disposition-252.json
+data/module-disposition-252.tsv
+tools/build-module-disposition.py
+tools/pool0-names.py
+tools/pti-ids.py

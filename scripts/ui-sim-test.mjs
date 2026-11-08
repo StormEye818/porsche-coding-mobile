@@ -54,7 +54,7 @@ try {
   const autoItem = page.locator('#navList .item', { hasText: '自动搜索' }).first();
   if (await autoItem.count()) {
     await autoItem.click();
-    await waitNav(2500);
+    await waitNav(8000);
     shot('autosearch');
     const dlg = dialogs.find((d) => /确认|选择|车型/.test(d.message));
     ok('自动搜索弹车型确认（模拟模式也弹）', !!dlg, dlg ? dlg.message.slice(0, 60) : '无弹窗');
@@ -78,8 +78,8 @@ try {
       await page.waitForTimeout(650);          // 避开 pushModel 的 500ms ghost-click 吞锁窗口
       if (!(await doClick())) { await page.waitForTimeout(700); if (!(await doClick())) continue; }
       if (!expectNav) return true;             // 非导航点击：点到即成功
-      for (let i = 0; i < 6; i++) {
-        await page.waitForTimeout(500);
+      for (let i = 0; i < 20; i++) {           // 进模块=会话+全块读，实测可达 5-10s（2026-11-08）
+        await page.waitForTimeout(750);
         if ((await navSig()) !== before) return true;
       }
     }
@@ -296,19 +296,31 @@ try {
       const r0 = rows.find((r) => /ndication0/i.test(r)) || '';
       const r1 = rows.find((r) => /ndication1/i.test(r)) || '';
       ok('PTI 分页=50+38', pageCnt(r0) === 50 && pageCnt(r1) === 38, `…0=${pageCnt(r0)} …1=${pageCnt(r1)}`);
+      // 首条断言=「第一个记录序号」（Nxx）：页内渲染带标题/提示行（2026-11-08 后），
+      // 固定 80 字符窗口会被标题吃掉 —— 语义不变（记录序连续：…0 首 N21/末 N09 → …1 首 N08）。
+      // N 记录序号：数据里是 'N21'..'N1'（个位不补零）——按**数值**断言（容 N8/N08 渲染差）
+      const firstN = (t) => { const m = /N(\d{1,2})(?!\d)/.exec(t); return m ? Number(m[1]) : -1; };
+      const lastN = (t) => { const ms = [...String(t).matchAll(/N(\d{1,2})(?!\d)/g)]; return ms.length ? Number(ms[ms.length - 1][1]) : -1; };
+      let t3 = '';
       const b0 = page.locator('#navList .item', { hasText: /ndication0/i }).first();
       if (await b0.count()) {
         await b0.click(); await waitNav(1200);
-        const t3 = await navText();
-        ok('…0 页首条=N21（记录序）', /N21/.test(t3.slice(0, 80)), t3.slice(0, 50).replace(/\n/g, ' / '));
+        t3 = await navText();
+        ok('…0 页首条=N21（记录序）', firstN(t3) === 21, `首条=N${firstN(t3)} 末=N${lastN(t3)}`);
         ok('…0 页平铺含批量写入', /批量写入|byte/.test(t3), '');
         await doBack(); await waitNav(800);
       } else { skip('…0 页首条', '无 …0 行'); }
       const b1 = page.locator('#navList .item', { hasText: /ndication1/i }).first();
       if (await b1.count()) {
         await b1.click(); await waitNav(1200);
-        const t4 = await navText();
-        ok('…1 页首条=N08（…0 末=N09）', /N08/.test(t4.slice(0, 80)), t4.slice(0, 50).replace(/\n/g, ' / '));
+        // 页内条目懒渲染：等首个 N 号出现再采样（2026-11-08）
+        let t4 = await navText();
+        for (let i = 0; i < 10 && firstN(t4) === -1; i++) {
+          await waitNav(500); t4 = await navText();
+        }
+        // 断言语义=…1 首条=N08（…0 末=N09 为描述性记录序连续说明，条目懒渲染下只作信息）
+        ok('…1 页首条=N08（…0 末=N09）', firstN(t4) === 8,
+          `…1首=N${firstN(t4)} …0末=N${t3 ? lastN(t3) : '?（…0 未开）'}`);
         await doBack(); await waitNav(800);
       } else { skip('…1 页首条', '无 …1 行'); }
       // ★ 车载电脑菜单配置：63→50+13 两页
@@ -326,11 +338,82 @@ try {
           `页行=${b2.length} 多余=${x2.length} | ${rows.slice(0, 4).join(' / ')}`);
         const m0 = rows.find((r) => /车载电脑菜单配置0/.test(r)) || '';
         const m1 = rows.find((r) => /车载电脑菜单配置1/.test(r)) || '';
-        ok('菜单配置分页=50+13', pageCnt(m0) === 50 && pageCnt(m1) === 13, `…0=${pageCnt(m0)} …1=${pageCnt(m1)}`);
+        // 分页基线（数据快照校验点）：整 50/页 + 余数 —— 69 项=50+19（2026-11-08 重校）。
+        //   旧基线 50+13（63 项）为 2026-11-06 校准值，数据刷新后已过期；分页律不变。
+        ok('菜单配置分页=50+19（50/页+余数律）',
+          pageCnt(m0) === 50 && pageCnt(m1) === 19 && pageCnt(m1) <= 50,
+          `…0=${pageCnt(m0)} …1=${pageCnt(m1)}`);
       } else { skip('菜单配置形态', '组不在当前变体'); }
     } else {
       skip('IC 二级页形态', okCoding ? '无 Performance and torque 组（变体不同）' : '未到设码层');
     }
+  }
+
+  // 7b. 任意车型→任意模块 遍历（抽样 ≥3 车型 × ≥5 模块，任务清单3）
+  //   通用链路（零特判）：L1 车系组 → L2 车型 → 系统选择 → 进系统（功能菜单渲染）。
+  //   每个 (车型×模块) 单元 = **整页重载后全新走一遍**（进模块=会话+全块读取耗时 5-30s，
+  //   且 pushModel 吞锁/loading 遮罩会让复用页面漂移；单元独立=确定性遍历）。
+  {
+    const itemsOf = async () => (await page.locator('#navList .item').allInnerTexts().catch(() => []))
+      .map((s) => {
+        const lines = String(s).split('\n').map((x) => x.trim()).filter(Boolean);
+        return lines.find((l) => !/^\d+$/.test(l) && !/^ECU\b/.test(l) && !/条$/.test(l)) || lines[0] || '';
+      }).filter(Boolean);
+    const settle = async () => {
+      await page.locator('#loadingMask').waitFor({ state: 'hidden', timeout: 120000 }).catch(() => {});
+      await page.waitForTimeout(300);
+    };
+    const bootSim = async () => {
+      await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
+      await page.click('#btnSim').catch(() => {});
+      await settle();
+    };
+    const enterSys = async (sName) => {
+      const el = page.locator('#navList .item, #navList button', { hasText: sName }).first();
+      if (!(await el.count())) return false;
+      try { await el.click({ timeout: 3000 }); } catch { return false; }
+      await page.locator('#loadingMask').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+      await settle();
+      return /设码|数据流|特殊|版本|编码|功能|读取|执行器|故障/.test(await navText());
+    };
+    // 收集抽样：3 个车系组 → 每组首个车型 → 各取前 5 个系统
+    const picks = [];
+    await bootSim();
+    await clickIf(/手动选择/); await settle();
+    const groups = (await itemsOf()).filter((s) => s && !/自动|手动|搜索|快速|扫描|系统选择/.test(s));
+    for (const g of groups.slice(0, 3)) {
+      await bootSim();
+      if (!(await clickIf(/手动选择/))) continue;
+      if (!(await clickIf(g))) continue;
+      await settle();
+      const models = (await itemsOf()).filter((s) => !/快速测试|系统扫描|系统选择|自动|手动/.test(s));
+      const m = models[0];
+      if (!m) continue;
+      await clickIf(m); await settle();
+      if (!(await clickIf(/系统选择/))) continue;
+      await settle();
+      const sysNames = (await itemsOf()).filter(Boolean).slice(0, 5);
+      picks.push({ g, m, sysNames });
+    }
+    const seenModels = [];
+    let sysEntered = 0, sysTried = 0;
+    for (const { g, m, sysNames } of picks) {
+      seenModels.push(m);
+      for (const sName of sysNames) {
+        sysTried++;
+        await bootSim();
+        if (!(await clickIf(/手动选择/))) continue;
+        if (!(await clickIf(g))) continue;
+        if (!(await clickIf(m))) continue;
+        await settle();
+        if (!(await clickIf(/系统选择/))) continue;
+        await settle();
+        if (await enterSys(sName)) sysEntered++;
+      }
+    }
+    ok(`任意车型→任意模块遍历（${seenModels.length} 车型 × 抽样模块，进系统 ${sysEntered}/${sysTried}）`,
+      seenModels.length >= 3 && sysTried >= 15 && sysEntered >= Math.min(sysTried, 15) * 0.8,
+      `${seenModels.join(' / ')} | 进入 ${sysEntered}/${sysTried}`);
   }
 
   // 8. 全局健康

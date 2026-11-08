@@ -1,15 +1,18 @@
 /**
- * Porsche seed/key 变体注册表 —— core.so
+ * Porsche seed/key 变体注册表（生成物 v2）
  *
- * 🔑 2026-10-17 · 工具链 解析 + 模拟器 对拍 全量验证
+ * 🔑 2026-10-17 · 离线全量验证
  *    ⚠️ 由 tools/gen-seedkey-registry.py 生成，**别手改**（程序表是完整十六进制）。
+ *    生成段：SA2 / ADD / SPECIAL / INLINE_VM（数据+真值+rodata 提取）；
+ *    维护段：analysis/seedkey-registry-extra.js（32 点真值对拍冻结）。
  *
  * 全库 135 个 `ASAP1A_CCP_*` 变体：
  *
- *   SA2 虚拟机       50 个  1 个解释器 + 每变体一张 VM 程序表  ✅ 对拍 对拍通过
+ *   SA2 虚拟机       50 个  1 个解释器 + 每变体一张 VM 程序表  ✅ 真值对拍通过
+ *   内联 VM            4 个  解释器内联进函数体（另一套 FOR 语义）  ✅ 32 点对拍
  *   内联 ADD         44 个  key = BE{n}((BE32(seed) + C) >>> 0)  ✅
  *   内联特殊          3 个  EMPTY / NOT_TOP / BYTES_NOT            ✅
- *   内联 OTHER       38 个  rotate+combine 家族，待逐个拆位布局   ⏳
+ *   内联 OTHER       38 个  rotate+combine/循环/CRC 族（extra 段执行器，全部收编）  ✅
  *
  * ⚠️ `outLen` 是**变体相关**的：多数 4 字节，少数 2/3 字节，还有 1 个 outLen=0 的空壳。
  *    变体签名：`ASAP1A_CCP_*(uchar *seed, ushort seedLen, uchar *key, ushort keyLen, ushort *outLen)`
@@ -30,27 +33,22 @@ import { inlineVmRun } from './seedkey-inlinevm.js';
  * 内联 VM 家族（2026-10-18 收编）—— 变体 ID → 40 字节程序（十六进制）
  *
  * ⚠️ 与 `SA2_PROGRAMS` **不是同一套解释器**，别混用：
- *    SA2 调独立函数 `sa2ExecuteCommand`（）；这一族是编译器把解释器
+ *    SA2 调独立函数 `sa2ExecuteCommand`；这一族是编译器把解释器
  *    **内联进变体函数体**（栈上 `local_50[40]` + do-while switch）。助记符相同，
  *    但 FOR 机制不同（见 `seedkey-inlinevm.js` 文件头）。
- *    这里 4 个程序两套解释器都能算对（程序没有跨循环跳转、count>0），
- *    但**回归里有断言卡住两套不许合并**，防止后来的程序踩到分叉语义。
  *
- * 程序来源：rodata，由 `tools/extract-inlinevm.py` 提取；
- *   提取器在 `9E95AD47` 上与 静态分析 静态分析的 `local_50[0..0x27]` 逐字节吻合。
+ * 程序来源：rodata，由 `tools/extract-inlinevm.py` 提取（生成时重提取并校验 HALT 结尾）。
  * 真值对拍 32 点 × 4 = 128 点全过。
  */
 export const INLINE_VM_PROGRAMS = {
   //  —— ASAM_seedkey_BDE_DL；= DRIVELINKS mode 0xb1 的落点
   '3D5365460CB39FEFC14651DF5075A1B8':
     '6803824a10680484121019734a05872506200382499319111974824a058717062006824a0181494c',
-  //  —— 静态分析完整（decompiled.txt [29]），本族语义的**权威参照**
+  //  —— 公式完整，本族语义的**权威参照**
   '9E95AD479750DBABF9068A886EC37CE7':
     '6803814a10680284121019734a05872506200382499322121954824a058717062006824a0181494c',
-  // 
   '91C0B71C660408DF11A4C211006FB913':
     '6805824a10680484121019734a05872506200382499319111974824a058701012008824a0181494c',
-  // 
   'ED8524ED02C73B97FF5D4E4DED031495':
     '6804814a10680384121019734a05872506200382499319111974814a058712082001814a0181494c',
 };
@@ -106,9 +104,6 @@ export const SA2_PROGRAMS = {
   'OverTheAir_21': { prog: '6807841a6d95ef814a05871bf91adf494c', outlen: 4 },
   'PDK2_21': { prog: '84370284fa680693323b0137824a1f87ab231255680993082245de4a10680684229ab1fd4a05875aaffea58149499312a20433494c', outlen: 4 },
   'PDK2_21_TOP': { prog: '84370284fa93323b0137824a1c87ab231255680993082245de4a0d84229ab1fd4a05875aaffea581499312a20433824a15680587c2327d24824a05874527120549934554669687233727104c', outlen: 4 },
-  '9E95AD479750DBABF9068A886EC37CE7': { prog: '6803814a10680284121019734a05872506200382499322121954824a058717062006824a0181494c', outlen: 4 },
-  '91C0B71C660408DF11A4C211006FB913': { prog: '6805824a10680484121019734a05872506200382499319111974824a058701012008824a0181494c', outlen: 4 },
-  'ED8524ED02C73B97FF5D4E4DED031495': { prog: '6804814a10680384121019734a05872506200382499319111974814a058712082001814a0181494c', outlen: 4 },
   'RealTopview': { prog: '93130120126807814a05870b22aa89494c', outlen: 4 },
 };
 
@@ -164,7 +159,7 @@ export const INLINE_ADD = {
 };
 
 /**
- * 内联特殊（3 个，每条都经解析 + 对拍 多点确认）：
+ * 内联特殊（3 个，每条都经多点真值确认）：
  *   EMPTY      —— outLen=0，不写 key（空壳变体）
  *   NOT_TOP    —— `key = BE{outlen}((~BE32(seed)) >>> shift)`
  *   BYTES_NOT  —— `key[i] = ~seed[indices[i]]`（逐字节取反）

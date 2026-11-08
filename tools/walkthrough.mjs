@@ -295,5 +295,63 @@ console.log('\n[9] 完整上车序列（会话 → 解锁 → 读 → 写 → �
      `keyRejects=${ecu.stats.keyRejects} writeRejects=${ecu.stats.writeRejects}`);
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// ui-sim：任意车型 → 任意模块 遍历（抽样 ≥3 车型 × ≥5 模块）
+//   通用规则全链路：记录 SID 派生家族（familyOfItems）→ 记录读帧形态（21/22/1A）→
+//   读写帧可按记录成帧（配对表已拆，参考诊断仪直接用记录 readSid/writeSid 发帧）→
+//   严格 mock 读块 + 写块回读。零特判：全部走记录字段，无车型/模块分支。
+// ────────────────────────────────────────────────────────────────────────
+{
+  const { familyOfItems, familyOfReadSid } = await import('../src/coder.js');
+  const { READ_SIDS, WRITE_SIDS, resolveBlockReadSid } = await import('../src/schema.js');
+  const { readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const SAMPLE_MODELS = ['Cayman_981_', 'Boxster_982_', '911_992_'];
+  let walked = 0, moduleGaps = [];
+  for (const model of SAMPLE_MODELS) {
+    const dir = join('data/models', model);
+    let files = [];
+    try {
+      files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+    } catch { moduleGaps.push(`${model}: 目录缺失`); continue; }
+    const picked = files.slice(0, 5);   // 抽样 ≥5 模块
+    for (const f of picked) {
+      const j = JSON.parse(readFileSync(join(dir, f), 'utf8'));
+      const items = (j.items || []).filter((it) => it && it.lid != null && it.readSid != null);
+      const modName = items[0]?.module || f.replace(/\.json$/i, '');
+      if (!items.length) { moduleGaps.push(`${model}/${f}: 无记录`); continue; }
+      const fam = familyOfItems(items);
+      // ② 读写帧可按记录成帧（2026-11-08 覆盖审计②：配对表已拆，参考诊断仪无此闸）
+      //   读帧服务={21,22,1A}，写帧服务={3B,2E}（SendUdsReadSidPidCmd/SendUdsWriteSidPidCmd 实证）；
+      //   writeSid∈写服务的记录 LID 必须放得进帧（2E→≤0xFFFF / 3B→≤0xFF）。
+      const writable = items.filter((it) => WRITE_SIDS.includes(Number(it.writeSid)));
+      const badWrite = writable.filter((it) =>
+        (Number(it.writeSid) === 0x2E ? it.lid > 0xffff : it.lid > 0xff));
+      ok(`${model} → ${modName}：写帧可按记录成帧（${writable.length} 条可写 / ${items.length} 条记录）`,
+        badWrite.length === 0,
+        badWrite.length ? `LID 超位宽 ×${badWrite.length}` : '无配对表（记录 writeSid 直发）');
+      // ④ LID 位宽
+      const wide = items.filter((it) => (it.readSid === 0x22 ? it.lid > 0xffff : it.lid > 0xff));
+      ok(`${model} → ${modName}：LID 位宽合法（读 SID ${items[0].readSid.toString(16)}）`, wide.length === 0);
+      // 严格 mock 走读+写（记录 SID 驱动帧形态；readSid=0 记录走表级回落读服务）
+      const sample = items.find((it) => READ_SIDS.includes(Number(it.readSid))) || items[0];
+      const rdSid = READ_SIDS.includes(Number(sample.readSid)) ? Number(sample.readSid) : resolveBlockReadSid(items);
+      const ecu = strictEcu({ seedBytes: [0x12, 0x34, 0x56, 0x78], keyVerifier: () => bytesOf(TRUTH[0].key) });
+      const { coder } = await link(ecu);
+      coder.family = fam;
+      await coder.enterSession(0x89, { family: fam });
+      const blk = await coder.readBlock(Number(sample.lid) & (rdSid === 0x22 ? 0xffff : 0xff), rdSid);
+      const frames = ecu.txLog.filter((c) => !c.startsWith('AT'));
+      const wantFrame = (rdSid === 0x22 ? '22' : rdSid.toString(16))
+        + (Number(sample.lid) & (rdSid === 0x22 ? 0xffff : 0xff)).toString(16)
+          .padStart(rdSid === 0x22 ? 4 : 2, '0');
+      ok(`${model} → ${modName}：读帧=记录 SID 形态（${wantFrame.toUpperCase()}）`,
+        frames.includes(wantFrame.toUpperCase()) && blk.length > 0, frames.join(','));
+      walked++;
+    }
+  }
+  ok(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, walked >= 15, moduleGaps.join(' | '));
+}
+
 console.log(`\n===== 全链路演练：${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail ? 1 : 0);

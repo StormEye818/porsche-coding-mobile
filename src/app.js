@@ -12,10 +12,10 @@
  *
  * 连接与适配器通信参考同门工具；车上的读写走本项目协议层（coder.js）。
  */
-import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1, parseRespAuto } from './coder.js';
-import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange } from './schema.js';
+import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1, parseRespAuto, familyOfReadSid, familyOfItems } from './coder.js';
+import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange, hasReadService, hasWriteService, isReadOnlyItem, readOnlyReason, resolveBlockReadSid, WRITE_SIDS, READ_SIDS } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
-import { autoPickVariant, pickVariantByPart } from './variant.js';
+import { autoPickVariant, pickVariantByPart, pickModelByName } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
@@ -24,10 +24,14 @@ import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './modul
 import { makeResolverProvider, SeedKeyUnresolvedError, resolveKeyByName, resolveKey } from './seedkey-resolver.js';
 import { nonAsapForName, nonAsapForModule, platformForModel } from './seedkey-nonasap.js';
 import { variantForName, NAME_TO_VARIANT } from './seedkey-name-map.js';
-/** DRIVELINKS：ECU_ID → {variantTag, mode, LID}（原厂 权威，2026-10-17） */
+/** DRIVELINKS：ECU_ID → 条目数组（原厂 权威）。
+ *  ★ 2026-11-09 mode 收口：条目 = {t,bk,recOff,recOffsetLo,recOffsetHi,mode,family,session[,state]}；
+ *    mode/family/session = 记录 u32 复合真值（mode=低字节=securityModel mode）；
+ *    recOffsetLo/Hi = 记录偏移拆字节（旧 m/l 改名，禁当 mode/LID 用）。 */
 let drivelinks = null;
 /** ECU 寻址表（2026-10-19 RE 实证）：sysId → {tx,rx,confidence,...} */
 let ecuAddrTable = undefined;
+let moduleFamily = undefined;   // 模块记录家族统计（data/module-family.json，通用规则信号②）
 // ★ 2026-11-05：零件号→(模块,变体) 会话库映射（参考诊断仪 同款变体落定，懒加载）。
 let ecuPartMap = undefined;
 async function ensureEcuPartMap() {
@@ -42,11 +46,8 @@ async function ensureEcuPartMap() {
 /**
  * 模块名 → DRIVELINKS 的 ECU_ID（0x0bXX）。
  *
- * ⚠️ 2026-10-18 审计：这张表**目前是空的** —— 原厂 DRIVELINKS.BIN 里只有
- *    `ECU_ID → (variantTag, mode, LID)`，没有模块名；菜单树里的 `sys.ecu` 也全是 null。
- *    所以「照抄 securityModel 的 mode 表」这条号称的正解路径现在走不通，
- *    实际全部落在按名字查 nameTable 变体的路径上。
- *    等拿到 ECU_ID 归属表（或按 variantTag 反查）后在这里补，代码路径已经通了。
+ * 2026-11-09：归属表已建（src/module-ecu-map.js，SYS_DATA 名字记录 name-9 / 同组证据），
+ *    DRIVELINKS 条目已带记录真值 mode —— 「照抄 securityModel 的 mode 表」路径可达。
  */
 const MODULE_TO_ECUID = MODULE_TO_ECUID_MAP;
 
@@ -85,8 +86,12 @@ const ECU_ADDR = {
   'AC(空调系统)':           { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；可进入' },
   '空调':                   { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；可进入' },
   '空调压缩机':              { tx: 0x7E5, rx: 0x7ED, state: 'candidate', note: '标准 7E5；可进入' },
-  'IC(仪表)':               { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '标准 7E4；可进入' },
-  '组合仪表':               { tx: 0x7E4, rx: 0x7EC, state: 'candidate', note: '标准 7E4；可进入' },
+  // ★ 2026-11-08 IC 寻址改走**寻址表链**（任务清单② 零特判）：候选由 ecu-addresses.json
+  //   解析（代际同名合并 R1 + KWP 代缺口低字节补 join R2，见 tools/export-ecu-address.py），
+  //   内置表不再给猜测对（旧 0x7E4/0x7E8 与 internal 0x0117 UDS 簇短名单同为猜测/错误）。
+  //   rx=tx+8 惯例（GW=710/77A 实证 rx 可≠+8，运行时以应答为准）。
+  'IC(仪表)':               { tx: null, rx: null, state: 'unknown', note: '寻址表链解析（RE-MODELADDR §2.2 R1/R2）' },
+  '组合仪表':               { tx: null, rx: null, state: 'unknown', note: '寻址表链解析（RE-MODELADDR §2.2 R1/R2）' },
   'EPS(电动助力转向系统)':   { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
   '电动转向':               { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
   '动力转向':               { tx: 0x730, rx: 0x738, state: 'candidate', note: '候选·未验证' },
@@ -119,6 +124,63 @@ const ECU_ADDR = {
   '右前照灯':                { tx: 0x71A, rx: 0x722, state: 'candidate', note: 'CAN 表 110 候选 71A' },
   'TPMS/TPM(胎压监控系统)':  { tx: 0x7E7, rx: 0x7EF, state: 'candidate', note: '标准 7E7；可进入' },
 };
+
+/**
+ * 会话流家族 —— 通用规则（任务清单⑤ / RE-FLOWSPEC §6，零特判）：
+ *   KWP 流=10 89 直接建会话（不发 10 03）；UDS 流=10 03（§1.3「另含」）。
+ *   信号（全部数据驱动，按优先级收集）：
+ *     ① 记录 SID 字段（readSid / 记录集多数）—— §6 分派键；
+ *     ② 目标模块记录统计（data/module-family.json，由 data/models 全量记录生成）；
+ *     ③ 寻址表行 proto（SYS_DATA proto 0x01=KWP 0x03=UDS，RE-MODELADDR §2.1）。
+ *   合并：任一信号=KWP → 'kwp'（10 89 主会话全库×4 两族通用零错，§1.3）；
+ *   全部信号=UDS → 'uds'；无信号 → null（按规格未覆盖，走 10 89 同形）。
+ */
+function familyFor(label, tx = null, { readSid = null, items = null, modules = null } = {}) {
+  const norm = (x) => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const signals = [];
+  const push = (f) => { if (f) signals.push(f); };
+  if (readSid != null) push(familyOfReadSid(readSid));
+  if (items && items.length) push(familyOfItems(items));
+  // ② 模块记录统计：优先显式模块集（进模块流），无则按 label→sysId→模块反查
+  let mods = (modules || []).filter(Boolean);
+  if (!mods.length && label) {
+    let sysId = SYSTEM_TO_ECUID[label];
+    if (!sysId && typeof MODULE_TO_ECUID !== 'undefined') sysId = MODULE_TO_ECUID[label];
+    if (!sysId) {
+      const k = norm(label);
+      const key = k.length >= 3 ? Object.keys(SYSTEM_TO_ECUID).find((K) => {
+        const N = norm(K);
+        return N === k || (N.includes(k) && k.length >= 3) || (k.includes(N) && N.length >= 3);
+      }) : null;
+      if (key) sysId = SYSTEM_TO_ECUID[key];
+    }
+    if (sysId && typeof MODULE_TO_ECUID !== 'undefined') {
+      mods = Object.keys(MODULE_TO_ECUID).filter((m) => MODULE_TO_ECUID[m] === sysId);
+    }
+  }
+  if (mods.length && typeof moduleFamily !== 'undefined' && moduleFamily) {
+    let kwp = 0, uds = 0;
+    for (const m of mods) {
+      const st = moduleFamily[m];
+      if (!st) continue;
+      kwp += st.kwp || 0; uds += st.uds || 0;
+    }
+    if (kwp || uds) push(kwp >= uds ? 'kwp' : 'uds');
+  }
+  // ③ 寻址表行 proto（exact tx 行）
+  try {
+    if (ecuAddrTable && tx != null) {
+      for (const e of (ecuAddrTable.entries || [])) {
+        for (const c of (e.cands || [])) {
+          if (parseInt(c.tx, 16) === tx && c.proto) push(Number(c.proto) === 1 ? 'kwp' : Number(c.proto) === 3 ? 'uds' : null);
+        }
+      }
+    }
+  } catch { /* 表未加载 */ }
+  if (signals.includes('kwp')) return 'kwp';
+  if (signals.includes('uds')) return 'uds';
+  return null;
+}
 
 // ★ 2026-11-05 终审③：地址缓存/手工兜底退役 —— 参考诊断仪 每次进模块新鲜解析
 //   （表+运行时绑定），解析失败=物理下限终态，不再手工救。
@@ -339,7 +401,7 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
     if (rx < 0x700 || rx > 0x7FF || rx === tx) return;
     if (seen.has(tx)) return;
     seen.add(tx);
-    list.push({ tx, rx });
+    list.push({ tx, rx, proto: Number(c.proto) || null });   // proto 1=KWP 3=UDS（探测帧族分派用）
   };
 
   // ★ 终审①：候选序 = 表行序（cands，变体选行收窄排序）→ candsAux
@@ -365,7 +427,15 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       await coder.elm.cmd(`ATSH${hex(p.tx)}`, 1200);
       await coder.elm.cmd(`ATCRA${hex(p.rx)}`, 1200);
       const cmdsProbe = probeCmdsForEntry(entry);
-      const cmds = probeCmd ? [probeCmd] : ['221409', ...cmdsProbe, '221102', '220705'];
+      // ★ 任务清单②（2026-11-08）：候选探测按协议族发帧 —— **KWP 候选只发 `21 01`/`1A xx`
+      //   （永不对 KWP 发 0x22 —— 实车 22 全拒断点）；UDS 候选才走 22 14 09/22 11 02/22 07 05
+      //   （DriveLinksMode_1000/1001 逐候选 0xff001409 族）。
+      //   IC blockKey（0x0860-0x0870）不在 flags 特殊集 → cmdsProbe 为空 = 不做 flags 探测，
+      //   直接静 tx/rx + 识别链（21 01/1A xx）。
+      const isKwpCand = Number(p.proto) === 1;
+      const cmds = probeCmd ? [probeCmd] : (isKwpCand
+        ? ['2101', '1A9F', '1A87', '1A90']
+        : ['221409', ...cmdsProbe, '221102', '220705']);
       for (let ci = 0; ci < cmds.length; ci++) {
         const cmd = cmds[ci];
         let r = '';
@@ -744,7 +814,10 @@ $('btnSim').onclick = async () => {;
     0x7D1: { name: 'BCM_vorne', dsn: 'BCM_vorne_9x1_Basis', ident22: 'BCM_vorne_9x1_Basis' },
     0x74F: { name: 'BCM_hinten', dsn: 'BCM_hinten_9x1', ident22: 'BCM_hinten_9x1' },
   };
-  const mock = new MockAdapter({ latencyMs: 30, strictAddress: true, ecus: SIM_ECUS });
+  // ★ 2026-11-08（任务清单3 ui-sim 遍历）：strictAddress 关闭 —— 模拟车对任意探测地址应答
+  //   （SIM_ECUS 4 拓扑只覆盖 DME/IC/BCM，其余模块进不去，「任意车型→任意模块」遍历无法成立）。
+  //   4 ECU 箩笆仍生效（noIdent1A/ident22 等按地址特例），识别串按 identTextTx 定点喂。
+  const mock = new MockAdapter({ latencyMs: 30, strictAddress: false, ecus: SIM_ECUS });
   simMock = mock;
   elm = new Elm327(mock, { timeoutMs: 2000 });   // ← MockAdapter 是 PortLike，包进 Elm327
   simMode = true;
@@ -802,66 +875,37 @@ function decodeVinYear(vin) {
   return i < 9 ? 2001 + i : 2010 + (i - 9);
 }
 
-// ---------- 自动搜索（读 VIN 判车型年款）----------
+// ---------- 自动搜索（读 VIN / 车名 判车型年款）----------
 async function autoSearch(opts = {}) {
-  log('—— 自动搜索：读 VIN ——', 'info');
+  log('—— 自动搜索：读 VIN / 车名 ——', 'info');
   if (!coder) {
     toast('err', '未连接适配器', '请先点「连接自检」，接上 vLinker 后再自动搜索');
     return;
   }
   try {
-    // ⚠️ 会话顺序对齐参考诊断仪：10 03 → 3E → 1A 9F → **读识别/VIN** → 才 10 89。
-    // 此前一上来就 enterSession(0x89) 再用 22 F190 读 VIN —— VIN 在保时捷专用
-    // 会话下可能读不到，且识别应走 KWP 1A 9F 不是 UDS 22。
-    await coder.address();
-    // ⚠️ 分级容错（2026-10-17 实车）：DME 对 `10 03` 回 `7F 10 12`，
-    //    旧实现直接抛错退出，后面 1A 9F / 读 VIN 全没跑。
-    try { await coder.uds('1003', 4000); }                            // ① 尽力而为
-    catch (e) { log(`  (10 03 未支持：${e.message} —— 继续)`, 'warn'); }
-    await coder.uds('3E00', 2000, { allowEmpty: true }).catch(() => {}); // ② 保活
-    let ident = null;
-    try { ident = await coder.uds('1A9F', 3000, { allowEmpty: true }); } catch { /* 不致命 */ }
-    if (ident?.body?.length) {
-      log(`  识别 1A 9F = ${ident.body.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`, 'info');
+    // ★ 任务清单①⑤（2026-11-08）：自动搜索链 = 主/备双请求 `22 11 02`/`22 11 01`
+    //   （fn(0xff001102,0xff001101,5)，SYSP:0x29fb8）+ 备选链（SYSP:0x56a66 模板表）；
+    //   trim 显示=应答文本（RE-MODELADDR §1.5④「应答文本==应答」）。
+    //   会话流按家族：KWP=10 89 直接建会话（不发 10 03 —— 实车 7F 10 12 断点修）。
+    if (moduleFamily === undefined) {
+      try {
+        const ctlM = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timerM = ctlM ? setTimeout(() => ctlM.abort(), 1500) : null;
+        const rM = await fetch('data/module-family.json', ctlM ? { signal: ctlM.signal } : {});
+        if (timerM) clearTimeout(timerM);
+        moduleFamily = rM.ok ? await rM.json() : null;
+      } catch (e) { moduleFamily = null; }
     }
+    const family = familyFor(coder.ecuName, coder.tx);
+    coder.family = family;
+    await coder.enterSession(0x89, { family });
+    const idn = await coder.readVehicleIdentity(family);
+    for (const s of idn.steps) log('  ' + s, 'info');
+    const vin = idn.vin || '';
+    const nameFromCar = idn.name || '';
+    if (nameFromCar) state.modelDesignation = nameFromCar.slice(0, 32);
 
-    // ③ 读 VIN —— **双途径**（GAG 实测 22 与 1A 都在用）：UDS 22 F190 → 兜底 KWP 1A xx
-    let blk = await coder.readBlock(0xF190, 0x22).catch(() => null);
-    let vin = '';
-    if (blk && blk.length >= 17) {
-      // ⚠️ 剥掉尾部 NUL/空格填充（审计 B4）：trim() 不去 \0，会把合法 VIN 判非法
-      vin = String.fromCharCode(...blk.slice(0, 17)).replace(/[\u0000\u0020]+$/g, '').trim();
-    }
-    if (!isValidVin(vin)) {
-      // ⚠️ 兜底走 KWP 1A（审计 B3）：1A 9F 常返回 **11 位 VIN 前缀**（WP0ZZZ991GS），
-      //    不是完整 17 位 —— 此前要求 17 位，兜底永不命中。
-      //    现在接受 11 位前缀，再接 1A 87 序列号拼完整 VIN；拼不出就用前缀+提示手动选。
-      for (const kid of ['90', '9F', '97', '87', '91', '88']) {
-        try {
-          const r = await coder.uds('1A' + kid, 3000, { allowEmpty: true });
-          const b = Array.from(r.body || []);
-          const payload = b[0] === 0x5a ? b.slice(2) : b;
-          const txt = payload.map((c) => (c >= 0x20 && c < 0x7f ? String.fromCharCode(c) : '')).join('')
-            .replace(/[\u0000\u0020]+$/g, '').trim();
-          log(`  1A ${kid} = "${txt}"（${txt.length} 字符）`, 'info');
-          // 零件号（9 开头 11 位数字串）不当 VIN
-          if (/^9[0-9]{10}$/.test(txt)) { log(`  1A ${kid} 是零件号，跳过`, 'info'); continue; }
-          if (/^[A-HJ-NPR-Z0-9]{11,17}$/.test(txt)) {
-            if (txt.length === 17) {
-              vin = txt; log(`  从 1A ${kid} 得到完整 VIN`, 'ok'); break;
-            }
-            if (!vin) {
-              vin = txt;
-              log(`  从 1A ${kid} 得到 VIN 前缀 ${txt}（${txt.length} 位，缺尾段）`, 'warn');
-            }
-          }
-        } catch (e) { /* 继续下一个 */ }
-      }
-    }
-    // ⚠️ 2026-10-18 审计：KWP `1A 9F` 在 981 上常只返回 **11 位 VIN 前缀**
-    //    （WP0ZZZ991GS）。原实现先接受前缀、随后又用 isValidVin(17 位) 把它判死，
-    //    等于自动搜索在 KWP 模块上从未成功过。现在允许「合法前缀」参与车型识别，
-    //    但绝不伪造完整 VIN：界面上明确标为前缀。
+    // ⚠️ 绝不伪造完整 VIN：前缀合法才参与识别，界面明示。
     let vinPrefix = false;
     if (!vin) {
       toast('warn', '读不到 VIN', '可能地址不对或 ECU 未响应 —— 请用手动选择车型');
@@ -873,7 +917,6 @@ async function autoSearch(opts = {}) {
         vinPrefix = true;
         log(`  VIN 前缀 ${vin}（${vin.length} 位）—— 按前缀识别车型，不伪造完整 VIN`, 'warn');
       } else {
-        // 二进制垃圾被当 VIN 读出来了 —— 拒绝，别据此猜车型
         log(`  VIN 格式非法（含 I/O/Q 或非字母数字）：${JSON.stringify(vin)}`, 'err');
         toast('warn', 'VIN 格式非法', `读到 ${JSON.stringify(vin)}，不是 17 位 ISO 3779 VIN。请手动选择车型。`);
         return;
@@ -884,53 +927,39 @@ async function autoSearch(opts = {}) {
 
     const yearCode = vin[9];
     const year = decodeVinYear(vin);
-    // ★ 2026-11-07 精确车型识别（参考诊断仪 同款读）：自动搜索链发 0xff00140a
-    //   （PorscheReadVinAndGetVehicleID 实证）= UDS 读 DID 0x140A —— 商品名/trim 级
-    //   识别数据。应答格式未在包内（证据级留白），先原样留日志（下次实测自证），
-    //   含可打印文本则显示为识别信息，不做无证据解析。
-    try {
-      const v140a = await coder.uds('22140A', 3000, { allowEmpty: true });
-      const b140a = Array.from(v140a?.body || []);
-      const hex140a = b140a.map((x) => x.toString(16).padStart(2, '0')).join('');
-      const p140a = b140a[0] === 0x62 ? b140a.slice(3) : b140a;   // 剥 62 14 0A 回显
-      const txt140a = p140a.filter((c) => c >= 0x20 && c < 0x7f)
-        .map((c) => String.fromCharCode(c)).join('').trim();
-      log(`  22 14 0A → ${hex140a.slice(0, 48) || '(空)'}${txt140a ? '  「' + txt140a.slice(0, 24) + '」' : ''}`, 'info');
-      if (txt140a) state.modelDesignation = txt140a.slice(0, 32);
-    } catch (e) { log(`  22 14 0A → 无应答（${e.message || '超时'}）`, 'info'); }
-    // ★ 商品名/trim 级识别（参考诊断仪 同款）：GetVehicleNameID 的 strcmp 入参=0xff001102
-    //   （=UDS 22 11 02）应答文本（PorscheReadVinAndGetVehicleID 逐指令实证）。
-    //   匹配语义=strcmp 精确相等 → 显示文本==应答文本，直接显示即逐字一致（无运行时文本库依赖）。
-    try {
-      const v11 = await coder.uds('221102', 3000, { allowEmpty: true });
-      const b11 = Array.from(v11?.body || []);
-      const p11 = b11[0] === 0x62 ? b11.slice(3) : b11;   // 剥 62 11 02 回显
-      const nameFromCar = p11.filter((c) => c >= 0x20 && c < 0x7f)
-        .map((c) => String.fromCharCode(c)).join('').trim();
-      log(`  22 11 02 → 「${nameFromCar || '(空)'}」`, 'info');
-      if (nameFromCar) state.modelDesignation = nameFromCar.slice(0, 32);
-    } catch (e) { log(`  22 11 02 → 无应答（${e.message || '超时'}）`, 'info'); }
     state.vin = vin;   // 地址缓存按 VIN 键控（同型号不同车不串台）
     const modelGuess = guessModelFromVin(vin, year);
     log(`  ${vinPrefix ? 'VIN 前缀' : 'VIN'}=${vin} · 年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：`
-      + `${modelGuess ? `${modelGuess.models.join(' / ')}（${modelGuess.how}）` : '未识别'}`,
+      + `${modelGuess ? `${modelGuess.models.join(' / ')}（${modelGuess.how}）` : '未识别'}`
+      + (nameFromCar ? ` · 应答名「${nameFromCar}」` : ' · 应答名（无）'),
       modelGuess ? 'ok' : 'info');
     if (modelGuess && modelGuess.models.length) {
-      // ★ 精确识别显示（参考诊断仪 同款）：年款简写 + 车上名字（如「21款 718 Boxster T」）
+      // ★ 显示（任务清单①）：= 应答文本（如「14款 Cayman」），车型条目由应答文本 strcmp 落定。
       const yy = year != null ? String(year % 100).padStart(2, '0') : '??';
-      const desig = state.modelDesignation ? `${yy}款 ${state.modelDesignation}` : '';
-      const pick = (label) => { pushModel({ label }); toast('ok', `已选 ${desig || label}`, desig || `${year ?? '?'} 年款`); };
+      const desig = nameFromCar ? `${yy}款 ${nameFromCar}` : '';
+      const pick = (label, note) => {
+        pushModel({ label });
+        toast('ok', `已选 ${desig || label}`, note || desig || `${year ?? '?'} 年款`);
+      };
       if (opts.autoAccept) {
-        // 程序化调用（如测试）免确认；**模拟模式同样弹确认**（2026-11-05 用户实测：
-        // 模拟模式读完 VIN 直接进车型，没给确认车型年款的机会）。
-        // ghost-click 由 pushModel 的 _navLockTs 吞锁兜住，不需要靠免弹窗根治。
-        pick(modelGuess.models[0]);
+        // 程序化调用（如测试）免确认；**模拟模式同样弹确认**（2026-11-05 用户实测）。
+        const byName0 = pickModelByName(modelGuess.models, nameFromCar);
+        pick(byName0 ? byName0.name : modelGuess.models[0]);
         return;
       }
-      // ★ 2026-11-07 数据集相同的候选项合并单确认（实证：981/982 的 Boxster/Cayman
-      //   数据集逐文件全同、变体名一致 → 车身/trim 选择对下游零影响）——两选手动
-      //   由此消灭，由数据事实驱动非猜测。精确商品名待 22 14 0A 格式定案后并入显示。
-      if (modelGuess.models.length > 1 && typeof modelsCatalog !== 'undefined') {
+      // ★ ① trim 落定：应答文本命中车型名（24 键 strcmp 可观测等价）→ 单选
+      //   （981 实证：22 11 02 应答「Cayman」→ Cayman（981））。
+      const byName = pickModelByName(modelGuess.models, nameFromCar);
+      if (byName) {
+        log(`  🚗 trim 落定：应答文本「${nameFromCar}」→ ${byName.name}（${byName.how}）`, 'ok');
+        const ok = confirm(`识别为：${desig || byName.name}（${byName.name}）\n`
+          + `${vinPrefix ? 'VIN 前缀' : 'VIN'}：${vin}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认这个车型？`);
+        if (ok) { pick(byName.name); return; }
+        return;
+      }
+      // ★ ② 链穷尽（无应答名）才允许双候选合并，且显示必须注明（任务清单①）。
+      if (!nameFromCar && modelGuess.models.length > 1 && typeof modelsCatalog !== 'undefined') {
+        const chainNote = '（双候选合并·链穷尽未获应答名）';
         const sigOf = (lbl) => {
           const m = modelsCatalog?.models?.[lbl];
           return JSON.stringify((m?.modules || []).map((x) => x.module + ':' + (x.count ?? '')));
@@ -938,23 +967,24 @@ async function autoSearch(opts = {}) {
         const sigs = modelGuess.models.map(sigOf);
         if (sigs[0] && sigs.every((x) => x === sigs[0])) {
           const joined = modelGuess.models.join(' / ');
-          log(`  候选车型数据集相同（${joined}）——合并单确认`, 'info');
-          const ok2 = confirm(`识别为：${joined}（数据集相同）\n`
+          log(`  候选车型数据集相同（${joined}）——合并单确认${chainNote}`, 'info');
+          const ok2 = confirm(`识别为：${joined}（数据集相同）${chainNote}\n`
             + `${vinPrefix ? 'VIN 前缀' : 'VIN'}：${vin}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认？`);
-          if (ok2) { pick(modelGuess.models[0]); return; }
+          if (ok2) { pick(modelGuess.models[0], chainNote); return; }
           return;
         }
       }
+      // ③ 有应答名但未命中 / 单候选：列出让用户定，不猜（应答名在标题里可见）
+      const nameNote = nameFromCar ? `（应答名「${nameFromCar}」未命中候选）` : '';
       if (modelGuess.models.length === 1) {
-        const ok = confirm(`识别为：${desig || modelGuess.models[0]}\n`
+        const ok = confirm(`识别为：${desig || modelGuess.models[0]}${nameNote}\n`
           + `${vinPrefix ? 'VIN 前缀' : 'VIN'}：${vin}\n年款码：${yearCode}（${year ?? '未知'} 年款）\n\n确认这个车型？`);
-        if (ok) { pick(modelGuess.models[0]); return; }
+        if (ok) { pick(modelGuess.models[0], nameNote || undefined); return; }
       } else {
-        // 多车型同平台：参考诊断仪 同款「推年款弹确认」——列出让用户定，不猜
         const list = modelGuess.models.map((m, i) => `${i + 1}. ${m}`).join('\n');
-        const raw = prompt(`识别为（${year ?? '?'} 年款）：\n${list}\n\n输入序号选择车型，留空取消：`);
+        const raw = prompt(`识别为（${year ?? '?'} 年款）${nameNote}：\n${list}\n\n输入序号选择车型，留空取消：`);
         const idx = parseInt(raw, 10) - 1;
-        if (raw && idx >= 0 && idx < modelGuess.models.length) { pick(modelGuess.models[idx]); return; }
+        if (raw && idx >= 0 && idx < modelGuess.models.length) { pick(modelGuess.models[idx], nameNote || undefined); return; }
       }
     }
     toast('info', `${year ? year + ' 年款已识别，' : ''}车型请手动选择`,
@@ -2099,7 +2129,7 @@ async function readBlocksForItems(items) {
   for (const lid of needLids) {
     const sample = items.find((p) => p.lid === lid);
     try {
-      currentBlocks[lid] = await coder.readBlock(lid, sample?.readSid ?? 0x21);
+      currentBlocks[lid] = await coder.readBlock(lid, blockReadSidOf(items, sample));
     } catch (e) {
       // ⚠️ 不能静默吞（2026-10-18 审计）：读失败会让当前值显示成「?」，
       //    用户会以为只是没读到；批量写入时又会在 applyChange 里重新读一次，
@@ -2229,7 +2259,9 @@ async function enterSystem(sys) {
   }
   // ★ 2026-10-29 审计 P0-2：setAddress 内部已下发 ATSP/ATSH/ATCRA，必须 await。
   //   此前只改属性，紧接着的 1A9F 还打在上一个模块/探测遗留地址上。
-  await coder.setAddress(addr.tx, addr.rx, sys.label);
+  // ★ 会话流家族（任务清单⑤）：KWP=10 89 直接建会话（不发 10 03）；UDS=10 03 流。
+  const enterFamily = familyFor(sys.label, addr.tx, { modules: sys.modules });
+  await coder.setAddress(addr.tx, addr.rx, sys.label, { family: enterFamily });
   // ★ 身份验证（终审④⑤：无 P200 启发式、无缓存比对）：读 1A9F 做运行时文本匹配
   //   （名字注册表原语，GetSubSysDataAddr 同款）；命中→提升 verified；不命中→保持现状。
   {
@@ -2258,7 +2290,7 @@ async function enterSystem(sys) {
     // ⚠️⚠️ 这里**绝不能阻塞**：2026-10-17 装机后实测「进模块一直转圈」，
     //    根因就是这段 `await fetch(...)` 在同步流程里 —— fetch 不 resolve 就永远 await，
     //    showLoading 的转圈停不下来。改成**限时 + 失败立刻回落旧路径**。
-    let mode = null, lid = null;
+    let mode = null, lid = null, fam = null;
     if (drivelinks === undefined) drivelinks = null;   // 允许 null 表示「加载过但没有」
     if (!drivelinks) {
       try {
@@ -2270,6 +2302,16 @@ async function enterSystem(sys) {
       } catch (e) {
         drivelinks = null;   // 拿不到就退回旧路径，绝不卡住
       }
+    }
+    // 模块记录家族统计（任务清单⑤ 信号②），限时加载，失败不阻塞
+    if (moduleFamily === undefined) {
+      try {
+        const ctl2 = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timer2 = ctl2 ? setTimeout(() => ctl2.abort(), 1500) : null;
+        const r2 = await fetch('data/module-family.json', ctl2 ? { signal: ctl2.signal } : {});
+        if (timer2) clearTimeout(timer2);
+        moduleFamily = r2.ok ? await r2.json() : null;
+      } catch (e) { moduleFamily = null; }
     }
     // 2026-10-19：RE 实证 ECU 寻址表（sysId → tx/rx），限时加载，失败不阻塞
     if (ecuAddrTable === undefined) ecuAddrTable = null;
@@ -2304,7 +2346,17 @@ async function enterSystem(sys) {
         const k = ecuKeyFrom(src);
         if (k && drivelinks?.ecu?.[k]?.length) { hit = drivelinks.ecu[k]; break; }
       }
-      if (hit && hit.length) { mode = hit[0].m; lid = hit[0].l; }
+      // ★ 2026-11-09 mode 收口：mode 真值 = 条目所指**记录** u32 复合的低字节
+      //   （SendSysSeedKey→Xml_GetDriveLinksAddress 逐指令实证：条目 6B=[u16 blockKey]
+      //   [u32 recOff]，记录复合 u32@rec+0 落 TOKEN+0x360950 → PorscheKeySendCmd 低字节
+      //   = PORSCHESecurityModel 的 mode）。旧 `hit[0].m` 是**记录偏移低字节**（垃圾 mode，
+      //   算错 key → NRC 0x35），已改名 recOffsetLo 防再误用。行选择 hit[0] = 块首行键，
+      //   与 参考诊断仪 GetSubSysDataAddr 未命中回落「组首行键」同构。
+      if (hit && hit.length) {
+        mode = hit[0].mode;            // rec[0]（记录复合低字节）；越界记录为 null
+        lid = hit[0].session ?? null;  // 会话字（复合 u32>>16，参考诊断仪 securityModel param_1）
+        fam = hit[0].family ?? null;   // 命令模板族（复合第 2 字节）
+      }
       else if (drivelinks) {
         log(`  （DRIVELINKS 已加载 ${Object.keys(drivelinks.ecu).length} 个 ECU，` +
             `但「${sys.label}」没有 ECU_ID —— 缺 module→ECU_ID 映射，退回按名字选变体）`, 'warn');
@@ -2319,7 +2371,8 @@ async function enterSystem(sys) {
       if (modeOk) {
         coder.seedKeyProvider = makeResolverProvider(mode, { ecuId: null, name: sys.label });
         log(`  seed/key：原厂 mode 0x${mode.toString(16).padStart(2, '0')}` +
-            (lid != null ? ` · LID 0x${lid.toString(16).padStart(4, '0')}` : '') + '（照抄 securityModel）', 'ok');
+            (fam != null ? ` · 模板族 0x${fam.toString(16).padStart(2, '0')}` : '') +
+            (lid != null ? ` · 会话 0x${lid.toString(16).padStart(4, '0')}` : '') + '（照抄 securityModel）', 'ok');
       } else {
         // ★ 2026-11-05 对齐 参考诊断仪：mode 分支算不出（如 0x1d 运行时态）**不锁只读** ——
         //   回落名字分发（dlsym 同款：ECU 标识串 → ASAP1A 变体符号）。参考诊断仪 对这类模块
@@ -2416,16 +2469,17 @@ async function enterSystem(sys) {
   //   原「10 89 失败回退 10 03」是自创恢复，已删。
   //   两步是**序列步**（非重试）：各自尽力而为（NRC 容忍=序列取证行为）；写路径
   //   applyChange 仍硬要求 10 89（失败即报错）；两步都无应答=物理下限报错。
+  // ★ 会话流（任务清单⑤ / RE-FLOWSPEC §1.3·§7）：一次 enterSession 完成整条流 ——
+  //   KWP 流 = `10 89` 直接建会话（不发 10 03 —— 实车 `7F 10 12` 断点修）；
+  //   UDS 流 = `10 03`→保活→识别→`10 89`（序列步，非重试）；家族未证=抓包序容错。
   let sessDead = 0;
-  for (const s of [0x03, 0x89]) {
-    try {
-      await coder.enterSession(s);
-    } catch (e) {
-      if (/无应答|NO DATA/i.test(String(e.message))) sessDead++;
-      log(`  (10 ${s.toString(16).padStart(2, '0')} 未支持：${e.message} —— 序列继续)`, 'warn');
-    }
+  try {
+    await coder.enterSession(0x89, { family: enterFamily });
+  } catch (e) {
+    if (/无应答|NO DATA/i.test(String(e.message))) sessDead++;
+    log(`  (会话未建成：${e.message} —— ${sessDead ? '通讯失败' : '序列继续'})`, 'warn');
   }
-  if (sessDead === 2) {
+  if (sessDead) {
     hideLoading();
     toast('err', `${sys.label} 通讯失败`, '1.车辆电压 2.VCI连接 3.固件/线路');
     return false;
@@ -2476,7 +2530,8 @@ async function enterSystem(sys) {
           if (pm) {
             const names = catMods.map((v) => v.name || String(v.file || '').replace(/\.json$/i, ''));
             picked = pickVariantByPart(pm.byPart, pm.byHwPart, {
-              partNumber: coder.lastPartNo, hwPartNo: coder.lastHwPart,
+              partNumber: coder.lastPartNo, partTokens: coder.lastPartTokens,
+              hwPartNo: coder.lastHwPart,
               swText: coder.lastSwNo, swTable: pm.bySw,
               module: mod, variants: names,
             });
@@ -2527,7 +2582,7 @@ async function enterSystem(sys) {
       updateLoading(`正在读取 ${sys.label}`, `${readDone}/${lids.length} 个编码块…`,
         () => { enterAbort = true; });
       try {
-        currentBlocks[lid] = await coder.readBlock(lid, sample.readSid ?? 0x21);
+        currentBlocks[lid] = await coder.readBlock(lid, blockReadSidOf(items, sample));
       } catch (e) {
         readFail++;
         log(`  ❌ LID 0x${lid.toString(16)} 读取失败：${e.message}`, 'err');
@@ -2855,7 +2910,7 @@ function renderParamDetail(p) {
   if (p?.lid != null && coder && currentBlocks[p.lid] === undefined) {
     setTimeout(() => { if (currentParam?.id === p.id) doRead(p); }, 0);
   }
-  const ro = p.sidPairOk === false;
+  const ro = isReadOnlyItem(p);
   const en = p.enum ? Object.entries(p.enum) : [];
   const curVal = p.currentValue !== undefined ? decodeValue(p, p.currentValue) : null;
 
@@ -2901,13 +2956,13 @@ function renderParamDetail(p) {
         <button id="pRead">读当前值</button>
         <button id="pWrite" class="${ro ? '' : 'primary'}">写入</button>
       </div>
-      <div class="hint">${ro ? (p.writeBlockedReason || '源数据无写服务，只能读') : ''}</div>
+      <div class="hint">${ro ? readOnlyReason(p) : ''}</div>
     </div>`;
 
   $('pRead').onclick = () => doRead(p);
   $('pWrite').onclick = () => {
     if (ro) {
-      toast('warn', `「${p.name}」是只读项`, p.writeBlockedReason || '源数据无写服务，只能读不能改');
+      toast('warn', `「${p.name}」是只读项`, readOnlyReason(p));
       return;
     }
     const raw = $('pVal')?.value ?? '0';
@@ -2983,7 +3038,7 @@ function showCurveGroup(g) {
 function showParam(p) {
   currentParam = p;
   $('secParam').style.display = '';
-  const ro = p.sidPairOk === false;
+  const ro = isReadOnlyItem(p);
   const en = p.enum ? Object.entries(p.enum) : [];
 
   // 按 kind 给不同输入：开关 / 下拉 / 数字
@@ -3023,7 +3078,7 @@ function showParam(p) {
         <button id="pRead">读当前值</button>
         <button id="pWrite" class="${ro ? '' : 'primary'}">写入</button>
       </div>
-      <div class="hint">${ro ? (p.writeBlockedReason || '源数据无写服务，只能读') : ''}</div>
+      <div class="hint">${ro ? readOnlyReason(p) : ''}</div>
     </div>`;
 
   // 开关按钮选中态
@@ -3036,7 +3091,7 @@ function showParam(p) {
   $('pRead').onclick = () => doRead(p);
   $('pWrite').onclick = () => {
     if (ro) {
-      toast('warn', `「${p.name}」是只读项`, p.writeBlockedReason || '源数据无写服务，只能读不能改');
+      toast('warn', `「${p.name}」是只读项`, readOnlyReason(p));
       return;
     }
     const sw = $('paramBox').querySelector('.swBtn.sel');
@@ -3125,7 +3180,7 @@ async function doWrite(p, v) {
   // 此前它零调用，文档说「改 WRITE_ENABLED=false 可恢复严格门禁」实际无效。
   if (!canWrite(p)) {
     toast('err', `「${p.name}」不可写`,
-      p.sidPairOk === false ? (p.writeBlockedReason || '源数据无写服务')
+      isReadOnlyItem(p) ? readOnlyReason(p)
         : (p.lid == null && p.did == null) ? '缺 LID/DID'
           : '严格门禁未放行（WRITE_ENABLED=false 且未 write-confirmed）');
     return;
@@ -3169,7 +3224,7 @@ function showSub(s) {
       </div>
       <div class="hint">执行前确认车辆状态安全；高风险功能请先备份。</div>
     </div>`;
-  // 例程轮询中止开关（点「停止」置位）—— MES 定论：用户取消时要发恢复命令，
+  // 例程轮询中止开关（点「停止」置位）—— 实证定论：用户取消时要发恢复命令，
   // 这里至少保证轮询能被打断，不会在后台继续敲 ECU。
   let routineAbort = false;
   const run = (sf, verb) => async () => {
@@ -3189,7 +3244,7 @@ function showSub(s) {
         await coder.securityAccessEx({ level: 0x09, kwp: false });
       }
       // ⚠️ 长例程会先回 NRC 0x78（响应挂起）/ 0x21（忙），一次请求判成败会误报失败。
-      //    MES 定论：发跟随服务 `31 03` 轮询直到响应不是 21/23/24/78（REAUDIT-20261017）。
+      //    实证定论：发跟随服务 `31 03` 轮询直到响应不是 21/23/24/78（REAUDIT-20261017）。
       routineAbort = false;
       const { result: r, polled } = await coder.runRoutine(sf, id, '', {
         maxMs: 30000, intervalMs: 1500,
@@ -3232,7 +3287,7 @@ async function doRead(p) {
     toast('info', `读取 ${p.name}`, '缓存无此块，现读 …');
     fromCache = false;
     try {
-      block = await coder.readBlock(p.lid, p.readSid ?? 0x21);
+      block = await coder.readBlock(p.lid, blockReadSidOf(null, p));
       currentBlocks[p.lid] = block;
     } catch (e) {
       toast('err', `${p.name} 读取失败`, e.message);
@@ -3322,7 +3377,7 @@ async function backupAllCoding(allItems, sysLabel) {
     for (const lid of lids) {
       const p = allItems.find((q) => q.lid === lid) || {};
       try {
-        const block = await coder.readBlock(lid, p.readSid ?? 0x21);
+        const block = await coder.readBlock(lid, blockReadSidOf(null, p));
         coder.backups.push({
           id: 'backup', lid, readSid: p.readSid, writeSid: p.writeSid, session: 0x89,
           time: new Date().toISOString(),
@@ -3359,7 +3414,7 @@ async function restoreCoding(sysLabel) {
         await coder.enterSessionFor('coding');
         await coder.securityAccess(0x09, !uds);
         await coder.uds(`${sidHex}${lidHex}${b.raw.toUpperCase()}`, 8000);
-        const back = await coder.readBlock(b.lid, b.readSid ?? 0x21);
+        const back = await coder.readBlock(b.lid, blockReadSidOf(null, b));
         const ok = back.map((x) => x.toString(16).padStart(2, '0')).join('') === b.raw.toUpperCase();
         if (!ok) throw new Error('回读与备份不一致');
         done++;
@@ -3387,7 +3442,7 @@ $('btnBackup').onclick = async () => {;
   toast('info', `备份 ${p.name}`, `LID 0x${lid.toString(16).toUpperCase()} …`);
   try {
     await coder.enterSession(0x89);
-    const block = await coder.readBlock(lid, p.readSid ?? 0x21);
+    const block = await coder.readBlock(lid, blockReadSidOf(null, p));
     coder.backups.push({
       id: 'backup', lid, readSid: p.readSid, writeSid: p.writeSid, session: 0x89,
       time: new Date().toISOString(),
@@ -3485,9 +3540,9 @@ async function showSysExtra(f) {
       <button id="xProgRead" class="primary">读当前值</button>
       <button id="xProgWrite">写入</button>
       <button id="xProgVerify">校验</button></div>
-      <div class="hint">默认按 KWP 读 0x21 / 写 0x3B；若该块是 UDS（22/2E），勾选下面的协议再操作。<br>
-      编程按标准流程：<b>读当前值 → 修改 → 写入 → 回读校验</b>。高风险，请先备份。</div>
-      <label style="display:block;margin-top:6px"><input type="checkbox" id="xProgUds"> 该块使用 UDS（22/2E）</label>`;
+      <div class="hint">读写 SID <b>按记录</b>（prefix[0]/[1]：KWP 21/3B · UDS 22/2E），不做协议族一刀切 ——<br>
+      需先进入模块（记录自带 SID）；无记录时按规格未覆盖，拒绝操作。<br>
+      编程按标准流程：<b>读当前值 → 修改 → 写入 → 回读校验</b>。高风险，请先备份。</div>`;
   } else if (kind === 'special') {
     // ★ 特殊功能（只列「本平台确认可执行」的项）
     //
@@ -4057,18 +4112,29 @@ async function showSysExtra(f) {
       }
     };
   } else if (kind === 'program') {
-    // ⚠️ 2026-10-18 审计：原实现的写入 handler 里引用了未定义的 `readSid`
-    //    （ReferenceError），且无论块是 KWP 还是 UDS 都硬发 0x3B —— 编程功能实际不可用。
-    //    现在按用户勾选决定 21/3B（KWP）或 22/2E（UDS），并统一走同一条读/写/回读路径。
+    // ★ 任务清单③（2026-11-08）：读写 SID 按**编码记录**（prefix[0]/[1]，同 ECU 混族），
+    //   删除「按协议族一刀切」的勾选派发。无记录 = 按规格未覆盖，拒绝操作（不猜 SID）。
+    //   ⚠️ 配对表补默认已删（覆盖审计②）：写 SID 只认记录 writeSid（参考诊断仪 直接用记录字段发帧）；
+    //   记录缺 writeSid = 无写服务（只读），不拿配对表猜。
     const progProto = () => {
-      const uds = !!($('xProgUds') && $('xProgUds').checked);
-      return { uds, readSid: uds ? 0x22 : 0x21, writeSid: uds ? 0x2E : 0x3B, idPad: uds ? 4 : 2 };
+      const lid = parseInt($('xProgLid').value || '', 16);
+      const rec = (Array.isArray(coding) ? coding : [])
+        .find((it) => it && it.lid === lid && it.readSid != null);
+      if (!rec) return null;
+      const readSid = Number(rec.readSid);
+      const writeSid = rec.writeSid != null ? Number(rec.writeSid) : null;
+      return { readSid, writeSid, idPad: readSid === 0x22 ? 4 : 2 };
     };
     const progRun = async (verb, fn) => {
       if (!needLink()) return;
       const lid = parseInt($('xProgLid').value || '', 16);
       if (Number.isNaN(lid)) { toast('err', 'LID 无效', '请输入十六进制 LID'); return; }
-      const { idPad } = progProto();
+      const pp0 = progProto();
+      if (!pp0) {
+        toast('err', '缺记录 SID', '按规格未覆盖：读写 SID 只认编码记录（prefix[0]/[1]），不做协议族一刀切 —— 请先进入模块');
+        return;
+      }
+      const { idPad } = pp0;
       if (lid < 0 || lid > (idPad === 4 ? 0xffff : 0xff)) {
         toast('err', 'LID 超出位宽', idPad === 4 ? 'UDS DID 为 2 字节（0000–FFFF）' : 'KWP LID 为 1 字节（00–FF）');
         return;
@@ -4083,7 +4149,7 @@ async function showSysExtra(f) {
       }
     };
     $('xProgRead').onclick = () => progRun('读编程块', async (lid) => {
-      const { readSid } = progProto();
+      const { readSid } = progProto() || {};
       await coder.enterSessionFor('coding');
       const blk = await coder.readBlock(lid, readSid);
       return blk.map((b) => b.toString(16).padStart(2, '0')).join(' ');
@@ -4097,7 +4163,10 @@ async function showSysExtra(f) {
       if (input == null || !input.trim()) return '已取消';
       const clean = input.replace(/[^0-9A-Fa-f]/g, '');
       if (!clean || clean.length % 2) throw new Error('十六进制内容非法（长度必须为偶数）');
-      const { uds, readSid, writeSid, idPad } = progProto();
+      const { readSid, writeSid, idPad } = progProto() || {};
+      if (!WRITE_SIDS.includes(Number(writeSid))) {
+        throw new Error(`记录 writeSid=${writeSid == null ? '缺' : '0x' + Number(writeSid).toString(16)} 非写服务（参考诊断仪 写帧仅 0x3B/0x2E）—— 只读，不写`);
+      }
       await coder.enterSessionFor('coding');
       const cur = await coder.readBlock(lid, readSid);
       if (clean.length / 2 !== cur.length) {
@@ -4193,11 +4262,24 @@ async function loadVariantItems(slug, file) {
     if (!r.ok) return [];
     const j = await r.json();
     const items = j.items || [];
+    // ★ 回落读服务标注（2026-11-08 覆盖审计②）：记录 readSid=0/非读服务的条目
+    //   自身无读帧（参考诊断仪 参考诊断仪 读包装 只打包 21/1A/22），块读/备份走
+    //   同表回落读服务（参考诊断仪 备份读 表首 SID 读整 PID map 实证）。
+    const fallback = resolveBlockReadSid(items);
+    for (const it of items) it.blockReadSid = fallback;
     loadedVariants.set(key, items);
     return items;
   } catch {
     return [];
   }
+}
+
+/** 块读服务：记录自带可发读帧用之；否则回落同表读服务（无则 null=不发帧）。 */
+function blockReadSidOf(items, p) {
+  if (p && hasReadService(p)) return Number(p.readSid);
+  if (p && READ_SIDS.includes(Number(p.blockReadSid))) return Number(p.blockReadSid);
+  const f = resolveBlockReadSid(items);
+  return f;
 }
 
 /**

@@ -35,22 +35,31 @@ spec = importlib.util.spec_from_file_location('rea', TOOL)
 rea = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rea)
 
-XREF = {0x0B08: {0x0117}}   # IC：0x7C0 仪表诊断段簇（手工交叉引用，证据见 HANDOFF）
+# ★ 2026-11-08 任务清单②（零特判版）：`XREF={0x0B08:{0x0117}}`（0x77A-0x7C0 UDS 簇短名单）
+#   为手工 XREF 错误（export-ecu-address.py:38），实车 16 对全 NO DATA 的根因 —— 已删。
+#   改为**通用规则**（RE-MODELADDR §2.2，任何 sysId 适用）：
+#     R1 代际同名合并：SYS_DATA 名字记录（sysId=u32 LE @name-9）同名 sysId = 同模块代际对
+#        （如 Kombiinstrument_BaseSys → 0x0B08/0x0C08；全库 54 组），候选池合并。
+#     R2 internal 低字节补 join：internal 无精确表A 行（代际缺口）→ 低字节 join 补齐
+#        （标记 lowbyte，低于精确置信；PASM 0x1CB 多带行同规则接受）。
 FLAG_OK = (0x0000, 0x1000, 0x2000, 0x3000)
 
 
 def load_rows(sd_bytes, sysids):
     tabA, tabB = {}, {}
+    tabB_proto = {}   # (sysid, inter) -> 表B 行 proto（R2：KWP 代缺口判据）
     for off in range(0, len(sd_bytes) - 16):
         f0, inter, attr, tail = struct.unpack_from('<IIII', sd_bytes, off)
         b = tail.to_bytes(4, 'little')
-        if not (b[3] == 0xff and b[1] == 0x02 and b[0] in (0x01, 0x03) and 0 < attr < 0x20000 and inter <= 0x1FFF):
+        # internal 上限放宽到 0x3FFF：KWP 代缺口族（如 0x35F9）在 0x1FFF 之外
+        if not (b[3] == 0xff and b[1] == 0x02 and b[0] in (0x01, 0x03) and 0 < attr < 0x20000 and inter <= 0x3FFF):
             continue
         if f0 in sysids:
             tabB.setdefault(f0, set()).add(inter)
+            tabB_proto[(f0, inter)] = b[0]
         elif 0x180 <= f0 <= 0x1FFF:
             tabA.setdefault(inter, []).append({'tx': f0, 'attr': attr, 'proto': b[0], 'idx': b[2]})
-    return tabA, tabB
+    return tabA, tabB, tabB_proto
 
 
 def load_rows2(sysids):
@@ -100,6 +109,40 @@ def name_records_index(sd_bytes):
     return lookup
 
 
+def gen_groups(sd_bytes):
+    """R1 代际同名组：SYS_DATA 名字记录 [u32 sysId @name-9][u32 ?][u16 len][name\0]。
+    同名 sysId = 同模块代际对（RE-MODELADDR §2.2 归属法，sysId 字段=name_ptr-9）。"""
+    import collections
+    name_of = {}
+    N = len(sd_bytes)
+    for off in range(9, N - 30):
+        n = struct.unpack_from('<H', sd_bytes, off - 2)[0]
+        if not (4 <= n <= 80):
+            continue
+        nb = sd_bytes[off:off + n]
+        if not (len(nb) == n and nb[-1] == 0 and all(32 <= c < 127 for c in nb[:-1])):
+            continue
+        sysid = struct.unpack_from('<I', sd_bytes, off - 9)[0]
+        if not (0x0100 <= sysid <= 0x0FFF):
+            continue
+        name_of.setdefault(sysid, nb[:-1].decode())
+    by_name = collections.defaultdict(set)
+    for sid, nm in name_of.items():
+        by_name[nm].add(sid)
+    group = {}
+    for nm, sids in by_name.items():
+        for sid in sids:
+            group.setdefault(sid, set()).update(sids - {sid})
+    return group
+
+
+def row_kind(inter, tabA):
+    """R2：internal 的表A join 形态 —— 精确优先；无精确行才低字节补 join。"""
+    if tabA.get(inter):
+        return 'exact'
+    return 'lowbyte'
+
+
 def order_key(r, rank, excl):
     # 专属 internal 的行优先（共享路由组行殿后），再按锚点槽位/idx/tx
     return (excl, rank, 0 if r['idx'] in (0x05, 0x08) else 1, r['idx'], r['tx'])
@@ -110,7 +153,7 @@ def main():
     dl_idx = rea.drivelinks_index(dl)
     sd_bytes = SYS_DATA.read_bytes()
     sysids = set(dl_idx.keys())
-    tabA, tabB = load_rows(sd_bytes, sysids)
+    tabA, tabB, tabB_proto = load_rows(sd_bytes, sysids)
     tabB2 = load_rows2(sysids)
     name_lookup = name_records_index(sd_bytes)
     print(f'表A internal {len(tabA)} · 表B源1 {len(tabB)} sysId · 表B源2 {len(tabB2)} sysId')
@@ -121,10 +164,11 @@ def main():
             old[e.get('sysId', '').lower()] = e
 
     ANCH = {sid: tx for _n, sid, tx, _i in rea.ANCHORS}
+    GG = gen_groups(sd_bytes)
     # internal 专属度：被多个 sysId 引用的 internal 是共享路由组，其行靠后、不能当唯一
     inter_users = {}
     for sysid in dl_idx:
-        for g in (tabB.get(sysid, set()), tabB2.get(sysid, set()), XREF.get(sysid, set())):
+        for g in (tabB.get(sysid, set()), tabB2.get(sysid, set())):
             for inter in g:
                 inter_users.setdefault(inter, set()).add(sysid)
     entries = []
@@ -132,23 +176,44 @@ def main():
     for sysid in sorted(dl_idx):
         key = f'0x{sysid:04x}'
         variants = dl_idx[sysid]
-        groups = [(tabB.get(sysid, set()), 0), (tabB2.get(sysid, set()), 1), (XREF.get(sysid, set()), 2)]
+        # R1：代际同名兄弟的 routing internal 并入 join 集（同模块代际对共享候选池）
+        sib = GG.get(sysid, set())
+        b1 = set(tabB.get(sysid, set()))
+        for s in sib:
+            b1 |= tabB.get(s, set())
+        groups = [(b1, 0), (tabB2.get(sysid, set()), 1)]
         rows, seen = [], set()
         picked = []
         for internals, rank in groups:
             for inter in sorted(internals):
                 excl = 0 if len(inter_users.get(inter, ())) <= 1 else 1
-                for r in tabA.get(inter, []):
-                    if 0x700 <= r['tx'] <= 0x7FF:
+                exact = [r for r in tabA.get(inter, []) if 0x180 <= r['tx'] <= 0x7FF]
+                if exact:
+                    for r in exact:
                         picked.append((excl, rank, inter, r))
-        picked.sort(key=lambda t: order_key(t[3], t[1], t[0]))
+                    continue
+                # R2（KWP 代缺口补 join，RE-MODELADDR §2.2）：仅**结构化表B 源1** 且
+                #   表B 行 proto=KWP(1) 的 routing internal，在无精确表A 行时按低字节补齐
+                #   （如 0x02F9→0x35F9 族 0x721/722/723）；标记 -lowbyte，低于精确置信。
+                #   源2 异形行 internal（flags 空间）不补 —— 低字节 join 全开会污染（v4 教训）。
+                is_kwp_route = rank == 0 and any(
+                    tabB_proto.get((s, inter)) == 1 for s in {sysid} | sib)
+                if not is_kwp_route:
+                    continue
+                for jinter, jrows in tabA.items():
+                    if (jinter & 0xFF) == (inter & 0xFF):
+                        for r in jrows:
+                            if 0x180 <= r['tx'] <= 0x7FF:
+                                picked.append((excl, rank + 1, jinter, dict(r, lowbyte=True)))
+        picked.sort(key=lambda t: (order_key(t[3], t[1], t[0]), t[3].get('lowbyte', False)))
         for excl, rank, inter, r in picked:
             if r['tx'] in seen:
                 continue
             seen.add(r['tx'])
             rows.append({'tx': f"0x{r['tx']:04X}", 'rx': f"0x{r['tx'] + 8:04X}",
                          'attr': f"0x{r['attr']:06X}", 'proto': r['proto'], 'idx': r['idx'],
-                         'internal': f"0x{inter:04X}", 'src': f'tabB{rank + 1}'})
+                         'internal': f"0x{inter:04X}",
+                         'src': f'tabB{rank + 1}' + ('-lowbyte' if r.get('lowbyte') else '')})
             if len(rows) >= 16:
                 break
 
@@ -187,6 +252,8 @@ def main():
                       'variant': (name_lookup(v['cmdptr'])[0]),
                       'variantSrc': (name_lookup(v['cmdptr'])[1])} for v in variants[:32]],
         }
+        if GG.get(sysid):
+            e['genSiblings'] = sorted(f'0x{s:04x}' for s in GG[sysid])
         if sysid in ANCH:
             e['tx'], e['rx'], e['confidence'] = f'0x{ANCH[sysid]:X}', f'0x{ANCH[sysid] + 8:X}', 'proven'
         entries.append(e)

@@ -64,17 +64,61 @@ export function validateParam(p) {
     errs.push(`bit(${p.bit}) + bitsize(${p.bitsize}) 过大`);
   }
   if (!LEVELS.includes(p.level)) errs.push(`level 必须是 ${LEVELS.join('/')}`);
-  // ★ 写入必需：LID + 配对的读写 SID（见 coder.js）
+  // ★ 写入必需：LID（来源 请求模板 / 参数表）。
+  //   ⚠️ 读写 SID 配对表已拆（2026-11-08 覆盖审计②）：参考诊断仪 无配对闸，
+  //   直接用记录自带 readSid/writeSid 发帧（RE-FLOWSPEC §3.1，同 ECU 混族常态）。
   if (p.lid == null && p.did == null) {
     errs.push('缺 lid（写入必需；来源 请求模板 / 参数表）');
   }
-  if (p.readSid != null && p.writeSid != null) {
-    const PAIRS = { 0x21: 0x3B, 0x22: 0x2E, 0x1A: 0x3B };
-    if (PAIRS[p.readSid] !== p.writeSid) {
-      errs.push(`读写 SID 不配对：${p.readSid}↔${p.writeSid}（合法 21↔3B / 22↔2E / 1A↔3B）`);
-    }
-  }
   return errs;
+}
+
+/**
+ * 读写 SID 服务集（参考诊断仪 实证，禁自创）：
+ * - 读帧只有 0x21/0x22/0x1A 三种 —— 参考诊断仪 读包装
+ *   （参考诊断仪 读包装实现）只对这三种打包 `21/1A <LID8>`、`22 <DID16be>`，
+ *   其余 SID 跳过打包不发（readSid=0 的记录 参考诊断仪 不发读帧）。
+ * - 写帧只有 0x3B/0x2E 两种 —— 参考诊断仪 写包装（同库 0xFDED4）只对这两种打包
+ *   `3B <LID8> <data>`、`2E <DID16be> <data>`，其余 SID 不打包（记录无写服务=只读项）。
+ * GAG 佐证：全库写服务仅 3B×14 / 2E×3 条（RE-FLOWSPEC §4.4/4.5）。
+ */
+export const READ_SIDS = Object.freeze([0x21, 0x22, 0x1A]);
+export const WRITE_SIDS = Object.freeze([0x3B, 0x2E]);
+
+/** 记录自带读服务是否可发读帧 */
+export function hasReadService(p) {
+  return READ_SIDS.includes(Number(p && p.readSid));
+}
+
+/** 记录自带写服务是否可发写帧（0/缺 = 无写服务） */
+export function hasWriteService(p) {
+  return WRITE_SIDS.includes(Number(p && p.writeSid));
+}
+
+/** 只读项判定（参考诊断仪 同款闸：记录无写服务 → 只读） */
+export function isReadOnlyItem(p) {
+  return !hasWriteService(p);
+}
+
+/** 只读原因（给 UI/日志） */
+export function readOnlyReason(p) {
+  const ws = Number(p && p.writeSid);
+  if (!Number.isFinite(ws) || ws === 0) return p?.writeBlockedReason || '源数据无写服务，只能读';
+  return `记录 writeSid=0x${ws.toString(16)} 非写服务（参考诊断仪 写帧仅 0x3B/0x2E），只能读`;
+}
+
+/**
+ * 记录集（同变体）的回落读服务。
+ * 参考诊断仪 备份/读码是表级读：参考诊断仪 备份读（参考诊断仪 备份读）取
+ * 首记录 readSid 对整个 PID map 发读（代码实证）；readSid=0 的记录
+ * 自身无读服务（参考诊断仪 读包装 不打包），值经同表回落读得到。
+ * 同表无任何读服务 → null（读不到=不写，RE-FLOWSPEC §4.1）。
+ */
+export function resolveBlockReadSid(items) {
+  for (const it of items || []) {
+    if (hasReadService(it)) return Number(it.readSid);
+  }
+  return null;
 }
 
 /**
@@ -204,15 +248,17 @@ export function fieldInRange(p, v) {
  * ⚠️ 策略变更（对齐参考诊断仪）：对照表数据已离线全量核验
  *   （byte/bit 锚点对照、LID/SID 99.9% 配对、口令算法逐位校验、请求格式实测），
  *   `level` 改为**验证状态标注**，不再作为写入门禁。
- *   真正拦住错误写入的是 coder.js 里的结构性闸门：
- *     缺 LID / SID 不配对 / 只读项 / 变更越界 / 回读不一致。
+ *   真正拦住错误写入的是 coder.js 里的 参考诊断仪 同款结构性闸门：
+ *     只读项（记录无 3B/2E 写服务） / 缺 LID / 变更越界 / 回读不一致。
+ *   ⚠️ 读写 SID 配对表已拆（2026-11-08 覆盖审计②）：参考诊断仪 直接用记录自带
+ *   readSid/writeSid 发帧，1a/2e 等混族记录按记录写（RE-FLOWSPEC §3.1）。
  *
  * 想恢复严格门禁：把 WRITE_ENABLED 改 false，会回到「必须 write-confirmed 才能写」。
  */
 export const WRITE_ENABLED = true;
 
 export function canWrite(p) {
-  if (p.sidPairOk === false) return false;        // 只读项永远不给写
+  if (!hasWriteService(p)) return false;          // 只读项（记录无 3B/2E 写服务）永远不给写
   if (p.lid == null && p.did == null) return false; // 无 LID 不能写
   if (!WRITE_ENABLED) return p.level === 'write-confirmed';
   return true;

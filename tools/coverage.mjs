@@ -27,14 +27,17 @@ for (const [ecu, arr] of Object.entries(dl.ecu)) {
   let ecuOk = true;
   for (const r of arr) {
     tot++;
+    // ★ 2026-11-09：mode 真值 = 记录复合低字节（旧 r.m 是记录偏移低字节，已改名 recOffsetLo）
+    const m = r.mode;
+    if (m == null) { buckets.threw++; ecuOk = false; threwModes.set(-1, (threwModes.get(-1) || 0) + 1); continue; }
     try {
-      const x = resolveKey(r.m, 0x12345678);
-      if (x.needsKey === false) { buckets.noAlgo++; noAlgoModes.add(r.m); }
+      const x = resolveKey(m, 0x12345678);
+      if (x.needsKey === false) { buckets.noAlgo++; noAlgoModes.add(m); }
       else buckets.real++;
     } catch (e) {
       buckets.threw++;
       ecuOk = false;
-      threwModes.set(r.m, (threwModes.get(r.m) || 0) + 1);
+      threwModes.set(m, (threwModes.get(m) || 0) + 1);
     }
   }
   if (!ecuOk) badEcu.add(ecu);

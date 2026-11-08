@@ -61,7 +61,7 @@ export function autoPickVariant(mod, ident) {
  *
  * @param {Record<string, Array<{platform?:string, module?:string, variant?:string, hwVersion?:string}>>} byPart
  * @param {Record<string, Array<{platform?:string, module?:string, variant?:string, hwVersion?:string}>>} byHwPart
- * @param {{partNumber?:string, hwPartNo?:string, hwVersion?:string, module?:string, variants?:string[]}} want
+ * @param {{partNumber?:string, partTokens?:string[], hwPartNo?:string, hwVersion?:string, module?:string, variants?:string[]}} want
  * @returns {{name:string, how:string, ambiguous?:string[]}|null}
  */
 export function pickVariantByPart(byPart, byHwPart, want) {
@@ -71,8 +71,12 @@ export function pickVariantByPart(byPart, byHwPart, want) {
   //   按原始字节精确比对 —— 行为与 参考诊断仪 逐字节一致（格式问题不存在）。
   //   带尾空格的源键（如 '7PP907357K '）需同形态输入才命中，与 参考诊断仪 同规则；
   //   不命中走调用方兜底（默认变体，不拒写）。
+  // ★ 2026-11-08 件号 token 逐个全等查（任务清单④ / RE-MODELADDR §3.3-3.4）：
+  //   1A 87/94 应答按 0x20 分词（checkPartNumber 语义）逐 token 查 byPart，
+  //   全等命中即用；1A84 采得的 partNumber 排最前（保留优先）。
   const norm = (x) => String(x ?? '');
-  const pn = norm(want.partNumber);
+  const pnTokens = [...(norm(want.partNumber) ? [norm(want.partNumber)] : []),
+    ...((want.partTokens || []).map(norm).filter(Boolean))];
   const hw = norm(want.hwPartNo);
   const hvs = norm(want.hwVersion);
   const modWant = norm(want.module);
@@ -98,8 +102,9 @@ export function pickVariantByPart(byPart, byHwPart, want) {
     const n = cands.filter((v) => swHit.includes(v));
     return n.length ? n : cands;
   };
-  // ① PARTNUMBER 精确（会话库里一一对应，最可靠）
-  if (pn && byPart[pn]) {
+  // ① PARTNUMBER 精确（会话库里一一对应，最可靠）；token 逐个全等命中即用
+  for (const pn of pnTokens) {
+    if (!byPart[pn]) continue;
     const hits = fit(byPart[pn]);
     const uniq = [...new Set(hits.map((e) => e.variant))];
     if (uniq.length === 1) return { name: uniq[0], how: '零件号精确命中' };
@@ -117,4 +122,28 @@ export function pickVariantByPart(byPart, byHwPart, want) {
     if (uniq.length > 1) return { name: uniq[0], how: 'HW 件号收窄（多候选取首）', ambiguous: uniq };
   }
   return null;   // 查不到 → 调用方回落识别串匹配（autoPickVariant）
+}
+
+/**
+ * 应答文本 → 车型（trim 落定，RE-MODELADDR §1.4/§1.5④ + 任务清单①）。
+ *
+ * 参考诊断仪 语义：22 11 02/22 11 01 应答文本（车上识别串）与 24 键表（SYSP:0x5E42C）
+ * 各键文本 strcmp —— strcmp 语义下 **显示文本 == 应答文本**；981 Cayman 应答含 "Cayman"
+ * ⇒ 显示 Cayman。此处以「应答文本 ∈ 车型名」为可观测等价（目录名含 trim 词）。
+ *
+ * @param {string[]} models   候选车型目录名（如 ['Boxster（981）','Cayman（981）']）
+ * @param {string} nameText   链上应答文本（如 "Cayman"）
+ * @returns {{name:string, how:string}|null}  null=文本未命中（调用方走双候选合并，须注明）
+ */
+export function pickModelByName(models, nameText) {
+  const t = String(nameText || '').trim();
+  if (!t || !models || !models.length) return null;
+  // 长词优先（"Cayman" 先于 "981" 这类短词），逐词命中即取首个含该词的车型
+  const words = t.split(/[^A-Za-z0-9一-龥]+/).filter((w) => w.length >= 3)
+    .sort((a, b) => b.length - a.length);
+  for (const w of words) {
+    const hit = models.find((m) => String(m).includes(w));
+    if (hit) return { name: hit, how: `应答文本「${t}」命中车型名` };
+  }
+  return null;
 }

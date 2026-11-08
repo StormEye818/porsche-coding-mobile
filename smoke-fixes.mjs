@@ -143,14 +143,22 @@ console.log('\n[5] ECU address table');
   const src = readFileSync('./src/app.js', 'utf8');
   const m = src.match(/const ECU_ADDR = \{[\s\S]*?\n\};/);
   const tbl = new Function(m[0] + '\nreturn ECU_ADDR;')();
-  ok('IC 用标准 0x7E4（不是 DME 应答 0x7E8）', tbl['IC(仪表)'].tx === 0x7E4);
-  ok('IC 是候选地址（标准顺序，进模块核验）', tbl['IC(仪表)'].state === 'candidate');
+  // ★ 任务清单②（2026-11-08 零特判）：IC 不给内置猜测对（旧 7E4/0x7E8、721 硬编码均退役），
+  //   候选由寻址表链解析（R1 代际合并 + R2 KWP 代缺口补 join）。
+  ok('IC 无内置猜测对（寻址表链解析）', tbl['IC(仪表)'].tx == null && tbl['IC(仪表)'].state === 'unknown');
   ok('PASM 用 PORSCHE_SYS_DATA 1CB→7D0', tbl['水平高度控制/PASM'].tx === 0x7D0);
   ok('后端电子设备 1C6→74F', tbl['后端电子设备'].tx === 0x74F);
   {
     const ea = JSON.parse(readFileSync(new URL('./data/ecu-addresses.json', import.meta.url), 'utf8'));
     ok('CAN 地址证据表含 PASM/后端/前端/PDC/Gateway',
       ea.entries.length >= 5 && ea.entries.some((e) => e.system === 'PASM' && e.tx === '0x7D0'));
+    // ★ 任务清单②（零特判）：IC 候选由 R1/R2 通用规则解析出 0x721/722/723（验证点，非代码路径）
+    const ic = ea.entries.find((e) => e.sysId.toLowerCase() === '0x0b08');
+    const txs = (ic.cands || []).map((c) => parseInt(c.tx, 16));
+    ok('IC 寻址表链解析出 0x721/722/723（R1 代际合并 + R2 KWP 代缺口）',
+      [0x721, 0x722, 0x723].every((t) => txs.includes(t)), txs.map((t) => t.toString(16)).join(','));
+    ok('IC 旧 0x0117 UDS 簇短名单已删', !txs.includes(0x77a));
+    ok('R1 代际同名组（Kombiinstrument_BaseSys 两代对）', JSON.stringify(ic.genSiblings) === '["0x0c08"]');
   }
   ok('座椅/摄像头/前照灯地址已补',
     tbl['驾驶员侧座椅存储器'].tx === 0x7D9 &&
@@ -736,23 +744,27 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
   }
 
   // ④ 覆盖率口径：ZERO 假成功不能算「已收编」
+  //    ★ 2026-11-09 mode 收口：按记录真值 mode 出表（旧 m=记录偏移低字节已废）。
+  //    总数 980→1072：旧生成器目录扫 0x570 截断（174 ECU），真目录 209 ECU/1072 条目。
   {
     const dl = JSON.parse(readFileSync('./data/drivelinks.json', 'utf8'));
-    let real = 0, noAlgo = 0, threw = 0, tot = 0;
+    let real = 0, noAlgo = 0, threw = 0, tot = 0, nulls = 0;
     for (const [ecu, arr] of Object.entries(dl.ecu)) {
       for (const r of arr) {
         tot++;
+        if (r.mode == null) { nulls++; threw++; continue; }
         try {
-          const x = resolveKey(r.m, 0x12345678);
+          const x = resolveKey(r.mode, 0x12345678);
           if (x.needsKey === false) noAlgo++; else real++;
         } catch (e) { threw++; }
       }
     }
-    ok('DRIVELINKS 总数 980', tot === 980, `tot=${tot}`);
+    ok('DRIVELINKS 总数 1072（209 ECU 全目录）', tot === 1072, `tot=${tot}`);
     ok('真·有算法 ≥ 600 条', real >= 600, `real=${real}`);
     ok('「原厂无 case」条目被单独计数，不混入已收编', noAlgo > 0 && noAlgo < tot, `noAlgo=${noAlgo}`);
-    ok('明确拒写条目只剩 0x00/0x1d（0x7a/0x7b 已收编）', threw > 0 && threw <= 4, `threw=${threw}`);
-    console.log(`       （口径：有算法 ${real} / 无 case ${noAlgo} / 拒写 ${threw} = ${tot}）`);
+    ok('明确拒写=mode 0x1d×4 + 记录越界×2（0x1d 为刻意拒写，越界回落名字分发）',
+      threw === 6 && nulls === 2, `threw=${threw} nulls=${nulls}`);
+    console.log(`       （口径：有算法 ${real} / 无 case ${noAlgo} / 拒写 ${threw}（含越界 ${nulls}） = ${tot}）`);
   }
 }
 
@@ -1455,7 +1467,14 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
 
   const coderSrc = readFileSync('./src/coder.js', 'utf8');
   ok('setAddress 内部 await address()',
-     /async setAddress\(tx, rx, name = ''\)[\s\S]{0,400}await this\.address\(\)/.test(coderSrc));
+     /async setAddress\(tx, rx, name = '', opts = \{\}\)[\s\S]{0,500}await this\.address\(\)/.test(coderSrc));
+  // ★ 任务清单⑤：KWP 流 10 89 直接建会话（不发 10 03）；NRC 7F 78 续等
+  ok('KWP 流直接建会话（enterSession 不发 10 03）',
+     /family === 'kwp'/.test(coderSrc) && /readVehicleIdentity/.test(coderSrc));
+  ok('NRC 7F 78 续等（其余 NRC 单发上浮）',
+     /\(p\.code \|\| 0\) === 0x78/.test(coderSrc));
+  // ★ 任务清单④：件号 token 采集扩 1A 87/91/92/94（不只 1A84）
+  ok('件号 token 采集（1A87/91/92/94 + 0x20 分词）', /lastPartTokens/.test(coderSrc));
   ok('识别循环连续 3 条无数据提前结束', /identMiss >= 3/.test(coderSrc));
   ok('coder 无裸工具字样', !coderSrc.includes('4' + '31'));
 

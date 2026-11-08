@@ -1,0 +1,1082 @@
+{
+"9x6_ABS": {
+"kwp": 120,
+"uds": 0
+},
+"9x6_DME_M_5_2_2": {
+"kwp": 297,
+"uds": 0
+},
+"9x6_Kombi": {
+"kwp": 501,
+"uds": 0
+},
+"9x6_PSM": {
+"kwp": 0,
+"uds": 9
+},
+"9x6_RDK": {
+"kwp": 66,
+"uds": 6
+},
+"9x6_SitzMemo": {
+"kwp": 0,
+"uds": 9
+},
+"9x6_TargaDach": {
+"kwp": 0,
+"uds": 6
+},
+"9x6_Tiptronic_G40G50": {
+"kwp": 0,
+"uds": 15
+},
+"9x6_Tiptronic_GTOP": {
+"kwp": 0,
+"uds": 12
+},
+"9x6_UEB": {
+"kwp": 0,
+"uds": 12
+},
+"9x6_Verdeck": {
+"kwp": 0,
+"uds": 12
+},
+"9x6_pdc": {
+"kwp": 0,
+"uds": 6
+},
+"ACC3": {
+"kwp": 0,
+"uds": 3561
+},
+"Aero": {
+"kwp": 0,
+"uds": 1185
+},
+"Airbag": {
+"kwp": 0,
+"uds": 4547
+},
+"Allrad": {
+"kwp": 14,
+"uds": 1365
+},
+"Anhaenger": {
+"kwp": 0,
+"uds": 382
+},
+"AnzeigenDomaenenRechner": {
+"kwp": 0,
+"uds": 798
+},
+"BCM_hinten": {
+"kwp": 0,
+"uds": 37402
+},
+"BCM_vorne": {
+"kwp": 0,
+"uds": 163477
+},
+"BKE": {
+"kwp": 0,
+"uds": 8116
+},
+"BKV": {
+"kwp": 0,
+"uds": 165
+},
+"BMS2": {
+"kwp": 0,
+"uds": 118
+},
+"BV_ActuaForExterNoiseUDS": {
+"kwp": 0,
+"uds": 1850
+},
+"BV_ActuaForStrucBorneSoundUDS": {
+"kwp": 62,
+"uds": 3546
+},
+"BV_AdaptCruisContr2UDS": {
+"kwp": 0,
+"uds": 241
+},
+"BV_AdaptCruisContrInnoDriveUDS": {
+"kwp": 0,
+"uds": 1474
+},
+"BV_AdaptCruisContrUDS": {
+"kwp": 0,
+"uds": 2106
+},
+"BV_AerodContrUnitUDS": {
+"kwp": 0,
+"uds": 5057
+},
+"BV_AirCondiComprUDS": {
+"kwp": 0,
+"uds": 288
+},
+"BV_AirCondiUDS": {
+"kwp": 0,
+"uds": 1100
+},
+"BV_AirbaUDS": {
+"kwp": 0,
+"uds": 2604
+},
+"BV_AllWheelContrUDS": {
+"kwp": 0,
+"uds": 546
+},
+"BV_AnaloClockUDS": {
+"kwp": 0,
+"uds": 1163
+},
+"BV_AntenContrModulUDS": {
+"kwp": 0,
+"uds": 2065
+},
+"BV_AssemMountUDS": {
+"kwp": 0,
+"uds": 217
+},
+"BV_AuxilParkiHeateUDS": {
+"kwp": 0,
+"uds": 1244
+},
+"BV_BKE": {
+"kwp": 0,
+"uds": 125
+},
+"BV_BatteChargContrModulUDS": {
+"kwp": 0,
+"uds": 6417
+},
+"BV_BatteEnergContrModul2UDS": {
+"kwp": 0,
+"uds": 297
+},
+"BV_BatteEnergContrModulUDS": {
+"kwp": 0,
+"uds": 1184
+},
+"BV_BatteJunctBoxUDS": {
+"kwp": 0,
+"uds": 194
+},
+"BV_BatteMonitContrModulUDS": {
+"kwp": 0,
+"uds": 30
+},
+"BV_BeameModulMatriHeadlLeftUDS": {
+"kwp": 0,
+"uds": 662
+},
+"BV_BeameModulMatriHeadlRightUDS": {
+"kwp": 0,
+"uds": 490
+},
+"BV_BedienSG_hi_MSB": {
+"kwp": 0,
+"uds": 1525
+},
+"BV_BedienSG_vo_MSB": {
+"kwp": 0,
+"uds": 1586
+},
+"BV_Brake1UDS": {
+"kwp": 0,
+"uds": 8828
+},
+"BV_BrakeBoostUDS": {
+"kwp": 0,
+"uds": 984
+},
+"BV_CamerSysteRearViewUDS": {
+"kwp": 0,
+"uds": 2255
+},
+"BV_CeiliLightModulUDS": {
+"kwp": 0,
+"uds": 1472
+},
+"BV_CellModulContr1UDS": {
+"kwp": 0,
+"uds": 27
+},
+"BV_CellModulContr2UDS": {
+"kwp": 0,
+"uds": 27
+},
+"BV_CellModulContr3UDS": {
+"kwp": 0,
+"uds": 23
+},
+"BV_CellModulContr4UDS": {
+"kwp": 0,
+"uds": 31
+},
+"BV_CellModulContr5UDS": {
+"kwp": 0,
+"uds": 31
+},
+"BV_CellModulContr6UDS": {
+"kwp": 0,
+"uds": 31
+},
+"BV_CellModulContr7UDS": {
+"kwp": 0,
+"uds": 15
+},
+"BV_CellModulContr8UDS": {
+"kwp": 0,
+"uds": 15
+},
+"BV_CentrElectUDS": {
+"kwp": 0,
+"uds": 42485
+},
+"BV_CentrModulComfoSysteUDS": {
+"kwp": 0,
+"uds": 31737
+},
+"BV_Charg1MobilDevicUDS": {
+"kwp": 162,
+"uds": 1844
+},
+"BV_Charg2MobilDevicUDS": {
+"kwp": 0,
+"uds": 239
+},
+"BV_ChassContrUDS": {
+"kwp": 0,
+"uds": 7238
+},
+"BV_ContrHeadRearLeftUDS": {
+"kwp": 0,
+"uds": 281
+},
+"BV_ContrHeadRearRightUDS": {
+"kwp": 0,
+"uds": 131
+},
+"BV_ContrModul2ForSunroUDS": {
+"kwp": 0,
+"uds": 759
+},
+"BV_ContrModulForAuxilAirHeateUDS": {
+"kwp": 0,
+"uds": 108
+},
+"BV_ContrModulForSunroUDS": {
+"kwp": 0,
+"uds": 2648
+},
+"BV_ContrUnitDigitMatriLightUDS": {
+"kwp": 0,
+"uds": 1084
+},
+"BV_ContrUnitHandsOnDetecSteerWheelUDS": {
+"kwp": 0,
+"uds": 371
+},
+"BV_ContrUnitLaneChangAssis2UDS": {
+"kwp": 0,
+"uds": 2583
+},
+"BV_DCDCConveContrModulHV2UDS": {
+"kwp": 0,
+"uds": 116
+},
+"BV_DCDCConveContrModulHVUDS": {
+"kwp": 0,
+"uds": 853
+},
+"BV_DCDCConveContrModulUDS": {
+"kwp": 0,
+"uds": 586
+},
+"BV_DashBoardUDS": {
+"kwp": 0,
+"uds": 83876
+},
+"BV_DeckLidContrUnitUDS": {
+"kwp": 0,
+"uds": 1851
+},
+"BV_DisplUnit3ForMultiSysteUDS": {
+"kwp": 0,
+"uds": 964
+},
+"BV_DisplUnit4ForMultiSysteUDS": {
+"kwp": 0,
+"uds": 981
+},
+"BV_DoorElectDriveSideUDS": {
+"kwp": 0,
+"uds": 1339
+},
+"BV_DoorElectPasseSideUDS": {
+"kwp": 0,
+"uds": 1475
+},
+"BV_DoorElectRearDriveSideUDS": {
+"kwp": 0,
+"uds": 1135
+},
+"BV_DoorElectRearPasseSideUDS": {
+"kwp": 0,
+"uds": 1161
+},
+"BV_DriveMonitSyste2UDS": {
+"kwp": 0,
+"uds": 2025
+},
+"BV_DriveMotorContrModulUDS": {
+"kwp": 0,
+"uds": 408
+},
+"BV_DriveMotorContrModulUDS_A01": {
+"kwp": 0,
+"uds": 74
+},
+"BV_DynamAssemMountUDS": {
+"kwp": 0,
+"uds": 176
+},
+"BV_ECM20_FSI": {
+"kwp": 0,
+"uds": 246
+},
+"BV_ECM30TFS": {
+"kwp": 0,
+"uds": 685
+},
+"BV_ECM30TNF": {
+"kwp": 0,
+"uds": 275
+},
+"BV_ECM30_GEN2_TNF": {
+"kwp": 0,
+"uds": 1127
+},
+"BV_ECM36FSI": {
+"kwp": 0,
+"uds": 406
+},
+"BV_ECM42TDI": {
+"kwp": 0,
+"uds": 375
+},
+"BV_ECM_UDS": {
+"kwp": 0,
+"uds": 2057
+},
+"BV_ERA_GLONASS": {
+"kwp": 0,
+"uds": 208
+},
+"BV_ElectAdjusSteerColumUDS": {
+"kwp": 0,
+"uds": 1915
+},
+"BV_ElectRoofContrUDS": {
+"kwp": 0,
+"uds": 246
+},
+"BV_EnginContrModul1UDS": {
+"kwp": 0,
+"uds": 21549
+},
+"BV_EnginContrModulMacanIII": {
+"kwp": 0,
+"uds": 592
+},
+"BV_FrontAxleLiftSysteUDS": {
+"kwp": 0,
+"uds": 174
+},
+"BV_FrontCorneRadar1UDS": {
+"kwp": 0,
+"uds": 1243
+},
+"BV_FrontCorneRadar2UDS": {
+"kwp": 0,
+"uds": 1025
+},
+"BV_FrontSensoDriveAssisSysteUDS": {
+"kwp": 0,
+"uds": 10022
+},
+"BV_GaragDoorOpeneContrModulUDS": {
+"kwp": 0,
+"uds": 687
+},
+"BV_GatewUDS": {
+"kwp": 0,
+"uds": 8237
+},
+"BV_GearSelecContrModulUDS": {
+"kwp": 0,
+"uds": 91
+},
+"BV_GearShiftContrModulUDS": {
+"kwp": 0,
+"uds": 2297
+},
+"BV_HeadUpDisplUDS": {
+"kwp": 0,
+"uds": 3884
+},
+"BV_ImageProceElectUDS": {
+"kwp": 0,
+"uds": 2670
+},
+"BV_InforContrUnit1PAGUDS": {
+"kwp": 0,
+"uds": 2962
+},
+"BV_InforContrUnit1UDS": {
+"kwp": 0,
+"uds": 60301
+},
+"BV_InforContrUnit1UDSDesay": {
+"kwp": 0,
+"uds": 21337
+},
+"BV_InfotInterUDS": {
+"kwp": 0,
+"uds": 1095
+},
+"BV_LaneChangAssisUDS": {
+"kwp": 0,
+"uds": 1542
+},
+"BV_LaserScannUDS": {
+"kwp": 0,
+"uds": 351
+},
+"BV_LightContrLeft2UDS": {
+"kwp": 0,
+"uds": 891
+},
+"BV_LightContrLeftUDS": {
+"kwp": 0,
+"uds": 343
+},
+"BV_LightContrRight2UDS": {
+"kwp": 0,
+"uds": 808
+},
+"BV_LightContrRightUDS": {
+"kwp": 0,
+"uds": 106
+},
+"BV_LockElectUDS": {
+"kwp": 0,
+"uds": 597
+},
+"BV_MediaPlayePosit1UDS": {
+"kwp": 0,
+"uds": 596
+},
+"BV_MultiFunctSteerWheelContrModulUDS": {
+"kwp": 0,
+"uds": 401
+},
+"BV_NightVisioUDS": {
+"kwp": 0,
+"uds": 2346
+},
+"BV_OTASoftwParti1UDS": {
+"kwp": 0,
+"uds": 590
+},
+"BV_OverTheAirFunctContrUnitUDS": {
+"kwp": 0,
+"uds": 243
+},
+"BV_ParkiAssisUDS": {
+"kwp": 0,
+"uds": 173
+},
+"BV_R4Evo4": {
+"kwp": 0,
+"uds": 488
+},
+"BV_RainLightRecogSensoUDS": {
+"kwp": 0,
+"uds": 48
+},
+"BV_RealTopView2": {
+"kwp": 0,
+"uds": 1389
+},
+"BV_RearAxleSteerUDS": {
+"kwp": 0,
+"uds": 1779
+},
+"BV_ReducContrModulPAGUDS": {
+"kwp": 0,
+"uds": 589
+},
+"BV_ReducContrModulUDS": {
+"kwp": 0,
+"uds": 478
+},
+"BV_RollContrSyste2UDS": {
+"kwp": 0,
+"uds": 304
+},
+"BV_RollContrSysteUDS": {
+"kwp": 0,
+"uds": 779
+},
+"BV_SeatAdjusDriveSideUDS": {
+"kwp": 0,
+"uds": 4495
+},
+"BV_SeatAdjusPasseSideUDS": {
+"kwp": 0,
+"uds": 4488
+},
+"BV_SeatAdjusRearDriveSideUDS": {
+"kwp": 0,
+"uds": 2175
+},
+"BV_SeatAdjusRearPasseSideUDS": {
+"kwp": 0,
+"uds": 2176
+},
+"BV_SoundSysteUDS": {
+"kwp": 81,
+"uds": 6383
+},
+"BV_SteerAssisUDS": {
+"kwp": 0,
+"uds": 4712
+},
+"BV_SteerColumElectUDS": {
+"kwp": 0,
+"uds": 2552
+},
+"BV_SteerColumLockiUDS": {
+"kwp": 0,
+"uds": 2012
+},
+"BV_TVTunerUDS": {
+"kwp": 0,
+"uds": 2513
+},
+"BV_TelemCommuUnitUDS": {
+"kwp": 0,
+"uds": 2169
+},
+"BV_TelemDiagnContrUnitUDS": {
+"kwp": 0,
+"uds": 2041
+},
+"BV_ThermManagUDS": {
+"kwp": 0,
+"uds": 344
+},
+"BV_TirePressMonit1UDS": {
+"kwp": 0,
+"uds": 2329
+},
+"BV_TrailFunctUDS": {
+"kwp": 0,
+"uds": 1207
+},
+"BV_TransContrModulUDS": {
+"kwp": 14,
+"uds": 1034
+},
+"BV_VehicTrackSysteUDS": {
+"kwp": 0,
+"uds": 645
+},
+"BV_WaterContrUnitUDS": {
+"kwp": 0,
+"uds": 1801
+},
+"CAN_CAN_Gateway": {
+"kwp": 0,
+"uds": 28588
+},
+"DME_BDE_Continental": {
+"kwp": 4104,
+"uds": 324
+},
+"DME_SIMOS_30_TFSI": {
+"kwp": 0,
+"uds": 266
+},
+"Dynamische_Aggregatelagerung": {
+"kwp": 0,
+"uds": 108
+},
+"E1_EDC17": {
+"kwp": 2,
+"uds": 0
+},
+"E1_ahsg": {
+"kwp": 1,
+"uds": 0
+},
+"E1_airbag": {
+"kwp": 2,
+"uds": 0
+},
+"E1_aws": {
+"kwp": 3,
+"uds": 0
+},
+"E1_bsg": {
+"kwp": 3,
+"uds": 0
+},
+"E1_klima": {
+"kwp": 4,
+"uds": 0
+},
+"E1_kombi": {
+"kwp": 5,
+"uds": 0
+},
+"E1_komp": {
+"kwp": 2,
+"uds": 0
+},
+"E1_lenk": {
+"kwp": 2,
+"uds": 0
+},
+"E1_lssg": {
+"kwp": 2,
+"uds": 0
+},
+"E1_lwr_links": {
+"kwp": 2,
+"uds": 0
+},
+"E1_lwr_neu": {
+"kwp": 2,
+"uds": 0
+},
+"E1_lwr_rechts": {
+"kwp": 2,
+"uds": 0
+},
+"E1_med91_me711": {
+"kwp": 26,
+"uds": 0
+},
+"E1_niveau": {
+"kwp": 10,
+"uds": 20
+},
+"E1_pcm2_bose": {
+"kwp": 18,
+"uds": 39
+},
+"E1_pcm2_cd_navi": {
+"kwp": 4,
+"uds": 26
+},
+"E1_pcm2_cdc": {
+"kwp": 12,
+"uds": 26
+},
+"E1_pcm2_dvd_navi": {
+"kwp": 4,
+"uds": 6
+},
+"E1_pcm2_gw": {
+"kwp": 18,
+"uds": 33
+},
+"E1_pcm2_mmi": {
+"kwp": 15,
+"uds": 33
+},
+"E1_pcm2_satradio": {
+"kwp": 2,
+"uds": 4
+},
+"E1_pcm2_sbs": {
+"kwp": 6,
+"uds": 12
+},
+"E1_pcm2_sbs2": {
+"kwp": 2,
+"uds": 4
+},
+"E1_pcm2_telefon": {
+"kwp": 3,
+"uds": 6
+},
+"E1_pcm2_tvtuner": {
+"kwp": 2,
+"uds": 4
+},
+"E1_sitzb": {
+"kwp": 18,
+"uds": 46
+},
+"E1_sitzf": {
+"kwp": 46,
+"uds": 48
+},
+"E1_swsg_links": {
+"kwp": 61,
+"uds": 62
+},
+"E1_swsg_rechts": {
+"kwp": 71,
+"uds": 71
+},
+"E1_tiptrnc": {
+"kwp": 73,
+"uds": 92
+},
+"E1_wisch": {
+"kwp": 73,
+"uds": 92
+},
+"E1_wzh": {
+"kwp": 73,
+"uds": 92
+},
+"EPB": {
+"kwp": 94,
+"uds": 2976
+},
+"EPS": {
+"kwp": 0,
+"uds": 387
+},
+"ERA_GLONASS": {
+"kwp": 168,
+"uds": 1812
+},
+"ERA_GLONASS_VFA": {
+"kwp": 98,
+"uds": 1172
+},
+"ESP_Colorado": {
+"kwp": 0,
+"uds": 1273
+},
+"Frontkamera": {
+"kwp": 0,
+"uds": 5250
+},
+"Getriebesteuerung_PDK": {
+"kwp": 764,
+"uds": 732
+},
+"Head_Unit": {
+"kwp": 3674,
+"uds": 660
+},
+"Heckklappe": {
+"kwp": 0,
+"uds": 1603
+},
+"Hinterachslenkung": {
+"kwp": 0,
+"uds": 3501
+},
+"Kombiinstrument": {
+"kwp": 0,
+"uds": 46094
+},
+"Kombiinstrument_MM": {
+"kwp": 0,
+"uds": 194464
+},
+"Kompass": {
+"kwp": 0,
+"uds": 414
+},
+"Lenkhilfe": {
+"kwp": 0,
+"uds": 492
+},
+"Lenkstockschalter": {
+"kwp": 105,
+"uds": 4212
+},
+"Lenkstockschalter2": {
+"kwp": 0,
+"uds": 354
+},
+"Lift_VA": {
+"kwp": 0,
+"uds": 4908
+},
+"Lift_VA_Gen2": {
+"kwp": 0,
+"uds": 3325
+},
+"MED17_1_11": {
+"kwp": 0,
+"uds": 1123
+},
+"PASM": {
+"kwp": 10,
+"uds": 1022
+},
+"PASM_PADM": {
+"kwp": 0,
+"uds": 10847
+},
+"PDC": {
+"kwp": 20,
+"uds": 12186
+},
+"PDCC": {
+"kwp": 0,
+"uds": 924
+},
+"PDCC_2": {
+"kwp": 0,
+"uds": 840
+},
+"PSM": {
+"kwp": 308,
+"uds": 5708
+},
+"Quersperre": {
+"kwp": 6,
+"uds": 1090
+},
+"RDK": {
+"kwp": 0,
+"uds": 3812
+},
+"RDK3": {
+"kwp": 4,
+"uds": 4451
+},
+"RealTopview": {
+"kwp": 81,
+"uds": 37
+},
+"Rueckfahrkamera": {
+"kwp": 0,
+"uds": 498
+},
+"Rueckfahrkamera_II": {
+"kwp": 4,
+"uds": 5434
+},
+"SCHEINWERFER": {
+"kwp": 12,
+"uds": 2416
+},
+"SCHEINWERFER_LED": {
+"kwp": 0,
+"uds": 9093
+},
+"SWA": {
+"kwp": 0,
+"uds": 616
+},
+"SWA2": {
+"kwp": 0,
+"uds": 801
+},
+"SWSG": {
+"kwp": 0,
+"uds": 24486
+},
+"SWSG_mit_AFS_ALWR": {
+"kwp": 0,
+"uds": 874
+},
+"Sitzsteuergeraet": {
+"kwp": 95,
+"uds": 3258
+},
+"Steering_Control_Unit": {
+"kwp": 0,
+"uds": 5700
+},
+"TUER_HINTEN": {
+"kwp": 0,
+"uds": 4073
+},
+"TUER_VORNE": {
+"kwp": 0,
+"uds": 10273
+},
+"TVTuner": {
+"kwp": 460,
+"uds": 4218
+},
+"Touchbedienfeld": {
+"kwp": 0,
+"uds": 576
+},
+"Verdeck_Synchronisation": {
+"kwp": 0,
+"uds": 770
+},
+"Verdeck_Targa": {
+"kwp": 0,
+"uds": 4396
+},
+"Verstaerker": {
+"kwp": 97,
+"uds": 2698
+},
+"Waehlhebel": {
+"kwp": 163,
+"uds": 2224
+},
+"Zusatzheizung": {
+"kwp": 6,
+"uds": 1486
+},
+"Zusatzinstrument": {
+"kwp": 84,
+"uds": 3688
+},
+"_9x7_CDR24": {
+"kwp": 126,
+"uds": 0
+},
+"_9x7_airbag": {
+"kwp": 162,
+"uds": 144
+},
+"_9x7_aws": {
+"kwp": 108,
+"uds": 72
+},
+"_9x7_bsg": {
+"kwp": 285,
+"uds": 0
+},
+"_9x7_bug": {
+"kwp": 189,
+"uds": 0
+},
+"_9x7_gateway": {
+"kwp": 174,
+"uds": 99
+},
+"_9x7_heck": {
+"kwp": 480,
+"uds": 0
+},
+"_9x7_klima": {
+"kwp": 180,
+"uds": 0
+},
+"_9x7_kombi": {
+"kwp": 348,
+"uds": 0
+},
+"_9x7_kurve": {
+"kwp": 243,
+"uds": 24
+},
+"_9x7_lenk": {
+"kwp": 813,
+"uds": 198
+},
+"_9x7_park": {
+"kwp": 291,
+"uds": 66
+},
+"_9x7_pas": {
+"kwp": 420,
+"uds": 99
+},
+"_9x7_pasm": {
+"kwp": 204,
+"uds": 66
+},
+"_9x7_pcm2_amp": {
+"kwp": 291,
+"uds": 90
+},
+"_9x7_pcm2_cdc": {
+"kwp": 162,
+"uds": 0
+},
+"_9x7_pcm2_gw": {
+"kwp": 162,
+"uds": 0
+},
+"_9x7_pcm2_mmi": {
+"kwp": 180,
+"uds": 0
+},
+"_9x7_pcm2_navi": {
+"kwp": 183,
+"uds": 0
+},
+"_9x7_pcm2_tel": {
+"kwp": 153,
+"uds": 0
+},
+"_9x7_pdc": {
+"kwp": 111,
+"uds": 0
+},
+"_9x7_psm": {
+"kwp": 384,
+"uds": 0
+},
+"_9x7_ptm": {
+"kwp": 207,
+"uds": 0
+},
+"_9x7_rdk": {
+"kwp": 207,
+"uds": 0
+},
+"_9x7_sitz": {
+"kwp": 207,
+"uds": 0
+},
+"_9x7_targa": {
+"kwp": 180,
+"uds": 0
+},
+"_9x7_tiptrnc_987": {
+"kwp": 136,
+"uds": 0
+},
+"_9x7_tiptrnc_997": {
+"kwp": 170,
+"uds": 0
+},
+"_9x7_tiptrnc_C7": {
+"kwp": 174,
+"uds": 0
+},
+"_9x7_tuerb": {
+"kwp": 261,
+"uds": 0
+},
+"_9x7_tuerf": {
+"kwp": 243,
+"uds": 0
+},
+"_9x7_uhr": {
+"kwp": 114,
+"uds": 0
+},
+"_9x7_vdst": {
+"kwp": 114,
+"uds": 0
+}
+}
