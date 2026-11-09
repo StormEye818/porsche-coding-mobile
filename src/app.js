@@ -1778,20 +1778,19 @@ function renderNav() {
         // ★ 2026-11-08 规则定案（用户实测四观测，RE-CODING-TREE 终判节）：
         //   二级页行 = 组内条目**按记录序**（ALLDATA 池链顺序，= data/models JSON items 顺序）
         //   **每 50 条一页**，行名 = 组名+同名去重编号（…0/…1/…2…）；页内条目平铺（记录序，不重排）。
-        //   ≤50 条组 = 条目直接行（用户原话「直接编码项在二级页直接可点」；备选=单页行，待真机定）。
+        //   ≤50 条组 = **进组即批量视图**（★ 2026-11-09 用户裁定，取代 11-08「条目直接行」：
+        //   「应该都和有二级菜单的一样我直接能批量看见当前值和进行批量修改」）。
         //   证据：PTI 88→50+38（…0 末=N09、…1 首=N08 与用户屏吻合）；警告配置(A2_9) 306→7 行 …0-…6；
         //   菜单配置 63→50+13；显示配置出厂设置 87→50+36。旧族桶/byte 半分/模块块假说全部作废。
         const g = top.data;
         const all = g.items || [];   // ⚠️ 保持记录序（勿按 byte 排序）
         if (all.length <= 50) {
-          items = all.map((p) => ({
-            kind: 'param', minByte: p.byte, raw: p,
-            lbl: p.name || '编码项',
-            meta: `${kindLabel(p)} · byte ${p.byte} bit ${p.bit}`,
-            cnt: null,
-          }));
-          title = g.name;
-          break;
+          // ★ 2026-11-09 UI 形态统一：≤50 组不再出「条目行→逐个详情页」，
+          //   直接复用桶页/批量页同款 showRuleBatchEdit（数据已由 onSelect readBlocksForItems 预读），
+          //   每行=名称|当前值|修改控件，直改直显；写入闸门不动（逐项 applyChange：备份→写→回读）。
+          $('navTitle').textContent = g.name;   // 组页头保留组名（返回走栈/crumb）
+          showRuleBatchEdit(g.name, all);
+          return;
         }
         const pageRows = [];
         for (let off = 0, pi = 0; off < all.length; off += 50, pi++) {

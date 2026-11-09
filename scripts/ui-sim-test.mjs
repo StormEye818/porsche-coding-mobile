@@ -365,6 +365,30 @@ try {
     } else {
       skip('IC 二级页形态', okCoding ? '无 Performance and torque 组（变体不同）' : '未到设码层');
     }
+
+    // ★ 末段b. ≤50 组=进组即批量视图（2026-11-09 用户裁定，例：规则编码→冷却液温度特性曲线 16 项）：
+    //   首屏即见≥3 项当前值文本 + 修改控件在位，组页头保留组名/返回；不再走「条目行→详情页」。
+    const atCodSub = async () => /备份所有编码/.test(await navText())
+      && (await page.locator('#navList .item', { hasText: /^规则编码/ }).count()) > 0;
+    for (let i = 0; i < 6 && !(await atCodSub()); i++) { await doBack(); await waitNav(700); }
+    if (!(await atCodSub())) { await clickIf(/^设码/); await waitNav(900); }
+    if (await atCodSub() && await clickIf(/^规则编码/)) {
+      await waitNav(900);
+      const grp2 = page.locator('#navList .item', { hasText: /冷却液温度特性曲线/ }).first();
+      if (await grp2.count()) {
+        await grp2.click();
+        await waitNav(1500);
+        const t5 = await navText();
+        const curValCnt = (t5.match(/当前:\s*[^?\s]/g) || []).length;
+        const valCnt = await page.locator('#navList .ruleVal').count();
+        ok('≤50 组进组即批量视图（首屏≥3 项当前值文本）', curValCnt >= 3, `当前值=${curValCnt} / 当前:字样=${(t5.match(/当前:/g) || []).length}`);
+        ok('≤50 组批量视图修改控件在位（≥3 个）', valCnt >= 3, `控件=${valCnt}`);
+        ok('≤50 组页头组名+批量写入（非条目行形态）',
+          /冷却液温度特性曲线/.test(await page.locator('#navTitle').innerText().catch(() => ''))
+          && /批量写入/.test(t5) && (await page.locator('#navList .item').count()) === 0, '');
+        await doBack(); await waitNav(700);
+      } else { skip('≤50 组批量视图', '规则编码列表无冷却液温度特性曲线组'); }
+    } else { skip('≤50 组批量视图', '未到设码子菜单/规则编码入口'); }
   }
 
   // 7b. 任意车型→任意模块 遍历（抽样 ≥3 车型 × ≥5 模块，任务清单3）
