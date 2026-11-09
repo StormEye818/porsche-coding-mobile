@@ -147,3 +147,124 @@ export function pickModelByName(models, nameText) {
   }
   return null;
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// ★ 2026-11-09 车辆证据→数据家族/变体选择层（真车二连败修复，规则级禁特判）
+//   证据优先级（任务口径）：① 识别串 ② 件号 ③ 协议族 KWP/UDS 兜底。
+//   识别串注册表 = data/ident-registry.json（DSN.BIN 挖掘：模块索引@105358 →
+//   模块记录[SID/ID 身份记录] → 变体表 → 变体识别串集；DME 族身份记录=1A 9F，
+//   与真车日志 `7E8 06 5A 9F 50 32 30 30`「P200」逐字互证）。
+//   件号 = data/ecu-part-map.json（JOB.BIN PARTNUMBER→ECU-REFS 一一对应，
+//   比对语义 strcmp/memcmp 全等 = IsMatchName ACTF:0x5f8ba / checkPartNumber ACTF:0x4e00c）。
+//   出处矩阵：RE-TRACEABILITY-20261109.md。
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * 显示名构造（RE-MODELADDR §1.5：「yy款 + 应答名」，如「14款 Cayman」）。
+ * app 与 fixture 共用，保证验收测的是真代码路径。
+ */
+export function designationFrom(year, nameText) {
+  const yy = year != null ? String(year % 100).padStart(2, '0') : '??';
+  const nm = String(nameText || '').trim();
+  return nm ? `${yy}款 ${nm}` : '';
+}
+
+/**
+ * 防御层（自创，矩阵标注「防御层(自创)·不计入对齐」）：
+ * 件号形态（纯数字 11-12 位）永不作显示名 —— 参考诊断仪侧同效由分支丢弃应答实现
+ * （1A 87/1A 9B/21 50 等 fire-and-forget），此处冗余兜底防解析层漏网。
+ */
+export function looksLikePartNumber(text) {
+  const t = String(text || '').trim();
+  return /^[0-9]{11,12}$/.test(t);
+}
+
+/**
+ * 车辆证据→数据家族选择（菜单模块候选 entries 里挑数据家族）。
+ *
+ * @param {Array<{mod:string, mi:object}>} entries  菜单模块候选（数据家族 + 目录记录）
+ * @param {object} ev
+ *   identTokens   识别串集（1A 9F / 22 F1 A2 等应答文本，空格分词）
+ *   partTokens    件号 token 集（1A 84/87/94 按 0x20 分词）
+ *   partNo        1A 84 件号（优先 token）
+ *   registry      data/ident-registry.json
+ *   byPart        ecu-part-map.json 的 byPart
+ *   moduleFamily  data/module-family.json（模块记录 SID 统计 {kwp,uds}）
+ *   observedFamily  实测协议族 'kwp' | 'uds' | null（识别/会话流证据）
+ * @returns {{mod:string, variant:string|null, how:string, evidence:string[]}}
+ */
+export function pickFamilyByEvidence(entries, ev = {}) {
+  const evidence = [];
+  if (!entries || !entries.length) return { mod: '', variant: null, how: '无候选', evidence };
+  const reg = ev.registry || {};
+  const identToVariant = reg.identToVariant || {};
+  const byPart = ev.byPart || {};
+  const moduleFamily = ev.moduleFamily || null;
+  let pool = entries.slice();
+
+  // ① 识别串（DSN.BIN 注册表，名字注册表 strcmp 同构：精确键查找）
+  let identHits = null;
+  const tokens = (ev.identTokens || []).map((t) => String(t || '').trim()).filter(Boolean);
+  for (const tok of tokens) {
+    const hits = identToVariant[tok];
+    if (!hits || !hits.length) continue;
+    const narrowed = pool.filter((e) => hits.some((h) => h.module === e.mod));
+    if (narrowed.length) {
+      evidence.push(`识别串「${tok}」→ ${narrowed.map((e) => e.mod).join('/')}`);
+      pool = narrowed;
+      identHits = hits;
+      break;   // 识别串优先：首个命中 token 定界
+    }
+  }
+
+  // ② 件号（JOB.BIN 会话库，memcmp 全等）
+  let partHit = null;
+  const pnTokens = [...(ev.partNo ? [ev.partNo] : []), ...(ev.partTokens || [])]
+    .map((t) => String(t || '')).filter(Boolean);
+  for (const pn of pnTokens) {
+    const hits = byPart[pn];
+    if (!hits || !hits.length) continue;
+    const narrowed = pool.filter((e) => hits.some((h) => h.module === e.mod
+      && (!h.platform || h.platform === (ev.platform || h.platform))));
+    if (narrowed.length) {
+      evidence.push(`件号「${pn}」→ ${narrowed.map((e) => e.mod).join('/')}`);
+      pool = narrowed;
+      partHit = hits.find((h) => h.module === pool[0].mod) || hits[0];
+      break;
+    }
+  }
+
+  // ③ 协议族兜底（模块记录 SID 统计 vs 实测协议族）
+  if (pool.length > 1 && moduleFamily && ev.observedFamily) {
+    const dom = (m) => {
+      const st = moduleFamily[m];
+      if (!st) return null;
+      return st.kwp > st.uds ? 'kwp' : st.uds > st.kwp ? 'uds' : null;
+    };
+    const narrowed = pool.filter((e) => dom(e.mod) === ev.observedFamily);
+    if (narrowed.length && narrowed.length < pool.length) {
+      evidence.push(`协议族 ${ev.observedFamily} 兜底 → ${narrowed.map((e) => e.mod).join('/')}`);
+      pool = narrowed;
+    }
+  }
+
+  const chosen = pool[0];
+  // 变体：识别串注册表 > 件号表 > null（调用方回落 autoPickVariant）
+  let variant = null, how = '';
+  const names = (chosen?.mi?.variants || []).map((v) => v.name || String(v.file || '').replace(/\.json$/i, ''));
+  const identVariant = (identHits || []).find((h) => h.module === chosen.mod && names.includes(h.variant)) || null;
+  if (identVariant) {
+    variant = identVariant.variant;
+    how = `识别串注册表（DSN.BIN）→ ${variant}`;
+  } else if (partHit && partHit.module === chosen.mod && names.includes(partHit.variant)) {
+    variant = String(partHit.variant).split(',')[0];
+    how = `件号表（JOB.BIN）→ ${variant}`;
+  }
+  const steps = evidence.length ? evidence.join('；') : '无识别串/件号命中，取首候选';
+  return {
+    mod: chosen.mod,
+    variant,
+    how: `家族 ${chosen.mod}（${steps}）${variant ? ' · ' + how : ''}`,
+    evidence,
+  };
+}

@@ -1,0 +1,1688 @@
+{
+ "schemaVersion": 1,
+ "kind": "ident-registry",
+ "source": "DSN.BIN（模块索引@105358→模块记录[SID/ID 身份记录]→变体表→变体识别串集）",
+ "evidence": "RE-TRACEABILITY-20261109.md §识别串注册表；DME 族身份记录=1A 9F（真车日志 5A 9F\"P200\"互证）",
+ "moduleIdent": {
+  "BCM_hinten": {
+   "sid": 34,
+   "id": 61858,
+   "request": "22F1A2",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "2200a2f102000002000080"
+  },
+  "BCM_vorne": {
+   "sid": 34,
+   "id": 61858,
+   "request": "22F1A2",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "2200a2f102000002000080"
+  },
+  "BV_ECM_UDS": {
+   "sid": 34,
+   "id": 61858,
+   "request": "22F1A2",
+   "identName": "ASAMODXFileVersi_Param_DataRecor",
+   "suffixHex": "2200a2f102000007000080"
+  },
+  "DME_BDE_Continental": {
+   "sid": 26,
+   "id": 159,
+   "request": "1A9F",
+   "identName": "ASAMODXFileVersi_ASAMODXFileVersi_Version",
+   "suffixHex": "1a009f0001000007000080"
+  },
+  "Getriebesteuerung_PDK": {
+   "sid": 26,
+   "id": 159,
+   "request": "1A9F",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "1a009f000100006e050080"
+  },
+  "Head_Unit": {
+   "sid": 26,
+   "id": 159,
+   "request": "1A9F",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "1a009f000100006e050080"
+  },
+  "Hinterachslenkung": {
+   "sid": 34,
+   "id": 61858,
+   "request": "22F1A2",
+   "identName": "ASAMODXFileVersi_Major",
+   "suffixHex": "2200a2f10200000a000080"
+  },
+  "MED17_1_11": {
+   "sid": 34,
+   "id": 61858,
+   "request": "22F1A2",
+   "identName": "ASAMODXFileVersi_Param_DataRecor",
+   "suffixHex": "2200a2f102000002000080"
+  },
+  "PSM": {
+   "sid": 34,
+   "id": 61858,
+   "request": "22F1A2",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "2200a2f102000002000080"
+  },
+  "TVTuner": {
+   "sid": 26,
+   "id": 159,
+   "request": "1A9F",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "1a009f000100006e050080"
+  },
+  "Verstaerker": {
+   "sid": 26,
+   "id": 159,
+   "request": "1A9F",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "1a009f000100006e050080"
+  },
+  "Waehlhebel": {
+   "sid": 26,
+   "id": 159,
+   "request": "1A9F",
+   "identName": "ASAMODXFileVersi_Version",
+   "suffixHex": "1a009f000100006e050080"
+  }
+ },
+ "identToVariant": {
+  "050018": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_9x1_GT4"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Basis_GT4"
+   }
+  ],
+  "050031": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_9x1_GT5"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Basis_GT5"
+   }
+  ],
+  "050010": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_9x1_VR10"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Basis_VR10"
+   }
+  ],
+  "050012": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_9x1_VR12"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Basis_VR12"
+   }
+  ],
+  "020018": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_E2_GT2"
+   }
+  ],
+  "020023": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_E2_GT3"
+   }
+  ],
+  "020024": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_E2_GT4"
+   }
+  ],
+  "020031": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_E2_GT5"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Basis_GT5"
+   }
+  ],
+  "020007": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_E2_VR07"
+   }
+  ],
+  "000017": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_GT"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_GT"
+   }
+  ],
+  "000018": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_GT2"
+   }
+  ],
+  "000023": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_GT3"
+   }
+  ],
+  "000024": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_GT4"
+   }
+  ],
+  "000031": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_GT5"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_GT5"
+   }
+  ],
+  "000012": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_VR12"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_VR12"
+   }
+  ],
+  "000013": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_VR12"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_VR12"
+   }
+  ],
+  "000005": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_G1_VR12"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_VR12"
+   }
+  ],
+  "000000": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_uncodiertes_SG"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_uncodiertes_Basis_SG"
+   }
+  ],
+  "900000": [
+   {
+    "module": "BCM_hinten",
+    "variant": "BCM_hinten_unprogrammiertes_SG"
+   },
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_unprogrammiertes_SG"
+   }
+  ],
+  "055018": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Max_GT4"
+   }
+  ],
+  "055031": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Max_GT5"
+   }
+  ],
+  "055010": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Max_VR10"
+   }
+  ],
+  "055012": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_9x1_Max_VR12"
+   }
+  ],
+  "020025": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Basis_GT2"
+   }
+  ],
+  "020027": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Basis_GT3"
+   }
+  ],
+  "020030": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Basis_GT4"
+   }
+  ],
+  "020006": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Basis_VR06"
+   }
+  ],
+  "025025": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Max_GT2"
+   }
+  ],
+  "025027": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Max_GT3"
+   }
+  ],
+  "025030": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Max_GT4"
+   }
+  ],
+  "025031": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Max_GT5"
+   }
+  ],
+  "025006": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_E2_Max_VR06"
+   }
+  ],
+  "000025": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_GT2"
+   }
+  ],
+  "000027": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_GT3"
+   }
+  ],
+  "000030": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Basis_GT4"
+   }
+  ],
+  "005017": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_GT"
+   }
+  ],
+  "005025": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_GT2"
+   }
+  ],
+  "005027": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_GT3"
+   }
+  ],
+  "005030": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_GT4"
+   }
+  ],
+  "005031": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_GT5"
+   }
+  ],
+  "005012": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_VR12"
+   }
+  ],
+  "005013": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_VR12"
+   }
+  ],
+  "005005": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_G1_Max_VR12"
+   }
+  ],
+  "005000": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_uncodiertes_Max_SG"
+   },
+   {
+    "module": "PSM",
+    "variant": "PSM_a2_3"
+   }
+  ],
+  "000500": [
+   {
+    "module": "BCM_vorne",
+    "variant": "BCM_vorne_uncodiertes_Max_SG"
+   }
+  ],
+  "H200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_RDW"
+   }
+  ],
+  "H300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_RDW"
+   }
+  ],
+  "H400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_RDW"
+   }
+  ],
+  "H500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_RDW"
+   }
+  ],
+  "H100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_USA"
+   }
+  ],
+  "P200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_4L_EU5"
+   }
+  ],
+  "P300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_4L_E4E"
+   }
+  ],
+  "P400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_4L_EU4"
+   }
+  ],
+  "P500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_RDW"
+   }
+  ],
+  "P100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_USA"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_4L_ULEV"
+   }
+  ],
+  "I200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_RDW"
+   }
+  ],
+  "I300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_RDW"
+   }
+  ],
+  "I400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_RDW"
+   }
+  ],
+  "I500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_RDW"
+   }
+  ],
+  "I100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_USA"
+   }
+  ],
+  "J200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_2_7L_RDW"
+   }
+  ],
+  "J300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_2_7L_RDW"
+   }
+  ],
+  "J400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_2_7L_RDW"
+   }
+  ],
+  "J500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_2_7L_RDW"
+   }
+  ],
+  "J100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_2_7L_USA"
+   }
+  ],
+  "K200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_RDW"
+   }
+  ],
+  "K300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_RDW"
+   }
+  ],
+  "K400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_RDW"
+   }
+  ],
+  "K500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_RDW"
+   }
+  ],
+  "K100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_USA"
+   }
+  ],
+  "L200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_8L_RDW"
+   }
+  ],
+  "L300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_8L_RDW"
+   }
+  ],
+  "L400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_8L_RDW"
+   }
+  ],
+  "L500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_8L_RDW"
+   }
+  ],
+  "L100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_8L_USA"
+   }
+  ],
+  "S200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_GT2RS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_TOP_EU5"
+   }
+  ],
+  "S300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_GT2RS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_TOP_E4E"
+   }
+  ],
+  "S400": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_GT2RS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_TOP_EU4"
+   }
+  ],
+  "S500": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_GT2RS_RDW"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_TOP_EU5"
+   }
+  ],
+  "S100": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_GT2RS_USA"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_TOP_ULEV"
+   }
+  ],
+  "V200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_EU6AG_mOPF"
+   }
+  ],
+  "V300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_0L_EU6AG_mOPF"
+   }
+  ],
+  "W200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_EU6AG_mOPF"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_8L_EU6"
+   }
+  ],
+  "W300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_EU6AG_mOPF"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_8L_E4E"
+   }
+  ],
+  "X200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_EU6AG_mOPF"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_EU5"
+   }
+  ],
+  "X300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Boxster_B4T_2_5L_GTS_EU6AG_mOPF"
+   },
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_E4E"
+   }
+  ],
+  "Y200": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_GTS_EU6AG_mOPF"
+   }
+  ],
+  "Y300": [
+   {
+    "module": "BV_ECM_UDS",
+    "variant": "Carrera_B6T_3_0L_GTS_EU6AG_mOPF"
+   }
+  ],
+  "O300": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_2_7L_E4E"
+   }
+  ],
+  "O400": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_2_7L_EU4"
+   }
+  ],
+  "O200": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_2_7L_EU5"
+   }
+  ],
+  "O100": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_2_7L_ULEV"
+   }
+  ],
+  "W400": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_8L_EU4"
+   }
+  ],
+  "W100": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_981_3_8L_ULEV"
+   }
+  ],
+  "Q300": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_4L_E4E"
+   }
+  ],
+  "Q400": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_4L_EU4"
+   }
+  ],
+  "Q200": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_4L_EU5"
+   }
+  ],
+  "Q100": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_4L_ULEV"
+   }
+  ],
+  "R300": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_8L_E4E"
+   }
+  ],
+  "R400": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_8L_EU4"
+   }
+  ],
+  "R200": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_8L_EU5"
+   }
+  ],
+  "R100": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_3_8L_ULEV"
+   }
+  ],
+  "T300": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_E4E"
+   }
+  ],
+  "T400": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_EU4"
+   }
+  ],
+  "X400": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_EU4"
+   }
+  ],
+  "T200": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_EU5"
+   }
+  ],
+  "T100": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_ULEV"
+   }
+  ],
+  "X100": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_991_KIT_ULEV"
+   }
+  ],
+  "C000": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI9_1_Werksdatensatz"
+   }
+  ],
+  "0000": [
+   {
+    "module": "DME_BDE_Continental",
+    "variant": "SDI_9_1_unprogrammiert"
+   }
+  ],
+  "0x40 00": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK"
+   }
+  ],
+  "0x43 00": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_918S"
+   }
+  ],
+  "0x41 00": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_A2"
+   }
+  ],
+  "0x41 10": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_A2_ohne_Quersperre"
+   }
+  ],
+  "0x42 00": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_A3"
+   }
+  ],
+  "0x42 10": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_A3_ohne_Quersperre"
+   }
+  ],
+  "0x44 00": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_A4"
+   }
+  ],
+  "0x40 10": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_ohne_Quersperre"
+   }
+  ],
+  "0xFF FF": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_unprogrammiert"
+   },
+   {
+    "module": "Head_Unit",
+    "variant": "HeadUnit_unprogrammiert"
+   },
+   {
+    "module": "TVTuner",
+    "variant": "TVTuner_unprogrammiert"
+   },
+   {
+    "module": "Verstaerker",
+    "variant": "BOSE_Verstaerker_unprogrammiert"
+   },
+   {
+    "module": "Waehlhebel",
+    "variant": "WH_unprogrammiert"
+   }
+  ],
+  "0x45 00": [
+   {
+    "module": "Getriebesteuerung_PDK",
+    "variant": "PDK_A5_CS"
+   }
+  ],
+  "0x20 00": [
+   {
+    "module": "Head_Unit",
+    "variant": "CDR31"
+   }
+  ],
+  "0x80 00": [
+   {
+    "module": "Head_Unit",
+    "variant": "PCM31_A3"
+   }
+  ],
+  "0x09 00": [
+   {
+    "module": "Head_Unit",
+    "variant": "PCM31_A3_2"
+   }
+  ],
+  "0x09 01": [
+   {
+    "module": "Head_Unit",
+    "variant": "PCM31_A3_3"
+   }
+  ],
+  "0x70 00": [
+   {
+    "module": "Head_Unit",
+    "variant": "PCM31_G1_und_9x1"
+   },
+   {
+    "module": "Verstaerker",
+    "variant": "BOSE"
+   }
+  ],
+  "001": [
+   {
+    "module": "Hinterachslenkung",
+    "variant": "Hinterachslenkung_a1"
+   }
+  ],
+  "002": [
+   {
+    "module": "Hinterachslenkung",
+    "variant": "Hinterachslenkung_a2"
+   }
+  ],
+  "003": [
+   {
+    "module": "Hinterachslenkung",
+    "variant": "Hinterachslenkung_a2_1"
+   }
+  ],
+  "004": [
+   {
+    "module": "Hinterachslenkung",
+    "variant": "Hinterachslenkung_a2_2"
+   }
+  ],
+  "005": [
+   {
+    "module": "Hinterachslenkung",
+    "variant": "Hinterachslenkung_a2_3_GT"
+   }
+  ],
+  "006": [
+   {
+    "module": "Hinterachslenkung",
+    "variant": "Hinterachslenkung_a2_4"
+   }
+  ],
+  "T20000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991II_RDW"
+   }
+  ],
+  "T30000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991II_RDW"
+   }
+  ],
+  "T40000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991II_RDW"
+   }
+  ],
+  "T50000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991II_RDW"
+   }
+  ],
+  "T10000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991II_USA"
+   }
+  ],
+  "M20000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991_RDW"
+   }
+  ],
+  "M30000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991_RDW"
+   }
+  ],
+  "M40000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991_RDW"
+   }
+  ],
+  "M50000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991_RDW"
+   }
+  ],
+  "M10000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3RS_991_USA"
+   }
+  ],
+  "R20000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991II_RDW"
+   }
+  ],
+  "R10000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991II_USA"
+   }
+  ],
+  "F20000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991_RDW"
+   }
+  ],
+  "F30000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991_RDW"
+   }
+  ],
+  "F40000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991_RDW"
+   }
+  ],
+  "F50000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991_RDW"
+   }
+  ],
+  "F10000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "GT3_991_USA"
+   }
+  ],
+  "Q20000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "_911R_991_RDW"
+   }
+  ],
+  "Q10000": [
+   {
+    "module": "MED17_1_11",
+    "variant": "_911R_991_USA"
+   }
+  ],
+  "001000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a1"
+   }
+  ],
+  "002000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a2"
+   }
+  ],
+  "003000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a2_1"
+   }
+  ],
+  "004000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a2_2"
+   }
+  ],
+  "007000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a2_5"
+   }
+  ],
+  "008000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a2_6"
+   }
+  ],
+  "009000": [
+   {
+    "module": "PSM",
+    "variant": "PSM_a2_7_CS"
+   }
+  ],
+  "0x50 00": [
+   {
+    "module": "TVTuner",
+    "variant": "TVTuner_A2"
+   }
+  ],
+  "0x60 00": [
+   {
+    "module": "TVTuner",
+    "variant": "TVTuner_Delphi_A2"
+   }
+  ],
+  "0x10 00": [
+   {
+    "module": "Verstaerker",
+    "variant": "ASK"
+   }
+  ],
+  "0xFF FE": [
+   {
+    "module": "Verstaerker",
+    "variant": "ASK_Verstaerker_unprogrammiert"
+   }
+  ],
+  "0x01 00": [
+   {
+    "module": "Waehlhebel",
+    "variant": "WH"
+   }
+  ],
+  "0x02 00": [
+   {
+    "module": "Waehlhebel",
+    "variant": "WH_918S"
+   }
+  ]
+ },
+ "variantToIdent": {
+  "BCM_hinten_9x1_GT4": [
+   "050018"
+  ],
+  "BCM_hinten_9x1_GT5": [
+   "050031"
+  ],
+  "BCM_hinten_9x1_VR10": [
+   "050010"
+  ],
+  "BCM_hinten_9x1_VR12": [
+   "050012"
+  ],
+  "BCM_hinten_E2_GT2": [
+   "020018"
+  ],
+  "BCM_hinten_E2_GT3": [
+   "020023"
+  ],
+  "BCM_hinten_E2_GT4": [
+   "020024"
+  ],
+  "BCM_hinten_E2_GT5": [
+   "020031"
+  ],
+  "BCM_hinten_E2_VR07": [
+   "020007"
+  ],
+  "BCM_hinten_G1_GT": [
+   "000017"
+  ],
+  "BCM_hinten_G1_GT2": [
+   "000018"
+  ],
+  "BCM_hinten_G1_GT3": [
+   "000023"
+  ],
+  "BCM_hinten_G1_GT4": [
+   "000024"
+  ],
+  "BCM_hinten_G1_GT5": [
+   "000031"
+  ],
+  "BCM_hinten_G1_VR12": [
+   "000012",
+   "000013",
+   "000005"
+  ],
+  "BCM_hinten_uncodiertes_SG": [
+   "000000"
+  ],
+  "BCM_hinten_unprogrammiertes_SG": [
+   "900000"
+  ],
+  "BCM_vorne_9x1_Basis_GT4": [
+   "050018"
+  ],
+  "BCM_vorne_9x1_Basis_GT5": [
+   "050031"
+  ],
+  "BCM_vorne_9x1_Basis_VR10": [
+   "050010"
+  ],
+  "BCM_vorne_9x1_Basis_VR12": [
+   "050012"
+  ],
+  "BCM_vorne_9x1_Max_GT4": [
+   "055018"
+  ],
+  "BCM_vorne_9x1_Max_GT5": [
+   "055031"
+  ],
+  "BCM_vorne_9x1_Max_VR10": [
+   "055010"
+  ],
+  "BCM_vorne_9x1_Max_VR12": [
+   "055012"
+  ],
+  "BCM_vorne_E2_Basis_GT2": [
+   "020025"
+  ],
+  "BCM_vorne_E2_Basis_GT3": [
+   "020027"
+  ],
+  "BCM_vorne_E2_Basis_GT4": [
+   "020030"
+  ],
+  "BCM_vorne_E2_Basis_GT5": [
+   "020031"
+  ],
+  "BCM_vorne_E2_Basis_VR06": [
+   "020006"
+  ],
+  "BCM_vorne_E2_Max_GT2": [
+   "025025"
+  ],
+  "BCM_vorne_E2_Max_GT3": [
+   "025027"
+  ],
+  "BCM_vorne_E2_Max_GT4": [
+   "025030"
+  ],
+  "BCM_vorne_E2_Max_GT5": [
+   "025031"
+  ],
+  "BCM_vorne_E2_Max_VR06": [
+   "025006"
+  ],
+  "BCM_vorne_G1_Basis_GT": [
+   "000017"
+  ],
+  "BCM_vorne_G1_Basis_GT2": [
+   "000025"
+  ],
+  "BCM_vorne_G1_Basis_GT3": [
+   "000027"
+  ],
+  "BCM_vorne_G1_Basis_GT4": [
+   "000030"
+  ],
+  "BCM_vorne_G1_Basis_GT5": [
+   "000031"
+  ],
+  "BCM_vorne_G1_Basis_VR12": [
+   "000012",
+   "000013",
+   "000005"
+  ],
+  "BCM_vorne_G1_Max_GT": [
+   "005017"
+  ],
+  "BCM_vorne_G1_Max_GT2": [
+   "005025"
+  ],
+  "BCM_vorne_G1_Max_GT3": [
+   "005027"
+  ],
+  "BCM_vorne_G1_Max_GT4": [
+   "005030"
+  ],
+  "BCM_vorne_G1_Max_GT5": [
+   "005031"
+  ],
+  "BCM_vorne_G1_Max_VR12": [
+   "005012",
+   "005013",
+   "005005"
+  ],
+  "BCM_vorne_uncodiertes_Basis_SG": [
+   "000000"
+  ],
+  "BCM_vorne_uncodiertes_Max_SG": [
+   "005000",
+   "000500"
+  ],
+  "BCM_vorne_unprogrammiertes_SG": [
+   "900000"
+  ],
+  "Boxster_B4T_2_0L_RDW": [
+   "H200",
+   "H300",
+   "H400",
+   "H500"
+  ],
+  "Boxster_B4T_2_0L_USA": [
+   "H100"
+  ],
+  "Boxster_B4T_2_5L_GTS_RDW": [
+   "P200",
+   "P300",
+   "P400",
+   "P500"
+  ],
+  "Boxster_B4T_2_5L_GTS_USA": [
+   "P100"
+  ],
+  "Boxster_B4T_2_5L_RDW": [
+   "I200",
+   "I300",
+   "I400",
+   "I500"
+  ],
+  "Boxster_B4T_2_5L_USA": [
+   "I100"
+  ],
+  "Carrera_B6T_2_7L_RDW": [
+   "J200",
+   "J300",
+   "J400",
+   "J500"
+  ],
+  "Carrera_B6T_2_7L_USA": [
+   "J100"
+  ],
+  "Carrera_B6T_3_0L_RDW": [
+   "K200",
+   "K300",
+   "K400",
+   "K500"
+  ],
+  "Carrera_B6T_3_0L_USA": [
+   "K100"
+  ],
+  "Carrera_B6T_3_8L_RDW": [
+   "L200",
+   "L300",
+   "L400",
+   "L500"
+  ],
+  "Carrera_B6T_3_8L_USA": [
+   "L100"
+  ],
+  "Carrera_GT2RS_RDW": [
+   "S200",
+   "S300",
+   "S400",
+   "S500"
+  ],
+  "Carrera_GT2RS_USA": [
+   "S100"
+  ],
+  "Boxster_B4T_2_0L_EU6AG_mOPF": [
+   "V200",
+   "V300"
+  ],
+  "Boxster_B4T_2_5L_EU6AG_mOPF": [
+   "W200",
+   "W300"
+  ],
+  "Boxster_B4T_2_5L_GTS_EU6AG_mOPF": [
+   "X200",
+   "X300"
+  ],
+  "Carrera_B6T_3_0L_GTS_EU6AG_mOPF": [
+   "Y200",
+   "Y300"
+  ],
+  "SDI9_1_981_2_7L_E4E": [
+   "O300"
+  ],
+  "SDI9_1_981_2_7L_EU4": [
+   "O400"
+  ],
+  "SDI9_1_981_2_7L_EU5": [
+   "O200"
+  ],
+  "SDI9_1_981_2_7L_ULEV": [
+   "O100"
+  ],
+  "SDI9_1_981_3_4L_E4E": [
+   "P300"
+  ],
+  "SDI9_1_981_3_4L_EU4": [
+   "P400"
+  ],
+  "SDI9_1_981_3_4L_EU5": [
+   "P200"
+  ],
+  "SDI9_1_981_3_4L_ULEV": [
+   "P100"
+  ],
+  "SDI9_1_981_3_8L_E4E": [
+   "W300"
+  ],
+  "SDI9_1_981_3_8L_EU4": [
+   "W400"
+  ],
+  "SDI9_1_981_3_8L_EU6": [
+   "W200"
+  ],
+  "SDI9_1_981_3_8L_ULEV": [
+   "W100"
+  ],
+  "SDI9_1_991_3_4L_E4E": [
+   "Q300"
+  ],
+  "SDI9_1_991_3_4L_EU4": [
+   "Q400"
+  ],
+  "SDI9_1_991_3_4L_EU5": [
+   "Q200"
+  ],
+  "SDI9_1_991_3_4L_ULEV": [
+   "Q100"
+  ],
+  "SDI9_1_991_3_8L_E4E": [
+   "R300"
+  ],
+  "SDI9_1_991_3_8L_EU4": [
+   "R400"
+  ],
+  "SDI9_1_991_3_8L_EU5": [
+   "R200"
+  ],
+  "SDI9_1_991_3_8L_ULEV": [
+   "R100"
+  ],
+  "SDI9_1_991_KIT_E4E": [
+   "T300",
+   "X300"
+  ],
+  "SDI9_1_991_KIT_EU4": [
+   "T400",
+   "X400"
+  ],
+  "SDI9_1_991_KIT_EU5": [
+   "T200",
+   "X200"
+  ],
+  "SDI9_1_991_KIT_ULEV": [
+   "T100",
+   "X100"
+  ],
+  "SDI9_1_991_TOP_E4E": [
+   "S300"
+  ],
+  "SDI9_1_991_TOP_EU4": [
+   "S400"
+  ],
+  "SDI9_1_991_TOP_EU5": [
+   "S200",
+   "S500"
+  ],
+  "SDI9_1_991_TOP_ULEV": [
+   "S100"
+  ],
+  "SDI9_1_Werksdatensatz": [
+   "C000"
+  ],
+  "SDI_9_1_unprogrammiert": [
+   "0000"
+  ],
+  "PDK": [
+   "0x40 00"
+  ],
+  "PDK_918S": [
+   "0x43 00"
+  ],
+  "PDK_A2": [
+   "0x41 00"
+  ],
+  "PDK_A2_ohne_Quersperre": [
+   "0x41 10"
+  ],
+  "PDK_A3": [
+   "0x42 00"
+  ],
+  "PDK_A3_ohne_Quersperre": [
+   "0x42 10"
+  ],
+  "PDK_A4": [
+   "0x44 00"
+  ],
+  "PDK_ohne_Quersperre": [
+   "0x40 10"
+  ],
+  "PDK_unprogrammiert": [
+   "0xFF FF"
+  ],
+  "PDK_A5_CS": [
+   "0x45 00"
+  ],
+  "CDR31": [
+   "0x20 00"
+  ],
+  "HeadUnit_unprogrammiert": [
+   "0xFF FF"
+  ],
+  "PCM31_A3": [
+   "0x80 00"
+  ],
+  "PCM31_A3_2": [
+   "0x09 00"
+  ],
+  "PCM31_A3_3": [
+   "0x09 01"
+  ],
+  "PCM31_G1_und_9x1": [
+   "0x70 00"
+  ],
+  "Hinterachslenkung_a1": [
+   "001"
+  ],
+  "Hinterachslenkung_a2": [
+   "002"
+  ],
+  "Hinterachslenkung_a2_1": [
+   "003"
+  ],
+  "Hinterachslenkung_a2_2": [
+   "004"
+  ],
+  "Hinterachslenkung_a2_3_GT": [
+   "005"
+  ],
+  "Hinterachslenkung_a2_4": [
+   "006"
+  ],
+  "GT3RS_991II_RDW": [
+   "T20000",
+   "T30000",
+   "T40000",
+   "T50000"
+  ],
+  "GT3RS_991II_USA": [
+   "T10000"
+  ],
+  "GT3RS_991_RDW": [
+   "M20000",
+   "M30000",
+   "M40000",
+   "M50000"
+  ],
+  "GT3RS_991_USA": [
+   "M10000"
+  ],
+  "GT3_991II_RDW": [
+   "R20000"
+  ],
+  "GT3_991II_USA": [
+   "R10000"
+  ],
+  "GT3_991_RDW": [
+   "F20000",
+   "F30000",
+   "F40000",
+   "F50000"
+  ],
+  "GT3_991_USA": [
+   "F10000"
+  ],
+  "_911R_991_RDW": [
+   "Q20000"
+  ],
+  "_911R_991_USA": [
+   "Q10000"
+  ],
+  "PSM_a1": [
+   "001000"
+  ],
+  "PSM_a2": [
+   "002000"
+  ],
+  "PSM_a2_1": [
+   "003000"
+  ],
+  "PSM_a2_2": [
+   "004000"
+  ],
+  "PSM_a2_3": [
+   "005000"
+  ],
+  "PSM_a2_5": [
+   "007000"
+  ],
+  "PSM_a2_6": [
+   "008000"
+  ],
+  "PSM_a2_7_CS": [
+   "009000"
+  ],
+  "TVTuner_A2": [
+   "0x50 00"
+  ],
+  "TVTuner_Delphi_A2": [
+   "0x60 00"
+  ],
+  "TVTuner_unprogrammiert": [
+   "0xFF FF"
+  ],
+  "ASK": [
+   "0x10 00"
+  ],
+  "ASK_Verstaerker_unprogrammiert": [
+   "0xFF FE"
+  ],
+  "BOSE": [
+   "0x70 00"
+  ],
+  "BOSE_Verstaerker_unprogrammiert": [
+   "0xFF FF"
+  ],
+  "WH": [
+   "0x01 00"
+  ],
+  "WH_918S": [
+   "0x02 00"
+  ],
+  "WH_unprogrammiert": [
+   "0xFF FF"
+  ]
+ }
+}

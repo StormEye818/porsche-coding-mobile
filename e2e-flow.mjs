@@ -10,7 +10,7 @@ import { MockAdapter } from './src/mock-adapter.js';
 import { Elm327 } from './src/elm327.js';
 import { Coder, parseResp } from './src/coder.js';
 import { extractField, injectField, validateParam, canWrite } from './src/schema.js';
-import { pickVariantByPart, pickModelByName } from './src/variant.js';
+import { pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './src/variant.js';
 import { familyOfItems, familyOfReadSid } from './src/coder.js';
 import { resolveKey } from './src/seedkey-resolver.js';
 
@@ -167,21 +167,29 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   // ★ 任务清单⑥：mock-adapter 实车日志重放模式 —— 逐条重放用户日志的应答字节，
   //   断言我方发出的每帧与规格逐字节一致（RE-FLOWSPEC / RE-MODELADDR 逐条）。
   //   来源标注：〔日志〕=用户实车日志原字节；〔§〕=规格取证（JOB.BIN@~0xbc21 / RE-MODELADDR §1.5④）。
+  // ★ 2026-11-09 验收重放（🔴 从真日志建 fixture，常驻回归）：应答字节=用户日志原字节。
+  //   标注：〔日志〕=真车日志字节；〔日志·车名链〕=车名键指认（RE-TRACEABILITY-20261109.md：
+  //   SYSP:0x2a4b4 0x55 分支留存键=21 51，1A 9B/21 50 发后即清）。
   const REPLAY_DME = [
     { req: '1089', resp: '7E8 02 50 89' },                                   // 〔日志〕10 89 正响应
     { req: '3E00', resp: '7E8 02 7E 00' },                                   // 保活 3E 00（会话后）
     { req: '1A9F', resp: '7E8 06 5A 9F 50 32 30 30' },                       // 〔日志〕1A 9F "P200"
     { req: '1A87', resp: '7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35' },  // 〔日志〕1A 87=98161864015
     { req: '1A84', resp: 'NO DATA' },
-    { req: '1A91', resp: 'NO DATA' },
-    { req: '1A92', resp: '7E8 10 0D 5A 92 39 39 31 36\r7E8 21 31 38 36 30 32 30 33' },  // 〔§〕HW 件号 99161860203（JOB.BIN）
-    { req: '1A93', resp: '7E8 05 5A 93 48 30 34' },                          // 〔§〕HW 版本 H04（JOB.BIN）
+    { req: '1A91', resp: '7E8 10 0D 5A 91 39 39 31 36\r7E8 21 31 38 36 30 32 30 33' },  // 〔日志〕1A 91=99161860203（HW 件号）
+    { req: '1A92', resp: 'NO DATA' },
+    { req: '1A93', resp: '7E8 05 5A 93 48 30 34' },                          // 〔日志〕1A 93=H04（HW 版本）
     { req: '1A94', resp: '7E8 10 0D 5A 94 39 38 31 36\r7E8 21 31 38 36 34 30 31 35' },  // 〔日志〕1A 94=98161864015
     { req: '1A95', resp: 'NO DATA' },
     { req: '1A97', resp: 'NO DATA' },
     { req: '1A9A', resp: 'NO DATA' },
-    { req: '221102', resp: '7E8 0A 62 11 02 43 61 79 6D 61 6E 20' },        // 〔§1.5④〕22 11 02 应答名 "Cayman"
+    { req: '221102', resp: '7E8 03 7F 22 12' },                              // 〔日志〕22 11 02 → NRC 0x12（DME 拒 0x22）
+    { req: '221101', resp: '7E8 03 7F 22 12' },                              // 〔日志〕备链 22 11 01 同拒
     { req: '1A90', resp: '7E810135A9057503041\r7E8214232393833454B\r7E822313930303833AA' }, // 〔日志〕1A 90 VIN 多帧
+    { req: '1A87', resp: '7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35' },  // 〔日志〕名链再发（确定性 ECU 同应答；fire-and-forget）
+    { req: '1A9B', resp: 'NO DATA' },                                        // 〔日志〕fire-and-forget（0x55 分支发后即清）
+    { req: '2150', resp: 'NO DATA' },                                        // 〔日志〕fire-and-forget（同上）
+    { req: '2151', resp: '7E8 08 61 51 43 61 79 6D 61 6E' },                 // 〔日志·车名链〕21 51="Cayman"（0x55 分支留存键，SYSP:0x2a4b4）
     { req: '21A4', resp: '7E8 05 61 A4 11 22 33' },                          // 编码块读（KWP 21 <LID8>）
   ];
   const m7 = new MockAdapter({ latencyMs: 0, replay: REPLAY_DME });
@@ -196,21 +204,27 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   await c7.readBlock(0xA4, 0x21).catch(() => null);
   const frames = m7.txLog.filter((c) => !c.startsWith('AT'));
 
-  // ① 逐帧逐字节：与规格帧序一致（KWP 流 10 89 直接建会话 → 3E 00 → 识别链 §2.1 →
-  //    主/备 22 11 02 → 备选链 1A 90 → 读码 21 A4）
+  // ① 逐帧逐字节：与真日志帧序一致（KWP 流 10 89 直接建会话 → 3E 00 → 识别链 §2.1 →
+  //    主/备 22 11 02/11 01（真日志双双 NRC 0x12）→ 名链 1A 90/1A 87/1A 9B/21 50/21 51
+  //    （留存键=1A 90+21 51，SYSP:0x2a4b4 分支）→ 读码 21 A4）
   const golden = ['1089', '3E00', '1A9F', '1A87', '1A84', '1A91', '1A92', '1A93', '1A94',
-    '1A95', '1A97', '1A9A', '221102', '1A90', '21A4'];
+    '1A95', '1A97', '1A9A', '221102', '221101', '1A90', '1A87', '1A9B', '2150', '2151', '21A4'];
   ok('DME 帧序逐帧逐字节一致', JSON.stringify(frames) === JSON.stringify(golden),
     JSON.stringify(frames));
   ok('KWP 流不发 10 03（任务清单⑤）', !frames.includes('1003'));
   ok('识别链帧序=RE-FLOWSPEC §2.1（1A 9F→87→84→91→92→93→94→95→97→9A）',
     frames.slice(2, 12).join(',') === '1A9F,1A87,1A84,1A91,1A92,1A93,1A94,1A95,1A97,1A9A');
   ok('保活=3E 00（无 3E 80）', frames.includes('3E00') && !frames.includes('3E80'));
-  ok('读码帧=KWP 21 <LID8>（2 字节帧）', frames.includes('21A4') && !frames.some((f) => /^22/.test(f) && f !== '221102'));
+  // 🔴③ 读出帧=21 <LID8> 系（绝无 22 00xx DID 读；22 11 02/11 01=车名对请求，RE-MODELADDR §2.5 双请求）
+  ok('🔴③ 读码帧=KWP 21 <LID8> 系（绝无 22 00xx）', frames.includes('21A4')
+    && !frames.some((f) => /^2200/.test(f))
+    && !frames.some((f) => /^22/.test(f) && f !== '221102' && f !== '221101'));
 
-  // ② VIN / trim 显示（任务清单①）：显示=应答文本，981 → Cayman（981）
+  // ② VIN / trim 显示（🔴 验收断言①）：显示名=Cayman（14款 Cayman）
   ok('1A 90 VIN 多帧重组出完整 VIN', idn.vin === 'WP0AB2983EK190083', idn.vin);
-  ok('22 11 02 应答文本=Cayman', idn.name === 'Cayman', idn.name);
+  ok('🔴① 车名=21 51 留存应答（0x55 分支指认，SYSP:0x2a4b4）=Cayman',
+    idn.name === 'Cayman' && idn.nameSrc === '2151', `${idn.name}/${idn.nameSrc}`);
+  ok('🔴④ 1A 87（件号 98161864015）不进车名', !String(idn.name).includes('98161864015'), idn.name);
   {
     const appSrc = readFileSync('./src/app.js', 'utf8');
     const grab = (name) => {
@@ -225,8 +239,9 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     const byName = pickModelByName(g.models, idn.name);
     ok('显示=Cayman（981）（应答文本 strcmp 落定，非 Boxster）',
       !!byName && byName.name === 'Cayman（981）', byName && byName.name);
-    const yy = String(year % 100).padStart(2, '0');
-    ok('显示串=「14款 Cayman」（应答文本）', `${yy}款 ${idn.name}` === '14款 Cayman');
+    const desig = designationFrom(year, idn.name);
+    ok('🔴① 显示串=「14款 Cayman」', desig === '14款 Cayman', desig);
+    ok('🔴④ 显示串不含 1A 87 件号', !desig.includes('98161864015'), desig);
   }
 
   // ③ 变体（任务清单④）：件号 98161864015（1A 87/94 token）→ SDI9_1_981_3_4L_EU5
@@ -245,6 +260,41 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     ok('变体=SDI9_1_981_3_4L_EU5（98161864015 全等命中）',
       !!picked && picked.name === 'SDI9_1_981_3_4L_EU5', picked && `${picked.name}（${picked.how}）`);
     ok('匹配语义=全等命中（零件号精确命中）', !!picked && picked.how === '零件号精确命中', picked && picked.how);
+  }
+
+  // 🔴② 数据家族+变体 = 选择层（识别串优先→件号→协议族兜底，pickFamilyByEvidence 真代码路径）：
+  //   候选=菜单 ECM/DME 条目（menu-tree-v3 真数据），识别串 P200 + 件号 98161864015 →
+  //   DME_BDE_Continental / SDI9_1_981_3_4L_EU5（事故里落错 BV_ECM_UDS 的对侧）。
+  {
+    const reg = JSON.parse(readFileSync('./data/ident-registry.json', 'utf8'));
+    const mf = JSON.parse(readFileSync('./data/module-family.json', 'utf8'));
+    const cat = JSON.parse(readFileSync('./data/models-catalog.json', 'utf8'));
+    const mt3 = JSON.parse(readFileSync('./data/menu-tree-v3.json', 'utf8'));
+    let menuMods = null;
+    for (const g of mt3.groups || []) for (const m of g.models || []) {
+      if (m.id === 'Cayman（981）') for (const fn of m.functions || []) for (const s of fn.systems || []) {
+        if (/ECM\/DME/.test(s.label)) menuMods = s.modules;
+      }
+    }
+    ok('ECM 菜单候选含事故双家族（BV_ECM_UDS + DME_BDE_Continental）',
+      !!menuMods && menuMods.includes('BV_ECM_UDS') && menuMods.includes('DME_BDE_Continental'),
+      JSON.stringify(menuMods));
+    const entries = (menuMods || []).map((mod) => ({ mod, mi: (cat.models['Cayman（981）'].modules || []).find((x) => x.module === mod) })).filter((e) => e.mi);
+    const pick = pickFamilyByEvidence(entries, {
+      identTokens: ['P200'],
+      partNo: '98161864015', partTokens: c7.lastPartTokens,
+      registry: reg, byPart: JSON.parse(readFileSync('./data/ecu-part-map.json', 'utf8')).byPart,
+      moduleFamily: mf, observedFamily: 'kwp',
+    });
+    ok('🔴② 数据家族=DME_BDE_Continental（识别串 P200→件号 98161864015）',
+      pick.mod === 'DME_BDE_Continental', pick.how);
+    ok('🔴② 变体=SDI9_1_981_3_4L_EU5', pick.variant === 'SDI9_1_981_3_4L_EU5', String(pick.variant));
+    // 识别串单证据也必须把家族收窄到含 DME（协议族 kwp 兜底排掉 BV_ECM_UDS 全 UDS 族）
+    const pickIdentOnly = pickFamilyByEvidence(entries, {
+      identTokens: ['P200'], registry: reg, moduleFamily: mf, observedFamily: 'kwp',
+    });
+    ok('🔴② 识别串单证据+协议族兜底 → 仍 DME_BDE_Continental（不落 BV_ECM_UDS）',
+      pickIdentOnly.mod === 'DME_BDE_Continental', pickIdentOnly.how);
   }
 
   // ④ mode 出参=原厂真值（2026-11-09 收口断言）：DME（P200，件号 98161864015，
@@ -268,7 +318,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
       calc.outlen > 0 && calc.mode === 0x08, `${calc.algo} outlen=${calc.outlen}`);
   }
 
-  // ── 进 IC（任务清单②）：tx ∈ 0x721/722/723 候选族，KWP 只发 21 01/1A xx ──
+  // ── 进 IC（KWP 家族）：KWP 只发 21 01/1A xx，永不对 KWP 发 0x22 ──
   const REPLAY_IC = [
     { req: '1089', resp: '7E8 02 50 89' },
     { req: '3E00', resp: '7E8 02 7E 00' },
@@ -285,15 +335,71 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   const fB = m7b.txLog.filter((c) => !c.startsWith('AT'));
   ok('IC 帧序逐帧一致（10 89→3E 00→识别链早停→21 01）',
     JSON.stringify(fB) === JSON.stringify(['1089', '3E00', '1A9F', '1A87', '1A84', '2101']), JSON.stringify(fB));
-  ok('进 IC 的 tx 在 0x721/722/723 候选族', [0x721, 0x722, 0x723].includes(c7b.tx), c7b.tx.toString(16));
   ok('永不对 KWP 发 0x22（IC 全程无 22 xx）', !fB.some((f) => f.startsWith('22')));
   {
     const ea = JSON.parse(readFileSync('./data/ecu-addresses.json', 'utf8'));
     const ic = ea.entries.find((x) => x.sysId.toLowerCase() === '0x0b08');
     const txs = (ic.cands || []).map((x) => parseInt(x.tx, 16));
-    ok('IC 候选表含 0x721/722/723（0x35F9 族）',
-      [0x721, 0x722, 0x723].every((t) => txs.includes(t)), txs.map((t) => t.toString(16)).join(','));
+    // ★ 2026-11-09 RE-ICADDR：0x721/722/723（低字节 join 族）真车 NO DATA 已证伪 ——
+    //   KWP IC internal 0x02F9 无精确表A 行 = joinState 未决，不再入候选。
+    ok('IC 候选不含 0x721/722/723（低字节 join 已证伪退役）',
+      ![0x721, 0x722, 0x723].some((t) => txs.includes(t)), txs.map((t) => t.toString(16)).join(','));
+    ok('KWP IC 0x02F9 joinState=unresolved/partial（表B 行证据落档）',
+      ['unresolved', 'partial'].includes(ic.joinState)
+      && (ic.joinUnresolved || []).some((u) => u.internal === '0x02F9'),
+      JSON.stringify(ic.joinUnresolved));
     ok('internal 0x0117 UDS 簇短名单已删（无 0x77A 簇）', !txs.includes(0x77a) && !txs.includes(0x7c0));
+  }
+
+  // ── IC 地址断言（mock 命中族中位）：假发现循环应答 + IC 绑定结果 ──
+  //   发现循环（参考诊断仪 转写，RE-ICADDR §3.2）：候选源=SpecArray/表行（本例=14B 记录族 0x71E-0x725
+  //   + 表行序 0x7F1），帧=21 01/1A xx（KWP）；身份=识别串 Kombi/仪表 语义匹配（GetSubSysDataAddr
+  //   strcmp/前缀/strstr）；NRC 地址（0x7F1 形态）=有 ECU 身份不符不算候选；NO DATA=候选死换下一个。
+  //   mock 假发现循环在族中位 0x722 应答身份串 → 断言 IC 绑定结果（tx/rx 对 + 身份）。
+  {
+    const fam = [0x71E, 0x71F, 0x720, 0x721, 0x722, 0x723, 0x724, 0x725];
+    const median = fam[Math.floor(fam.length / 2)];   // 0x722
+    ok('族中位定义（DRIVELINKS 14B 记录族 0x71E-0x725）', median === 0x722, median.toString(16));
+    // strictAddress 拓扑：只有列出的 tx 有 ECU —— 族其余地址 = NO DATA（候选死）。
+    const ecus = {
+      [median]: { name: 'IC', dsn: 'Kombiinstrument_9x1', kwp: true },   // 族中位 = IC（mock 命中族中位）
+      0x7F1: { name: 'unknown', nrcAll: true },                          // 真车 0x7F1 形态：只回 NRC
+    };
+    const mIC = new MockAdapter({ latencyMs: 0, strictAddress: true, ecus });
+    const eIC = new Elm327(mIC, { timeoutMs: 2000 });
+    // 与 app.probeAddressFor 同款探测环（probeDecision 判定，RE-FLOWSPEC §1.6/2.3）
+    const { probeDecision } = await import('./src/probe.js');
+    let hit = null, sawNrc = false, nonKwpFrame = false;
+    const order = [0x7F1, ...fam];   // 表行序候选（0x7F1 精确 join 行）先于族候选
+    for (const tx of order) {
+      if (hit) break;
+      await eIC.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 500);
+      await eIC.cmd(`ATCRA${(tx + 8).toString(16).toUpperCase()}`, 500);
+      for (const cmd of ['2101', '1A9F', '1A87', '1A90']) {
+        if (/^22/.test(cmd)) nonKwpFrame = true;
+        const r = (await eIC.cmd(cmd, 800) || '').trim();
+        const pr = parseResp(r);
+        const body = Array.from(pr.body || []).map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+        const text = Array.from(pr.body || []).filter((c) => c >= 0x20 && c < 0x7f)
+          .map((c) => String.fromCharCode(c)).join('').trim();
+        const d = probeDecision(body, text, { label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'], otherLabels: [] });
+        if (d.verdict === 'accept') { hit = { tx, ident: d.ident }; break; }
+        if (d.verdict === 'nrc-reject') sawNrc = true;
+      }
+    }
+    ok('族探测命中=族中位 0x722（mock 命中族中位）', !!hit && hit.tx === median,
+      hit && `hit=0x${hit.tx.toString(16)} ident=${hit.ident}`);
+    ok('命中依据=识别串匹配（Kombi 语义），非 NRC/存活',
+      !!hit && /Kombi/i.test(hit.ident || ''), hit && hit.ident);
+    ok('NRC 地址 0x7F1 被 nrc-reject（不算候选，NRC 字节非识别串）',
+      sawNrc && !!hit && hit.tx !== 0x7F1, hit && `hit=0x${hit.tx.toString(16)}`);
+    ok('KWP 族探测只发 21 01/1A xx（无 22）', !nonKwpFrame && !mIC.txLog.some((c) => !c.startsWith('AT') && c.startsWith('22')));
+    ok('0x7F1 先探后弃（表行序候选未命中即换族候选）',
+      mIC.txLog.includes('ATSH7F1') && mIC.txLog.includes(`ATSH${median.toString(16).toUpperCase()}`),
+      mIC.txLog.filter((c) => c.startsWith('ATSH')).join(','));
+    ok('IC 绑定结果=发现循环命中项（tx/rx 对与身份成对落定）',
+      !!hit && hit.tx === median && hit.ident && hit.ident.length > 0,
+      hit && `bind=0x${hit.tx.toString(16)}/0x${(hit.tx + 8).toString(16)} ident=${hit.ident}`);
   }
 
   // ── NRC（任务清单⑤）：7F 78 续等重发原帧；其余 NRC 单发不重试 ──
@@ -331,6 +437,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     { req: '1003', resp: '7E8 02 50 03' },                                   // UDS 流=10 03（§1.3 另含）
     { req: '3E00', resp: '7E8 02 7E 00' },
     { req: '1A9F', resp: '7E8 06 5A 9F 50 32 30 30' },
+    { req: '22F1A2', resp: 'NO DATA' },                                    // 注册表识别请求（UDS 族插入 1A9F 后）
     { req: '1A87', resp: 'NO DATA' },
     { req: '1A84', resp: 'NO DATA' },
     { req: '1A91', resp: 'NO DATA' },                                        // 3 miss 早停（§2.1）
@@ -347,7 +454,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   const did718 = it718 ? (it718.lid & 0xffff) : 0;
   await c7d.readBlock(did718, 0x22).catch(() => null);
   const f718 = m7d.txLog.filter((c) => !c.startsWith('AT'));
-  const golden718 = ['1003', '3E00', '1A9F', '1A87', '1A84', '1A91', '1089', '221102', '1003', '22F190', '220000'];
+  const golden718 = ['1003', '3E00', '1A9F', '22F1A2', '1A87', '1A84', '1089', '221102', '1003', '22F190', '220000'];
   ok('UDS 车帧序逐帧逐字节一致（10 03 流）', JSON.stringify(f718) === JSON.stringify(golden718), JSON.stringify(f718));
   ok('UDS 流含 10 03（§1.3「UDS ECU 流另含」）', f718.includes('1003') && f718.includes('1089'));
   ok('22 11 02 直读成功（UDS 车应答文本）', idn718.name === '718 Boxster T', idn718.name);
@@ -385,6 +492,137 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     ok('718 记录复合=0x03040208（mode 0x08 · 模板族 0x02 · 会话 0x0304）',
       !!row && row.mode === 0x08 && row.family === 0x02 && row.session === 0x0304,
       row && `0x${((row.session << 16) | (row.family << 8) | row.mode).toString(16)}`);
+  }
+}
+
+// ─────────────────────────────────────────────
+console.log('\n[7x] 验收重放·多模块形态（PSM/BCM_vorne UDS 族 —— mock 应答从包内识别串/件号表生成）');
+{
+  // ★ 任务口径：除 DME（KWP）外覆盖至少 2 个不同形态模块（KWP+UDS 混合）。
+  //   应答内容全部来自包内表：识别串=DSN.BIN 注册表（data/ident-registry.json
+  //   variantToIdent）、件号=JOB.BIN 会话库（data/ecu-part-map.json）—— 零编造。
+  const reg = JSON.parse(readFileSync('./data/ident-registry.json', 'utf8'));
+  const pm = JSON.parse(readFileSync('./data/ecu-part-map.json', 'utf8'));
+  const mf = JSON.parse(readFileSync('./data/module-family.json', 'utf8'));
+  const cat = JSON.parse(readFileSync('./data/models-catalog.json', 'utf8'));
+  const mt3 = JSON.parse(readFileSync('./data/menu-tree-v3.json', 'utf8'));
+  const menuModules = (labelRe) => {
+    for (const g of mt3.groups || []) for (const m of g.models || []) {
+      if (m.id === 'Cayman（981）') for (const fn of m.functions || []) for (const s of fn.systems || []) {
+        if (labelRe.test(s.label)) return s.modules;
+      }
+    }
+    return null;
+  };
+  const hex2 = (b) => (b & 0xff).toString(16).padStart(2, '0').toUpperCase();
+  // 响应帧构造（CAF1 头 + ISO-TP）：header 前缀（如 [0x62,0xF1,0xA2] / [0x5A,0x84]）+ ASCII 文本；
+  // >7 数据字节走 FF/CF 多帧（与真日志 1A 87/91/94 多帧形态同款）。
+  const respFrames = (header, text) => {
+    const data = [...header, ...[...String(text)].map((c) => c.charCodeAt(0))];
+    const h = (arr) => arr.map(hex2).join(' ');
+    if (data.length <= 7) return `7E8 ${hex2(data.length)} ${h(data)}`;
+    const lines = [`7E8 ${hex2(0x10 | (data.length >> 8))} ${hex2(data.length)} ${h(data.slice(0, 6))}`];
+    for (let seq = 1, i = 6; i < data.length; i += 7, seq++) {
+      lines.push(`7E8 ${hex2(0x20 | (seq & 0x0f))} ${h(data.slice(i, i + 7))}`);
+    }
+    return lines.join('\r');
+  };
+
+  // ── PSM（UDS 族，识别串 003000 + 件号 99135565589 → PSM_a2_1）──
+  const identPsm = reg.variantToIdent['PSM_a2_1'][0];            // '003000'（DSN.BIN）
+  const partPsm = Object.entries(pm.byPart).find(([, es]) => es.some((e) => e.module === 'PSM' && String(e.variant).includes('PSM_a2_1')))[0]; // 99135565589
+  ok('PSM mock 来源=包内表（识别串 DSN.BIN + 件号 JOB.BIN）',
+    identPsm === '003000' && partPsm === '99135565589', `${identPsm}/${partPsm}`);
+  const REPLAY_PSM = [
+    { req: '1003', resp: '7E8 02 50 03' },
+    { req: '1089', resp: '7E8 02 50 89' },
+    { req: '3E00', resp: '7E8 02 7E 00' },
+    { req: '1A9F', resp: 'NO DATA' },
+    { req: '22F1A2', resp: respFrames([0x62, 0xF1, 0xA2], identPsm) },   // 〔DSN.BIN 身份记录 22 F1 A2〕
+    { req: '1A87', resp: 'NO DATA' },
+    { req: '1A84', resp: respFrames([0x5A, 0x84], partPsm) },            // 〔JOB.BIN PARTNUMBER〕
+    { req: '1A91', resp: 'NO DATA' },
+    { req: '1A92', resp: 'NO DATA' },
+    { req: '1A93', resp: 'NO DATA' },
+  ];
+  const m8 = new MockAdapter({ latencyMs: 0, replay: REPLAY_PSM });
+  const e8 = new Elm327(m8, { timeoutMs: 2000 });
+  const c8 = new Coder(e8, { tx: 0x7E0, rx: 0x7E8, ecuName: 'PSM', family: 'uds' });
+  await c8.enterSession(0x89, { family: 'uds' });
+  ok('PSM 识别串采集（22 F1 A2 应答）', c8.identByCmd['22F1A2'] === '003000', JSON.stringify(c8.identByCmd));
+  ok('PSM 件号采集（1A 84）', c8.lastPartTokens.includes('99135565589'), JSON.stringify(c8.lastPartTokens));
+  {
+    const menuMods = menuModules(/ESP\/PSM/);
+    ok('PSM 菜单候选=Cayman 981 ESP/PSM 条目', JSON.stringify(menuMods) === '["PSM"]', JSON.stringify(menuMods));
+    const entries = (menuMods || []).map((mod) => ({ mod, mi: (cat.models['Cayman（981）'].modules || []).find((x) => x.module === mod) })).filter((e) => e.mi);
+    // 跨家族判别集：识别串必须从混合候选里挑出 PSM（而非 ECM 族）
+    const mixed = [...entries,
+      { mod: 'DME_BDE_Continental', mi: cat.models['Cayman（981）'].modules.find((x) => x.module === 'DME_BDE_Continental') },
+      { mod: 'BV_ECM_UDS', mi: cat.models['Cayman（981）'].modules.find((x) => x.module === 'BV_ECM_UDS') }];
+    const pickPsm = pickFamilyByEvidence(mixed, {
+      identTokens: [c8.identByCmd['22F1A2']],
+      partTokens: c8.lastPartTokens,
+      registry: reg, byPart: pm.byPart, moduleFamily: mf, observedFamily: 'uds',
+    });
+    ok('PSM 家族选择=PSM（识别串 003000，混合候选判别）', pickPsm.mod === 'PSM', pickPsm.how);
+    ok('PSM 变体=PSM_a2_1（识别串注册表）', pickPsm.variant === 'PSM_a2_1', String(pickPsm.variant));
+  }
+  {
+    // 出帧：PSM 记录=22/2E 族（UDS）→ 读帧 `22 <DID16>`，绝无 21 <LID8>
+    const rec = JSON.parse(readFileSync('./data/models/Cayman_981_/PSM_a2_1.json', 'utf8'));
+    ok('PSM 记录 SID 族=22/2E（UDS）', rec.items.every((i) => i.readSid === 0x22), String(rec.items[0]?.readSid));
+    const lid = rec.items.find((i) => i.lid != null).lid;
+    const did = lid.toString(16).padStart(4, '0').toUpperCase();
+    m8.replay.push({ req: `22${did}`, resp: `7E8 04 62 ${did.slice(0, 2)} ${did.slice(2)} 11` });
+    await c8.readBlock(lid, 0x22).catch(() => null);
+    const frames = m8.txLog.filter((c) => !c.startsWith('AT'));
+    ok('PSM 读帧=22 <DID16>（UDS 形态）', frames.includes(`22${did}`) && !frames.some((f) => /^21/.test(f)), frames.join(','));
+  }
+
+  // ── BCM_vorne（UDS 纯族，识别串 050018 → BCM_vorne_9x1_Basis_GT4，无件号回落注册表）──
+  const identBcm = reg.variantToIdent['BCM_vorne_9x1_Basis_GT4'][0];   // '050018'（DSN.BIN）
+  ok('BCM mock 来源=包内识别串表（DSN.BIN）', identBcm === '050018', identBcm);
+  const REPLAY_BCM = [
+    { req: '1003', resp: '7E8 02 50 03' },
+    { req: '1089', resp: '7E8 02 50 89' },
+    { req: '3E00', resp: '7E8 02 7E 00' },
+    { req: '1A9F', resp: 'NO DATA' },
+    { req: '22F1A2', resp: respFrames([0x62, 0xF1, 0xA2], identBcm) },
+    { req: '1A87', resp: 'NO DATA' },
+    { req: '1A84', resp: 'NO DATA' },
+    { req: '1A91', resp: 'NO DATA' },
+  ];
+  const m8b = new MockAdapter({ latencyMs: 0, replay: REPLAY_BCM });
+  const e8b = new Elm327(m8b, { timeoutMs: 2000 });
+  const c8b = new Coder(e8b, { tx: 0x7E0, rx: 0x7E8, ecuName: 'BCM_vorne', family: 'uds' });
+  await c8b.enterSession(0x89, { family: 'uds' });
+  ok('BCM 识别串采集（22 F1 A2 应答）', c8b.identByCmd['22F1A2'] === '050018', JSON.stringify(c8b.identByCmd));
+  {
+    const menuMods = menuModules(/前端电子/);
+    ok('BCM 菜单候选=Cayman 981 前端电子条目', JSON.stringify(menuMods) === '["BCM_vorne"]', JSON.stringify(menuMods));
+    const entries = (menuMods || []).map((mod) => ({ mod, mi: (cat.models['Cayman（981）'].modules || []).find((x) => x.module === mod) })).filter((e) => e.mi);
+    // 跨模块判别集：050018 同时存在于 BCM_hinten/BCM_vorne 变体表 —— 菜单上下文 + 注册表落 BCM_vorne 变体
+    const mixed = [...entries,
+      { mod: 'BCM_hinten', mi: cat.models['Cayman（981）'].modules.find((x) => x.module === 'BCM_hinten') }];
+    const pickBcm = pickFamilyByEvidence(mixed, {
+      identTokens: [c8b.identByCmd['22F1A2']],
+      registry: reg, byPart: pm.byPart, moduleFamily: mf, observedFamily: 'uds',
+    });
+    ok('BCM 家族选择=BCM_vorne（识别串 050018 + 菜单上下文）', pickBcm.mod === 'BCM_vorne', pickBcm.how);
+    ok('BCM 变体=BCM_vorne_9x1_Basis_GT4（识别串注册表）', pickBcm.variant === 'BCM_vorne_9x1_Basis_GT4', String(pickBcm.variant));
+  }
+  {
+    const rec = JSON.parse(readFileSync('./data/models/Cayman_981_/BCM_vorne_9x1_Basis_GT4.json', 'utf8'));
+    ok('BCM 记录 SID 族=22/2E（UDS）', rec.items.every((i) => i.readSid === 0x22), String(rec.items[0]?.readSid));
+    const lid = rec.items.find((i) => i.lid != null).lid;
+    const did = lid.toString(16).padStart(4, '0').toUpperCase();
+    m8b.replay.push({ req: `22${did}`, resp: `7E8 04 62 ${did.slice(0, 2)} ${did.slice(2)} 11` });
+    await c8b.readBlock(lid, 0x22).catch(() => null);
+    const frames = m8b.txLog.filter((c) => !c.startsWith('AT'));
+    ok('BCM 读帧=22 <DID16>（UDS 形态）', frames.includes(`22${did}`) && !frames.some((f) => /^21/.test(f)), frames.join(','));
+    ok('重放零未命中（PSM/BCM 每帧都有脚本应答）',
+      m8.replayMisses.length === 0 && m8b.replayMisses.length === 0,
+      JSON.stringify([...m8.replayMisses, ...m8b.replayMisses]));
   }
 }
 

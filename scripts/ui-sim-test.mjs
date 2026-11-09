@@ -268,10 +268,28 @@ try {
       await doBack();
     }
     await clickIf(/系统选择/);
+    const logBefore = await page.locator('#log').innerText().catch(() => '');
     await clickIf(/IC\(仪表\)/);                 // 精确 IC（避免附加仪表抢匹配）
     // IC 进模块=全量编码块读取，真实耗时 ~17s（真机同）——耐心等进入
     for (let i = 0; i < 120 && !/IC|仪表/.test(await page.locator('#navTitle').innerText().catch(()=>'')); i++) {
       await page.waitForTimeout(1000);
+    }
+    // ★ IC 地址断言（mock 命中族中位，2026-11-09 RE-ICADDR）：
+    //   探测接受=识别串匹配（Kombi/仪表语义）；模拟车识别目标=探测族中位（probeList 同源）；
+    //   命中地址必须=族中位目标（真车同一路径自证）。NRC/无名应答不算候选（不进「✅」行）。
+    //   断言只看**本轮进 IC 的日志增量**（防早前遍历单元的旧行误配）。
+    {
+      const logAll = await page.locator('#log').innerText().catch(() => '');
+      const logTxt = logAll.startsWith(logBefore) ? logAll.slice(logBefore.length) : logAll;
+      const mTarget = /模拟车识别目标（族中位）= 0x([0-9A-F]+)/.exec(logTxt);
+      const mHit = /✅ IC\(仪表\) → 0x([0-9A-F]+)\/0x([0-9A-F]+)/.exec(logTxt);
+      ok('IC 地址断言：mock 命中族中位（接受地址==族中位目标）',
+        !!mTarget && !!mHit && mHit[1] === mTarget[1],
+        mTarget && mHit ? `族中位=0x${mTarget[1]} 命中=0x${mHit[1]}/0x${mHit[2]}`
+          : `target=${!!mTarget} hit=${!!mHit} | delta=${logTxt.slice(-300).replace(/\n/g, ' / ')}`);
+      ok('IC 探测接受依据=识别串命中（无「存活/行序」采纳）',
+        !!mHit && /✅ IC\(仪表\) → 0x[0-9A-F]+\/0x[0-9A-F]+（识别串「[^」]+」）/.test(logTxt)
+        && !/存活候选/.test(logTxt));
     }
     const okCoding = await clickIf(/^设码/);
     await clickIf(/刷隐藏/);                      // 设码首页=类别层，PTI 组在刷隐藏/改装内

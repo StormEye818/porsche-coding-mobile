@@ -35,31 +35,55 @@ spec = importlib.util.spec_from_file_location('rea', TOOL)
 rea = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rea)
 
-# ★ 2026-11-08 任务清单②（零特判版）：`XREF={0x0B08:{0x0117}}`（0x77A-0x7C0 UDS 簇短名单）
-#   为手工 XREF 错误（export-ecu-address.py:38），实车 16 对全 NO DATA 的根因 —— 已删。
-#   改为**通用规则**（RE-MODELADDR §2.2，任何 sysId 适用）：
-#     R1 代际同名合并：SYS_DATA 名字记录（sysId=u32 LE @name-9）同名 sysId = 同模块代际对
-#        （如 Kombiinstrument_BaseSys → 0x0B08/0x0C08；全库 54 组），候选池合并。
-#     R2 internal 低字节补 join：internal 无精确表A 行（代际缺口）→ 低字节 join 补齐
-#        （标记 lowbyte，低于精确置信；PASM 0x1CB 多带行同规则接受）。
+# ★ 2026-11-09 RE-ICADDR（真车二连败后证据级重收敛）：
+#   R2「internal 低字节补 join」（0x02F9→0x35F9 族 0x721/722/723）**已被真车证伪**
+#   （2101/1A9F/1A87/1A90 全 NO DATA）—— 按验收标准禁止任何形式的近似 join，整体删除。
+#   无精确表A 行的 routing internal → `joinState='unresolved'`（未决），不产出候选。
+#   R1 代际同名合并保留（名字记录同名 = 同模块代际对，非近似 join）。
+# ★ 通用候选族（DRIVELINKS 14B 记录族，任何模块适用，零特判）：
+#   记录 = [u8 idx][u32 A=(flags<<16)|u16][u32 B][u8 C tag][u32 D]（GetDriveLinksData
+#   0x18b74 mode 0x1001/0x1002 循环 @0x18d9a，stride 14 @0x18dda 逐指令转写，RE-ICADDR §3）。
+#   u16 与 addrBlock A 同为请求键坐标空间（语义未证，见 RE-ICADDR §3.3）——
+#   只作**运行时身份探测候选**（识别串匹配才算命中，真车自证），不作静态 tx 定论。
 FLAG_OK = (0x0000, 0x1000, 0x2000, 0x3000)
+
+# ★ 2026-11-09(2) 链路绑定段转写（最后一锹）：
+#   `PorscheTransCanCalcID` COMM:0x13fc0（64B 逐指令，本次复核）：
+#   out = ((idx<<8)|lo) ^ T2[idx]，idx = 输入高字节在 T1 的位置；8 族不中→直通。
+#   8 族互逆双射（CAN↔连接码）；全包调用点 0（1900 调用普查 + P5TOKEN 边界定案）——
+#   它是 CAN 的下游编码，**不是行→CAN 选择器**。锚点反证：internal 当码反解与真值矛盾
+#   （PASM 0x01CB→0x068A ≠ 0x7D0）→ internal≠连接码，禁作 join。
+#   按任务指令把「码像候选」（internal 经本公式的反解像）喂给运行时身份探测自证通道，
+#   标 code-image（未证），不作静态 tx 定论。
+TC_T1 = (0x05, 0x07, 0x03, 0x02, 0x04, 0x06, 0x01, 0x00)
+TC_T2 = (0x46, 0x75, 0x63, 0x6B, 0x55, 0x53, 0x41, 0x2E)
+
+
+def tc_code_to_can(code):
+    """TransCanCalcID 同式反解（码→CAN）。8 族不中返回 None（直通形态不可反解）。"""
+    hi, lo = (code >> 8) & 0xFF, code & 0xFF
+    if hi not in TC_T1:
+        return None
+    idx = TC_T1.index(hi)
+    return ((idx << 8) | lo) ^ TC_T2[idx]
 
 
 def load_rows(sd_bytes, sysids):
     tabA, tabB = {}, {}
-    tabB_proto = {}   # (sysid, inter) -> 表B 行 proto（R2：KWP 代缺口判据）
+    tabB_proto = {}   # (sysid, inter) -> 表B 行 proto
+    tabB_off = {}     # (sysid, inter) -> 表B 行文件偏移（逐候选行证据）
     for off in range(0, len(sd_bytes) - 16):
         f0, inter, attr, tail = struct.unpack_from('<IIII', sd_bytes, off)
         b = tail.to_bytes(4, 'little')
-        # internal 上限放宽到 0x3FFF：KWP 代缺口族（如 0x35F9）在 0x1FFF 之外
         if not (b[3] == 0xff and b[1] == 0x02 and b[0] in (0x01, 0x03) and 0 < attr < 0x20000 and inter <= 0x3FFF):
             continue
         if f0 in sysids:
             tabB.setdefault(f0, set()).add(inter)
             tabB_proto[(f0, inter)] = b[0]
+            tabB_off.setdefault((f0, inter), []).append(off)
         elif 0x180 <= f0 <= 0x1FFF:
-            tabA.setdefault(inter, []).append({'tx': f0, 'attr': attr, 'proto': b[0], 'idx': b[2]})
-    return tabA, tabB, tabB_proto
+            tabA.setdefault(inter, []).append({'tx': f0, 'attr': attr, 'proto': b[0], 'idx': b[2], 'off': off})
+    return tabA, tabB, tabB_proto, tabB_off
 
 
 def load_rows2(sysids):
@@ -137,10 +161,10 @@ def gen_groups(sd_bytes):
 
 
 def row_kind(inter, tabA):
-    """R2：internal 的表A join 形态 —— 精确优先；无精确行才低字节补 join。"""
+    """join 形态：精确 = 有表A 行；无精确行 = 未决（2026-11-09 起无近似 join）。"""
     if tabA.get(inter):
         return 'exact'
-    return 'lowbyte'
+    return 'unresolved'
 
 
 def order_key(r, rank, excl):
@@ -148,15 +172,129 @@ def order_key(r, rank, excl):
     return (excl, rank, 0 if r['idx'] in (0x05, 0x08) else 1, r['idx'], r['tx'])
 
 
+def extract_families(dl_bytes, allrows):
+    """DRIVELINKS 14B 记录族（通用候选族生成规则，零特判）。
+
+    记录（GetDriveLinksData FILE:0x18b74 mode 0x1001/0x1002 循环 @0x18d9a 转写）：
+      [u8 idx][u32 A=(flags<<16)|u16][u32 B][u8 C tag][u32 D]，stride 14。
+    归属：addrBlock 行 cmdptr（记录流起点）序 → 包含 run 起点的最大 cmdptr 的行组。
+    u16 与 addrBlock A 同为请求键坐标空间（RE-ICADDR §3.3，语义未证）——
+    只作运行时身份探测候选（识别串匹配才算命中），不作静态 tx 定论。
+    返回 {sysId: [{'tx','rx','idx','tag','keyD','recB','recOff','rowOff','ownerCmdptr'}]}
+    """
+    def rec_ok(p):
+        if p + 14 > len(dl_bytes):
+            return False
+        idx = dl_bytes[p]
+        A, B = struct.unpack_from('<II', dl_bytes, p + 1)
+        C = dl_bytes[p + 9]
+        D = struct.unpack_from('<I', dl_bytes, p + 10)[0]
+        alo, ahi = A & 0xFFFF, A >> 16
+        return (1 <= idx <= 64 and 0x180 <= alo <= 0x7FF and ahi <= 0x1FFF
+                and B < 0x02000000 and C <= 0x40 and D < 0x200000)
+
+    runs = []
+    p = 0
+    while p < len(dl_bytes) - 14:
+        if rec_ok(p) and rec_ok(p + 14) and rec_ok(p + 28):
+            start = p
+            while p + 14 <= len(dl_bytes) and rec_ok(p):
+                p += 14
+            runs.append((start, (p - start) // 14))
+        else:
+            p += 1
+
+    cmdptrs = sorted(set(r[5] for r in allrows))
+
+    def owner_rows(off):
+        prev = [c for c in cmdptrs if c <= off]
+        if not prev:
+            return []
+        c = prev[-1]
+        out, seen = [], set()
+        for r in allrows:
+            if r[5] == c and (r[0], r[1], r[2]) not in seen:
+                seen.add((r[0], r[1], r[2]))
+                out.append(r)
+        return out
+
+    fam = {}
+    for start, n in runs:
+        recs = []
+        for k in range(n):
+            q = start + k * 14
+            idx = dl_bytes[q]
+            A, B = struct.unpack_from('<II', dl_bytes, q + 1)
+            C = dl_bytes[q + 9]
+            D = struct.unpack_from('<I', dl_bytes, q + 10)[0]
+            recs.append({'tx': A & 0xFFFF, 'idx': idx, 'tag': C,
+                         'keyD': D, 'recB': B, 'recOff': f'PORSCHE_DRIVELINKS.dec.bin:0x{q:X}',
+                         'aPacked': f'0x{A:08X}'})
+        owners = owner_rows(start)
+        for r in owners:
+            sysId = r[0]
+            lst = fam.setdefault(sysId, [])
+            have = {e['recOff'] for e in lst}
+            for rec in recs:
+                if rec['recOff'] in have:
+                    continue
+                lst.append(dict(rec,
+                                rx=f"0x{rec['tx'] + 8:04X}",
+                                ownerCmdptr=f"0x{r[5]:X}",
+                                rowOff=f"PORSCHE_DRIVELINKS.dec.bin:0x{r[7]:X}",
+                                src='drivelinks-14b'))
+    return fam
+
+
+def parse_addr_rows(dl_bytes):
+    """DRIVELINKS 目录→block→addrBlock 全行（含文件行偏移）。
+    目录 8B/条 [u32 sysId][u32 blockOffset]；block=[u8 count][count×6B [u16 blockKey][u32 addrBlock]]；
+    addrBlock=[u16 grp][u16 0x0304][u16 count]+count×11B [u8 idx][u16 vint][u16 flags][u32 cmdptr][u16 C]。"""
+    dirc, i = [], 0
+    while i + 8 <= len(dl_bytes):
+        sysId, off = struct.unpack_from('<II', dl_bytes, i)
+        if sysId == 0x7FFFFFFF:
+            break
+        dirc.append((sysId, off))
+        i += 8
+    rows = []
+    for sysId, boff in dirc:
+        if boff >= len(dl_bytes):
+            continue
+        cnt = dl_bytes[boff]
+        q0 = boff + 1
+        for k in range(cnt):
+            bk, ab = struct.unpack_from('<HI', dl_bytes, q0)
+            q0 += 6
+            if ab >= len(dl_bytes):
+                continue
+            grp, magic, n = struct.unpack_from('<HHH', dl_bytes, ab)
+            if magic != 0x0304:
+                continue
+            q = ab + 6
+            for r in range(n):
+                if q + 11 > len(dl_bytes):
+                    break
+                idx = dl_bytes[q]
+                vint, flags, cmdptr, c = struct.unpack_from('<HHIH', dl_bytes, q + 1)
+                if cmdptr < 0x30000:
+                    rows.append((sysId, bk, idx, vint, flags, cmdptr, c, q))
+                q += 11
+    return rows
+
+
 def main():
     dl, sd = rea.load()
     dl_idx = rea.drivelinks_index(dl)
     sd_bytes = SYS_DATA.read_bytes()
     sysids = set(dl_idx.keys())
-    tabA, tabB, tabB_proto = load_rows(sd_bytes, sysids)
+    tabA, tabB, tabB_proto, tabB_off = load_rows(sd_bytes, sysids)
     tabB2 = load_rows2(sysids)
     name_lookup = name_records_index(sd_bytes)
-    print(f'表A internal {len(tabA)} · 表B源1 {len(tabB)} sysId · 表B源2 {len(tabB2)} sysId')
+    allrows = parse_addr_rows(dl)
+    families = extract_families(dl, allrows)
+    print(f'表A internal {len(tabA)} · 表B源1 {len(tabB)} sysId · 表B源2 {len(tabB2)} sysId · '
+          f'14B 记录族 {len(families)} sysId')
 
     old = {}
     if OUT.exists():
@@ -184,6 +322,7 @@ def main():
         groups = [(b1, 0), (tabB2.get(sysid, set()), 1)]
         rows, seen = [], set()
         picked = []
+        unresolved = []   # 无精确表A 行的 routing internal（近似 join 禁用 → 未决）
         for internals, rank in groups:
             for inter in sorted(internals):
                 excl = 0 if len(inter_users.get(inter, ())) <= 1 else 1
@@ -192,20 +331,19 @@ def main():
                     for r in exact:
                         picked.append((excl, rank, inter, r))
                     continue
-                # R2（KWP 代缺口补 join，RE-MODELADDR §2.2）：仅**结构化表B 源1** 且
-                #   表B 行 proto=KWP(1) 的 routing internal，在无精确表A 行时按低字节补齐
-                #   （如 0x02F9→0x35F9 族 0x721/722/723）；标记 -lowbyte，低于精确置信。
-                #   源2 异形行 internal（flags 空间）不补 —— 低字节 join 全开会污染（v4 教训）。
-                is_kwp_route = rank == 0 and any(
-                    tabB_proto.get((s, inter)) == 1 for s in {sysid} | sib)
-                if not is_kwp_route:
-                    continue
-                for jinter, jrows in tabA.items():
-                    if (jinter & 0xFF) == (inter & 0xFF):
-                        for r in jrows:
-                            if 0x180 <= r['tx'] <= 0x7FF:
-                                picked.append((excl, rank + 1, jinter, dict(r, lowbyte=True)))
-        picked.sort(key=lambda t: (order_key(t[3], t[1], t[0]), t[3].get('lowbyte', False)))
+                # ★ 2026-11-09：低字节 join 已被真车证伪（0x02F9→0x35F9→0x721/722/723 NO DATA），
+                #   禁止任何形式的近似 join —— 无精确行 = 未决（joinState='unresolved'），
+                #   记录 表B 行偏移 作证据，不出候选。
+                if rank == 0:
+                    unresolved.append({
+                        'internal': f'0x{inter:04X}',
+                        'proto': tabB_proto.get((sysid, inter)) or
+                                 next((tabB_proto.get((s, inter)) for s in sib if tabB_proto.get((s, inter))), None),
+                        'tabBRows': [f'PORSCHE_SYS_DATA.BIN:{o}' for o in
+                                     sorted({o for s in {sysid} | sib
+                                             for o in tabB_off.get((s, inter), [])})],
+                    })
+        picked.sort(key=lambda t: (order_key(t[3], t[1], t[0]), t[3]['tx']))
         for excl, rank, inter, r in picked:
             if r['tx'] in seen:
                 continue
@@ -213,7 +351,8 @@ def main():
             rows.append({'tx': f"0x{r['tx']:04X}", 'rx': f"0x{r['tx'] + 8:04X}",
                          'attr': f"0x{r['attr']:06X}", 'proto': r['proto'], 'idx': r['idx'],
                          'internal': f"0x{inter:04X}",
-                         'src': f'tabB{rank + 1}' + ('-lowbyte' if r.get('lowbyte') else '')})
+                         'src': f'tabB{rank + 1}',
+                         'rowOff': f"PORSCHE_SYS_DATA.BIN:{r['off']}"})
             if len(rows) >= 16:
                 break
 
@@ -254,6 +393,14 @@ def main():
         }
         if GG.get(sysid):
             e['genSiblings'] = sorted(f'0x{s:04x}' for s in GG[sysid])
+        if unresolved:
+            e['joinUnresolved'] = unresolved
+            e['joinState'] = 'unresolved' if not rows else 'partial'
+            # ★ 2026-11-09(3)：码像候选（internal 经 TransCanCalcID 反解）**撤销**——
+            #   被发现机制取代（发现循环候选源=SpecArray/表行，RE-ICADDR §3.2；
+            #   GetData FILE:0x160fc 装载体 + Mode_1000/1001 发现循环转写后，码像无机制依据）。
+        if families.get(sysid):
+            e['family'] = families[sysid]
         if sysid in ANCH:
             e['tx'], e['rx'], e['confidence'] = f'0x{ANCH[sysid]:X}', f'0x{ANCH[sysid] + 8:X}', 'proven'
         entries.append(e)
@@ -273,11 +420,13 @@ def main():
              'multi' if e['cands'] else 'none'] += 1
 
     doc = {
-        'schemaVersion': 5,
-        'source': 'PORSCHE_SYS_DATA.BIN 表B/表A 结构化行 + ALL_ACTINFO internal|flags 行 + 交叉引用',
+        'schemaVersion': 6,
+        'source': 'PORSCHE_SYS_DATA.BIN 表B/表A 结构化行（精确 internal join）+ ALL_ACTINFO internal|flags 行',
         'note': ('proven=真机锚点；table-unique=诊断段候选唯一；candidate=短名单定向探测+识别串终审。'
-                 'v5=结构化 join（v4 柔性扫描 0x746 污染事故后重写），候选限诊断段 0x700-0x7FF。'),
-        'probeRule': 'blockKey ∈ {0x0B40,0x0B41,0x2040,0x2041,0x2340..0x2345} → 发探测命令，按响应 flags 丢 2/3 条候选',
+                 'v6=低字节 join 退役（真车证伪 0x721/722/723 NO DATA），无精确表A 行=joinState:unresolved；'
+                 'family=DRIVELINKS 14B 记录族（通用运行时候选族，识别串匹配才算命中）。'),
+        'probeRule': ('候选序=表行序（cands）→family；接受=识别串匹配模块名（strcmp/前缀/strstr）；'
+                      'NRC=有 ECU 但身份不符，不算候选；KWP 只发 21 01/1A xx，UDS 走 22 14 09 族'),
         'entries': entries,
         'anchorNote': '6 条 proven 来自真机实测锚点（2026-10-19 验证 6/6 命中）。',
     }

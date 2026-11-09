@@ -149,6 +149,11 @@ export class MockAdapter extends Emitter {
     const ecu = this.ecus ? this.ecus[this.address.tx] : null;
     if (this.ecus && this.strictAddress && !ecu) return '';   // 这个 tx 上没有模块
     if (ecu && ecu.noIdent1A && sid === 0x1A) return '';       // ★ KWP 识别静默（IC 类）
+    if (ecu && ecu.nrcAll) {
+      // ★ 只回 NRC 的 ECU（真车 0x7F1 形态：22 14 09→7F 22 12、1A xx→7F 1A 11、10 89→7F 10 12）
+      //   —— 该地址有 ECU 但身份不符，探测判定必须 nrc-reject，不算候选。
+      return this.#frame([0x7F, sid, 0x12]);
+    }
     if (ecu) {
       // 协议族不匹配 → 服务不支持（真车就是这样回 NRC 0x11）
       const kwpSids = [0x21, 0x3B, 0x17, 0x1A];
@@ -221,7 +226,10 @@ export class MockAdapter extends Emitter {
           return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }
         if (sid === 0x22 && did === 0x0705) {
-          const t = (ecu && (ecu.ident22b || ecu.ident22)) || '';
+          // ★ 模块识别文本（探测归属用）：目标地址（identTextTx=族中位）回 identText，
+          //   否则回该 ECU 自己的 ident22（真车每模块各回各的）。
+          const atTarget = this.identText && (this.identTextTx == null || this.identTextTx === this.address.tx);
+          const t = (ecu && (ecu.ident22b || ecu.ident22)) || (atTarget ? this.identText : '');
           if (!t) return '';
           return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }

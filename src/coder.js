@@ -341,7 +341,7 @@ export class Coder {
    * @param {Elm327} elm   已锁定协议的 ELM327
    * @param {object} opts  { tx, rx, ecuName }
    */
-  constructor(elm, { tx, rx, ecuName = 'ECU', verbose = true, family = null } = {}) {
+  constructor(elm, { tx, rx, ecuName = 'ECU', verbose = true, family = null, identRequests = null } = {}) {
     this.elm = elm;
     this.tx = tx;
     this.rx = rx;
@@ -351,6 +351,10 @@ export class Coder {
     this.protocol = 6;             // CAN 11bit/500k（保时捷实证）。link-doctor 锁定后可覆盖
     this.backups = [];
     this.lastIdent = '';          // 1A 9F/1A 94/1A 92 的 ASCII 识别串（自动选变体用）
+    this.identByCmd = {};         // ★ 2026-11-09 逐识别命令应答文本（识别串注册表精确键查找用）
+    // ★ 附加识别请求 = DSN.BIN 身份记录 SID/ID 集（data/ident-registry.json moduleIdent 的
+    //   request 字段；KWP 族=1A 9F 已在基础链，UDS 族=22 F1 A2）。可经 opts.identRequests 覆盖。
+    this.identRequests = identRequests || ['22F1A2'];
     this.lastPartNo = '';         // 1A 84 ECU 零件号（参考诊断仪 同款变体落定键，2026-11-05）
     this.lastPartTokens = [];     // 件号 ASCII token 集（1A 87/91/92/94 + 1A84，按 0x20 分词）
     this.lastHwPart = '';         // 1A 92/1A 91 硬件件号（多市场共用件收窄用）
@@ -446,11 +450,20 @@ export class Coder {
     //   参考诊断仪 不弹变体选择，它是按 ECU 识别/ODX 变体名自动进模块的；我们之前
     //   只看十六进制、然后 prompt 让用户选，方向反了。
     this.lastIdent = '';
+    this.identByCmd = {};
     this.lastPartNo = '';
     this.lastPartTokens = [];
     this.lastHwPart = '';
     this.lastSwNo = '';
     const identParts = [];
+    // ★ 2026-11-09 识别请求集 = DSN.BIN 身份记录 SID/ID（识别串注册表 moduleIdent，
+    //   DME 族=1A 9F（真车日志 5A 9F"P200"互证）、PSM/BCM 族=22 F1 A2）。
+    //   UDS 族模块不答 1A xx —— 注册表请求紧跟 1A9F 后插入（连续 3 miss 早停前可达）。
+    //   ⚠️ KWP 族绝不发 0x22（RE-FLOWSPEC §2.3：KWP 车请求集只有 1A xx/21 xx，
+    //   实车 22 全拒断点）—— 注册表 22 xx 请求只进非 KWP 链。
+    const identChain = ['1A9F',
+      ...(this.family === 'kwp' ? [] : (this.identRequests || [])).filter((x) => x && x !== '1A9F'),
+      '1A87', '1A84', '1A91', '1A92', '1A93', '1A94', '1A95', '1A97', '1A9A'];
     // 参考诊断仪 用版本信息识别变体；9F 可能是零件号，94 才是软件/变体，两条都读。
     // ★ 2026-10-28：全套 1A xx 识别（对齐 参考诊断仪 ODX 识别链）。
     //   此前只读 9F(DSN)+94(软件号)，识别串太短匹配不上变体名。
@@ -458,11 +471,12 @@ export class Coder {
     // 连续 3 条没有任何数据就提前收手：老 ECU 只支持 9F/94，
     // 挨个等 3s 超时会把「进模块」拖到 30 秒（2026-10-29 审计 P2-4）。
     let identMiss = 0;
-    for (const cmd of ['1A9F', '1A87', '1A84', '1A91', '1A92', '1A93', '1A94', '1A95', '1A97', '1A9A']) {
+    for (const cmd of identChain) {
       try {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
         let b = Array.from(id.body || []);
         if (b[0] === 0x5a) b = b.slice(2);           // 5A 9F / 5A 94 / 5A 92
+        else if (b[0] === 0x62) b = b.slice(3);      // 62 F1 A2（UDS 族识别，DSN.BIN 身份记录）
         const txtRaw = b.filter((c) => c >= 0x20 && c < 0x7f)
           .map((c) => String.fromCharCode(c)).join('');
         const txt = txtRaw.trim();   // 仅显示用；键留存用原样字节（strcmp 语义）
@@ -470,6 +484,7 @@ export class Coder {
           + (txt ? `  「${txt}」` : ''));
         if (txt) {
           identParts.push(txt); identMiss = 0;
+          if (!this.identByCmd[cmd]) this.identByCmd[cmd] = txt;   // ★ 识别串注册表键查找用
           // ★ 2026-11-08 件号采集扩到 1A 87/91/92/94（任务清单④ / RE-MODELADDR §3.3-3.4）：
           //   本车实证件号 98161864015 出现在 1A 87/94（不只 1A84）；按 0x20 分词逐 token 入集，
           //   供 pickVariantByPart 全等查表（checkPartNumber 分词语义）。
@@ -509,15 +524,20 @@ export class Coder {
   }
 
   /**
-   * 自动搜索链（RE-MODELADDR §2.5 + 任务清单①，逐帧对齐）：
+   * 自动搜索链（★ 2026-11-09 按参考诊断仪分支代码逐字转写，RE-TRACEABILITY-20261109.md §车名链）：
    *   ① 主/备双请求 `22 11 02`（0xff001102）→ `22 11 01`（0xff001101）——
-   *      fn(0xff001102, 0xff001101, 5)，发给当前链路地址；应答文本=车上识别串（trim 名）。
-   *   ② 备选链（SYSP:0x56a66 模板表，PorscheReadVehicleVin）：
-   *      UDS 流 `10 03`→`22 F1 90`→`1A 90`→`1A 87`→`1A 9B`→`21 50`→`21 51`→`1A 9A`；
-   *      KWP 流去 `10 03`/`22 F1 90`（不发 10 03；候选探测不对 KWP 发 0x22 —— 任务清单②⑤）。
-   *      每步 NRC/无数据 → 下一模板（链步进≠重试）；应答文本灌库（strcmp 语义）。
-   *   返回 { name, vin, nameSrc, vinSrc, steps }。
-   *   ⚠️ `22 14 0A` 支链触发条件（PorscheReadVehicleVin 返回值语义）按规格未覆盖 —— 不发。
+   *      PorscheReadVinAndGetVehicleID（SYSP:0x29fb8）内三处 `ShowMessageBoxID(0xff001102,0xff001101,5)`；
+   *      应答文本=车上识别串（trim 名源，RE-MODELID strcmp 语义）。
+   *   ② 备选链 = SYSP:0x56a66 模板表（PorscheReadVehicleVin SYSP:0x2a4b4 分支逐字节转写）：
+   *      模板序 `10 03 / 22 F1 90 / 1A 90 / 1A 87 / 1A 9B / 21 50 / 21 51 / 1A 9A`；
+   *      **留存键**（应答进 param_2/TOKEN+0x409cf4 文本库）：
+   *        22 F1 90(+2, UDS 路径) · 21 51(+3, FUN_00032450(0x309)==0x55 分支) ·
+   *        1A 90(+1, 0xAA/0x608/0x101 分支)；
+   *      **fire-and-forget**（代码内应答即清/不取）：10 03 · 1A 87 · 1A 9B · 21 50 · 1A 9A
+   *      —— 1A 87/1A 9B/21 50 的应答**不进**车名候选（参考诊断仪机制本身兜住「件号不进显示名」）。
+   *      分支条件 FUN_00032450(0x309)/0x608/0x101 = 记录字节探测，离线不可查 →
+   *      留存键并集全发、按键定性（矩阵「分支条件离线不可复现」如实标注）。
+   *   ⚠️ `22 14 0A` 支链触发条件按规格未覆盖 —— 不发。
    */
   async readVehicleIdentity(family = this.family) {
     const out = { name: '', vin: '', nameSrc: '', vinSrc: '', steps: [] };
@@ -529,7 +549,12 @@ export class Coder {
     // 串号/零填充（如 "000000000000"）不当 VIN（旧 autoSearch 同款启发式，2026-11-08 回归修复）。
     const VIN_RE = /^[A-HJ-NPR-Z0-9]{11,17}$/;
     const looksVin = (t) => VIN_RE.test(t) && /[A-Z]/.test(t) && !/^9[0-9]{10}$/.test(t);
-    const step = async (req, vinMode) => {
+    // ★ 参考诊断仪留存键（PorscheReadVehicleVin 分支实证：应答被 memcpy 到 param_2/文本库）
+    const RETAIN = new Set(['22F190', '2151', '1A90']);
+    // ★ 防御层（自创 · 矩阵标注「防御层(自创)·不计入对齐」）：件号形态（纯数字 11-12 位）
+    //   永不作显示名。参考诊断仪侧同效=分支丢弃应答（见上），此处冗余兜底防解析层漏网。
+    const looksLikePartNo = (t) => /^[0-9]{11,12}$/.test(String(t || '').trim());
+    const step = async (req, { retain = false } = {}) => {
       try {
         const r = await this.uds(req, 3000, { allowEmpty: true });
         const body = Array.from(r.body || []);
@@ -537,11 +562,13 @@ export class Coder {
         let skip = 2;
         if (body[0] === 0x62) skip = 3;
         const txt = asciiOf(body, skip);
-        out.steps.push(`${req} → ${(body || []).map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`);
-        if (!out.vin && vinMode && looksVin(txt)) {
+        out.steps.push(`${req} → ${(body || []).map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`
+          + (retain ? '' : '（fire-and-forget，应答不取）'));
+        if (!retain || !txt) return;
+        if (!out.vin && looksVin(txt)) {
           out.vin = txt.slice(0, 17); out.vinSrc = req;
         }
-        if (!out.name && txt && !looksVin(txt)) {
+        if (!out.name && !looksVin(txt) && !looksLikePartNo(txt)) {
           out.name = txt.slice(0, 32); out.nameSrc = req;
         }
       } catch (e) {
@@ -549,16 +576,16 @@ export class Coder {
       }
     };
     // ① 主/备双请求（备仅在主失败/NRC 时发）
-    await step('221102', false);
-    if (!out.name) await step('221101', false);
-    // ② 备选链（SYSP:0x56a66 模板表）：UDS 流全表；KWP 流/未证家族走 KWP 段
-    //   （§2.3「KWP 车 0x22 全拒时走 1A xx/21 xx 段」——未证家族保守取 KWP 段零错，按规格未覆盖）
+    await step('221102', { retain: true });
+    if (!out.name) await step('221101', { retain: true });
+    // ② 备选链（SYSP:0x56a66 模板序）：UDS 流全表；KWP 流/未证家族走 KWP 段
+    //   （§2.3「KWP 车 0x22 全拒时走 1A xx/21 xx 段」——未证家族保守取 KWP 段零错）
     const chain = family === 'uds'
       ? ['1003', '22F190', '1A90', '1A87', '1A9B', '2150', '2151', '1A9A']
       : ['1A90', '1A87', '1A9B', '2150', '2151', '1A9A'];
     for (const req of chain) {
       if (out.name && out.vin) break;
-      await step(req, true);
+      await step(req, { retain: RETAIN.has(req) });
     }
     return out;
   }

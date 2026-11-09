@@ -14,6 +14,7 @@ import { parseAddrPair, overrideFor } from './src/addr.js';
 import { LinkDoctor } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
 import { autoPickVariant } from './src/variant.js';
+import { probeDecision, familyCandidates, identMatch } from './src/probe.js';
 import { specialFunctionsFor } from './src/special-catalog.js';
 import { MockAdapter } from './src/mock-adapter.js';
 
@@ -152,13 +153,34 @@ console.log('\n[5] ECU address table');
     const ea = JSON.parse(readFileSync(new URL('./data/ecu-addresses.json', import.meta.url), 'utf8'));
     ok('CAN 地址证据表含 PASM/后端/前端/PDC/Gateway',
       ea.entries.length >= 5 && ea.entries.some((e) => e.system === 'PASM' && e.tx === '0x7D0'));
-    // ★ 任务清单②（零特判）：IC 候选由 R1/R2 通用规则解析出 0x721/722/723（验证点，非代码路径）
+    // ★ 2026-11-09 RE-ICADDR：低字节 join 已被真车证伪（0x721/722/723 NO DATA）——
+    //   近似 join 禁用；KWP IC internal 0x02F9 无精确表A 行 = joinState:unresolved。
     const ic = ea.entries.find((e) => e.sysId.toLowerCase() === '0x0b08');
     const txs = (ic.cands || []).map((c) => parseInt(c.tx, 16));
-    ok('IC 寻址表链解析出 0x721/722/723（R1 代际合并 + R2 KWP 代缺口）',
-      [0x721, 0x722, 0x723].every((t) => txs.includes(t)), txs.map((t) => t.toString(16)).join(','));
+    ok('IC 低字节 join 退役：候选不含 0x721/722/723（真车证伪族）',
+      ![0x721, 0x722, 0x723].some((t) => txs.includes(t)), txs.map((t) => t.toString(16)).join(','));
+    ok('IC 无任何 -lowbyte 近似 join 残留',
+      !ea.entries.some((e) => (e.cands || []).some((c) => /lowbyte/.test(c.src || ''))));
+    ok('KWP IC internal 0x02F9 标 joinState 未决/partial（含表B 行证据）',
+      ['unresolved', 'partial'].includes(ic.joinState) && (ic.joinUnresolved || []).some(
+        (u) => u.internal === '0x02F9' && (u.tabBRows || []).length > 0),
+      JSON.stringify(ic.joinUnresolved));
     ok('IC 旧 0x0117 UDS 簇短名单已删', !txs.includes(0x77a));
     ok('R1 代际同名组（Kombiinstrument_BaseSys 两代对）', JSON.stringify(ic.genSiblings) === '["0x0c08"]');
+    // ★ 通用候选族（DRIVELINKS 14B 记录族）：任何模块可生成，带记录偏移证据
+    const th = ea.entries.filter((e) => (e.family || []).length > 0);
+    ok('14B 记录族通用生成（含记录偏移证据；码像候选标 code-image 未证）',
+      th.length > 0 && th.every((e) => e.family.every((f) =>
+        /dec\.bin:0x/.test(f.recOff || '') || /^code-image:/.test(f.recOff || ''))),
+      `${th.length} 个 sysId 带族`);
+    // ★ 链路绑定段转写断言（2026-11-09(2)）：TransCanCalcID 同式 + 锚点反证（internal≠连接码）
+    {
+      const { tcCodeToCan } = await import('./src/probe.js').catch(() => ({}));
+      const coderSrc2 = readFileSync('./src/coder.js', 'utf8');
+      ok('calcLinkCode=TransCanCalcID 同源（参考诊断仪 64B 本体转写）',
+        /_TC_T1 = \[0x05, 0x07, 0x03, 0x02, 0x04, 0x06, 0x01, 0x00\]/.test(coderSrc2)
+        && /_TC_T2 = \[0x46, 0x75, 0x63, 0x6b, 0x55, 0x53, 0x41, 0x2e\]/.test(coderSrc2));
+    }
   }
   ok('座椅/摄像头/前照灯地址已补',
     tbl['驾驶员侧座椅存储器'].tx === 0x7D9 &&
@@ -181,6 +203,49 @@ console.log('\n[5] ECU address table');
     if ((hitTx && hitTx !== k) || (hitRx && hitRx !== k)) clash.push(k);
   }
   ok('candidates do not clash with measured ids', clash.length === 0, clash.join(','));
+}
+
+// ===== 5b. 探活判定（参考诊断仪 语义，RE-FLOWSPEC §1.6/2.3 转写）=====
+console.log('\n[5b] probeDecision 探活判定');
+{
+  // ★ NRC = 该地址有 ECU 但身份不符 —— 不算候选，NRC 字节不许当识别串（真车 0x7F1 教训）
+  const nrc = probeDecision('7F2212', '', { label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'] });
+  ok('NRC 7F 22 12 → nrc-reject（不算候选）', nrc.verdict === 'nrc-reject' && nrc.ident === '', nrc.verdict);
+  const nrc2 = probeDecision('7F1A11', '7F 1A 11', { label: 'IC(仪表)' });
+  ok('NRC 7F 1A 11 → nrc-reject（NRC 字节不当识别串）', nrc2.verdict === 'nrc-reject' && !nrc2.ident, nrc2.ident);
+  // 识别串匹配模块名（strcmp/前缀/strstr）才算候选
+  const hit = probeDecision('6211024B6F6D6269', 'Kombiinstrument_A2_2', {
+    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'],
+  });
+  ok('识别串 Kombiinstrument… → accept（前缀 memcmp）', hit.verdict === 'accept', hit.verdict);
+  const hit2 = probeDecision('5A9F4B6F6D62695F49435F397831', 'Kombi_IC_9x1', {
+    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'],
+  });
+  ok('识别串 Kombi_IC_9x1 → accept（Kombi 语义前缀 ≥4）', hit2.verdict === 'accept', hit2.verdict);
+  const mis = probeDecision('5A9F42434D5F766F726E655F397831', 'BCM_vorne_9x1_Basis', {
+    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'], otherLabels: ['前端电子设备', 'BCM_vorne'],
+  });
+  ok('识别串指向邻居 BCM → other-module 排除', mis.verdict === 'other-module', mis.verdict);
+  const no = probeDecision('5A9F414141313233', 'AAA123', {
+    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'],
+  });
+  ok('正响应但识别串不匹配 → no-match（不算候选）', no.verdict === 'no-match', no.verdict);
+  ok('no-answer → no-answer', probeDecision('', '', { label: 'X' }).verdict === 'no-answer');
+  // 短键（<4）只接受全等，防任意串误命中
+  ok('短键 IC 不误命中任意含 IC 串', !identMatch('TRAFIC_LIGHT', ['IC']));
+  ok('短键全等可命中', identMatch('IC', ['IC']));
+  // ★ 候选族生成（通用 DRIVELINKS tx 表族规则）：joinState=unresolved 扫全库族并集
+  const entry = { joinState: 'unresolved', family: [{ tx: 0x722, rx: 0x72A, recOff: 'dec.bin:0xF2DA' }] };
+  const fam = familyCandidates(entry, [{ tx: 0x371, rx: 0x379 }, { tx: 0x722, rx: 0x72A }, { tx: 0x50, rx: 0x58 }]);
+  ok('未决模块族=自身族∪全库族并集（去重、过滤域外）',
+    fam.map((f) => f.tx.toString(16)).join(',') === '722,371', fam.map((f) => f.tx.toString(16)).join(','));
+  const fam2 = familyCandidates({ family: [{ tx: 0x742 }] }, [{ tx: 0x371 }]);
+  ok('join 无未决模块族=自身族（不扫全库，探测轻量）',
+    fam2.map((f) => f.tx.toString(16)).join(',') === '742', fam2.map((f) => f.tx.toString(16)).join(','));
+  const fam3 = familyCandidates({ joinState: 'partial', joinUnresolved: [{ internal: '0x02F9' }],
+    family: [{ tx: 0x722 }] }, [{ tx: 0x371 }, { tx: 0x722 }]);
+  ok('join 有未决（如 KWP IC 0x02F9）→ 族=自身∪全库并集（判据=join 证据，非模块特判）',
+    fam3.map((f) => f.tx.toString(16)).join(',') === '722,371', fam3.map((f) => f.tx.toString(16)).join(','));
 }
 
 // ===== 6. parseResp ISO-TP =====
@@ -1458,11 +1523,12 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
      && !/st === 'candidate'[\s\S]{0,600}return confirm/.test(app));
   ok('身份验证通过后提升 verified',
      /state\.currentAddr = \{ \.\.\.addr, state: 'verified'/.test(app));
-  ok('探测命中静默采纳（文本匹配，终审⑤）',
-     /文本匹配命中（静默采纳）/.test(app) && !/confirm\(`在 0x/.test(app));
+  ok('探测命中静默采纳（识别串匹配，RE-FLOWSPEC §1.6）',
+     /识别串匹配命中（静默采纳/.test(app) && !/confirm\(`在 0x/.test(app)
+     && !/存活候选/.test(app) && !/confidence: 'alive'/.test(app));
   ok('探测候选序=表行序+可取消（终审①，无深度盲扫）',
      /probeAbort/.test(app) && !/深度扫描/.test(app) && /candsAux/.test(app));
-  ok('探测挡掉 rx 溢出', /rx > 0x7FF/.test(app));
+  ok('探测挡掉 rx 溢出（probeList 同源）', /rx > 0x7FF/.test(app + readFileSync('./src/probe.js', 'utf8')));
   ok('无第三方工具字样（UI 与源码）', !app.includes('4' + '31'));
 
   const coderSrc = readFileSync('./src/coder.js', 'utf8');

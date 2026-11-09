@@ -15,7 +15,7 @@
 import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1, parseRespAuto, familyOfReadSid, familyOfItems } from './coder.js';
 import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange, hasReadService, hasWriteService, isReadOnlyItem, readOnlyReason, resolveBlockReadSid, WRITE_SIDS, READ_SIDS } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
-import { autoPickVariant, pickVariantByPart, pickModelByName } from './variant.js';
+import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
@@ -42,6 +42,17 @@ async function ensureEcuPartMap() {
   } catch { ecuPartMap = null; }
   return ecuPartMap;
 }
+// ★ 2026-11-09：识别串→家族/变体注册表（DSN.BIN 挖掘，data/ident-registry.json，懒加载）。
+//   DME 族身份记录=1A 9F（真车日志 5A 9F"P200"互证）、PSM/BCM 族=22 F1 A2。
+let identRegistry = undefined;
+async function ensureIdentRegistry() {
+  if (identRegistry !== undefined) return identRegistry;
+  try {
+    const r = await fetch('data/ident-registry.json');
+    identRegistry = r.ok ? await r.json() : null;
+  } catch { identRegistry = null; }
+  return identRegistry;
+}
 
 /**
  * 模块名 → DRIVELINKS 的 ECU_ID（0x0bXX）。
@@ -55,6 +66,7 @@ import { LinkDoctor } from './link-doctor.js';
 import { parseDtcPayload } from './dtc.js';
 import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
+import { probeDecision, familyCandidates, probeList } from './probe.js';
 
 /**
  * ECU 物理地址表（CAN 请求/应答 ID）。
@@ -380,62 +392,49 @@ function identTextMatch(text, label, variantNames, modRecs, moduleKeys) {
 }
 
 /**
- * 探测模块地址（2026-11-05 终审：0 自创，照抄 参考诊断仪）。
+ * 探测模块地址（2026-11-09 RE-ICADDR：判定转写 参考诊断仪，RE-FLOWSPEC §1.6/2.3）。
  *
- * 候选序 = **表行序**（cands 行序 + 变体选行收窄）→ candsAux 辅助候选 → 探测族序
- *   （blockKey 族报文，PROBE_CMDS_BY_BLOCKKEY）；无手工地址表、无网段盲扫。
- * 归属判定只用 参考诊断仪 机制：§8.3 探测 flags + **运行时文本匹配**（名字注册表原语）。
- * 文本匹配命中 → **静默采纳**（参考诊断仪 进模块无确认弹窗，TEXT_CN UI 文本库实证）；
- * 不命中 → 试下一候选；全失败 → null（物理下限终态由调用方按「通讯失败」报错）。
+ * 候选序 = **表行序**（cands 行序 + 变体选行收窄）→ candsAux → **DRIVELINKS 14B 记录族**
+ *   （通用兜底族：entry.family；joinState=unresolved 模块扫全库族并集 —— 真车自证）。
+ * 接受条件（零放松）：**识别串匹配模块名**（strcmp/前缀/strstr，probe.js probeDecision）才算候选；
+ *   NRC 应答 = 该地址有 ECU 但身份不符 —— **不算候选，NRC 字节绝不当识别串**（真车 0x7F1 教训）；
+ *   无应答 = 候选死，换下一候选。全失败 → null（调用方按「通讯失败」报错）。
  * 返回 { tx, rx, cmd, ident, confidence:'probed' } 或 null。
  */
 async function probeAddressFor(label, probeCmd, opts = {}) {
   if (!coder) return null;
 
-  const seen = new Set();
-  const add = (list, c) => {
-    const tx = parseInt(c.tx, 16), rx = parseInt(c.rx, 16);
-    // rx 溢出会被 ATCRA 当成非法 ID（0x7F8+8=0x800），必须挡掉
-    if (!Number.isFinite(tx) || !Number.isFinite(rx)) return;
-    if (tx < 0x700 || tx > 0x7FF) return;
-    if (rx < 0x700 || rx > 0x7FF || rx === tx) return;
-    if (seen.has(tx)) return;
-    seen.add(tx);
-    list.push({ tx, rx, proto: Number(c.proto) || null });   // proto 1=KWP 3=UDS（探测帧族分派用）
-  };
-
-  // ★ 终审①：候选序 = 表行序（cands，变体选行收窄排序）→ candsAux
+  // ★ 终审①：候选序 = 表行序（cands，变体选行收窄排序）→ 兜底族（probeList 与模拟车族中位同源）
   const prefer = variantMatchedInternals(label, null, opts && opts.variantNames);
   const entry = addrEntryFor(label, opts && opts.sys);
-  const cands = ((entry?.cands || []).concat(entry?.candsAux || [])).slice().sort((a, b) => {
-    const pa = prefer.has(String(a.internal || '').toUpperCase()) ? 0 : 1;
-    const pb = prefer.has(String(b.internal || '').toUpperCase()) ? 0 : 1;
-    return pa - pb;
-  });
-  const quick = [];
-  for (const c of cands) add(quick, c);
+  // ★ 通用兜底族（DRIVELINKS 14B 记录族，零特判）：静态候选之外的运行时身份探测族。
+  //   joinState=unresolved 的模块（如 KWP IC internal 0x02F9 无精确表A 行）扫全库族并集。
+  const globalFams = [];
+  for (const e2 of (ecuAddrTable?.entries || [])) {
+    for (const f of (e2.family || [])) globalFams.push(f);
+  }
+  const all = probeList(entry, globalFams, prefer);
+  const famList = all.filter((p) => p.src === 'family');
 
   const hex = (n) => n.toString(16).toUpperCase();
 
-  // ★ 2026-11-07 真机定案（用户 982 实测：1A9F 探测 16 候选全灭）：探测报文补
-  //   参考诊断仪 同款 **22 14 09**（DriveLinksMode_1001 逐候选发 0xff001409 的总线帧），
-  //   判定=flags/文本匹配；存活（任何应答含 NRC）按表行序采纳，每个候选落日志（自证）。
   const tryAddr = async (p) => {
     const note = (s) => log(`  · 探 0x${hex(p.tx)}/0x${hex(p.rx)}: ${s}`, 'info');
-    let alive = null;   // {resp} 存活但未确认
     try {
       await coder.elm.cmd(`ATSH${hex(p.tx)}`, 1200);
       await coder.elm.cmd(`ATCRA${hex(p.rx)}`, 1200);
       const cmdsProbe = probeCmdsForEntry(entry);
-      // ★ 任务清单②（2026-11-08）：候选探测按协议族发帧 —— **KWP 候选只发 `21 01`/`1A xx`
-      //   （永不对 KWP 发 0x22 —— 实车 22 全拒断点）；UDS 候选才走 22 14 09/22 11 02/22 07 05
-      //   （DriveLinksMode_1000/1001 逐候选 0xff001409 族）。
-      //   IC blockKey（0x0860-0x0870）不在 flags 特殊集 → cmdsProbe 为空 = 不做 flags 探测，
-      //   直接静 tx/rx + 识别链（21 01/1A xx）。
-      const isKwpCand = Number(p.proto) === 1;
-      const cmds = probeCmd ? [probeCmd] : (isKwpCand
+      // ★ 候选探测按协议族分派帧（RE-FLOWSPEC §1.6/2.3）：
+      //   KWP 候选（proto=1）只发 `21 01`/`1A xx`（永不对 KWP 发 0x22 —— 实车 22 全拒断点）；
+      //   UDS 候选（proto=3）走 22 14 09/22 11 02/22 07 05（DriveLinksMode 逐候选 0xff001409 族）；
+      //   proto 未知（族候选）→ KWP 先 UDS 后：KWP ECU 先应答即命中，不会走到 22；
+      //   UDS ECU 对 KWP 帧回 NRC（身份不符）后由 UDS 帧识别 —— 真车自证路径。
+      const proto = Number(p.proto) || 0;
+      const cmds = probeCmd ? [probeCmd] : (proto === 1
         ? ['2101', '1A9F', '1A87', '1A90']
-        : ['221409', ...cmdsProbe, '221102', '220705']);
+        : proto === 3
+          ? ['221409', ...cmdsProbe, '221102', '220705']
+          : ['2101', '1A9F', '1A87', '1A90', '221409', ...cmdsProbe, '221102', '220705']);
       for (let ci = 0; ci < cmds.length; ci++) {
         const cmd = cmds[ci];
         let r = '';
@@ -449,57 +448,45 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
           .filter((c) => c >= 0x20 && c < 0x7f)
           .map((c) => String.fromCharCode(c)).join('').trim();
         note(`${cmd} → ${body.slice(0, 24) || r.slice(0, 24) || '(空)'}`);
-        if (body.startsWith('5A') || body.startsWith('62')) {
-          if ((pr.body || []).length >= 3 && cmd === '221409') {
-            const fl = probeFlagsFromResp(pr.body);
-            log(`    探测 flags: bVar22=${fl.bVar22 ? 1 : 0} local164=${fl.local164} local178=${fl.local178}`, 'info');
-          }
-          // ① 文本匹配（GetSubSysDataAddr 同款原语）= 归属确认，静默采纳
-          if (identTextMatch(text, label, opts.variantNames, opts.modRecords, opts.modules)) {
-            return { tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32), confidence: 'probed' };
-          }
-          if (text) {
-            // 文本指向其他模块家族 → 排除（同原语反向用：不把邻居 ECU 当目标）
-            const others = (opts.otherLabels || []).filter((L) => L !== label);
-            const hitOther = others.some((L) => {
-              const k = String(L || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-              const N = String(text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-              return k && k.length >= 3 && (N.includes(k) || k.includes(N));
-            });
-            if (hitOther) { note(`文本指向其他模块家族「${text.slice(0, 16)}」，跳过`); alive = null; break; }
-          }
-          alive = alive || { resp: body.slice(0, 24) };
-        } else if (body.startsWith('7F')) {
-          // NRC = 该地址有模块在（存在性应答），记存活
-          alive = alive || { resp: body.slice(0, 8) };
-        } else if (body) {
-          alive = alive || { resp: body.slice(0, 24) };
+        // ★ 判定 = probeDecision（RE-FLOWSPEC §1.6/2.3 转写）：识别串匹配才算候选；
+        //   NRC=有 ECU 但身份不符（不许当 IC/目标候选，NRC 字节不许当识别串）。
+        const d = probeDecision(body, text, {
+          label,
+          variantNames: opts.variantNames,
+          moduleKeys: opts.modules,
+          modRecords: opts.modRecords,
+          autoPick: autoPickVariant,
+          otherLabels: (opts.otherLabels || []).filter((L) => L !== label),
+        });
+        if (d.verdict === 'accept') {
+          return { tx: p.tx, rx: p.rx, cmd, ident: d.ident, confidence: 'probed' };
         }
+        if (d.verdict === 'nrc-reject') {
+          note(`${cmd} → NRC 身份不符（该地址有 ECU 非目标模块），不算候选`);
+        } else if (d.verdict === 'other-module') {
+          note(`文本指向其他模块家族「${(d.ident || '').slice(0, 16)}」，跳过`);
+          return null;
+        }
+        // no-match / no-answer：继续下一帧（同一候选识别链继续）
       }
     } catch (e) { note(`异常 ${e.message || e}`); }
-    if (alive) return { tx: p.tx, rx: p.rx, cmd: 'alive', ident: alive.resp, confidence: 'alive' };
     return null;
   };
 
   probeAbort = false;
-  const alive = [];
   try {
     // 上一个模块可能是 29-bit，先切回 11-bit/500k
     await coder.elm.cmd('ATSP6', 1500).catch(() => {});
-    for (let i = 0; i < quick.length; i++) {
+    for (let i = 0; i < all.length; i++) {
       if (probeAbort) return null;
-      showLoading(`正在探测 ${label}`, `候选 ${i + 1}/${quick.length} · 0x${hex(quick[i].tx)}`,
+      showLoading(`正在探测 ${label}`, `候选 ${i + 1}/${all.length} · 0x${hex(all[i].tx)}`,
         () => { probeAbort = true; });
-      const hit = await tryAddr(quick[i]);
-      // 文本/flags 确认命中 → 立即采纳（参考诊断仪 静默采纳）；存活候选继续扫完按行序取
-      if (hit && hit.confidence === 'probed') return hit;
-      if (hit) alive.push(hit);
+      const hit = await tryAddr(all[i]);
+      // ★ 识别串匹配命中 → 静默采纳（参考诊断仪 无确认弹窗）；否则换下一候选。
+      //   无「存活即采纳」路径 —— NRC/无名应答一律不算（真车二连败教训）。
+      if (hit) return hit;
     }
-    if (alive.length) {
-      // ★ 存活候选按表行序取首个（参考诊断仪 行序选行原则），进入后身份校验再确认
-      log(`  · 存活候选 ${alive.length} 个（${alive.map((a) => '0x' + hex(a.tx)).join(' ')}），按行序取首个`, 'info');
-      return alive[0];
-    }
+    log(`  · 候选 ${all.length} 个全部未命中识别串（含族候选 ${famList.length} 个），通讯失败`, 'warn');
     return null;
   } finally {
     hideLoading();
@@ -936,7 +923,7 @@ async function autoSearch(opts = {}) {
     if (modelGuess && modelGuess.models.length) {
       // ★ 显示（任务清单①）：= 应答文本（如「14款 Cayman」），车型条目由应答文本 strcmp 落定。
       const yy = year != null ? String(year % 100).padStart(2, '0') : '??';
-      const desig = nameFromCar ? `${yy}款 ${nameFromCar}` : '';
+      const desig = designationFrom(year, nameFromCar);
       const pick = (label, note) => {
         pushModel({ label });
         toast('ok', `已选 ${desig || label}`, note || desig || `${year ?? '?'} 年款`);
@@ -2204,7 +2191,23 @@ async function enterSystem(sys) {
   if (simMode && simMock) {
     if (varNames.length) {
       simMock.identText = varNames.join(' ');
-      simMock.identTextTx = coder && coder.tx != null ? coder.tx : null;   // 只在目标地址回识别串
+      // ★ mock 命中族中位（2026-11-09 通用规则，非 IC 特判）：识别串答在**探测族中位**地址
+      //   （probeList = 表行序 cands → DRIVELINKS 14B 记录族，与 probeAddressFor 同源同序）。
+      //   探测全族扫描 → 中位地址识别串命中 → 身份匹配采纳；NRC/无名应答不算。
+      const entrySim = addrEntryFor(sys.label, sys);
+      const globalFamsSim = [];
+      for (const e2 of (ecuAddrTable?.entries || [])) {
+        for (const f of (e2.family || [])) globalFamsSim.push(f);
+      }
+      const listSim = probeList(entrySim, globalFamsSim,
+        variantMatchedInternals(sys.label, null, varNames));
+      simMock.identTextTx = listSim.length
+        ? listSim[Math.floor(listSim.length / 2)].tx
+        : (coder && coder.tx != null ? coder.tx : null);
+      if (simMock.identTextTx != null) {
+        log(`  · 模拟车识别目标（族中位）= 0x${simMock.identTextTx.toString(16).toUpperCase()}`
+          + `（族 ${listSim.length} 候选）`, 'info');
+      }
     }
   }
   state.currentAddr = null;   // 进模块失败时不能沿用上一个模块的地址证据
@@ -2234,7 +2237,7 @@ async function enterSystem(sys) {
         otherLabels: (modelsCatalog?.models?.[currentModel]?.modules || []).map((m) => m.module),
       });
       if (probed) {
-        addr = { ...probed, state: 'probed', note: probed.confidence === 'probed' ? '文本匹配命中（静默采纳）' : '存活候选（行序采纳）' };
+        addr = { ...probed, state: 'probed', note: '识别串匹配命中（静默采纳，NRC/无名应答不算候选）' };
         log(`  ✅ ${sys.label} → 0x${probed.tx.toString(16).toUpperCase()}/0x${probed.rx.toString(16).toUpperCase()}`
           + (probed.ident ? `（识别串「${probed.ident}」）` : ''), 'ok');
       } else {
@@ -2494,9 +2497,43 @@ async function enterSystem(sys) {
   if (!entries.length) {
     log(`  ${sys.label} 没有可加载的模块数据`, 'warn');
   }
-  // 已有用户/自动选择 → 只认这个模块；否则优先选识别串能命中的模块，
-  // 都不命中才退回第一个候选（不把全部候选都读一遍）。
+  // 已有用户/自动选择 → 只认这个模块；否则按车辆证据分派（★ 2026-11-09 选择层，
+  // RE-TRACEABILITY-20261109.md）：①识别串（DSN.BIN 注册表）②件号（JOB.BIN 会话库）
+  // ③协议族 KWP/UDS 兜底 —— 家族选错则记录 SID 族错（22 00xx 全灭事故根因），此层优先。
   let active = entries.find((e) => state.selectedVariant[e.mod]) || null;
+  let familyPick = null;
+  if (!active && entries.length) {
+    const reg = await ensureIdentRegistry();
+    const pm = await ensureEcuPartMap();
+    if (moduleFamily === undefined) {
+      try {
+        const ctlM = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timerM = ctlM ? setTimeout(() => ctlM.abort(), 1500) : null;
+        const rM = await fetch('data/module-family.json', ctlM ? { signal: ctlM.signal } : {});
+        if (timerM) clearTimeout(timerM);
+        moduleFamily = rM.ok ? await rM.json() : null;
+      } catch (e) { moduleFamily = null; }
+    }
+    const identTokens = [];
+    for (const t of [coder.identByCmd?.['1A9F'], coder.identByCmd?.['22F1A2'], coder.lastIdent]) {
+      for (const w of String(t || '').split(/[^A-Za-z0-9一-龥]+/).filter(Boolean)) {
+        if (!identTokens.includes(w)) identTokens.push(w);
+      }
+    }
+    familyPick = pickFamilyByEvidence(entries, {
+      identTokens,
+      partNo: coder.lastPartNo,
+      partTokens: coder.lastPartTokens,
+      registry: reg,
+      byPart: pm?.byPart,
+      moduleFamily,
+      observedFamily: enterFamily,
+    });
+    active = entries.find((e) => e.mod === familyPick.mod) || null;
+    if (familyPick.evidence.length) log(`  🔎 家族证据：${familyPick.evidence.join('；')}`, 'info');
+    log(`  📦 数据家族分派 → ${familyPick.mod}${familyPick.variant ? ` · 变体 ${familyPick.variant}` : ''}（${familyPick.how}）`, active ? 'ok' : 'warn');
+    if (familyPick.variant) state.selectedVariant[familyPick.mod] = familyPick.variant;
+  }
   if (!active) {
     const recognized = [];
     for (const e of entries) {
