@@ -313,6 +313,49 @@ export function parseRespCaf1(hexStr, reqEcho = '') {
  * 判定：按请求 SID 期望的正响应（req+0x40）或 NRC(0x7F) 落在 body[0] 为准，
  * 两种解释都像时优先 ISO-TP（长度可核对）。
  */
+/**
+ * 发送 AT 命令并要求回执（对没有 cmdOk 的旧桩/裸适配器退回裸 cmd）。
+ * 只有 Elm327 才实现 cmdOk —— 测试桩、第三方 port 不该被迫实现它。
+ */
+export async function atCmdOk(elm, at, timeoutMs, opts = {}) {
+  // ⚠️ 2026-11-10 审计：opts 之前没透传 —— 扫描时传 { noDelay:true } 被静默丢弃，
+  //    每条 ATSH/ATCRA 仍然等 120ms，256 个地址白等 60s（扫完 70s 而不是 10–15s）。
+  if (elm && typeof elm.cmdOk === 'function') return elm.cmdOk(at, timeoutMs, opts);
+  return elm.cmd(at, timeoutMs, opts);
+}
+
+/**
+ * 抽取应答里每一帧的 CAN ID（11 位 3 hex / 29 位 8 hex）。
+ *
+ * ⚠️ 2026-11-10 审计 R4：`parseResp` 把 CAN ID 当噪声丢掉，于是"这帧是谁回的"
+ *    在整条链路上不可见。真车日志里探 0x7F1/0x7F9 却回帧头 `7E8` —— 要么 ATSH 没落地，
+ *    要么应答方不是该候选。两种都必须当场判死，不能当"该候选回了个 NRC"。
+ *
+ * 只做识别、不改解析：调用方拿它和期望 rx 比对，不符即丢弃该帧。
+ */
+export function frameIdsOf(text) {
+  const out = [];
+  for (const ln of String(text || '').split(/[\r\n]+/)) {
+    const line = ln.replace(/searching\.*/gi, '').trim();
+    if (!line) continue;
+    const toks = line.split(/\s+/).filter((t) => /^[0-9A-Fa-f]+$/.test(t));
+    if (!toks.length) continue;
+    const t0 = toks[0];
+    // 空格分隔：首个 token 就是 ID
+    if (toks.length > 1 && (t0.length === 3 || t0.length === 8)) {
+      out.push(parseInt(t0, 16));
+      continue;
+    }
+    // ATS0 连写：ID + 载荷（11 位 ⇒ 总长奇数；29 位 ⇒ 总长偶数且 ≥10）
+    if (toks.length === 1 && t0.length >= 5) {
+      const idLen = ((t0.length - 8) % 2 === 0 && t0.length >= 10) ? 8
+        : (((t0.length - 3) % 2 === 0) ? 3 : 0);
+      if (idLen) out.push(parseInt(t0.slice(0, idLen), 16));
+    }
+  }
+  return out;
+}
+
 export function parseRespAuto(hexStr, reqEcho = '', reqSid = null) {
   const iso = parseResp(hexStr, reqEcho);
   const caf = parseRespCaf1(hexStr, reqEcho);
@@ -381,15 +424,24 @@ export class Coder {
     //    2026-10-17 真车实测：L4 试完 ATSP6/7/8/9 失败后停在 ATSP9（250k），
     //    保时捷是 500k，之后所有请求全是 CAN ERROR。参考诊断仪 能连、我们连不上就是这个。
     //    协议码：6=11bit/500k  7=29bit/500k  8=11bit/250k  9=29bit/250k
-    await this.elm.cmd(`ATSP${this.protocol ?? 6}`, 2500);
+    await atCmdOk(this.elm, `ATSP${this.protocol ?? 6}`, 2500);
     // ★ 绑定期换算同款（2026-11-06）：参考诊断仪 绑定参数=连接码（CAN 的纯函数），
     //   这里同步计算出同源连接码留档校验；适配器侧 ATSH/ATCRA 直接吃 CAN（等价其 SetAddress/FilterId）。
     this.linkCodeTx = calcLinkCode(this.tx);
     this.linkCodeRx = calcLinkCode(this.rx);
     this._say(`  绑定换算 tx=0x${this.tx.toString(16).toUpperCase()}→码${this.linkCodeTx != null ? '0x' + this.linkCodeTx.toString(16).toUpperCase() : '?'}`
       + ` rx=0x${this.rx.toString(16).toUpperCase()}→码${this.linkCodeRx != null ? '0x' + this.linkCodeRx.toString(16).toUpperCase() : '?'}`);
-    await this.elm.cmd(`ATSH${this.tx.toString(16).toUpperCase()}`, 2000);
-    await this.elm.cmd(`ATCRA${this.rx.toString(16).toUpperCase()}`, 2000);
+    // ⚠️ 2026-11-10 审计 R4：绑定三件套必须**回执确认**。此前 cmd() 的返回值被丢掉，
+    //    适配器回 `?`/空行也照发，请求其实还打在上一个地址上 —— 真车日志里探 0x7F1
+    //    回帧头是 7E8 就是这个症状。宁可当场报错，不要带着错地址往下跑。
+    try {
+      await atCmdOk(this.elm, `ATSH${this.tx.toString(16).toUpperCase()}`, 2000);
+      await atCmdOk(this.elm, `ATCRA${this.rx.toString(16).toUpperCase()}`, 2000);
+    } catch (e) {
+      throw new CodingError(
+        `绑定 0x${this.tx.toString(16).toUpperCase()}/0x${this.rx.toString(16).toUpperCase()} 失败：${e.message}` +
+        '（适配器没有确认 ATSH/ATCRA —— 检查 EA 通道/固件是否支持该命令）');
+    }
     // 流控头随模块地址走：多帧读写时适配器内建 FC 要用**当前模块的请求 ID**。
     // （只在 init 里设一次不够 —— 换模块后 FC 头是上一个模块的）
     await this.elm.cmd(`ATFCSH${this.tx.toString(16).toUpperCase()}`, 1500).catch(() => {});
@@ -471,12 +523,13 @@ export class Coder {
     // 连续 3 条没有任何数据就提前收手：老 ECU 只支持 9F/94，
     // 挨个等 3s 超时会把「进模块」拖到 30 秒（2026-10-29 审计 P2-4）。
     let identMiss = 0;
+    let sawUdsIdent = false;   // 62 F1 A2 → UDS 模块（lastReadSid 不能记成 1A）
     for (const cmd of identChain) {
       try {
         const id = await this.uds(cmd, 3000, { allowEmpty: true });
         let b = Array.from(id.body || []);
         if (b[0] === 0x5a) b = b.slice(2);           // 5A 9F / 5A 94 / 5A 92
-        else if (b[0] === 0x62) b = b.slice(3);      // 62 F1 A2（UDS 族识别，DSN.BIN 身份记录）
+        else if (b[0] === 0x62) { b = b.slice(3); sawUdsIdent = true; }   // 62 F1 A2（UDS 族识别，DSN.BIN 身份记录）
         const txtRaw = b.filter((c) => c >= 0x20 && c < 0x7f)
           .map((c) => String.fromCharCode(c)).join('');
         const txt = txtRaw.trim();   // 仅显示用；键留存用原样字节（strcmp 语义）
@@ -513,7 +566,11 @@ export class Coder {
     //   记下来供例程/特殊功能判断 KWP(21/1A) 还是 UDS(22)。
     //   此前只靠 readBlock 赋值，进模块后直接点例程时 lastReadSid 仍是 null，
     //   KWP 模块会被发成 27 09（应为 17 00）→ NRC。
-    if (identParts.length) this.lastReadSid = 0x1A;
+    // ★ 2026-11-10 修：此前只要有识别文本就记 1A —— UDS 模块答的是 `62 F1 A2`，
+    //   却被记成 KWP（1A），随后例程/特殊功能会发 17/21 族帧 → NRC。
+    //   现在按实际应答形态记：62 → 0x22；5A → 0x1A。
+    if (sawUdsIdent) this.lastReadSid = 0x22;
+    else if (identParts.length) this.lastReadSid = 0x1A;
     // ④ 目标会话（UDS 流）—— **硬要求**，失败才报错。
     //   KWP 流/未证家族已在开头直接建会话，此处不再重复发。
     if (family === 'uds') {
@@ -888,8 +945,14 @@ export class Coder {
     this._say(`  位置: byte ${p.byte} bit ${p.bit}（宽 ${p.bitsize}）  风险: ${p.risk}`);
     this._say(`  服务: 读 ${readSid.toString(16)} / 写 ${writeSid.toString(16)}  LID=0x${lid.toString(16)}`);
 
-    // 1. 备份原值
-    await this.address();
+    // 1. 进会话 + 备份原值
+    //   ⚠️ 2026-11-10 修：此前是「先读备份、后进会话」—— 注释自己写的序列是
+    //   `10 03 → 3E → 识别 → 10 89 → 读写`，但代码把读放在会话之前。
+    //   依赖「进模块时碰巧还在 10 89」这个隐含状态；一旦中途被 10 03/其他模块切走，
+    //   备份读会拿 NRC，写入直接中止（或更糟：读到别的会话下的默认值）。
+    //   现按 参考诊断仪 的写序列：**会话 → 读备份 → 安全访问 → 写 → 回读**。
+    this._say('  进会话 …');
+    await this.enterSession(session);
     const before = await this.readBlock(lid, readSid);
     this.backups.push({
       id: p.id, lid, readSid, writeSid, session, time: new Date().toISOString(),
@@ -930,9 +993,7 @@ export class Coder {
       return { dryRun: true, before, after, diffs };
     }
 
-    // 4. 进会话（参考诊断仪序列：10 03 → 3E → 1A 9F → 10 89）
-    this._say(`  进会话 …`);
-    await this.enterSession(session);
+    // 4. 会话已在步骤 1 建立（会话 → 读备份 → 安全访问 → 写 → 回读）
 
     // 5. 安全访问（参考诊断仪实测 UDS 用 27 09 / 27 0A）
     //    ⚠️ level 是 0x09，不是 0x01。发错会 NRC 0x12/0x7F，或吃满尝试次数锁死（0x36）

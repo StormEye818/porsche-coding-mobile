@@ -1,0 +1,643 @@
+{
+ "schemaVersion": 1,
+ "source": "9X1_ALLDATA 顶级目录/系统区 + PORSCHE_SYS_DATA name-9 变体名投票 + 段内邻接收口",
+ "method": "name-9: flag u16@name-11, sysId u32@name-9, len u16@name-2 (len==strlen+1); flag∈{1,2,3} 记录带有效 sysId; 981 段≈57900-81500",
+ "stats": {
+  "resolved": 48,
+  "total": 48
+ },
+ "modules": {
+  "ACC3": {
+   "sysId": "0x0e40",
+   "sysIds": [
+    "0x0e40"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e40×1"
+  },
+  "Airbag": {
+   "sysId": "0x0e04",
+   "sysIds": [
+    "0x0e04"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e04×1"
+  },
+  "Allrad": {
+   "sysId": "0x0e52",
+   "sysIds": [
+    "0x0e52"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e52×1"
+  },
+  "BCM_hinten": {
+   "sysId": "0x0e23",
+   "sysIds": [
+    "0x0e23"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e23×1"
+  },
+  "BCM_vorne": {
+   "sysId": "0x0e20",
+   "sysIds": [
+    "0x0e20"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e20×1"
+  },
+  "BKE": {
+   "sysId": "0x0e07",
+   "sysIds": [
+    "0x0e07"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e07×1"
+  },
+  "BV_ActuaForStrucBorneSoundUDS": {
+   "sysId": "0x0e57",
+   "sysIds": [
+    "0x0e57"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e57×2",
+   "drivelinksMissing": [
+    "0x0e57"
+   ]
+  },
+  "BV_ContrUnitLaneChangAssis2UDS": {
+   "sysId": "0x0f4d",
+   "sysIds": [
+    "0x0f4d"
+   ],
+   "method": "drivelinks-key",
+   "evidence": "无名字记录；drivelinks-v3 键 0x0f4d 独占直连键 0x003006CC-0x003006CF（lane change assist 惯用段）"
+  },
+  "BV_ECM_UDS": {
+   "sysId": "0x0e01",
+   "sysIds": [
+    "0x0e01"
+   ],
+   "method": "adjacency",
+   "evidence": "段 62905-63834 夹在 DME_BDE(0x0E01@60979)/MED17(0x0E01@62460) 与 Airbag(0x0E04@64869) 之间"
+  },
+  "BV_EnginContrModul1UDS": {
+   "sysId": "0x0e01",
+   "sysIds": [
+    "0x0e01"
+   ],
+   "method": "adjacency",
+   "evidence": "段 63834-64773 同上 DME 家族簇；且 9X1_ALLDATA 命令行区 3344 行 [u16 can][02 f0] 全部属于其池"
+  },
+  "BV_InforContrUnit1UDS": {
+   "sysId": "0x0e46",
+   "sysIds": [
+    "0x0e46"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e46×1"
+  },
+  "BV_InforContrUnit1UDSDesay": {
+   "sysId": "0x0e46",
+   "sysIds": [
+    "0x0e46"
+   ],
+   "method": "adjacency",
+   "evidence": "记录@81423 紧随 BV_InforContrUnit1UDS(0x0E46@81222)"
+  },
+  "BV_SoundSysteUDS": {
+   "sysId": "0x0e41",
+   "sysIds": [
+    "0x0e41"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e41×1"
+  },
+  "BV_TVTunerUDS": {
+   "sysId": "0x0e4b",
+   "sysIds": [
+    "0x0e4b"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e4b×1"
+  },
+  "CAN_CAN_Gateway": {
+   "sysId": "0x0e09",
+   "sysIds": [
+    "0x0e09"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e09×1"
+  },
+  "DME_BDE_Continental": {
+   "sysId": "0x0e01",
+   "sysIds": [
+    "0x0e01"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e01×1"
+  },
+  "EPB": {
+   "sysId": "0x0e32",
+   "sysIds": [
+    "0x0e32"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e32×1"
+  },
+  "ERA_GLONASS": {
+   "sysId": "0x0ea5",
+   "sysIds": [
+    "0x0ea5"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0ea5×1",
+   "drivelinksMissing": [
+    "0x0ea5"
+   ]
+  },
+  "ERA_GLONASS_VFA": {
+   "sysId": "0x0ea5",
+   "sysIds": [
+    "0x0ea5"
+   ],
+   "method": "adjacency",
+   "evidence": "段 81084-81134 紧邻 ERA_GLONASS(0x0EA5@80991)",
+   "drivelinksMissing": [
+    "0x0ea5"
+   ]
+  },
+  "Frontkamera": {
+   "sysId": "0x0e4a",
+   "sysIds": [
+    "0x0e4a"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e4a×1"
+  },
+  "Getriebesteuerung_PDK": {
+   "sysId": "0x0e02",
+   "sysIds": [
+    "0x0e02"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e02×1",
+   "drivelinksMissing": [
+    "0x0e02"
+   ]
+  },
+  "Head_Unit": {
+   "sysId": "0x0e46",
+   "sysIds": [
+    "0x0e46"
+   ],
+   "method": "vote",
+   "evidence": "Head_Unit_BaseSys@74583 flag=1 sysId=0x0E46"
+  },
+  "Hinterachslenkung": {
+   "sysId": "0x0e59",
+   "sysIds": [
+    "0x0e59",
+    "0x0e5a"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e59×1/0x0e5a×1"
+  },
+  "Kombiinstrument_MM": {
+   "sysId": "0x0e08",
+   "sysIds": [
+    "0x0e08"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e08×1"
+  },
+  "Lenkstockschalter": {
+   "sysId": "0x0e36",
+   "sysIds": [
+    "0x0e36"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e36×1"
+  },
+  "Lift_VA": {
+   "sysId": "0x0e5b",
+   "sysIds": [
+    "0x0e5b"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e5b×2"
+  },
+  "Lift_VA_Gen2": {
+   "sysId": "0x0e5b",
+   "sysIds": [
+    "0x0e5b"
+   ],
+   "method": "adjacency",
+   "evidence": "段 79719-79809 紧邻 Lift_VA(0x0E5B@79601)"
+  },
+  "MED17_1_11": {
+   "sysId": "0x0e01",
+   "sysIds": [
+    "0x0e01"
+   ],
+   "method": "vote",
+   "evidence": "MED17_1_11_BaseSys@62460 flag=2 sysId=0x0E01"
+  },
+  "PASM_PADM": {
+   "sysId": "0x0e13",
+   "sysIds": [
+    "0x0e13"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e13×1"
+  },
+  "PDC": {
+   "sysId": "0x0e12",
+   "sysIds": [
+    "0x0e12"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e12×1"
+  },
+  "PDCC_2": {
+   "sysId": "0x0e2b",
+   "sysIds": [
+    "0x0e2b"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e2b×1"
+  },
+  "PSM": {
+   "sysId": "0x0e05",
+   "sysIds": [
+    "0x0e05"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e05×1"
+  },
+  "RDK": {
+   "sysId": "0x0e37",
+   "sysIds": [
+    "0x0e37"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e37×1"
+  },
+  "RDK3": {
+   "sysId": "0x0e37",
+   "sysIds": [
+    "0x0e37"
+   ],
+   "method": "adjacency",
+   "evidence": "981 段 RDK3 记录@81722+ 全 flag=0，紧随 RDK_BaseSys(0x0E37@81582)；0x0C/0x0F 代 RDK3 独立 sysId 不适用于 981"
+  },
+  "Rueckfahrkamera_II": {
+   "sysId": "0x0e51",
+   "sysIds": [
+    "0x0e51"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e51×1"
+  },
+  "SCHEINWERFER": {
+   "sysId": "0x0e58",
+   "sysIds": [
+    "0x0e58"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e58×1",
+   "drivelinksMissing": [
+    "0x0e58"
+   ]
+  },
+  "SCHEINWERFER_LED": {
+   "sysId": "0x0e2f",
+   "sysIds": [
+    "0x0e2f",
+    "0x0e30"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e2f×1/0x0e30×1"
+  },
+  "SWSG": {
+   "sysId": "0x0e2f",
+   "sysIds": [
+    "0x0e2f"
+   ],
+   "method": "isomorphic",
+   "evidence": "SWSG 981 无名字记录；0x0B 代 SWSG_mit_AFS_ALWR=0x0B2F/0x0B30 与 SCHEINWERFER_LED 0x0E2F/0x0E30 同构；DRIVELINKS 0x0E2F/0x0E30 均含直连键 0x00300763/0x00300764（=SWSG 大灯随动）"
+  },
+  "Sitzsteuergeraet": {
+   "sysId": "0x0e4c",
+   "sysIds": [
+    "0x0e4c",
+    "0x0e4e"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e4c×1/0x0e4e×1"
+  },
+  "Steering_Control_Unit": {
+   "sysId": "0x0e45",
+   "sysIds": [
+    "0x0e45"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e45×1"
+  },
+  "TUER_HINTEN": {
+   "sysId": "0x0e4f",
+   "sysIds": [
+    "0x0e4f",
+    "0x0e50"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e4f×1/0x0e50×1"
+  },
+  "TUER_VORNE": {
+   "sysId": "0x0e1e",
+   "sysIds": [
+    "0x0e1e",
+    "0x0e1f"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e1e×3/0x0e1f×1"
+  },
+  "TVTuner": {
+   "sysId": "0x0e4b",
+   "sysIds": [
+    "0x0e4b"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e4b×1"
+  },
+  "Verdeck_Synchronisation": {
+   "sysId": "0x0e27",
+   "sysIds": [
+    "0x0e27"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e27×1"
+  },
+  "Verdeck_Targa": {
+   "sysId": "0x0e27",
+   "sysIds": [
+    "0x0e27"
+   ],
+   "method": "adjacency",
+   "evidence": "段 72993-73207 紧邻 Verdeck_Synchronisation(0x0E27@72876)"
+  },
+  "Verstaerker": {
+   "sysId": "0x0e41",
+   "sysIds": [
+    "0x0e41"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e41×1"
+  },
+  "Waehlhebel": {
+   "sysId": "0x0e44",
+   "sysIds": [
+    "0x0e44"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e44×1",
+   "drivelinksMissing": [
+    "0x0e44"
+   ]
+  },
+  "Zusatzinstrument": {
+   "sysId": "0x0e1d",
+   "sysIds": [
+    "0x0e1d"
+   ],
+   "method": "vote",
+   "evidence": "变体名投票 0x0e1d×1"
+  }
+ },
+ "votes": {
+  "ACC3": {
+   "0x0b40": 1,
+   "0x0c40": 1,
+   "0x0e40": 1,
+   "0x0f40": 1
+  },
+  "Airbag": {
+   "0x0b04": 1,
+   "0x0f04": 1,
+   "0x0e04": 1
+  },
+  "Allrad": {
+   "0x0b35": 1,
+   "0x0e52": 1
+  },
+  "BCM_hinten": {
+   "0x0b23": 1,
+   "0x0c23": 1,
+   "0x0e23": 1,
+   "0x0f23": 1
+  },
+  "BCM_vorne": {
+   "0x0b20": 1,
+   "0x0c20": 1,
+   "0x0e20": 1,
+   "0x0f20": 1
+  },
+  "BKE": {
+   "0x0b07": 1,
+   "0x0c07": 1,
+   "0x0e07": 1,
+   "0x0f07": 1
+  },
+  "BV_ActuaForStrucBorneSoundUDS": {
+   "0x0b57": 2,
+   "0x0e57": 2,
+   "0x0f57": 2
+  },
+  "BV_BatteEnergContrModulOBD": {},
+  "BV_BrakeBoostOBD": {},
+  "BV_BrakeOBD": {},
+  "BV_ContrUnitLaneChangAssis2UDS": {},
+  "BV_DriveMotorContrModulOBD": {},
+  "BV_ECM_UDS": {},
+  "BV_EnginContrModul1UDS": {},
+  "BV_EnginContrModulOBD": {},
+  "BV_InforContrUnit1UDS": {
+   "0x0b46": 1,
+   "0x0e46": 1,
+   "0x0f46": 1
+  },
+  "BV_InforContrUnit1UDSDesay": {},
+  "BV_SoundSysteUDS": {
+   "0x0b41": 2,
+   "0x0e41": 1
+  },
+  "BV_TVTunerUDS": {
+   "0x0b4b": 1,
+   "0x0e4b": 1,
+   "0x0f4b": 1
+  },
+  "BV_ThermManagOBD": {},
+  "BV_TransContrModulOBD": {},
+  "CAN_CAN_Gateway": {
+   "0x0b09": 1,
+   "0x0c09": 1,
+   "0x0e09": 1,
+   "0x0f09": 1
+  },
+  "DME_BDE_Continental": {
+   "0x0b01": 1,
+   "0x0c01": 1,
+   "0x0e01": 1,
+   "0x0f01": 1
+  },
+  "EPB": {
+   "0x0b32": 1,
+   "0x0c32": 1,
+   "0x0e32": 1,
+   "0x0f32": 1
+  },
+  "ERA_GLONASS": {
+   "0x0ba5": 1,
+   "0x0ea5": 1,
+   "0x0fa5": 1
+  },
+  "ERA_GLONASS_VFA": {},
+  "Frontkamera": {
+   "0x0b4a": 1,
+   "0x0c4a": 1,
+   "0x0e4a": 1,
+   "0x0f4a": 1
+  },
+  "Getriebesteuerung_PDK": {
+   "0x0c02": 1,
+   "0x0e02": 1
+  },
+  "Head_Unit": {
+   "0x0b46": 1,
+   "0x0c46": 1,
+   "0x0e46": 1,
+   "0x0f46": 1
+  },
+  "Hinterachslenkung": {
+   "0x0e59": 1,
+   "0x0e5a": 1
+  },
+  "Kombiinstrument_MM": {
+   "0x0e08": 1,
+   "0x0f08": 1
+  },
+  "Lenkstockschalter": {
+   "0x0b36": 1,
+   "0x0c36": 1,
+   "0x0e36": 1,
+   "0x0f36": 1
+  },
+  "Lift_VA": {
+   "0x0e5b": 2
+  },
+  "Lift_VA_Gen2": {},
+  "MED17_1_11": {
+   "0x0e01": 1
+  },
+  "PASM_PADM": {
+   "0x0e13": 1
+  },
+  "PDC": {
+   "0x0b12": 1,
+   "0x0c12": 1,
+   "0x0e12": 1,
+   "0x0f12": 1
+  },
+  "PDCC_2": {
+   "0x0e2b": 1
+  },
+  "PSM": {
+   "0x0c05": 1,
+   "0x0e05": 1
+  },
+  "RDK": {
+   "0x0b37": 1,
+   "0x0e37": 1
+  },
+  "RDK3": {
+   "0x0c37": 1,
+   "0x0f37": 1
+  },
+  "RaceApp": {},
+  "Rueckfahrkamera_II": {
+   "0x0b51": 1,
+   "0x0e51": 1
+  },
+  "SCHEINWERFER": {
+   "0x0b58": 1,
+   "0x0c58": 1,
+   "0x0e58": 1,
+   "0x0f58": 1
+  },
+  "SCHEINWERFER_LED": {
+   "0x0e2f": 1,
+   "0x0e30": 1
+  },
+  "SWSG": {},
+  "Sitzsteuergeraet": {
+   "0x0b4c": 1,
+   "0x0b4e": 1,
+   "0x0c4c": 1,
+   "0x0c4e": 1,
+   "0x0e4c": 1,
+   "0x0e4e": 1,
+   "0x0f4c": 1,
+   "0x0f4e": 1
+  },
+  "Steering_Control_Unit": {
+   "0x0e45": 1
+  },
+  "TUER_HINTEN": {
+   "0x0b4f": 1,
+   "0x0b50": 1,
+   "0x0c4f": 1,
+   "0x0c50": 1,
+   "0x0e4f": 1,
+   "0x0e50": 1,
+   "0x0f4f": 1,
+   "0x0f50": 1
+  },
+  "TUER_VORNE": {
+   "0x0b1e": 1,
+   "0x0b1f": 1,
+   "0x0c1e": 1,
+   "0x0c1f": 1,
+   "0x0e1e": 3,
+   "0x0e1f": 1,
+   "0x0f1e": 1,
+   "0x0f1f": 1
+  },
+  "TVTuner": {
+   "0x0b4b": 1,
+   "0x0c4b": 1,
+   "0x0e4b": 1,
+   "0x0f4b": 1
+  },
+  "Verdeck_Synchronisation": {
+   "0x0e27": 1
+  },
+  "Verdeck_Targa": {},
+  "Verstaerker": {
+   "0x0b41": 1,
+   "0x0c41": 1,
+   "0x0e41": 1,
+   "0x0f41": 1
+  },
+  "Waehlhebel": {
+   "0x0c44": 1,
+   "0x0e44": 1
+  },
+  "Zusatzinstrument": {
+   "0x0b1d": 1,
+   "0x0c1d": 1,
+   "0x0e1d": 1,
+   "0x0f1d": 1
+  }
+ }
+}

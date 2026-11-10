@@ -41,13 +41,37 @@ export class Elm327 {
   }
 
   /** 发一条命令，读到 '>' 或超时（已串行化，可安全并发调用） */
-  async cmd(at, timeoutMs = this.timeoutMs) {
-    const run = this.reqChain.then(() => this._cmdLocked(at, timeoutMs));
+  async cmd(at, timeoutMs = this.timeoutMs, opts = {}) {
+    const run = this.reqChain.then(() => this._cmdLocked(at, timeoutMs, opts));
     this.reqChain = run.then(() => {}, () => {});
     return run;
   }
 
-  async _cmdLocked(at, timeoutMs) {
+  /**
+   * 发一条 AT 命令并**要求回执 OK**。
+   *
+   * ⚠️ 2026-11-10 审计 R4：ATSH/ATCRA 的返回值从来没校验过。
+   *    适配器回 `?`（不支持）或空行时，代码照样往下发请求 —— 实际还在上一个地址上，
+   *    随后所有「NRC / NO DATA」判定都是对着错地址做的（真车日志里探 0x7F1 回帧头是 7E8
+   *    就是这个症状）。绑定类命令必须断言 OK，失败即报错，不许静默。
+   */
+  async cmdOk(at, timeoutMs = this.timeoutMs, opts = {}) {
+    const r = await this.cmd(at, timeoutMs, opts);
+    const s = String(r || '').trim();
+    if (/\bOK\b/i.test(s)) return r;
+    // 明确的"不支持"回执：`?` / ERROR —— 这是唯一能确定"命令没落地"的信号，必须报死。
+    if (/^\s*\?|error/i.test(s)) {
+      throw new Elm327Error(
+        `${at} 被拒绝（回「${s.slice(0, 24)}」）—— 适配器不支持该命令，寻址/协议没落地`,
+        'AT_NOT_OK');
+    }
+    // 空回执（超时）/ 非标准回执（回显或回数据）：不阻断，但留痕。
+    // 真正的错地址由调用方的"回帧 ID 校验"兜住（frameIdsOf），这里不做二次猜测。
+    this.log.push([at, `${s || '(空)'} (非 OK 回执)`]);
+    return r;
+  }
+
+  async _cmdLocked(at, timeoutMs, opts = {}) {
     await this.port.write(at + '\r');
     const t0 = Date.now();
     while (Date.now() - t0 < timeoutMs) {
@@ -56,7 +80,8 @@ export class Elm327 {
         const out = this._drain();
         this.log.push([at, out]);
         // 命令间隔：SEARCHING... 期间连发会打断成 STOPPED（2026-10-01 实测）
-        await new Promise((r) => setTimeout(r, 120));
+        // 扫描类调用传 { noDelay: true } 跳过 —— 256 地址 × 120ms 就是 30s 纯等待。
+        if (!opts.noDelay) await new Promise((r) => setTimeout(r, 120));
         // ⚠️ 必须保留帧分隔符（2026-10-17 实测）：`.replace(/\r/g,'')` 会把 ISO-TP 的
         //    多帧边界删掉 → FF 末字节粘到下一个 CAN ID 被丢、CF 的 PCI(0x21) 反被当数据。
         //    现归一为 \n，parseResp 按 [\r\n]+ 切帧。
@@ -68,7 +93,7 @@ export class Elm327 {
     //    算完 after 再写回 ECU 就是把截断块写进车里（2026-10-16 复查 P2）。
     const out = this._drain();
     this.log.push([at, out]);
-    await new Promise((r) => setTimeout(r, 120));
+    if (!opts.noDelay) await new Promise((r) => setTimeout(r, 120));
     const trimmed = out.replace(/\s*>$/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
     throw new Elm327Error(
       `命令超时（${timeoutMs}ms）：${at}${trimmed ? '，已收半包 ' + trimmed.slice(0, 40) : '，无应答'}`,

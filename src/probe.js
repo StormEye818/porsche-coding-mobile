@@ -118,8 +118,10 @@ export function probeList(entry, globalFamilies = [], prefer = null) {
   const seen = new Set();
   const add = (tx, rx, proto, src) => {
     if (!Number.isFinite(tx) || !Number.isFinite(rx)) return;
-    if (tx < 0x700 || tx > 0x7FF) return;        // 诊断段 11 位收窄（ATCRA 合法域）
-    if (rx < 0x700 || rx > 0x7FF || rx === tx) return;
+    // 2026-11-10：诊断段从 0x700 放宽到 0x600 —— 表 A 里真实候选有 0x6DD/0x6E7/0x758/0x7B6 等，
+    //   旧的 0x700 下界会把它们静默丢掉（bind-plan 主路径不受影响，这里是兜底路径）。
+    if (tx < 0x600 || tx > 0x7FF) return;        // 11 位 CAN 合法域内的诊断段
+    if (rx < 0x600 || rx > 0x7FF || rx === tx) return;
     if (seen.has(tx)) return;
     seen.add(tx);
     out.push({ tx, rx, proto: proto ?? null, src });

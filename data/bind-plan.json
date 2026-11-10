@@ -1,0 +1,9516 @@
+{
+ "schemaVersion": 2,
+ "source": "drivelinks-v3 + sysdata-routing(路由表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
+ "rule": "多源分级：tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(0x_0C)；tierA 空→跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。候选序=多源收敛数降序。cands/pairs 仅诊断段 0x600-0x7FF；rx=tx+8（0x0E 代路由表无 rx 独立字段）。firstRead=该 sysId 首参数读帧（绑定后验证）。0x0B 旧代条目=原表A join 逻辑（对账用）。",
+ "stats": {
+  "legacy": 134,
+  "noCand": 65,
+  "enumeration": 20,
+  "tierA": 46,
+  "crossgen": 9
+ },
+ "ecu": {
+  "0x0501": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x0744",
+    "0x0766",
+    "0x0767",
+    "0x0782",
+    "0x0791",
+    "0x07CF",
+    "0x07E0",
+    "0x07EA",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0766",
+     "rx": "0x076E"
+    },
+    {
+     "tx": "0x0767",
+     "rx": "0x076F"
+    },
+    {
+     "tx": "0x0782",
+     "rx": "0x078A"
+    },
+    {
+     "tx": "0x0791",
+     "rx": "0x0799"
+    },
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    },
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0502": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0714",
+    "0x0715"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0714",
+     "rx": "0x071C"
+    },
+    {
+     "tx": "0x0715",
+     "rx": "0x071D"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0505": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06AE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06AE",
+     "rx": "0x06B6"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0507": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E4",
+    "0x0708",
+    "0x0719",
+    "0x071A",
+    "0x0751",
+    "0x0752",
+    "0x0779",
+    "0x07B1",
+    "0x07B6",
+    "0x07DF",
+    "0x07EC",
+    "0x07ED"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E4",
+     "rx": "0x06EC"
+    },
+    {
+     "tx": "0x0708",
+     "rx": "0x0710"
+    },
+    {
+     "tx": "0x0719",
+     "rx": "0x0721"
+    },
+    {
+     "tx": "0x071A",
+     "rx": "0x0722"
+    },
+    {
+     "tx": "0x0751",
+     "rx": "0x0759"
+    },
+    {
+     "tx": "0x0752",
+     "rx": "0x075A"
+    },
+    {
+     "tx": "0x0779",
+     "rx": "0x0781"
+    },
+    {
+     "tx": "0x07B1",
+     "rx": "0x07B9"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    },
+    {
+     "tx": "0x07DF",
+     "rx": "0x07E7"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    },
+    {
+     "tx": "0x07ED",
+     "rx": "0x07F5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0508": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x050b": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0746"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0746",
+     "rx": "0x074E"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x050c": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07FD"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07FD",
+     "rx": "0x0005"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0511": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0512": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x051d": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x051e": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x051f": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x070A",
+    "0x0716",
+    "0x0763",
+    "0x0764",
+    "0x076B",
+    "0x076C",
+    "0x076D",
+    "0x076E",
+    "0x0776",
+    "0x0778",
+    "0x0781",
+    "0x07CE",
+    "0x07D1",
+    "0x07D2",
+    "0x07DA"
+   ],
+   "pairs": [
+    {
+     "tx": "0x070A",
+     "rx": "0x0712"
+    },
+    {
+     "tx": "0x0716",
+     "rx": "0x071E"
+    },
+    {
+     "tx": "0x0763",
+     "rx": "0x076B"
+    },
+    {
+     "tx": "0x0764",
+     "rx": "0x076C"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x076D",
+     "rx": "0x0775"
+    },
+    {
+     "tx": "0x076E",
+     "rx": "0x0776"
+    },
+    {
+     "tx": "0x0776",
+     "rx": "0x077E"
+    },
+    {
+     "tx": "0x0778",
+     "rx": "0x0780"
+    },
+    {
+     "tx": "0x0781",
+     "rx": "0x0789"
+    },
+    {
+     "tx": "0x07CE",
+     "rx": "0x07D6"
+    },
+    {
+     "tx": "0x07D1",
+     "rx": "0x07D9"
+    },
+    {
+     "tx": "0x07D2",
+     "rx": "0x07DA"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0520": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0522": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0523": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0525": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0526": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06B4"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06B4",
+     "rx": "0x06BC"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0527": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06EC",
+    "0x06ED",
+    "0x0724",
+    "0x0725",
+    "0x0756",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0725",
+     "rx": "0x072D"
+    },
+    {
+     "tx": "0x0756",
+     "rx": "0x075E"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0528": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06EC",
+    "0x06ED",
+    "0x0724",
+    "0x0725",
+    "0x0756",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0725",
+     "rx": "0x072D"
+    },
+    {
+     "tx": "0x0756",
+     "rx": "0x075E"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0601": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x073C",
+    "0x0744",
+    "0x0766",
+    "0x0767",
+    "0x0782",
+    "0x0791",
+    "0x07E0",
+    "0x07EA",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0766",
+     "rx": "0x076E"
+    },
+    {
+     "tx": "0x0767",
+     "rx": "0x076F"
+    },
+    {
+     "tx": "0x0782",
+     "rx": "0x078A"
+    },
+    {
+     "tx": "0x0791",
+     "rx": "0x0799"
+    },
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0602": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0605": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EC",
+    "0x06EE",
+    "0x06EF",
+    "0x06F5",
+    "0x07EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06EF",
+     "rx": "0x06F7"
+    },
+    {
+     "tx": "0x06F5",
+     "rx": "0x06FD"
+    },
+    {
+     "tx": "0x07EE",
+     "rx": "0x07F6"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0607": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0608": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x060b": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x060c": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06ED",
+    "0x0758",
+    "0x075C",
+    "0x07BB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x075C",
+     "rx": "0x0764"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0611": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0612": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0613",
+    "0x061C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0613",
+     "rx": "0x061B"
+    },
+    {
+     "tx": "0x061C",
+     "rx": "0x0624"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x061d": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0613",
+    "0x061C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0613",
+     "rx": "0x061B"
+    },
+    {
+     "tx": "0x061C",
+     "rx": "0x0624"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x061e": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0614"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0614",
+     "rx": "0x061C"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x061f": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0614",
+    "0x06E2",
+    "0x07F0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0614",
+     "rx": "0x061C"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x07F0",
+     "rx": "0x07F8"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0620": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0616"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0616",
+     "rx": "0x061E"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0622": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0618"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0618",
+     "rx": "0x0620"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0623": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0626": {
+   "mode": "0x1005",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E4",
+    "0x0760",
+    "0x0761",
+    "0x0762",
+    "0x07D9"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E4",
+     "rx": "0x06EC"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x0761",
+     "rx": "0x0769"
+    },
+    {
+     "tx": "0x0762",
+     "rx": "0x076A"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b01": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": "2200FF",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b02": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": "2101",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b04": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b05": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b07": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b08": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b09": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06E3",
+    "0x074F",
+    "0x07BD",
+    "0x07C0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b12": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07BA",
+    "0x07BC",
+    "0x07CF",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07BA",
+     "rx": "0x07C2"
+    },
+    {
+     "tx": "0x07BC",
+     "rx": "0x07C4"
+    },
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": "220033",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b13": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E5",
+    "0x06EC",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x076B",
+    "0x07B2",
+    "0x07BB",
+    "0x07BD",
+    "0x07BF",
+    "0x07D0",
+    "0x07ED"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E5",
+     "rx": "0x06ED"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    },
+    {
+     "tx": "0x07D0",
+     "rx": "0x07D8"
+    },
+    {
+     "tx": "0x07ED",
+     "rx": "0x07F5"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b1d": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b1e": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06ED",
+    "0x0724",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4",
+    "0x07D9",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b1f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06ED",
+    "0x0724",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4",
+    "0x07D9",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b20": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DE",
+    "0x06EB",
+    "0x06ED",
+    "0x06F6",
+    "0x0700",
+    "0x0724",
+    "0x0757",
+    "0x076B",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b23": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06E3",
+    "0x074F",
+    "0x07BD",
+    "0x07C0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b2b": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b2f": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E3",
+    "0x06EC",
+    "0x072A",
+    "0x0731",
+    "0x0734",
+    "0x073A",
+    "0x073B",
+    "0x0794",
+    "0x0798",
+    "0x079B",
+    "0x079D"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x072A",
+     "rx": "0x0732"
+    },
+    {
+     "tx": "0x0731",
+     "rx": "0x0739"
+    },
+    {
+     "tx": "0x0734",
+     "rx": "0x073C"
+    },
+    {
+     "tx": "0x073A",
+     "rx": "0x0742"
+    },
+    {
+     "tx": "0x073B",
+     "rx": "0x0743"
+    },
+    {
+     "tx": "0x0794",
+     "rx": "0x079C"
+    },
+    {
+     "tx": "0x0798",
+     "rx": "0x07A0"
+    },
+    {
+     "tx": "0x079B",
+     "rx": "0x07A3"
+    },
+    {
+     "tx": "0x079D",
+     "rx": "0x07A5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b30": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E3",
+    "0x06EC",
+    "0x072A",
+    "0x0731",
+    "0x0734",
+    "0x073A",
+    "0x073B",
+    "0x0794",
+    "0x0798",
+    "0x079B",
+    "0x079D"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x072A",
+     "rx": "0x0732"
+    },
+    {
+     "tx": "0x0731",
+     "rx": "0x0739"
+    },
+    {
+     "tx": "0x0734",
+     "rx": "0x073C"
+    },
+    {
+     "tx": "0x073A",
+     "rx": "0x0742"
+    },
+    {
+     "tx": "0x073B",
+     "rx": "0x0743"
+    },
+    {
+     "tx": "0x0794",
+     "rx": "0x079C"
+    },
+    {
+     "tx": "0x0798",
+     "rx": "0x07A0"
+    },
+    {
+     "tx": "0x079B",
+     "rx": "0x07A3"
+    },
+    {
+     "tx": "0x079D",
+     "rx": "0x07A5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b32": {
+   "mode": "0xffff",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b34": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b35": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DD",
+    "0x06E3",
+    "0x074F",
+    "0x07BD",
+    "0x07C0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b36": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06DF",
+    "0x07B1",
+    "0x07B9",
+    "0x07BE",
+    "0x07C1",
+    "0x07C2",
+    "0x07EA",
+    "0x07EB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06DF",
+     "rx": "0x06E7"
+    },
+    {
+     "tx": "0x07B1",
+     "rx": "0x07B9"
+    },
+    {
+     "tx": "0x07B9",
+     "rx": "0x07C1"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07C1",
+     "rx": "0x07C9"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07EB",
+     "rx": "0x07F3"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b37": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DD",
+    "0x06E3",
+    "0x074F",
+    "0x07BD",
+    "0x07C0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b40": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06ED",
+    "0x0758",
+    "0x075C",
+    "0x07BB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x075C",
+     "rx": "0x0764"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b41": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07BA",
+    "0x07BC",
+    "0x07CF",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07BA",
+     "rx": "0x07C2"
+    },
+    {
+     "tx": "0x07BC",
+     "rx": "0x07C4"
+    },
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b42": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b43": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b45": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b46": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": "220002",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b48": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06F0",
+    "0x06F1",
+    "0x0707",
+    "0x0708",
+    "0x0709",
+    "0x07DD"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06F0",
+     "rx": "0x06F8"
+    },
+    {
+     "tx": "0x06F1",
+     "rx": "0x06F9"
+    },
+    {
+     "tx": "0x0707",
+     "rx": "0x070F"
+    },
+    {
+     "tx": "0x0708",
+     "rx": "0x0710"
+    },
+    {
+     "tx": "0x0709",
+     "rx": "0x0711"
+    },
+    {
+     "tx": "0x07DD",
+     "rx": "0x07E5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b49": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b4a": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": "2200AF",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b4b": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b4c": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x07D9",
+    "0x07DA",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220007",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b4e": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x07D9",
+    "0x07DA",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b4f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0b50": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c01": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6",
+    "0x07FC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    },
+    {
+     "tx": "0x07FC",
+     "rx": "0x0004"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c02": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c04": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c05": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c07": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0702",
+    "0x076D",
+    "0x07B8",
+    "0x07BC",
+    "0x07DD",
+    "0x07E8"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0702",
+     "rx": "0x070A"
+    },
+    {
+     "tx": "0x076D",
+     "rx": "0x0775"
+    },
+    {
+     "tx": "0x07B8",
+     "rx": "0x07C0"
+    },
+    {
+     "tx": "0x07BC",
+     "rx": "0x07C4"
+    },
+    {
+     "tx": "0x07DD",
+     "rx": "0x07E5"
+    },
+    {
+     "tx": "0x07E8",
+     "rx": "0x07F0"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c08": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c09": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06E3",
+    "0x074F",
+    "0x07BD",
+    "0x07C0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c12": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07BA",
+    "0x07BC",
+    "0x07CF",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07BA",
+     "rx": "0x07C2"
+    },
+    {
+     "tx": "0x07BC",
+     "rx": "0x07C4"
+    },
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c13": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E5",
+    "0x06EC",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x076B",
+    "0x07B2",
+    "0x07BB",
+    "0x07BD",
+    "0x07BF",
+    "0x07D0",
+    "0x07ED"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E5",
+     "rx": "0x06ED"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    },
+    {
+     "tx": "0x07D0",
+     "rx": "0x07D8"
+    },
+    {
+     "tx": "0x07ED",
+     "rx": "0x07F5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c1d": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c1e": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06ED",
+    "0x0724",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4",
+    "0x07D9",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c1f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06ED",
+    "0x0724",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4",
+    "0x07D9",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c20": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DE",
+    "0x06EB",
+    "0x06ED",
+    "0x06F6",
+    "0x0700",
+    "0x0724",
+    "0x0757",
+    "0x076B",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c23": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06E3",
+    "0x074F",
+    "0x07BD",
+    "0x07C0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c2b": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c2f": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E3",
+    "0x06EC",
+    "0x072A",
+    "0x0731",
+    "0x0734",
+    "0x073A",
+    "0x073B",
+    "0x0794",
+    "0x0798",
+    "0x079B",
+    "0x079D"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x072A",
+     "rx": "0x0732"
+    },
+    {
+     "tx": "0x0731",
+     "rx": "0x0739"
+    },
+    {
+     "tx": "0x0734",
+     "rx": "0x073C"
+    },
+    {
+     "tx": "0x073A",
+     "rx": "0x0742"
+    },
+    {
+     "tx": "0x073B",
+     "rx": "0x0743"
+    },
+    {
+     "tx": "0x0794",
+     "rx": "0x079C"
+    },
+    {
+     "tx": "0x0798",
+     "rx": "0x07A0"
+    },
+    {
+     "tx": "0x079B",
+     "rx": "0x07A3"
+    },
+    {
+     "tx": "0x079D",
+     "rx": "0x07A5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c30": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E3",
+    "0x06EC",
+    "0x072A",
+    "0x0731",
+    "0x0734",
+    "0x073A",
+    "0x073B",
+    "0x0794",
+    "0x0798",
+    "0x079B",
+    "0x079D"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x072A",
+     "rx": "0x0732"
+    },
+    {
+     "tx": "0x0731",
+     "rx": "0x0739"
+    },
+    {
+     "tx": "0x0734",
+     "rx": "0x073C"
+    },
+    {
+     "tx": "0x073A",
+     "rx": "0x0742"
+    },
+    {
+     "tx": "0x073B",
+     "rx": "0x0743"
+    },
+    {
+     "tx": "0x0794",
+     "rx": "0x079C"
+    },
+    {
+     "tx": "0x0798",
+     "rx": "0x07A0"
+    },
+    {
+     "tx": "0x079B",
+     "rx": "0x07A3"
+    },
+    {
+     "tx": "0x079D",
+     "rx": "0x07A5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c32": {
+   "mode": "0xffff",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c34": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c36": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06DF",
+    "0x07B1",
+    "0x07B9",
+    "0x07BE",
+    "0x07C1",
+    "0x07C2",
+    "0x07EA",
+    "0x07EB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06DF",
+     "rx": "0x06E7"
+    },
+    {
+     "tx": "0x07B1",
+     "rx": "0x07B9"
+    },
+    {
+     "tx": "0x07B9",
+     "rx": "0x07C1"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07C1",
+     "rx": "0x07C9"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07EB",
+     "rx": "0x07F3"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c37": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c40": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c41": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c42": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c43": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c45": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c46": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c48": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06F0",
+    "0x06F1",
+    "0x0707",
+    "0x0708",
+    "0x0709",
+    "0x07DD"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06F0",
+     "rx": "0x06F8"
+    },
+    {
+     "tx": "0x06F1",
+     "rx": "0x06F9"
+    },
+    {
+     "tx": "0x0707",
+     "rx": "0x070F"
+    },
+    {
+     "tx": "0x0708",
+     "rx": "0x0710"
+    },
+    {
+     "tx": "0x0709",
+     "rx": "0x0711"
+    },
+    {
+     "tx": "0x07DD",
+     "rx": "0x07E5"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c4a": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c4b": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c4c": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x07D9",
+    "0x07DA",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c4e": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x07D9",
+    "0x07DA",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c4f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c50": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BF",
+    "0x07DB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    },
+    {
+     "tx": "0x07DB",
+     "rx": "0x07E3"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0c51": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d01": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07E0",
+    "0x07E1",
+    "0x07E2",
+    "0x07E3",
+    "0x07E4",
+    "0x07E5",
+    "0x07E6",
+    "0x07E7",
+    "0x07E8",
+    "0x07E9",
+    "0x07EA",
+    "0x07EB",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8"
+    },
+    {
+     "tx": "0x07E1",
+     "rx": "0x07E9"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    },
+    {
+     "tx": "0x07E3",
+     "rx": "0x07EB"
+    },
+    {
+     "tx": "0x07E4",
+     "rx": "0x07EC"
+    },
+    {
+     "tx": "0x07E5",
+     "rx": "0x07ED"
+    },
+    {
+     "tx": "0x07E6",
+     "rx": "0x07EE"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    },
+    {
+     "tx": "0x07E8",
+     "rx": "0x07F0"
+    },
+    {
+     "tx": "0x07E9",
+     "rx": "0x07F1"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07EB",
+     "rx": "0x07F3"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d04": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d05": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0746"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0746",
+     "rx": "0x074E"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d07": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d08": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d09": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d12": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d13": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d1d": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d1e": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d1f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EC",
+    "0x06EE",
+    "0x06EF",
+    "0x06F5",
+    "0x07EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06EF",
+     "rx": "0x06F7"
+    },
+    {
+     "tx": "0x06F5",
+     "rx": "0x06FD"
+    },
+    {
+     "tx": "0x07EE",
+     "rx": "0x07F6"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d20": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d23": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d27": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d2f": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d30": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0763",
+    "0x0764",
+    "0x076B",
+    "0x076C",
+    "0x076D",
+    "0x076E",
+    "0x0773",
+    "0x0774",
+    "0x0776",
+    "0x0778",
+    "0x07B4",
+    "0x07CF",
+    "0x07D1",
+    "0x07D2",
+    "0x07D5"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0763",
+     "rx": "0x076B"
+    },
+    {
+     "tx": "0x0764",
+     "rx": "0x076C"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x076D",
+     "rx": "0x0775"
+    },
+    {
+     "tx": "0x076E",
+     "rx": "0x0776"
+    },
+    {
+     "tx": "0x0773",
+     "rx": "0x077B"
+    },
+    {
+     "tx": "0x0774",
+     "rx": "0x077C"
+    },
+    {
+     "tx": "0x0776",
+     "rx": "0x077E"
+    },
+    {
+     "tx": "0x0778",
+     "rx": "0x0780"
+    },
+    {
+     "tx": "0x07B4",
+     "rx": "0x07BC"
+    },
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    },
+    {
+     "tx": "0x07D1",
+     "rx": "0x07D9"
+    },
+    {
+     "tx": "0x07D2",
+     "rx": "0x07DA"
+    },
+    {
+     "tx": "0x07D5",
+     "rx": "0x07DD"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d32": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d36": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d37": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d40": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d41": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d45": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d46": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d4a": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d4b": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d4c": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d4e": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0d51": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0e01": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07E0",
+    "0x07E1",
+    "0x07E2",
+    "0x07E3",
+    "0x07E4",
+    "0x06EC",
+    "0x06F3",
+    "0x06F6",
+    "0x06F7",
+    "0x06FE",
+    "0x078A",
+    "0x078B",
+    "0x078C",
+    "0x078D",
+    "0x078E",
+    "0x078F",
+    "0x0790",
+    "0x0791",
+    "0x0792",
+    "0x0793"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8"
+    },
+    {
+     "tx": "0x07E1",
+     "rx": "0x07E9"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    },
+    {
+     "tx": "0x07E3",
+     "rx": "0x07EB"
+    },
+    {
+     "tx": "0x07E4",
+     "rx": "0x07EC"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x078A",
+     "rx": "0x0792"
+    },
+    {
+     "tx": "0x078B",
+     "rx": "0x0793"
+    },
+    {
+     "tx": "0x078C",
+     "rx": "0x0794"
+    },
+    {
+     "tx": "0x078D",
+     "rx": "0x0795"
+    },
+    {
+     "tx": "0x078E",
+     "rx": "0x0796"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x0790",
+     "rx": "0x0798"
+    },
+    {
+     "tx": "0x0791",
+     "rx": "0x0799"
+    },
+    {
+     "tx": "0x0792",
+     "rx": "0x079A"
+    },
+    {
+     "tx": "0x0793",
+     "rx": "0x079B"
+    }
+   ],
+   "firstRead": "21A4",
+   "provenance": [
+    {
+     "can": "0x06EC",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x06F3",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06F6",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06F7",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06FE",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x078A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x078B",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x078C",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x078D",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x078E",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x078F",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0790",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0791",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0792",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0793",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0794",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0795",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0796",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0797",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0798",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0799",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x079A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x079B",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x079C",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x079D",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x079E",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x079F",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A0",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A1",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A2",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07E0",
+     "sources": [
+      "crossgenProven",
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07E1",
+     "sources": [
+      "routeGroup",
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07E2",
+     "sources": [
+      "routeGroup",
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07E3",
+     "sources": [
+      "routeGroup",
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07E4",
+     "sources": [
+      "routeGroup",
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07E5",
+     "sources": [
+      "routeGroup"
+     ]
+    },
+    {
+     "can": "0x07E6",
+     "sources": [
+      "routeGroup"
+     ]
+    },
+    {
+     "can": "0x07E7",
+     "sources": [
+      "routeGroup"
+     ]
+    },
+    {
+     "can": "0x07E8",
+     "sources": [
+      "routeGroup"
+     ]
+    }
+   ]
+  },
+  "0x0e02": {
+   "mode": null,
+   "n": null,
+   "bindDirect": false,
+   "cands": [
+    "0x0725",
+    "0x0726",
+    "0x0727",
+    "0x0728",
+    "0x0729",
+    "0x072A"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0725",
+     "rx": "0x072D"
+    },
+    {
+     "tx": "0x0726",
+     "rx": "0x072E"
+    },
+    {
+     "tx": "0x0727",
+     "rx": "0x072F"
+    },
+    {
+     "tx": "0x0728",
+     "rx": "0x0730"
+    },
+    {
+     "tx": "0x0729",
+     "rx": "0x0731"
+    },
+    {
+     "tx": "0x072A",
+     "rx": "0x0732"
+    }
+   ],
+   "firstRead": "2101",
+   "provenance": [
+    {
+     "can": "0x0725",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0726",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0727",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0728",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0729",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x072A",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0e04": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06F6",
+    "0x0731",
+    "0x0767",
+    "0x0769"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x0731",
+     "rx": "0x0739"
+    },
+    {
+     "tx": "0x0767",
+     "rx": "0x076F"
+    },
+    {
+     "tx": "0x0769",
+     "rx": "0x0771"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x06F6",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0731",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0767",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0769",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0e05": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06E6",
+    "0x06E7",
+    "0x06E8",
+    "0x06E9",
+    "0x06EA"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E6",
+     "rx": "0x06EE"
+    },
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x06E8",
+     "rx": "0x06F0"
+    },
+    {
+     "tx": "0x06E9",
+     "rx": "0x06F1"
+    },
+    {
+     "tx": "0x06EA",
+     "rx": "0x06F2"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x06E6",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x06E7",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x06E8",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x06E9",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x06EA",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0e07": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0735",
+    "0x0736",
+    "0x0738",
+    "0x0739",
+    "0x0733",
+    "0x0737",
+    "0x073A",
+    "0x073B",
+    "0x073C",
+    "0x0755"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0735",
+     "rx": "0x073D"
+    },
+    {
+     "tx": "0x0736",
+     "rx": "0x073E"
+    },
+    {
+     "tx": "0x0738",
+     "rx": "0x0740"
+    },
+    {
+     "tx": "0x0739",
+     "rx": "0x0741"
+    },
+    {
+     "tx": "0x0733",
+     "rx": "0x073B"
+    },
+    {
+     "tx": "0x0737",
+     "rx": "0x073F"
+    },
+    {
+     "tx": "0x073A",
+     "rx": "0x0742"
+    },
+    {
+     "tx": "0x073B",
+     "rx": "0x0743"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x0755",
+     "rx": "0x075D"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0733",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x0735",
+     "sources": [
+      "v3candRx",
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0736",
+     "sources": [
+      "routing",
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0737",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0738",
+     "sources": [
+      "routing",
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0739",
+     "sources": [
+      "routing",
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x073A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x073B",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x073C",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0755",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0e08": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x060A",
+    "0x0646",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x060A",
+     "rx": "0x0612"
+    },
+    {
+     "tx": "0x0646",
+     "rx": "0x064E"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x060A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0646",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07F1",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0e09": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0710"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0710",
+     "rx": "0x0718"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0710",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e12": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0755",
+    "0x07CF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0755",
+     "rx": "0x075D"
+    },
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    }
+   ],
+   "firstRead": "220033",
+   "provenance": [
+    {
+     "can": "0x0755",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07CF",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e13": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x07D0",
+    "0x06DD",
+    "0x06DE",
+    "0x06E5",
+    "0x06EC",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x076B",
+    "0x07B2",
+    "0x07BB",
+    "0x07BD",
+    "0x07BF",
+    "0x07ED"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07D0",
+     "rx": "0x07D8"
+    },
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E5",
+     "rx": "0x06ED"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BD",
+     "rx": "0x07C5"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    },
+    {
+     "tx": "0x07ED",
+     "rx": "0x07F5"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x07D0",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06DD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06DE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06E5",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06EC",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06F6",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06F7",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0700",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x076B",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BF",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07ED",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ],
+   "note": "PASM 无静态直达（0x13 家族任何代无路由 owner 行，数据事实）：候选=0x0b13 表A(表A精确 join 结果) ∩ 路由表 can；0x7D0 由跨代 owner 0x0C05/0x0C02 行确证（非锚点补录）"
+  },
+  "0x0e1d": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x06FA",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FC",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E2",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e1e": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06ED",
+    "0x0724",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4",
+    "0x07D9",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x06EB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06ED",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0724",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0757",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x078F",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07A2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07A9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B0",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07D4",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07D9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E7",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e1f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06EB",
+    "0x06ED",
+    "0x0724",
+    "0x0757",
+    "0x078F",
+    "0x07A2",
+    "0x07A9",
+    "0x07B0",
+    "0x07D4",
+    "0x07D9",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06ED",
+     "rx": "0x06F5"
+    },
+    {
+     "tx": "0x0724",
+     "rx": "0x072C"
+    },
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    },
+    {
+     "tx": "0x07A2",
+     "rx": "0x07AA"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07D4",
+     "rx": "0x07DC"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x06EB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06ED",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0724",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0757",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x078F",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07A2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07A9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B0",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07D4",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07D9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E7",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e20": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07A3",
+    "0x07A4",
+    "0x07D1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07A3",
+     "rx": "0x07AB"
+    },
+    {
+     "tx": "0x07A4",
+     "rx": "0x07AC"
+    },
+    {
+     "tx": "0x07D1",
+     "rx": "0x07D9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x07A3",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A4",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x07D1",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e23": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06A7",
+    "0x06A8",
+    "0x074F",
+    "0x07A5",
+    "0x07A6",
+    "0x07A7",
+    "0x07A8",
+    "0x07A9",
+    "0x07AA",
+    "0x07AB",
+    "0x07AC",
+    "0x07AD",
+    "0x07AE",
+    "0x07AF",
+    "0x07B0",
+    "0x07B1",
+    "0x07B2",
+    "0x07B3",
+    "0x07B4"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06A7",
+     "rx": "0x06AF"
+    },
+    {
+     "tx": "0x06A8",
+     "rx": "0x06B0"
+    },
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x07A5",
+     "rx": "0x07AD"
+    },
+    {
+     "tx": "0x07A6",
+     "rx": "0x07AE"
+    },
+    {
+     "tx": "0x07A7",
+     "rx": "0x07AF"
+    },
+    {
+     "tx": "0x07A8",
+     "rx": "0x07B0"
+    },
+    {
+     "tx": "0x07A9",
+     "rx": "0x07B1"
+    },
+    {
+     "tx": "0x07AA",
+     "rx": "0x07B2"
+    },
+    {
+     "tx": "0x07AB",
+     "rx": "0x07B3"
+    },
+    {
+     "tx": "0x07AC",
+     "rx": "0x07B4"
+    },
+    {
+     "tx": "0x07AD",
+     "rx": "0x07B5"
+    },
+    {
+     "tx": "0x07AE",
+     "rx": "0x07B6"
+    },
+    {
+     "tx": "0x07AF",
+     "rx": "0x07B7"
+    },
+    {
+     "tx": "0x07B0",
+     "rx": "0x07B8"
+    },
+    {
+     "tx": "0x07B1",
+     "rx": "0x07B9"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07B3",
+     "rx": "0x07BB"
+    },
+    {
+     "tx": "0x07B4",
+     "rx": "0x07BC"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x06A7",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06A8",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x074F",
+     "sources": [
+      "crossgenProven"
+     ]
+    },
+    {
+     "can": "0x07A5",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A6",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A7",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A8",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07A9",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07AA",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07AB",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07AC",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07AD",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07AE",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07AF",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07B0",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07B1",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07B2",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07B3",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x07B4",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0e27": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0765",
+    "0x0766",
+    "0x0767"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0765",
+     "rx": "0x076D"
+    },
+    {
+     "tx": "0x0766",
+     "rx": "0x076E"
+    },
+    {
+     "tx": "0x0767",
+     "rx": "0x076F"
+    }
+   ],
+   "firstRead": "2200A0",
+   "provenance": [
+    {
+     "can": "0x0765",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0766",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x0767",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0e2b": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x06DE",
+    "0x06EE",
+    "0x06F3",
+    "0x0705",
+    "0x0706",
+    "0x0713",
+    "0x075F",
+    "0x0760",
+    "0x07C0",
+    "0x07C2",
+    "0x07EA",
+    "0x07F1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06EE",
+     "rx": "0x06F6"
+    },
+    {
+     "tx": "0x06F3",
+     "rx": "0x06FB"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0713",
+     "rx": "0x071B"
+    },
+    {
+     "tx": "0x075F",
+     "rx": "0x0767"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x07C0",
+     "rx": "0x07C8"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x06DE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06EE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06F3",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0705",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0706",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0713",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x075F",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0760",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07C0",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07C2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07EA",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07F1",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e2f": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0763",
+    "0x0764"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0763",
+     "rx": "0x076B"
+    },
+    {
+     "tx": "0x0764",
+     "rx": "0x076C"
+    }
+   ],
+   "firstRead": "2200A0",
+   "provenance": [
+    {
+     "can": "0x0763",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0764",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e30": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0763",
+    "0x0764"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0763",
+     "rx": "0x076B"
+    },
+    {
+     "tx": "0x0764",
+     "rx": "0x076C"
+    }
+   ],
+   "firstRead": "2200B0",
+   "provenance": [
+    {
+     "can": "0x0763",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0764",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e32": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0757",
+    "0x075E",
+    "0x0760",
+    "0x0761"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0757",
+     "rx": "0x075F"
+    },
+    {
+     "tx": "0x075E",
+     "rx": "0x0766"
+    },
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    },
+    {
+     "tx": "0x0761",
+     "rx": "0x0769"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x0757",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x075E",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0760",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x0761",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0e36": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0603",
+    "0x0660",
+    "0x0721",
+    "0x0722",
+    "0x0728",
+    "0x07E0",
+    "0x07E1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0603",
+     "rx": "0x060B"
+    },
+    {
+     "tx": "0x0660",
+     "rx": "0x0668"
+    },
+    {
+     "tx": "0x0721",
+     "rx": "0x0729"
+    },
+    {
+     "tx": "0x0722",
+     "rx": "0x072A"
+    },
+    {
+     "tx": "0x0728",
+     "rx": "0x0730"
+    },
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8"
+    },
+    {
+     "tx": "0x07E1",
+     "rx": "0x07E9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0603",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0660",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0721",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x0722",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x0728",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07E0",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x07E1",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0e37": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x074F"
+   ],
+   "pairs": [
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x074F",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e40": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0760"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0760",
+     "rx": "0x0768"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x0760",
+     "sources": [
+      "v3candRx"
+     ]
+    }
+   ]
+  },
+  "0x0e41": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07CF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07CF",
+     "rx": "0x07D7"
+    }
+   ],
+   "firstRead": "2109",
+   "provenance": [
+    {
+     "can": "0x07CF",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e44": {
+   "mode": null,
+   "n": null,
+   "bindDirect": false,
+   "cands": [
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x06E7",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073C",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073D",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0743",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0744",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0758",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B6",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e45": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0762"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0762",
+     "rx": "0x076A"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0762",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e46": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06E9",
+    "0x06EA",
+    "0x06EB",
+    "0x06EC",
+    "0x06F2",
+    "0x0784"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06E9",
+     "rx": "0x06F1"
+    },
+    {
+     "tx": "0x06EA",
+     "rx": "0x06F2"
+    },
+    {
+     "tx": "0x06EB",
+     "rx": "0x06F3"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4"
+    },
+    {
+     "tx": "0x06F2",
+     "rx": "0x06FA"
+    },
+    {
+     "tx": "0x0784",
+     "rx": "0x078C"
+    }
+   ],
+   "firstRead": "220030",
+   "provenance": [
+    {
+     "can": "0x06E9",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06EA",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06EB",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06EC",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06F2",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x0784",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e4a": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FA",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FA",
+     "rx": "0x0702"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": "2200AF",
+   "provenance": [
+    {
+     "can": "0x06FA",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FC",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E2",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e4b": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x072D",
+    "0x072E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x072D",
+     "rx": "0x0735"
+    },
+    {
+     "tx": "0x072E",
+     "rx": "0x0736"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x072D",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x072E",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e4c": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x07D9",
+    "0x07DA",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220007",
+   "provenance": [
+    {
+     "can": "0x06FB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FC",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07D9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07DA",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E7",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e4e": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x07D9",
+    "0x07DA",
+    "0x07E7"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x07D9",
+     "rx": "0x07E1"
+    },
+    {
+     "tx": "0x07DA",
+     "rx": "0x07E2"
+    },
+    {
+     "tx": "0x07E7",
+     "rx": "0x07EF"
+    }
+   ],
+   "firstRead": "220007",
+   "provenance": [
+    {
+     "can": "0x06FB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FC",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06FE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07D9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07DA",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E7",
+     "sources": [
+      "crossgen"
+     ]
+    }
+   ]
+  },
+  "0x0e4f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07DB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07DB",
+     "rx": "0x07E3"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x07DB",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e50": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x07DB"
+   ],
+   "pairs": [
+    {
+     "tx": "0x07DB",
+     "rx": "0x07E3"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x07DB",
+     "sources": [
+      "crossgenProven"
+     ]
+    }
+   ]
+  },
+  "0x0e51": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0782"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0782",
+     "rx": "0x078A"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x0782",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e52": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x074F",
+    "0x0762",
+    "0x0769",
+    "0x076B",
+    "0x076C",
+    "0x076D",
+    "0x07E2"
+   ],
+   "pairs": [
+    {
+     "tx": "0x074F",
+     "rx": "0x0757"
+    },
+    {
+     "tx": "0x0762",
+     "rx": "0x076A"
+    },
+    {
+     "tx": "0x0769",
+     "rx": "0x0771"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x076D",
+     "rx": "0x0775"
+    },
+    {
+     "tx": "0x07E2",
+     "rx": "0x07EA"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x074F",
+     "sources": [
+      "crossgenProven"
+     ]
+    },
+    {
+     "can": "0x0762",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x0769",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x076B",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x076C",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x076D",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07E2",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0e57": {
+   "mode": null,
+   "n": null,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0e58": {
+   "mode": null,
+   "n": null,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0e59": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0767",
+    "0x076E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0767",
+     "rx": "0x076F"
+    },
+    {
+     "tx": "0x076E",
+     "rx": "0x0776"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0767",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x076E",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e5a": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0767",
+    "0x076E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0767",
+     "rx": "0x076F"
+    },
+    {
+     "tx": "0x076E",
+     "rx": "0x0776"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0767",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x076E",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0e5b": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0771",
+    "0x0772",
+    "0x0773",
+    "0x0776"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0771",
+     "rx": "0x0779"
+    },
+    {
+     "tx": "0x0772",
+     "rx": "0x077A"
+    },
+    {
+     "tx": "0x0773",
+     "rx": "0x077B"
+    },
+    {
+     "tx": "0x0776",
+     "rx": "0x077E"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0771",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0772",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0773",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x0776",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0ea5": {
+   "mode": null,
+   "n": null,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f01": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06F6",
+    "0x06F7",
+    "0x06FB",
+    "0x06FC",
+    "0x06FD",
+    "0x06FE",
+    "0x06FF",
+    "0x0701",
+    "0x0702",
+    "0x0703",
+    "0x0704",
+    "0x0705",
+    "0x0706",
+    "0x0707",
+    "0x0708",
+    "0x0709",
+    "0x070A",
+    "0x070B",
+    "0x070C",
+    "0x070D"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x06FB",
+     "rx": "0x0703"
+    },
+    {
+     "tx": "0x06FC",
+     "rx": "0x0704"
+    },
+    {
+     "tx": "0x06FD",
+     "rx": "0x0705"
+    },
+    {
+     "tx": "0x06FE",
+     "rx": "0x0706"
+    },
+    {
+     "tx": "0x06FF",
+     "rx": "0x0707"
+    },
+    {
+     "tx": "0x0701",
+     "rx": "0x0709"
+    },
+    {
+     "tx": "0x0702",
+     "rx": "0x070A"
+    },
+    {
+     "tx": "0x0703",
+     "rx": "0x070B"
+    },
+    {
+     "tx": "0x0704",
+     "rx": "0x070C"
+    },
+    {
+     "tx": "0x0705",
+     "rx": "0x070D"
+    },
+    {
+     "tx": "0x0706",
+     "rx": "0x070E"
+    },
+    {
+     "tx": "0x0707",
+     "rx": "0x070F"
+    },
+    {
+     "tx": "0x0708",
+     "rx": "0x0710"
+    },
+    {
+     "tx": "0x0709",
+     "rx": "0x0711"
+    },
+    {
+     "tx": "0x070A",
+     "rx": "0x0712"
+    },
+    {
+     "tx": "0x070B",
+     "rx": "0x0713"
+    },
+    {
+     "tx": "0x070C",
+     "rx": "0x0714"
+    },
+    {
+     "tx": "0x070D",
+     "rx": "0x0715"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x06F6",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06F7",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06FB",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06FC",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06FD",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06FE",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06FF",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0701",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0702",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0703",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0704",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0705",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0706",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0707",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0708",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0709",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x070A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x070B",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x070C",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x070D",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x070E",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x070F",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0710",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0711",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x0712",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x0713",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0f02": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0601",
+    "0x0602"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0601",
+     "rx": "0x0609"
+    },
+    {
+     "tx": "0x0602",
+     "rx": "0x060A"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0601",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0602",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0f04": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f05": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0750"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0750",
+     "rx": "0x0758"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0750",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0f07": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0661",
+    "0x0662",
+    "0x0663",
+    "0x0664",
+    "0x0665",
+    "0x0666",
+    "0x070B",
+    "0x078E",
+    "0x078F"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0661",
+     "rx": "0x0669"
+    },
+    {
+     "tx": "0x0662",
+     "rx": "0x066A"
+    },
+    {
+     "tx": "0x0663",
+     "rx": "0x066B"
+    },
+    {
+     "tx": "0x0664",
+     "rx": "0x066C"
+    },
+    {
+     "tx": "0x0665",
+     "rx": "0x066D"
+    },
+    {
+     "tx": "0x0666",
+     "rx": "0x066E"
+    },
+    {
+     "tx": "0x070B",
+     "rx": "0x0713"
+    },
+    {
+     "tx": "0x078E",
+     "rx": "0x0796"
+    },
+    {
+     "tx": "0x078F",
+     "rx": "0x0797"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0661",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0662",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0663",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0664",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0665",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0666",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x070B",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x078E",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x078F",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0f08": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x060A",
+    "0x0645",
+    "0x0646",
+    "0x07EB",
+    "0x07EC"
+   ],
+   "pairs": [
+    {
+     "tx": "0x060A",
+     "rx": "0x0612"
+    },
+    {
+     "tx": "0x0645",
+     "rx": "0x064D"
+    },
+    {
+     "tx": "0x0646",
+     "rx": "0x064E"
+    },
+    {
+     "tx": "0x07EB",
+     "rx": "0x07F3"
+    },
+    {
+     "tx": "0x07EC",
+     "rx": "0x07F4"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x060A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0645",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0646",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07EB",
+     "sources": [
+      "routing"
+     ]
+    },
+    {
+     "can": "0x07EC",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0f09": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0762"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0762",
+     "rx": "0x076A"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0762",
+     "sources": [
+      "routing"
+     ]
+    }
+   ]
+  },
+  "0x0f12": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f13": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f1d": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f1e": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0717"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0717",
+     "rx": "0x071F"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0717",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0f1f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0717"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0717",
+     "rx": "0x071F"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0717",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0f20": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06A5"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06A5",
+     "rx": "0x06AD"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x06A5",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0f23": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06A6",
+    "0x07B3",
+    "0x07B4",
+    "0x07E5",
+    "0x07E6"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06A6",
+     "rx": "0x06AE"
+    },
+    {
+     "tx": "0x07B3",
+     "rx": "0x07BB"
+    },
+    {
+     "tx": "0x07B4",
+     "rx": "0x07BC"
+    },
+    {
+     "tx": "0x07E5",
+     "rx": "0x07ED"
+    },
+    {
+     "tx": "0x07E6",
+     "rx": "0x07EE"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x06A6",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07B3",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x07B4",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x07E5",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x07E6",
+     "sources": [
+      "v3candRx"
+     ]
+    }
+   ]
+  },
+  "0x0f32": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0685",
+    "0x0686",
+    "0x0687",
+    "0x0689",
+    "0x068A",
+    "0x068B",
+    "0x068C",
+    "0x0690"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0685",
+     "rx": "0x068D"
+    },
+    {
+     "tx": "0x0686",
+     "rx": "0x068E"
+    },
+    {
+     "tx": "0x0687",
+     "rx": "0x068F"
+    },
+    {
+     "tx": "0x0689",
+     "rx": "0x0691"
+    },
+    {
+     "tx": "0x068A",
+     "rx": "0x0692"
+    },
+    {
+     "tx": "0x068B",
+     "rx": "0x0693"
+    },
+    {
+     "tx": "0x068C",
+     "rx": "0x0694"
+    },
+    {
+     "tx": "0x0690",
+     "rx": "0x0698"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0685",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x0686",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x0687",
+     "sources": [
+      "v3candRx"
+     ]
+    },
+    {
+     "can": "0x0689",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x068A",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x068B",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x068C",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0690",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0f34": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f35": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f36": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x065F",
+    "0x0660",
+    "0x07E0",
+    "0x07E1"
+   ],
+   "pairs": [
+    {
+     "tx": "0x065F",
+     "rx": "0x0667"
+    },
+    {
+     "tx": "0x0660",
+     "rx": "0x0668"
+    },
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8"
+    },
+    {
+     "tx": "0x07E1",
+     "rx": "0x07E9"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x065F",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0660",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x07E0",
+     "sources": [
+      "v3cand"
+     ]
+    },
+    {
+     "can": "0x07E1",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0f37": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [
+    "0x0691",
+    "0x0692"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0691",
+     "rx": "0x0699"
+    },
+    {
+     "tx": "0x0692",
+     "rx": "0x069A"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0691",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0692",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0f40": {
+   "mode": "0x1010",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f41": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f45": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f46": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f49": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f4a": {
+   "mode": "0x1000",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f4b": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f4c": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f4d": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06CC",
+    "0x06CD",
+    "0x06CE",
+    "0x06CF"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06CC",
+     "rx": "0x06D4"
+    },
+    {
+     "tx": "0x06CD",
+     "rx": "0x06D5"
+    },
+    {
+     "tx": "0x06CE",
+     "rx": "0x06D6"
+    },
+    {
+     "tx": "0x06CF",
+     "rx": "0x06D7"
+    }
+   ],
+   "firstRead": "2200FE",
+   "provenance": [
+    {
+     "can": "0x06CC",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06CD",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06CE",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06CF",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0f4e": {
+   "mode": "0x1002",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f4f": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0717",
+    "0x0718",
+    "0x0719"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0717",
+     "rx": "0x071F"
+    },
+    {
+     "tx": "0x0718",
+     "rx": "0x0720"
+    },
+    {
+     "tx": "0x0719",
+     "rx": "0x0721"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0717",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0718",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0719",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0f50": {
+   "mode": "0x1001",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x0717",
+    "0x0718",
+    "0x0719"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0717",
+     "rx": "0x071F"
+    },
+    {
+     "tx": "0x0718",
+     "rx": "0x0720"
+    },
+    {
+     "tx": "0x0719",
+     "rx": "0x0721"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x0717",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0718",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x0719",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  },
+  "0x0f51": {
+   "mode": "0x1000",
+   "n": 1,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f54": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06D8",
+    "0x06D9",
+    "0x06DA",
+    "0x06DB",
+    "0x06DC",
+    "0x06DD",
+    "0x06DE",
+    "0x06DF",
+    "0x06E0",
+    "0x06E1",
+    "0x06E2",
+    "0x06E3",
+    "0x06E4",
+    "0x06E5"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06D8",
+     "rx": "0x06E0"
+    },
+    {
+     "tx": "0x06D9",
+     "rx": "0x06E1"
+    },
+    {
+     "tx": "0x06DA",
+     "rx": "0x06E2"
+    },
+    {
+     "tx": "0x06DB",
+     "rx": "0x06E3"
+    },
+    {
+     "tx": "0x06DC",
+     "rx": "0x06E4"
+    },
+    {
+     "tx": "0x06DD",
+     "rx": "0x06E5"
+    },
+    {
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06DF",
+     "rx": "0x06E7"
+    },
+    {
+     "tx": "0x06E0",
+     "rx": "0x06E8"
+    },
+    {
+     "tx": "0x06E1",
+     "rx": "0x06E9"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06E3",
+     "rx": "0x06EB"
+    },
+    {
+     "tx": "0x06E4",
+     "rx": "0x06EC"
+    },
+    {
+     "tx": "0x06E5",
+     "rx": "0x06ED"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x06D8",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06D9",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06DA",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06DB",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06DC",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06DD",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06DE",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06DF",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06E0",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06E1",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06E2",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06E3",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06E4",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06E5",
+     "sources": [
+      "v3cand"
+     ]
+    }
+   ]
+  },
+  "0x0f56": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "provenance": [
+    {
+     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+    }
+   ]
+  },
+  "0x0f58": {
+   "mode": "0x1010",
+   "n": 0,
+   "bindDirect": true,
+   "cands": [
+    "0x06B3",
+    "0x06B7",
+    "0x06C4",
+    "0x06C5"
+   ],
+   "pairs": [
+    {
+     "tx": "0x06B3",
+     "rx": "0x06BB"
+    },
+    {
+     "tx": "0x06B7",
+     "rx": "0x06BF"
+    },
+    {
+     "tx": "0x06C4",
+     "rx": "0x06CC"
+    },
+    {
+     "tx": "0x06C5",
+     "rx": "0x06CD"
+    }
+   ],
+   "firstRead": null,
+   "provenance": [
+    {
+     "can": "0x06B3",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06B7",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06C4",
+     "sources": [
+      "v3key"
+     ]
+    },
+    {
+     "can": "0x06C5",
+     "sources": [
+      "v3key"
+     ]
+    }
+   ]
+  }
+ }
+}

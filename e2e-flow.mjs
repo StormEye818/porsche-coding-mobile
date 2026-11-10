@@ -351,55 +351,46 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     ok('internal 0x0117 UDS 簇短名单已删（无 0x77A 簇）', !txs.includes(0x77a) && !txs.includes(0x7c0));
   }
 
-  // ── IC 地址断言（mock 命中族中位）：假发现循环应答 + IC 绑定结果 ──
-  //   发现循环（参考诊断仪 转写，RE-ICADDR §3.2）：候选源=SpecArray/表行（本例=14B 记录族 0x71E-0x725
-  //   + 表行序 0x7F1），帧=21 01/1A xx（KWP）；身份=识别串 Kombi/仪表 语义匹配（GetSubSysDataAddr
-  //   strcmp/前缀/strstr）；NRC 地址（0x7F1 形态）=有 ECU 身份不符不算候选；NO DATA=候选死换下一个。
-  //   mock 假发现循环在族中位 0x722 应答身份串 → 断言 IC 绑定结果（tx/rx 对 + 身份）。
+  // ── IC 绑定断言（2026-11-10 新契约：记录驱动 + 单帧绑定 + 回帧 ID 校验）──
+  //   依据 RE-DISCOVERY：参考诊断仪对 n=0 的记录**不发探针**，直接绑定；
+  //   我们等价实现 = 一帧族存活帧（UDS 3E00 / KWP 裸 3E），判据是「回帧来自该 rx 且有 body」。
+  //   身份不在这里裁决，交给进模块后的首参数读帧。
   {
-    const fam = [0x71E, 0x71F, 0x720, 0x721, 0x722, 0x723, 0x724, 0x725];
-    const median = fam[Math.floor(fam.length / 2)];   // 0x722
-    ok('族中位定义（DRIVELINKS 14B 记录族 0x71E-0x725）', median === 0x722, median.toString(16));
-    // strictAddress 拓扑：只有列出的 tx 有 ECU —— 族其余地址 = NO DATA（候选死）。
-    const ecus = {
-      [median]: { name: 'IC', dsn: 'Kombiinstrument_9x1', kwp: true },   // 族中位 = IC（mock 命中族中位）
-      0x7F1: { name: 'unknown', nrcAll: true },                          // 真车 0x7F1 形态：只回 NRC
-    };
+    const plan = JSON.parse(readFileSync('./data/bind-plan.json', 'utf8'));
+    const ic = plan.ecu['0x0b08'];
+    ok('IC 记录 n=0 → 直接绑定（参考诊断仪 cbz 分支）', ic && ic.bindDirect === true, JSON.stringify(ic));
+    ok('IC 候选=该组唯一诊断段行 0x7F1', ic && ic.cands.length === 1 && parseInt(ic.cands[0], 16) === 0x7F1);
+
+    // 拓扑 A：0x7F1 就是目标 → 一帧 3E00 应绑定成功
+    const ecus = { 0x7F1: { name: 'IC', dsn: 'Kombiinstrument_9x1', kwp: false } };
     const mIC = new MockAdapter({ latencyMs: 0, strictAddress: true, ecus });
     const eIC = new Elm327(mIC, { timeoutMs: 2000 });
-    // 与 app.probeAddressFor 同款探测环（probeDecision 判定，RE-FLOWSPEC §1.6/2.3）
-    const { probeDecision } = await import('./src/probe.js');
-    let hit = null, sawNrc = false, nonKwpFrame = false;
-    const order = [0x7F1, ...fam];   // 表行序候选（0x7F1 精确 join 行）先于族候选
-    for (const tx of order) {
-      if (hit) break;
+    const { frameIdsOf } = await import('./src/coder.js');
+    let hit = null;
+    for (const tx of ic.cands.map((c) => parseInt(c, 16))) {
       await eIC.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 500);
       await eIC.cmd(`ATCRA${(tx + 8).toString(16).toUpperCase()}`, 500);
-      for (const cmd of ['2101', '1A9F', '1A87', '1A90']) {
-        if (/^22/.test(cmd)) nonKwpFrame = true;
-        const r = (await eIC.cmd(cmd, 800) || '').trim();
-        const pr = parseResp(r);
-        const body = Array.from(pr.body || []).map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-        const text = Array.from(pr.body || []).filter((c) => c >= 0x20 && c < 0x7f)
-          .map((c) => String.fromCharCode(c)).join('').trim();
-        const d = probeDecision(body, text, { label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'], otherLabels: [] });
-        if (d.verdict === 'accept') { hit = { tx, ident: d.ident }; break; }
-        if (d.verdict === 'nrc-reject') sawNrc = true;
-      }
+      const r = (await eIC.cmd('3E00', 800) || '').trim();
+      const ids = frameIdsOf(r);
+      const body = Array.from(parseResp(r).body || []).map((x) => x.toString(16).padStart(2, '0')).join('');
+      const idOk = !ids.length || ids.includes(tx + 8);
+      if (idOk && body) { hit = { tx, body }; break; }
     }
-    ok('族探测命中=族中位 0x722（mock 命中族中位）', !!hit && hit.tx === median,
-      hit && `hit=0x${hit.tx.toString(16)} ident=${hit.ident}`);
-    ok('命中依据=识别串匹配（Kombi 语义），非 NRC/存活',
-      !!hit && /Kombi/i.test(hit.ident || ''), hit && hit.ident);
-    ok('NRC 地址 0x7F1 被 nrc-reject（不算候选，NRC 字节非识别串）',
-      sawNrc && !!hit && hit.tx !== 0x7F1, hit && `hit=0x${hit.tx.toString(16)}`);
-    ok('KWP 族探测只发 21 01/1A xx（无 22）', !nonKwpFrame && !mIC.txLog.some((c) => !c.startsWith('AT') && c.startsWith('22')));
-    ok('0x7F1 先探后弃（表行序候选未命中即换族候选）',
-      mIC.txLog.includes('ATSH7F1') && mIC.txLog.includes(`ATSH${median.toString(16).toUpperCase()}`),
-      mIC.txLog.filter((c) => c.startsWith('ATSH')).join(','));
-    ok('IC 绑定结果=发现循环命中项（tx/rx 对与身份成对落定）',
-      !!hit && hit.tx === median && hit.ident && hit.ident.length > 0,
-      hit && `bind=0x${hit.tx.toString(16)}/0x${(hit.tx + 8).toString(16)} ident=${hit.ident}`);
+    ok('n=0 单帧绑定成功（0x7F1/0x7F9）', !!hit && hit.tx === 0x7F1, hit && `bind=0x${hit.tx.toString(16)}`);
+    ok('绑定帧只发 1 条（无 21/1A/22 探针链）',
+      mIC.txLog.filter((c) => !c.startsWith('AT')).length === 1,
+      mIC.txLog.filter((c) => !c.startsWith('AT')).join(','));
+
+    // 拓扑 B：只有 0x7E8 会答（模拟「别人替你应答」）→ 必须判死
+    const mBad = new MockAdapter({ latencyMs: 0, replay: [{ req: '3E00', resp: '7E8 02 7E 00' }] });
+    const eBad = new Elm327(mBad, { timeoutMs: 800 });
+    await eBad.cmd('ATSH7F1', 500);
+    await eBad.cmd('ATCRA7F9', 500);
+    const rBad = (await eBad.cmd('3E00', 800) || '').trim();
+    const idsBad = frameIdsOf(rBad);
+    const bodyBad = Array.from(parseResp(rBad).body || []).length;
+    ok('回帧来自 7E8（≠期望 7F9）→ 不算绑定', idsBad.includes(0x7E8) && !idsBad.includes(0x7F9) && bodyBad > 0,
+      `ids=${idsBad.map((x) => x.toString(16)).join('/')}`);
   }
 
   // ── NRC（任务清单⑤）：7F 78 续等重发原帧；其余 NRC 单发不重试 ──
@@ -478,19 +469,20 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   ok('familyOfReadSid 通用映射（21/1A→kwp，22→uds）',
     familyOfReadSid(0x21) === 'kwp' && familyOfReadSid(0x1A) === 'kwp' && familyOfReadSid(0x22) === 'uds');
 
-  // ★ mode 出参=原厂真值（718 场景）：BV_ECM_UDS → sysId 0x0b01（模块名→ECU_ID 通用映射），
-  //   条目行记录 u32 复合真值 —— 与 981 DME 同 ECU 族同真值，验证路由是**通用规则**
-  //   （记录字节级取 mode，无车型/模块特判）。
+  // ★ mode 出参=原厂真值（718 场景）：BV_ECM_UDS → sysId 0x0e01（2026-11-10 换表，
+  //   981-sysids.json name-9 证据；旧 0x0b01），条目行记录 u32 复合真值 ——
+  //   0x0e01 块首行 recOff=0x1380F → u32@rec+0 = 0x03040241（mode 0x41 · 族 0x02 · 会话 0x0304），
+  //   验证路由是**通用规则**（记录字节级取 mode，无车型/模块特判）。
   {
     const dl = JSON.parse(readFileSync('./data/drivelinks.json', 'utf8'));
     const { MODULE_TO_ECUID } = await import('./src/module-ecu-map.js');
-    ok('718 模块→ECU_ID 通用映射（BV_ECM_UDS→0x0b01）',
-      MODULE_TO_ECUID['BV_ECM_UDS'] === '0x0b01', MODULE_TO_ECUID['BV_ECM_UDS']);
+    ok('718 模块→ECU_ID 通用映射（BV_ECM_UDS→0x0e01，981-sysids 换表）',
+      MODULE_TO_ECUID['BV_ECM_UDS'] === '0x0e01', MODULE_TO_ECUID['BV_ECM_UDS']);
     const row = dl.ecu[MODULE_TO_ECUID['BV_ECM_UDS']]?.[0];
-    ok('718 BV_ECM_UDS mode 出参=原厂真值 0x08（记录 0x1F59 rec[0]）',
-      !!row && row.mode === 0x08, row && `mode=0x${(row.mode ?? -1).toString(16)}`);
-    ok('718 记录复合=0x03040208（mode 0x08 · 模板族 0x02 · 会话 0x0304）',
-      !!row && row.mode === 0x08 && row.family === 0x02 && row.session === 0x0304,
+    ok('718 BV_ECM_UDS mode 出参=原厂真值 0x41（记录 0x1380F rec[0]）',
+      !!row && row.mode === 0x41, row && `mode=0x${(row.mode ?? -1).toString(16)}`);
+    ok('718 记录复合=0x03040241（mode 0x41 · 模板族 0x02 · 会话 0x0304）',
+      !!row && row.mode === 0x41 && row.family === 0x02 && row.session === 0x0304,
       row && `0x${((row.session << 16) | (row.family << 8) | row.mode).toString(16)}`);
   }
 }

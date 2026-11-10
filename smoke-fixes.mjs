@@ -436,14 +436,18 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
   {
     const appSrc = (await import('node:fs')).readFileSync('./src/app.js', 'utf8');
     const app = appSrc;
-    ok('参考诊断仪 探测命令按 blockKey 映射（§8.1 payload 形态）',
-       /'0x0b40': \['21010001'\]/.test(app) && /'0x2040': \['21010102'\]/.test(app)
-       && /'0x2340': \['21010001', '21010601'\]/.test(app));
-    ok('探测 flags 解析（§8.3 bVar22/local164/local178）',
-       /probeFlagsFromResp/.test(app) && /\(b1 & 0x30\) === 0x30/.test(app));
-    ok('参考诊断仪 表头裁剪字节级对齐（!bVar22→3 / 其余→2 / 0x2340 族不裁）',
-       /pruneRowsByFlags/.test(app) && /flags\.bit2 \? 2 : 0/.test(app)
-       && /!flags\.bVar22\) drop = 3/.test(app) && /fam === 0x2340\) return rows/.test(app));
+    // 2026-11-10 撤回：blockKey→`21 01 00 01` 映射**没有 431 出处**（发现函数里也没有 21 01 常量），
+    //   且 21 01 是读数据不是探活；改用 431 实证的两帧：22 14 09 → 22 11 02（KWP 走 1A 9F）。
+    ok('A8 已撤回（不再按 blockKey 猜探针帧）',
+       !/PROBE_CMDS_BY_BLOCKKEY/.test(app) && !/probeCmdsForEntry/.test(app));
+    ok('族探针链 = 431 实证帧（UDS: 221409→221102）',
+       /function probeChainFor/.test(app)
+       && /'uds'\)\s*return \['221409', '221102'\]/.test(app)
+       && /'kwp'\)\s*return \['1A9F', '3E'\]/.test(app));
+    // 2026-11-10：flags 解析 / 表头裁剪两个函数**从未接线**（死代码），已删除。
+    // 断言改为「确实删掉且不留假对齐」——不再要求源码里存在这两个名字。
+    ok('探测 flags/裁剪死代码已退休（未接线 → 删除，不冒充已对齐）',
+       !/probeFlagsFromResp/.test(app) && !/pruneRowsByFlags/.test(app));
     ok('地址缓存/手工兜底已退役（终审③，0 自创）',
        !/saveAddrOverride|loadAddrOverrides|ADDR_OVERRIDE_KEY/.test(app));
     ok('每次进模块新鲜解析（终审③）',
@@ -529,8 +533,10 @@ console.log('\n[8] 特殊功能安全访问');
   const iRout = src.indexOf('coder.runRoutine(sf, id');
   ok('特殊功能路径调用了 securityAccessEx(0x09)', iSec > 0);
   ok('securityAccessEx 在 runRoutine **之前**', iSec > 0 && iRout > 0 && iSec < iRout);
-  ok('特殊功能用 UDS 27（不是 KWP 17）',
-     /securityAccessEx\(\{\s*level:\s*0x09,\s*kwp:\s*false/.test(src));
+  // 2026-11-10 修：此前写死 kwp:false → KWP 模块被发 27 09（应为 17 00）。改为按读服务判族。
+  ok('特殊功能按族选安全访问（UDS 27 / KWP 17）',
+     /securityAccessEx\(\{\s*level:\s*0x09,\s*kwp:\s*kwpRoutine/.test(src)
+     && /kwpRoutine\s*=\s*coder\.lastReadSid\s*!=\s*null\s*&&\s*coder\.lastReadSid\s*!==\s*0x22/.test(src));
   // MES 定论（REAUDIT-20261017）：跟随服务轮询直到响应不是 21/23/24/78
   ok('例程走 runRoutine（含 31 03 跟随轮询）', iRout > 0);
   ok('轮询可被打断（shouldStop）', /shouldStop:\s*\(\)\s*=>\s*routineAbort/.test(src));
@@ -1517,7 +1523,7 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
 
   // ⑤ 源码级断言：本轮修复的硬约束
   const app = readFileSync('./src/app.js', 'utf8');
-  ok('地址门禁放行 verified/table', /\['measured', 'probed', 'manual', 'verified', 'table'\]/.test(app));
+  ok('地址门禁放行 verified/table/bound', /\['measured', 'probed', 'bound', 'manual', 'verified', 'table'\]/.test(app));
   ok('candidate 直接放行（无确认弹窗，回读兜底；未知仍拒）',
      /st === 'candidate'[\s\S]{0,600}return true/.test(app)
      && !/st === 'candidate'[\s\S]{0,600}return confirm/.test(app));
