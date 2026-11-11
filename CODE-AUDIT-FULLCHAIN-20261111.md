@@ -12,9 +12,10 @@
 
 ## 0. 总结论（先回答用户的问题）
 
-> ⚠️ **本节是 2026-11-11 首轮审计的结论。同日第二轮已按用户要求把全部偏离改成原厂行为、
-> 删除自创内容、完成文档收口 —— 最新结论与验收矩阵见 [`ACCEPTANCE-MATRIX-431.md`](./ACCEPTANCE-MATRIX-431.md)
-> 与本文件 §10「改造后二次审计」。改造后**默认路径自创行为 = 0**，仅剩 5 项数据缺口/适配器差异。**
+> ⚠️ **历史结论警示（2026-11-11 第三轮独立复核）**：§10 及 `ACCEPTANCE-MATRIX-431.md`
+> 所称「默认路径自创行为 = 0 / 文档已收口 / 全绿」经本轮复验**不成立，已废止**。
+> 最新结论见本文件 **§11**：当前仍有可复现 P0、P1 bug 和多项未逆/未收口项；
+> 分开执行的测试主体通过不等于 `npm test` 可复现通过，也不等于真车链路正确。
 
 **不是「完全和 431 对齐」。** 分环节判定：
 
@@ -332,3 +333,115 @@
 `SAFETY`（默认全关）并在验收矩阵单列；「文档写 A 代码做 B」的 6 处（addrSafeForAction 注释
 互斥、probe.js 旧模型、变体落定政策、会话数据驱动、cmdOk 兜底承诺、vin-vehicle-map 数据源）
 已逐条收口。剩余 5 项均为**包内数据缺口或适配器架构差异**，已在矩阵中如实标注，不做猜测。
+
+---
+
+## 11. 第三轮独立复核（当前有效结论）
+
+> 对象：commit `93819491d115fcff5ed320ac42497543eeadf73f`，复核开始时工作区干净。
+> 方法：4 路只读审计 + 主审重读当前磁盘 + 数据生成器/产物对账 + 最小运行用例。
+> 本节取代 §10.5 与验收矩阵的「无自创 / 已收口」结论。**本轮未改协议源码。**
+
+### 11.1 对用户三问的直接回答
+
+1. **全链路没有完全对齐 431。** 帧格式和若干模板已经对齐，但 VIN 主链、车型/变体证据、
+   n=0/n>0 绑定、跨模块 seed/key、备份恢复、同 LID 多服务读取仍有实质偏离与 bug；
+   OBD VIN 地址、24 键语言表、逐 ECU 会话、部分 seed/mode 与多 sysId 归属仍未收口。
+2. **自创逻辑没有清干净，文档↔代码也没有收口。** `isValidVin`、件号防御函数、
+   多变体取首/默认放行、platform 恒真、扫描取首模块等仍在；验收矩阵把会阻止写入的 UI
+   值域闸写成「仅提示」，把默认不回滚写成全路径一致，均与代码相反。
+3. **仍有 bug，且多项是 P0。** 下面只列本轮能用当前代码/数据/最小用例证明的项；
+   不再用「测试全绿」替代行为审查。
+
+### 11.2 四阶段当前判定
+
+| 阶段 | 当前判定 | 关键事实 |
+|---|---|---|
+| 读 VIN | **未对齐** | fresh 连接 `familyFor('DME')=null`，UDS 分支不走 `22F190`；UDS 显式分支实际首帧仍是 `221102`，`1003` 在其后；`221102` 若回 VIN 会同时污染 `name`；OBD 通道与正确寻址未实现 |
+| 年款/车型/变体 | **年款表对齐，车型/变体未收口** | 三档年款与 `PorscheGetYearByModel` 一致；24 键语言表未导出；`trim()` 破坏 856 个尾空格件号键，逗号变体 750 键不能全等命中，platform 过滤仍恒真 |
+| 进模块 | **存在 P0，不可称对齐** | `n_min` 混行得到 88 个错误直绑条目；运行时 n=0 取首候选；生成器把 rx 重算并绕回 0x0000；KWP 车道变换模块被发 221409；首模块 sysId 与多 sysId 归属可错代 |
+| 编码读写 | **存在写错 ECU/块的风险** | 备份不带 ECU 身份可跨模块恢复；同 LID 跨 SID 混缓存；缺 SID/LID 默认值仍可发写帧；回帧过滤可漏多帧错地址；读块不校验 LID/DID 回显 |
+
+### 11.3 P0：可复现的高危问题
+
+| # | 位置 | 问题与证据 | 影响 |
+|---|---|---|---|
+| P0-1 | `tools/export-bind-plan.py:289-290,368` + `app.js:595-597` | 88 个 sysId 同时含 n=0/1 行，`min(n)=0` 被整体直绑；运行时对 bindDirect **不探测、直接取 pairs[0]**。981 IC `0x0e08` pairs 为 `060A/0612`、`0646/064E`、`07F1/07F9`，当前会选 `060A`，验收期望 `07F1` 仅在第三项。门禁只查「包含」不查实际选择 | 直接进错模块；n=0 语义被错误解释成「首候选免验证」 |
+| P0-2 | `tools/export-bind-plan.py:165-177,364` | 表 A 原始 rx 已读入但生成 pairs 时丢弃，统一 `(tx+8)&0x7FF`。实测表 A `07FC→0804` 变成 `07FC→0004`，`07FD→0805` 变成 `07FD→0005` | 11 位 ATCRA 指向错误/非法接收 ID，可能收别的 ECU 帧 |
+| P0-3 | `app.js:2573` + `coder.js:684-695` | 换模块前没有清 `seedKeyProvider`；本模块无 drivelinks hit 且旧 provider 非空时，`:2573` 直接跳过新模块名字分派。`lastIdent` 在本次识别前也可用于旧算法分派 | 上一模块算法/识别串用于下一模块，错 key 有 0x35/0x36 风险 |
+| P0-4 | `app.js:3618-3622,3638,3649-3680` + `coder.js:1004-1008` | 备份只存 lid/readSid/writeSid/raw，不存车型、模块、tx/rx、VIN；restoreCoding 在当前 ECU 上恢复全部历史备份，也不检查 `WRITE_SIDS`。实测 343 条备份 readSid 有效但 writeSid=0，EPB 可拼 `00 87…`；另有 6 条备份因未保存 blockReadSid 而永久不可恢复 | 可把 A 模块/另一辆车的块写进 B 模块，且绕过只读服务闸 |
+| P0-5 | `app.js:150-161,2284-2308,2790-2827,4551-4555` | `currentBlocks` 只按 lid 缓存；`loadVariantItems` 给全文件统一 `blockReadSid`。实测 `911_991_/Allrad_Gen2_a1.json` 同 lid=144 同时要求 `readSid=34` 与 `readSid=26`；扫描统计 350 文件、698 个 lid 组跨 SID | 后读块直接不读，旧块/错误服务的数据冒充当前值并参与写入 |
+| P0-6 | `coder.js:712-726` | 回帧校验用 `ids.length` 而不是不同 ID 数，且包含期望 ID 就立即接受混流。最小用例：期望 rx=0x7E8，两个错帧均来自 0x7E9，`uds()` 返回 `ok`，`frameIdsOf=[2025,2025]` | 多帧错地址可漏过 FilterId 等价校验，错块可进入读写 |
+| P0-7 | `app.js:1060,2499-2501` + `coder.js:647-665` | fresh DME 定族为 null；`familyFor` 在 `ensureModuleFamily()` 前调用。非 uds 链不含 `22F190`；UDS 主名 `221102` 又在 `1003` 前发出。最小复现 `221102` 回 VIN 时输出 `name=VIN`、`vin=VIN` | fresh UDS 自动搜索读不到 VIN 或把 VIN 当车名，后续车型识别失真 |
+| P0-8 | `src/module-ecu-map.js` | esbuild 报 24 组重复键，16 组值冲突，后者静默覆盖前者。例 `Allrad 0x0e52→0x0b35`、`PDCC_2 0x0e2b→0x0b2b`、`RDK3 0x0e37→0x0c37`、`BV_EnginContrModul1UDS 0x0e01→0x0b01` | 全局/回退/反查表拿错代 sysId；测试只警告不失败 |
+| P0-9 | `coder.js:937-978,1110` | 公共写 API 对缺 writeSid 默认 0x3B，绕过只读闸；`Number(null)=0`，null lid 可进入 `3B 00…`；自动恢复还对缺 writeSid 默认 3B | 调用方可绕开 UI，发出源记录并未定义的写帧 |
+| P0-10 | `app.js:2515-2556` | `let hit` 定义在 2515 的 inner try 内，2556 在块外求值。当前 drivelinks 记录 mode 非空，因此必走到 `hit` 并抛 `ReferenceError`，被 2648 外层 catch 吞成「无算法」；旧 provider 同时被清掉 | 原厂 mode 路径在当前数据下不可达，并可能把本来可用的名字分派算法一并清掉 |
+
+### 11.4 P1/P2：功能错误、431 偏离与安全策略不一致
+
+| # | 位置 | 问题 |
+|---|---|---|
+| P1-1 | `app.js:2463-2469,622-633` + `probe.js:34-46` | 已知 UDS 的 `BV_ContrUnitLaneChangAssis2UDS` 发 KWP `1A9F`，KWP 实证只答 `221409`；fresh 首次探测也在 moduleFamily 加载前定族 |
+| P1-2 | `app.js:359-365,898-906` + `981-sysids.json` | 地址解析在识别前取首个有 sysId 的模块；5 个双 sysId 模块只展开首枚，其余静态候选不可达；平台缺失时可回退全局旧代表 |
+| P1-3 | `coder.js:541,546` + `variant.js:106-124,246-251,278` | `trim()` 破坏 856 个尾空格件号键；750 个逗号变体键未先拆分，`names.includes(整串)` 永远 false；platform 过滤仍恒真；partHit 可能来自别的模块 |
+| P1-4 | `app.js:3202,3332` | 两个主参数 UI 仍无条件 `fieldInRange` 并 return，SAFETY.range=false 也拦；验收矩阵所称「只是提示」不成立 |
+| P1-5 | `app.js:4453-4471,4454,4464` | 编程页不看 SAFETY.autoRestore，任何写/回读异常都自动恢复；写帧与恢复帧不传 `pendingWait:true`，NRC 0x78 直接失败 |
+| P1-6 | `coder.js:190,215-231` | FF 后未设 `expectedSeq=1`，第一个 CF 不校序号。最小用例 FF 后首 CF=2 仍返回 `kind:'ok'` |
+| P1-7 | `coder.js:816-828,1063-1067` | 只校验正响应 SID，不校验 LID/DID 回显；最小用例请求 LID=1、应答 `61 99 22` 被接受并返回 `[0x22]` |
+| P1-8 | `app.js:2379,4404-4406` | 模拟路径仍用旧 entry 查 plan；编程页 progRun 按 readPad 做写前预检，混族记录可在进入 writePad 检查前被误拒 |
+| P1-9 | `app.js:251` + `variant.js:67-125,215-289` | 多件号/变体歧义仍取首；默认变体可放行写入；`variantFitsBlocks` 对 object enum 恒生成空 keys，枚举约束失效（coding-v2 中 3802 条为 object） |
+| P1-10 | `app.js:37-45,48-51,90-147,150-161` | bind-plan/枚举可静默回退；内存 liveMap 不重新比 VIN，换车仍可能用上一辆；KWP 枚举统一 221409/22F1A2，覆盖不完整 |
+| P1-11 | `app.js:2530,2556` + `data/drivelinks.json` | 当前 1072 行 `modeVerified` 全空，但 mode 本身非空，所以「无 modeVerified 就不用」不能解释失败；真正原因是 P0-10 的块作用域 ReferenceError。会话仍固定 0x89，drivelinks 会话字只进日志 |
+| P1-12 | `app.js:589-597` + `e2e-flow.mjs:355-383` | n=0 没有 ECU 任何应答也可判 bound；注释称绑定失败补 221102，实际 ATSH/ATCRA catch 直接 return。e2e 仍自写 3E00 测旧行为，并未调用 app 的 probeAddressFor |
+| P1-13 | `coder.js:1484-1530` | 原厂写序言 A/B/C/D 有实现函数但无调用方；applyChange 对所有 ECU 固定会话→安全访问→写→回读，写前分派未收口 |
+| P1-14 | `app.js:2596-2602` + `seedkey-resolver.js:295-358` | 非 ASAP 预检带 `{platform,module}` 能通过，真正 calc 却只传 name；实测 `BV_SteerAssisUDS` 在写入时才抛「名字不在已证实表里」，日志却先报算法就绪——非 ASAP 写入路径不可达，测试未覆盖真实 calc |
+| P1-15 | `tools/export-all-model-sysids.py:205-215,238-249` + `model-sysid-map.js:867-870` | 8 个模块 top=second 平票仍输出 `sysId/confidence=low`，平台级 high/medium 后直接 apply；例如 918S 三个模块 5:5 或 4:4 平票仍选首代际 sysId——平票被当成精确证据 |
+| P1-16 | `tools/export-bind-plan.py:218-253` | 仍保留模块名前缀/最佳交集跨代推断，当前 151 个 crossgen 条目；与「无近似 join」口径冲突，需逐项区分精确证据与启发式 |
+| P1-17 | `src/mfi-port.js:67-73,88-90` + 恢复/编程/例程路径 | addListener 句柄未保存，close 不移除，重连可累积 data/closed 回调；恢复/编程/例程不统一使用 `_writeBusy`，Elm 只保证单命令串行，不保证写事务完整，真机重连后可能重复处理或交错 |
+| P1-18 | `app.js:37-46,60-69,166-183` | bind-plan/module-family/part-map/ident-registry 首次异常静默写 null 且永不重试；一次网络/打包失败会让整个生命周期降级 |
+| P2-1 | `app.js:1014,2349` + `variant.js:196` + `schema.js:206` | `isValidVin`、`identMatchesSys`、`looksLikePartNumber`、`encodeValue` 等死代码/自创防御层仍在；测试还在验证运行时不再调用的 VIN 正则 |
+| P2-2 | `schema.js:173` | 负数按绝对值 mask，不是补码：8 位写 -1 得 `[1]`，16 位写 -2 得 `[2,0]`；当前数据未发现负 min，故列 P2 |
+| P2-3 | `app.js:3352-3355` | 开启 addrState 后 `!st` 仍 return true，与「未知地址拒绝」注释不符 |
+| P2-4 | 多处 `catch{}`/`.catch(()=>{})` | ATFCSH、ATSP6、识别、加载失败等仍可静默降级；排障与验收无法区分「不支持」和「没执行」 |
+| P2-5 | `schema.js:224-242,158-183` | 即使显式开启 range，也只比较 min/max，不检查位宽/有限数；实测 1 位字段写 2 被认为在范围内，随后 mask 成 0——安全增强开启也不能防非法值 |
+| P2-6 | `tools/export-all-model-sysids.py:23` + `scripts/sync.mjs:106-110` + `rebuild:all-models` | 工具引用另一项目绝对路径，批量删除当前 project data/www data，无执行前清单/备份/小批校验；clean checkout 不可独立重建，当前 npm test 也因批量删除护栏中断 |
+| P2-7 | `README.md:62-99,230` | 仍介绍值域拦截、可变 LID、19 失败切 18 等与当前实现不符的行为；`model-sysid-map.js:893` 仍有第三方工具名，匿名化门禁只覆盖 5 个文件，文档不是可信规范 |
+
+### 11.5 「文档写 A、代码做 B」仍未收口的直接例子
+
+1. `ACCEPTANCE-MATRIX-431.md:10-12` 称默认无自创、仅剩 1 项缺口，但同文件 §3 实际列 5 项，且本轮新增多项代码级偏离。
+2. 同文件 `:63-64` 称 UI 值域检查「只影响提示、不是门禁」，实际 `app.js:3202-3205,3332-3335` 直接 return，写帧不会发生。
+3. 同文件把 autoRestore/range 描述成全路径默认关闭，但编程页仍自动恢复，主 UI 仍拦值域。
+4. `app.js:194-202` 仍宣传「低字节跨代平移」，下一函数已删除该行为；`doWrite` 头注释仍写「变体未确认拒绝」，实现却默认变体放行。
+5. `app.js:2829-2831` 称歧义保持未确认/拒写，随后代码默认落定并放行；`addrSafeForAction` 头注释仍称无确认，doWrite 实际有 confirm。
+6. `CODE-AUDIT §10` 与 HANDOFF 顶部称「默认无自创、全绿」，被本轮实际代码、生成器产物和最小用例直接推翻。
+
+### 11.6 尚未逆出 / 未得出结论 / 数据缺口
+
+- OBD VIN 通道 `21 09 05/21 09 01` 的寻址与完整调用条件未证，当前未实现；Porsche 模板链固定使用当前 coder 地址，fresh 为 DME，可能是任意前模块。
+- `SYSP:0x5E42C` 24 键语言表未导出，目录基名归一化不是原厂 strcmp 的完整等价物。
+- 逐 ECU ODX SESSIONS 不在包内；会话固定主模板，不能声称全 ECU 数据驱动。
+- `drivelinks.json` 没有 `modeVerified=true` 条目，原厂 securityModel mode 主路径未真正落地；写序言分派表也未提取全。
+- 9X6/9X7/CS1/E1 平台代际未定；新代 0x14–0x16 路由 owner 缺口仍在；静态候选不是全车型完整覆盖。
+- 多 sysId 的第二地址归属、n=0 行键到唯一 CAN 的运行时解析、表 A 非 +8 rx 的完整保留规则仍需按原始记录重建。
+- 原审计中的 640 条 unknown name 记录、478 条旧代 comm 跳过、部分无可读/可写服务文件仍是数据侧开放项。
+
+### 11.7 测试与验收真相
+
+- 当前直接执行 `npm test`：**失败于 `scripts/sync.mjs:110` 的 www/data 删除安全护栏**，并没有跑完测试链；因此不能再写「npm test 当前全绿」。
+- 绕过 sync 分开执行的主体套件观察为 **36 + 359 + 105 + 84 + 66 通过**，且 `node --check src/*.js` 全过；但这些结果**没有覆盖上述 P0**。
+- `verify-all-models` 的 IC 断言只检查 cands 包含 07F1，没检查运行时实际选择 pairs[0]；静态源码 regex 也不能证明发帧顺序。
+- `e2e-flow.mjs:355-383` 自写 3E00 验证旧 n=0 模型；`tools/walkthrough.mjs:220-221` 只凭错误串不含「恢复备份失败」就宣称恢复成功，未检查 ECU 块，默认不回滚也能通过。
+- sync 还暴露 24 个 duplicate-key warning，但门禁不失败；这些 warning 是实质数据冲突，不应忽略。
+- `tools/boot-smoke.mjs` 启动实际抛出 `StatusBar UNIMPLEMENTED`，输出仍为 `ok bundle 可加载`；它只证明没有某类未声明变量，不证明启动无运行时错误。
+- `tools/verify-pending.mjs` 对 `mode 0x1d` 打印 `FAIL 0/32`，最终仍 exit 0；`e2e-flow` 多处绕过真实入口，模拟旧版 `runSequence` 输出、构造源码不存在的 `runReadBack`/`out` 等对象，不能把「参数存在且能跑通」当成实现一致。
+- 项目已有实车诊断 `RE-RECOVERY-20261105` 本身记录 32 失败、0 可写，不是 0 失败；e2e 把通过数写成 105，HANDOFF/验收表又写成 84，是同一套件不同快照的混写。
+- `probeAddressFor` 在 raw `elm.cmd` 改适配器地址后，`.setAddress` 仍显式改 tx/rx，不能把「没有 ReferenceError」当成链路已验证；必须检查实际候选和回帧。
+
+### 11.8 建议修复顺序（先安全，再对齐）
+
+1. **立即禁止实车写入**：先修备份 ECU 身份/跨服务缓存/缺 SID 默认值/seed provider 串模块/回帧过滤；为恢复与公共写 API 加真实拒绝测试。
+2. **重建 bind-plan**：逐行保留 n，n 缺失不得当 0；直绑必须有唯一地址证据；保留表 A 原始 rx；运行时禁止 bindDirect 任意取首。
+3. **修自动搜索与证据选择**：fresh/UDS/KWP 各自帧序；主名 VIN 同串归一；件号尾空格与逗号变体；platform 与 variant 证据同候选；删除取首/默认冒充证据。
+4. **统一写政策**：UI、applyChange、restore、program、特殊功能同一 SAFETY 语义；明确哪些是有意偏离 431，不允许各路径各自实现。
+5. **最后才更新验收矩阵**：门禁必须调用真实运行时函数并断言实际帧/实际选择，不再只匹配注释或 cands 包含关系。
