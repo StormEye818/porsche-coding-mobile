@@ -1,0 +1,218 @@
+{
+ "schemaVersion": 1,
+ "source": "PORSCHE_SYS_DATA.BIN name 记录 + 14× *_ALLDATA.BIN 变体块",
+ "rule": "步骤4 通用判定：name 记录 6×u32 之后若有合法 [u16 len][name\\0] → 无 ctx+0x638 扩展 → 编码地址走 ALLDATA coding 池；若严格 [u8 n][u32×n]×2 → SYS_DATA 编码地址流。Xml_GetCodingAddress 消费格式见 RE-CODINGADDR §2。",
+ "stats": {
+  "nameRecords": 3958,
+  "no-extension": 3318,
+  "sysDataStream": 0,
+  "unknown": 640,
+  "EOF": 0,
+  "generationsWithName9": 5,
+  "streams": 0
+ },
+ "byGeneration": {
+  "0x0B": {
+   "no-extension": 56
+  },
+  "0x0C": {
+   "no-extension": 47,
+   "unknown": 1
+  },
+  "0x0E": {
+   "no-extension": 47,
+   "unknown": 1
+  },
+  "0x0F": {
+   "no-extension": 44
+  },
+  "0x12": {
+   "no-extension": 1
+  }
+ },
+ "streams": [],
+ "platforms": {
+  "918S": {
+   "gen": "0x10",
+   "confidence": "high",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 49119,
+    "hexKeyStrings": 159137,
+    "bytes": 4707380
+   }
+  },
+  "992": {
+   "gen": "0x14",
+   "confidence": "high",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 109534,
+    "hexKeyStrings": 315247,
+    "bytes": 11204612
+   }
+  },
+  "9X1": {
+   "gen": "0x0e",
+   "confidence": "high",
+   "source": "allDataCodingPool",
+   "evidence": "该代 47 条 name 记录 6×u32 后直接下一条记录（无 +2 扩展），ALLDATA 变体块 [22 2e] 行 80903 条 → 编码地址走 coding 池",
+   "nameRecordStats": {
+    "no-extension": 47,
+    "unknown": 1
+   },
+   "codingPool": {
+    "readWriteRows": 80903,
+    "hexKeyStrings": 294181,
+    "bytes": 10351388
+   }
+  },
+  "9X6": {
+   "gen": null,
+   "confidence": "unresolved",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 41,
+    "hexKeyStrings": 1375,
+    "bytes": 386556
+   }
+  },
+  "9X7": {
+   "gen": null,
+   "confidence": "low",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 332,
+    "hexKeyStrings": 30031,
+    "bytes": 1675836
+   }
+  },
+  "CAJUN": {
+   "gen": "0x0f",
+   "confidence": "high",
+   "source": "allDataCodingPool",
+   "evidence": "该代 44 条 name 记录 6×u32 后直接下一条记录（无 +2 扩展），ALLDATA 变体块 [22 2e] 行 54531 条 → 编码地址走 coding 池",
+   "nameRecordStats": {
+    "no-extension": 44
+   },
+   "codingPool": {
+    "readWriteRows": 54531,
+    "hexKeyStrings": 189725,
+    "bytes": 7206140
+   }
+  },
+  "CS1": {
+   "gen": null,
+   "confidence": "low",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 62945,
+    "hexKeyStrings": 235303,
+    "bytes": 8468488
+   }
+  },
+  "E1": {
+   "gen": null,
+   "confidence": "low",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 182,
+    "hexKeyStrings": 7251,
+    "bytes": 2537420
+   }
+  },
+  "E2": {
+   "gen": "0x0b",
+   "confidence": "high",
+   "source": "allDataCodingPool",
+   "evidence": "该代 56 条 name 记录 6×u32 后直接下一条记录（无 +2 扩展），ALLDATA 变体块 [22 2e] 行 41175 条 → 编码地址走 coding 池",
+   "nameRecordStats": {
+    "no-extension": 56
+   },
+   "codingPool": {
+    "readWriteRows": 41175,
+    "hexKeyStrings": 155507,
+    "bytes": 6460932
+   }
+  },
+  "E3": {
+   "gen": "0x12",
+   "confidence": "medium",
+   "source": "allDataCodingPool",
+   "evidence": "该代 1 条 name 记录 6×u32 后直接下一条记录（无 +2 扩展），ALLDATA 变体块 [22 2e] 行 115965 条 → 编码地址走 coding 池",
+   "nameRecordStats": {
+    "no-extension": 1
+   },
+   "codingPool": {
+    "readWriteRows": 115965,
+    "hexKeyStrings": 338291,
+    "bytes": 12568768
+   }
+  },
+  "G1": {
+   "gen": "0x0c",
+   "confidence": "high",
+   "source": "allDataCodingPool",
+   "evidence": "该代 47 条 name 记录 6×u32 后直接下一条记录（无 +2 扩展），ALLDATA 变体块 [22 2e] 行 36861 条 → 编码地址走 coding 池",
+   "nameRecordStats": {
+    "no-extension": 47,
+    "unknown": 1
+   },
+   "codingPool": {
+    "readWriteRows": 36861,
+    "hexKeyStrings": 143071,
+    "bytes": 5558776
+   }
+  },
+  "G2": {
+   "gen": "0x12",
+   "confidence": "high",
+   "source": "allDataCodingPool",
+   "evidence": "该代 1 条 name 记录 6×u32 后直接下一条记录（无 +2 扩展），ALLDATA 变体块 [22 2e] 行 87414 条 → 编码地址走 coding 池",
+   "nameRecordStats": {
+    "no-extension": 1
+   },
+   "codingPool": {
+    "readWriteRows": 87414,
+    "hexKeyStrings": 263878,
+    "bytes": 11172864
+   }
+  },
+  "G3": {
+   "gen": "0x16",
+   "confidence": "medium",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 87800,
+    "hexKeyStrings": 267094,
+    "bytes": 11339904
+   }
+  },
+  "J1": {
+   "gen": "0x15",
+   "confidence": "high",
+   "source": "allDataCodingPool(weak)",
+   "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
+   "nameRecordStats": {},
+   "codingPool": {
+    "readWriteRows": 84117,
+    "hexKeyStrings": 243634,
+    "bytes": 10047728
+   }
+  }
+ }
+}

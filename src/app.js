@@ -17,6 +17,7 @@ import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFie
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
+import { sysIdForModule, platformSysIdByLowByte, modulesForSysId } from './model-sysid-map.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -190,6 +191,26 @@ async function ensureIdentRegistry() {
  */
 const MODULE_TO_ECUID = MODULE_TO_ECUID_MAP;
 
+/**
+ * ★ 2026-11-11 全车型推广（RE-CODINGADDR-20261110 §6 步骤1-3）：sysId 按当前车型平台解析。
+ *   - 981（9X1/0x0E）解析结果与全局表逐键相同 → 已验收行为零变化；
+ *   - 其它 high/medium 平台（Macan 0x0F、Cayenne 9PA 0x0C、992 0x14、Taycan 0x15…）
+ *     用平台专属 sysId（精确交集定代际 + name-9/comm 子表精确 join），
+ *     中文菜单标签按「系统家族低字节跨代不变」精确平移（IC 0x0?08、ACC3 0x0?40 …）；
+ *   - low/unresolved 平台（986/996/987/Carrera GT/Panamera 970）返回 null → 回退全局表，
+ *     **宁可不覆盖也不猜**。
+ *   - currentModel 未选（null / 测试环境）时同样回退全局表，保持确定性。
+ */
+const sysIdForLabel = (label) => {
+  const g = SYSTEM_TO_ECUID[label] || MODULE_TO_ECUID[label] || null;
+  return (g && platformSysIdByLowByte(g, currentModel)) || g;
+};
+const sysIdForMod = (m) => sysIdForModule(m, currentModel) || MODULE_TO_ECUID[m] || null;
+const modsForSysId = (sysId) => {
+  const hit = modulesForSysId(sysId, currentModel);
+  return hit.length ? hit : Object.keys(MODULE_TO_ECUID).filter((m) => MODULE_TO_ECUID[m] === sysId);
+};
+
 import { LinkDoctor } from './link-doctor.js';
 import { parseDtcPayload } from './dtc.js';
 import { MockAdapter } from './mock-adapter.js';
@@ -285,18 +306,18 @@ function familyFor(label, tx = null, { readSid = null, items = null, modules = n
   // ② 模块记录统计：优先显式模块集（进模块流），无则按 label→sysId→模块反查
   let mods = (modules || []).filter(Boolean);
   if (!mods.length && label) {
-    let sysId = SYSTEM_TO_ECUID[label];
-    if (!sysId && typeof MODULE_TO_ECUID !== 'undefined') sysId = MODULE_TO_ECUID[label];
+    let sysId = sysIdForLabel(label);
+    if (!sysId) sysId = sysIdForMod(label);
     if (!sysId) {
       const k = norm(label);
       const key = k.length >= 3 ? Object.keys(SYSTEM_TO_ECUID).find((K) => {
         const N = norm(K);
         return N === k || (N.includes(k) && k.length >= 3) || (k.includes(N) && N.length >= 3);
       }) : null;
-      if (key) sysId = SYSTEM_TO_ECUID[key];
+      if (key) sysId = sysIdForLabel(key);
     }
-    if (sysId && typeof MODULE_TO_ECUID !== 'undefined') {
-      mods = Object.keys(MODULE_TO_ECUID).filter((m) => MODULE_TO_ECUID[m] === sysId);
+    if (sysId) {
+      mods = modsForSysId(sysId);
     }
   }
   if (mods.length && typeof moduleFamily !== 'undefined' && moduleFamily) {
@@ -332,11 +353,11 @@ function ecuAddrFromTable(label, sys) {
   if (!ecuAddrTable) return null;
   // ① 精确 label ② label 的模块名走 MODULE_TO_ECUID ③ sys.modules 兜底
   //   （2026-10-19 审计：只查 SYSTEM_TO_ECUID 会漏「停车辅助」→PDC、「RTM Gateway」→CAN_CAN_Gateway）
-  let sysId = SYSTEM_TO_ECUID[label];
-  if (!sysId && typeof MODULE_TO_ECUID !== 'undefined') sysId = MODULE_TO_ECUID[label];
+  let sysId = sysIdForLabel(label);
+  if (!sysId) sysId = sysIdForMod(label);
   if (!sysId && sys?.modules?.length) {
     for (const m of sys.modules) {
-      const k = MODULE_TO_ECUID[m];
+      const k = sysIdForMod(m);
       if (k) { sysId = k; break; }
     }
   }
@@ -407,11 +428,11 @@ let probeAbort = false;
 function addrEntryFor(label, sys = null) {
   try {
     if (!ecuAddrTable) return null;
-    let sysId = SYSTEM_TO_ECUID[label];
-    if (!sysId && typeof MODULE_TO_ECUID !== 'undefined') sysId = MODULE_TO_ECUID[label];
+    let sysId = sysIdForLabel(label);
+    if (!sysId) sysId = sysIdForMod(label);
     if (!sysId && sys?.modules?.length) {
       for (const m of sys.modules) {
-        const k = MODULE_TO_ECUID[m];
+        const k = sysIdForMod(m);
         if (k) { sysId = k; break; }
       }
     }
@@ -2549,7 +2570,7 @@ async function enterSystem(sys) {
         return m ? '0x' + m[1].toLowerCase().padStart(4, '0') : null;
       };
       let hit = null;
-      for (const src of [sys.ecu, SYSTEM_TO_ECUID[sys.label], sys.label, ...(sys.modules || []).map((m) => MODULE_TO_ECUID[m])]) {
+      for (const src of [sys.ecu, sysIdForLabel(sys.label), sys.label, ...(sys.modules || []).map((m) => sysIdForMod(m))]) {
         const k = ecuKeyFrom(src);
         if (k && drivelinks?.ecu?.[k]?.length) { hit = drivelinks.ecu[k]; break; }
       }

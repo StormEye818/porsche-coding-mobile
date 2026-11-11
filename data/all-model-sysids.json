@@ -1,0 +1,3921 @@
+{
+ "schemaVersion": 1,
+ "source": "PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json",
+ "method": "平台→代际=平台变体名∩type 子系统名字集精确交集(top1 gap≥15% high/≥5% medium)；模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48",
+ "rule": "只有 high/medium 平台在运行时启用平台专属 sysId；low/unresolved 保持全局 MODULE_TO_ECUID（宁可不覆盖也不猜）",
+ "stats": {
+  "platforms": 14,
+  "models": 25,
+  "high": 8,
+  "modules": 601,
+  "unresolved": 1,
+  "low": 3,
+  "medium": 2
+ },
+ "platforms": {
+  "918S": {
+   "gen": "0x10",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x10×190 次高=154 gap=18.9%；type 子表 32 个 sysId（高字节=type 自证）",
+   "systems": 29,
+   "modulesResolved": 28,
+   "routeOwnerCount": 7,
+   "modules": {
+    "Aero": {
+     "sysId": "0x1075",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1075×3（次高 0）"
+    },
+    "Airbag": {
+     "sysId": "0x1004",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 7 票 → 0x1004×7（次高 0）"
+    },
+    "AnzeigenDomaenenRechner": {
+     "sysId": "0x1073",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 2 票 → 0x1073×2（次高 0）"
+    },
+    "BCM_hinten": {
+     "sysId": "0x1023",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 17 票 → 0x1023×17（次高 0）"
+    },
+    "BCM_vorne": {
+     "sysId": "0x1020",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 34 票 → 0x1020×34（次高 0）"
+    },
+    "BKE": {
+     "sysId": "0x1007",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 14 票 → 0x1007×14（次高 0）"
+    },
+    "BKV": {
+     "sysId": "0x1072",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1072×3（次高 0）"
+    },
+    "BMS2": {
+     "sysId": "0x1042",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1042×3（次高 0）"
+    },
+    "BV_AirCondiComprUDS": {
+     "sysId": "0x1048",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 2 票 → 0x1048×2（次高 0）"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x1070",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 5 票 → 0x1070×5（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS_A01": {
+     "sysId": "0x1071",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 10 票 → 0x1071×5（次高 5）"
+    },
+    "CAN_CAN_Gateway": {
+     "sysId": "0x1009",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 18 票 → 0x1009×18（次高 0）"
+    },
+    "EPB": {
+     "sysId": "0x1032",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1032×3（次高 0）"
+    },
+    "Getriebesteuerung_PDK": {
+     "sysId": "0x1002",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 9 票 → 0x1002×9（次高 0）"
+    },
+    "Hinterachslenkung": {
+     "sysId": "0x1059",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 10 票 → 0x1059×5（次高 5）"
+    },
+    "Kombiinstrument": {
+     "sysId": "0x1008",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 12 票 → 0x1008×12（次高 0）"
+    },
+    "Lenkstockschalter": {
+     "sysId": "0x1076",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1076×3（次高 0）"
+    },
+    "Lenkstockschalter2": {
+     "sysId": "0x1076",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 2 票 → 0x1076×2（次高 0）"
+    },
+    "Lift_VA": {
+     "sysId": "0x105b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x105b×3（次高 0）"
+    },
+    "MED17_1_11": {
+     "sysId": "0x1001",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1001×3（次高 0）"
+    },
+    "PASM_PADM": {
+     "sysId": "0x1013",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 8 票 → 0x1013×8（次高 0）"
+    },
+    "PSM": {
+     "sysId": "0x1005",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 6 票 → 0x1005×6（次高 0）"
+    },
+    "RDK": {
+     "sysId": "0x1037",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 3 票 → 0x1037×3（次高 0）"
+    },
+    "SCHEINWERFER": {
+     "sysId": "0x1058",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 5 票 → 0x1058×5（次高 0）"
+    },
+    "Steering_Control_Unit": {
+     "sysId": "0x1045",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 5 票 → 0x1045×5（次高 0）"
+    },
+    "TUER_VORNE": {
+     "sysId": "0x101e",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 8 票 → 0x101e×4（次高 4）"
+    },
+    "Touchbedienfeld": {
+     "sysId": "0x1074",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 2 票 → 0x1074×2（次高 0）"
+    },
+    "Waehlhebel": {
+     "sysId": "0x1044",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x10 comm 子表 sysId→名字精确 join 4 票 → 0x1044×4（次高 0）"
+    }
+   }
+  },
+  "992": {
+   "gen": "0x14",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x14×366 次高=286 gap=21.9%；type 子表 60 个 sysId（高字节=type 自证）",
+   "systems": 82,
+   "modulesResolved": 58,
+   "routeOwnerCount": 0,
+   "modules": {
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x1481",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x1481×4（次高 0）"
+    },
+    "BV_AdaptCruisContrUDS": {
+     "sysId": "0x1440",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 5 票 → 0x1440×5（次高 0）"
+    },
+    "BV_AerodContrUnitUDS": {
+     "sysId": "0x1493",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 6 票 → 0x1493×6（次高 0）"
+    },
+    "BV_AirbaUDS": {
+     "sysId": "0x1404",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 6 票 → 0x1404×6（次高 0）"
+    },
+    "BV_AllWheelContrUDS": {
+     "sysId": "0x1435",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 5 票 → 0x1435×5（次高 0）"
+    },
+    "BV_AnaloClockUDS": {
+     "sysId": "0x1449",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 1 票 → 0x1449×1（次高 0）"
+    },
+    "BV_AntenContrModulUDS": {
+     "sysId": "0x1463",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x1463×4（次高 0）"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x1442",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1442×3（次高 0）"
+    },
+    "BV_BatteJunctBoxUDS": {
+     "sysId": "0x149e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x149e×2（次高 0）"
+    },
+    "BV_BatteMonitContrModulUDS": {
+     "sysId": "0x145e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x145e×4（次高 0）"
+    },
+    "BV_BeameModulMatriHeadlLeftUDS": {
+     "sysId": "0x14b9",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x14b9×2（次高 0）"
+    },
+    "BV_BeameModulMatriHeadlRightUDS": {
+     "sysId": "0x14b8",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x14b8×2（次高 0）"
+    },
+    "BV_BedienSG_vo_MSB": {
+     "sysId": "0x1466",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 6 票 → 0x1466×6（次高 0）"
+    },
+    "BV_Brake1UDS": {
+     "sysId": "0x1405",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 23 票 → 0x1405×23（次高 0）"
+    },
+    "BV_BrakeBoostUDS": {
+     "sysId": "0x1486",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 11 票 → 0x1486×11（次高 0）"
+    },
+    "BV_CamerSysteRearViewUDS": {
+     "sysId": "0x1451",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1451×3（次高 0）"
+    },
+    "BV_CeiliLightModulUDS": {
+     "sysId": "0x1483",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x1483×2（次高 0）"
+    },
+    "BV_CentrElectUDS": {
+     "sysId": "0x1420",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 15 票 → 0x1420×15（次高 0）"
+    },
+    "BV_CentrModulComfoSysteUDS": {
+     "sysId": "0x1423",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 14 票 → 0x1423×14（次高 0）"
+    },
+    "BV_Charg1MobilDevicUDS": {
+     "sysId": "0x14b1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x14b1×3（次高 0）"
+    },
+    "BV_ChassContrUDS": {
+     "sysId": "0x1413",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 25 票 → 0x1413×25（次高 0）"
+    },
+    "BV_ContrModulForSunroUDS": {
+     "sysId": "0x142d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 7 票 → 0x142d×7（次高 0）"
+    },
+    "BV_ContrUnitDigitMatriLightUDS": {
+     "sysId": "0x1458",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x1458×4（次高 0）"
+    },
+    "BV_ContrUnitForWiperMotorUDS": {
+     "sysId": "0x1492",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 1 票 → 0x1492×1（次高 0）"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x1460",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1460×3（次高 0）"
+    },
+    "BV_DCDCConveContrModulHVUDS": {
+     "sysId": "0x14b4",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x14b4×3（次高 0）"
+    },
+    "BV_DashBoardUDS": {
+     "sysId": "0x1408",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 17 票 → 0x1408×17（次高 0）"
+    },
+    "BV_DoorElectDriveSideUDS": {
+     "sysId": "0x1479",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1479×3（次高 0）"
+    },
+    "BV_DoorElectPasseSideUDS": {
+     "sysId": "0x147a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x147a×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS": {
+     "sysId": "0x1443",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 17 票 → 0x1443×17（次高 0）"
+    },
+    "BV_DynamAssemMountUDS": {
+     "sysId": "0x14ad",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x14ad×2（次高 0）"
+    },
+    "BV_ElectAdjusSteerColumUDS": {
+     "sysId": "0x148c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x148c×2（次高 0）"
+    },
+    "BV_ElectRoofContrUDS": {
+     "sysId": "0x14ab",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x14ab×3（次高 0）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x1401",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 21 票 → 0x1401×21（次高 0）"
+    },
+    "BV_FreshAirBloweFrontUDS": {
+     "sysId": "0x1489",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x1489×2（次高 0）"
+    },
+    "BV_FrontAxleLiftSysteUDS": {
+     "sysId": "0x14ac",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 5 票 → 0x14ac×5（次高 0）"
+    },
+    "BV_FrontSensoDriveAssisSysteUDS": {
+     "sysId": "0x148f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 6 票 → 0x148f×6（次高 0）"
+    },
+    "BV_GaragDoorOpeneContrModulUDS": {
+     "sysId": "0x1491",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1491×3（次高 0）"
+    },
+    "BV_GatewUDS": {
+     "sysId": "0x1409",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 5 票 → 0x1409×5（次高 0）"
+    },
+    "BV_GearShiftContrModulUDS": {
+     "sysId": "0x1444",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1444×3（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x1446",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 7 票 → 0x1446×7（次高 0）"
+    },
+    "BV_LaneChangAssisUDS": {
+     "sysId": "0x145f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x145f×3（次高 0）"
+    },
+    "BV_LightContrLeft2UDS": {
+     "sysId": "0x146a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 7 票 → 0x146a×7（次高 0）"
+    },
+    "BV_LightContrRight2UDS": {
+     "sysId": "0x146b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 7 票 → 0x146b×7（次高 0）"
+    },
+    "BV_NightVisioUDS": {
+     "sysId": "0x148d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 8 票 → 0x148d×8（次高 0）"
+    },
+    "BV_RearAxleSteerUDS": {
+     "sysId": "0x14ae",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 10 票 → 0x14ae×6（次高 4）"
+    },
+    "BV_RollContrSyste2UDS": {
+     "sysId": "0x1464",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x1464×2（次高 2）"
+    },
+    "BV_SeatAdjusDriveSideUDS": {
+     "sysId": "0x146c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x146c×2（次高 0）"
+    },
+    "BV_SeatAdjusPasseSideUDS": {
+     "sysId": "0x146d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 2 票 → 0x146d×2（次高 0）"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x1441",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 6 票 → 0x1441×6（次高 0）"
+    },
+    "BV_SteerAssisUDS": {
+     "sysId": "0x1445",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 15 票 → 0x1445×15（次高 0）"
+    },
+    "BV_SteerColumElectUDS": {
+     "sysId": "0x1436",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x1436×4（次高 0）"
+    },
+    "BV_SteerColumLockiUDS": {
+     "sysId": "0x148b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 4 票 → 0x148b×4（次高 0）"
+    },
+    "BV_TelemCommuUnitUDS": {
+     "sysId": "0x14a2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 6 票 → 0x14a2×6（次高 0）"
+    },
+    "BV_ThermManagUDS": {
+     "sysId": "0x1488",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 5 票 → 0x1488×5（次高 0）"
+    },
+    "BV_TirePressMonit1UDS": {
+     "sysId": "0x1437",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 5 票 → 0x1437×5（次高 0）"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x1402",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 18 票 → 0x1402×18（次高 0）"
+    },
+    "BV_VehicTrackSysteUDS": {
+     "sysId": "0x1494",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x14 comm 子表 sysId→名字精确 join 3 票 → 0x1494×3（次高 0）"
+    }
+   }
+  },
+  "9X1": {
+   "gen": "0x0e",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x0E×380 次高=352 gap=7.4%；type 子表 42 个 sysId（高字节=type 自证）；9X1 模块表沿用 981-sysids.json（48/48 已验收，含 adjacency/isomorphic/drivelinks-key 收口）",
+   "systems": 56,
+   "modulesResolved": 48,
+   "routeOwnerCount": 12,
+   "modules": {
+    "ACC3": {
+     "sysId": "0x0e40",
+     "sysIds": [
+      "0x0e40"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e40×1"
+    },
+    "Airbag": {
+     "sysId": "0x0e04",
+     "sysIds": [
+      "0x0e04"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e04×1"
+    },
+    "Allrad": {
+     "sysId": "0x0e52",
+     "sysIds": [
+      "0x0e52"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e52×1"
+    },
+    "BCM_hinten": {
+     "sysId": "0x0e23",
+     "sysIds": [
+      "0x0e23"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e23×1"
+    },
+    "BCM_vorne": {
+     "sysId": "0x0e20",
+     "sysIds": [
+      "0x0e20"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e20×1"
+    },
+    "BKE": {
+     "sysId": "0x0e07",
+     "sysIds": [
+      "0x0e07"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e07×1"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x0e57",
+     "sysIds": [
+      "0x0e57"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e57×2",
+     "drivelinksMissing": [
+      "0x0e57"
+     ]
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x0f4d",
+     "sysIds": [
+      "0x0f4d"
+     ],
+     "method": "drivelinks-key",
+     "evidence": "无名字记录；drivelinks-v3 键 0x0f4d 独占直连键 0x003006CC-0x003006CF（lane change assist 惯用段）"
+    },
+    "BV_ECM_UDS": {
+     "sysId": "0x0e01",
+     "sysIds": [
+      "0x0e01"
+     ],
+     "method": "adjacency",
+     "evidence": "段 62905-63834 夹在 DME_BDE(0x0E01@60979)/MED17(0x0E01@62460) 与 Airbag(0x0E04@64869) 之间"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x0e01",
+     "sysIds": [
+      "0x0e01"
+     ],
+     "method": "adjacency",
+     "evidence": "段 63834-64773 同上 DME 家族簇；且 9X1_ALLDATA 命令行区 3344 行 [u16 can][02 f0] 全部属于其池"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x0e46",
+     "sysIds": [
+      "0x0e46"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e46×1"
+    },
+    "BV_InforContrUnit1UDSDesay": {
+     "sysId": "0x0e46",
+     "sysIds": [
+      "0x0e46"
+     ],
+     "method": "adjacency",
+     "evidence": "记录@81423 紧随 BV_InforContrUnit1UDS(0x0E46@81222)"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x0e41",
+     "sysIds": [
+      "0x0e41"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e41×1"
+    },
+    "BV_TVTunerUDS": {
+     "sysId": "0x0e4b",
+     "sysIds": [
+      "0x0e4b"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e4b×1"
+    },
+    "CAN_CAN_Gateway": {
+     "sysId": "0x0e09",
+     "sysIds": [
+      "0x0e09"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e09×1"
+    },
+    "DME_BDE_Continental": {
+     "sysId": "0x0e01",
+     "sysIds": [
+      "0x0e01"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e01×1"
+    },
+    "EPB": {
+     "sysId": "0x0e32",
+     "sysIds": [
+      "0x0e32"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e32×1"
+    },
+    "ERA_GLONASS": {
+     "sysId": "0x0ea5",
+     "sysIds": [
+      "0x0ea5"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0ea5×1",
+     "drivelinksMissing": [
+      "0x0ea5"
+     ]
+    },
+    "ERA_GLONASS_VFA": {
+     "sysId": "0x0ea5",
+     "sysIds": [
+      "0x0ea5"
+     ],
+     "method": "adjacency",
+     "evidence": "段 81084-81134 紧邻 ERA_GLONASS(0x0EA5@80991)",
+     "drivelinksMissing": [
+      "0x0ea5"
+     ]
+    },
+    "Frontkamera": {
+     "sysId": "0x0e4a",
+     "sysIds": [
+      "0x0e4a"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e4a×1"
+    },
+    "Getriebesteuerung_PDK": {
+     "sysId": "0x0e02",
+     "sysIds": [
+      "0x0e02"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e02×1",
+     "drivelinksMissing": [
+      "0x0e02"
+     ]
+    },
+    "Head_Unit": {
+     "sysId": "0x0e46",
+     "sysIds": [
+      "0x0e46"
+     ],
+     "method": "vote",
+     "evidence": "Head_Unit_BaseSys@74583 flag=1 sysId=0x0E46"
+    },
+    "Hinterachslenkung": {
+     "sysId": "0x0e59",
+     "sysIds": [
+      "0x0e59",
+      "0x0e5a"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e59×1/0x0e5a×1"
+    },
+    "Kombiinstrument_MM": {
+     "sysId": "0x0e08",
+     "sysIds": [
+      "0x0e08"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e08×1"
+    },
+    "Lenkstockschalter": {
+     "sysId": "0x0e36",
+     "sysIds": [
+      "0x0e36"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e36×1"
+    },
+    "Lift_VA": {
+     "sysId": "0x0e5b",
+     "sysIds": [
+      "0x0e5b"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e5b×2"
+    },
+    "Lift_VA_Gen2": {
+     "sysId": "0x0e5b",
+     "sysIds": [
+      "0x0e5b"
+     ],
+     "method": "adjacency",
+     "evidence": "段 79719-79809 紧邻 Lift_VA(0x0E5B@79601)"
+    },
+    "MED17_1_11": {
+     "sysId": "0x0e01",
+     "sysIds": [
+      "0x0e01"
+     ],
+     "method": "vote",
+     "evidence": "MED17_1_11_BaseSys@62460 flag=2 sysId=0x0E01"
+    },
+    "PASM_PADM": {
+     "sysId": "0x0e13",
+     "sysIds": [
+      "0x0e13"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e13×1"
+    },
+    "PDC": {
+     "sysId": "0x0e12",
+     "sysIds": [
+      "0x0e12"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e12×1"
+    },
+    "PDCC_2": {
+     "sysId": "0x0e2b",
+     "sysIds": [
+      "0x0e2b"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e2b×1"
+    },
+    "PSM": {
+     "sysId": "0x0e05",
+     "sysIds": [
+      "0x0e05"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e05×1"
+    },
+    "RDK": {
+     "sysId": "0x0e37",
+     "sysIds": [
+      "0x0e37"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e37×1"
+    },
+    "RDK3": {
+     "sysId": "0x0e37",
+     "sysIds": [
+      "0x0e37"
+     ],
+     "method": "adjacency",
+     "evidence": "981 段 RDK3 记录@81722+ 全 flag=0，紧随 RDK_BaseSys(0x0E37@81582)；0x0C/0x0F 代 RDK3 独立 sysId 不适用于 981"
+    },
+    "Rueckfahrkamera_II": {
+     "sysId": "0x0e51",
+     "sysIds": [
+      "0x0e51"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e51×1"
+    },
+    "SCHEINWERFER": {
+     "sysId": "0x0e58",
+     "sysIds": [
+      "0x0e58"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e58×1",
+     "drivelinksMissing": [
+      "0x0e58"
+     ]
+    },
+    "SCHEINWERFER_LED": {
+     "sysId": "0x0e2f",
+     "sysIds": [
+      "0x0e2f",
+      "0x0e30"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e2f×1/0x0e30×1"
+    },
+    "SWSG": {
+     "sysId": "0x0e2f",
+     "sysIds": [
+      "0x0e2f"
+     ],
+     "method": "isomorphic",
+     "evidence": "SWSG 981 无名字记录；0x0B 代 SWSG_mit_AFS_ALWR=0x0B2F/0x0B30 与 SCHEINWERFER_LED 0x0E2F/0x0E30 同构；DRIVELINKS 0x0E2F/0x0E30 均含直连键 0x00300763/0x00300764（=SWSG 大灯随动）"
+    },
+    "Sitzsteuergeraet": {
+     "sysId": "0x0e4c",
+     "sysIds": [
+      "0x0e4c",
+      "0x0e4e"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e4c×1/0x0e4e×1"
+    },
+    "Steering_Control_Unit": {
+     "sysId": "0x0e45",
+     "sysIds": [
+      "0x0e45"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e45×1"
+    },
+    "TUER_HINTEN": {
+     "sysId": "0x0e4f",
+     "sysIds": [
+      "0x0e4f",
+      "0x0e50"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e4f×1/0x0e50×1"
+    },
+    "TUER_VORNE": {
+     "sysId": "0x0e1e",
+     "sysIds": [
+      "0x0e1e",
+      "0x0e1f"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e1e×3/0x0e1f×1"
+    },
+    "TVTuner": {
+     "sysId": "0x0e4b",
+     "sysIds": [
+      "0x0e4b"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e4b×1"
+    },
+    "Verdeck_Synchronisation": {
+     "sysId": "0x0e27",
+     "sysIds": [
+      "0x0e27"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e27×1"
+    },
+    "Verdeck_Targa": {
+     "sysId": "0x0e27",
+     "sysIds": [
+      "0x0e27"
+     ],
+     "method": "adjacency",
+     "evidence": "段 72993-73207 紧邻 Verdeck_Synchronisation(0x0E27@72876)"
+    },
+    "Verstaerker": {
+     "sysId": "0x0e41",
+     "sysIds": [
+      "0x0e41"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e41×1"
+    },
+    "Waehlhebel": {
+     "sysId": "0x0e44",
+     "sysIds": [
+      "0x0e44"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e44×1",
+     "drivelinksMissing": [
+      "0x0e44"
+     ]
+    },
+    "Zusatzinstrument": {
+     "sysId": "0x0e1d",
+     "sysIds": [
+      "0x0e1d"
+     ],
+     "method": "vote",
+     "evidence": "变体名投票 0x0e1d×1"
+    }
+   }
+  },
+  "9X6": {
+   "gen": null,
+   "confidence": "unresolved",
+   "genEvidence": "平台变体名与全部 type 子系统名字集零交集",
+   "systems": 29,
+   "modulesResolved": 0,
+   "routeOwnerCount": 0,
+   "modules": {}
+  },
+  "9X7": {
+   "gen": null,
+   "confidence": "low",
+   "genEvidence": "精确交集 top1=type 0x0E×10 次高=10 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "systems": 41,
+   "modulesResolved": 0,
+   "routeOwnerCount": 0,
+   "modules": {}
+  },
+  "CAJUN": {
+   "gen": "0x0f",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x0F×285 次高=188 gap=34.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "systems": 64,
+   "modulesResolved": 55,
+   "routeOwnerCount": 11,
+   "modules": {
+    "ACC3": {
+     "sysId": "0x0f40",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f40×1"
+    },
+    "Airbag": {
+     "sysId": "0x0f04",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f04×1"
+    },
+    "Allrad": {
+     "sysId": "0x0f35",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f35×1"
+    },
+    "BCM_hinten": {
+     "sysId": "0x0f23",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f23×1"
+    },
+    "BCM_vorne": {
+     "sysId": "0x0f20",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f20×1"
+    },
+    "BKE": {
+     "sysId": "0x0f07",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f07×1"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x0f57",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 2 票 → 0x0f57×2"
+    },
+    "BV_BKE": {
+     "sysId": "0x0f07",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 1 票 → 0x0f07×1（次高 0）"
+    },
+    "BV_Charg1MobilDevicUDS": {
+     "sysId": "0x0fb1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 2 票 → 0x0fb1×2（次高 0）"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x0f60",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 10 票 → 0x0f60×5（次高 5）"
+    },
+    "BV_ECM20_FSI": {
+     "sysId": "0x0f01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f01×1"
+    },
+    "BV_ECM30_GEN2_TNF": {
+     "sysId": "0x0f01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 5 票 → 0x0f01×5（次高 0）"
+    },
+    "BV_ECM_UDS": {
+     "sysId": "0x0f01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 6 票 → 0x0f01×6（次高 0）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x0f01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 14 票 → 0x0f01×14（次高 0）"
+    },
+    "BV_EnginContrModulMacanIII": {
+     "sysId": "0x0f01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 8 票 → 0x0f01×8（次高 0）"
+    },
+    "BV_FrontSensoDriveAssisSysteUDS": {
+     "sysId": "0x0f4a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 2 票 → 0x0f4a×2（次高 0）"
+    },
+    "BV_InforContrUnit1PAGUDS": {
+     "sysId": "0x0f46",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 2 票 → 0x0f46×2（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x0f46",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f46×1"
+    },
+    "BV_InforContrUnit1UDSDesay": {
+     "sysId": "0x0f46",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 2 票 → 0x0f46×2（次高 0）"
+    },
+    "BV_MediaPlayePosit1UDS": {
+     "sysId": "0x0f80",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f80×1"
+    },
+    "BV_ParkiAssisUDS": {
+     "sysId": "0x0f12",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 3 票 → 0x0f12×3（次高 0）"
+    },
+    "BV_R4Evo4": {
+     "sysId": "0x0f01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 6 票 → 0x0f01×6（次高 0）"
+    },
+    "BV_RealTopView2": {
+     "sysId": "0x0f51",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f51×1"
+    },
+    "BV_ReducContrModulUDS": {
+     "sysId": "0x0f56",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f56×1"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x0f41",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 3 票 → 0x0f41×3（次高 0）"
+    },
+    "BV_TVTunerUDS": {
+     "sysId": "0x0f4b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f4b×1"
+    },
+    "BV_TrailFunctUDS": {
+     "sysId": "0x0f54",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f54×1"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x0f02",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f02×1"
+    },
+    "CAN_CAN_Gateway": {
+     "sysId": "0x0f09",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f09×1"
+    },
+    "DME_BDE_Continental": {
+     "sysId": "0x0f01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f01×1"
+    },
+    "EPB": {
+     "sysId": "0x0f32",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f32×1"
+    },
+    "EPS": {
+     "sysId": "0x0f45",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f45×1"
+    },
+    "ERA_GLONASS": {
+     "sysId": "0x0fa5",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0fa5×1"
+    },
+    "ERA_GLONASS_VFA": {
+     "sysId": "0x0fa5",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 2 票 → 0x0fa5×2（次高 0）"
+    },
+    "ESP_Colorado": {
+     "sysId": "0x0f05",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f05×1"
+    },
+    "Frontkamera": {
+     "sysId": "0x0f4a",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f4a×1"
+    },
+    "Head_Unit": {
+     "sysId": "0x0f46",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f46×1"
+    },
+    "Heckklappe": {
+     "sysId": "0x0f34",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f34×1"
+    },
+    "Kombiinstrument_MM": {
+     "sysId": "0x0f08",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f08×1"
+    },
+    "Kompass": {
+     "sysId": "0x0f49",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f49×1"
+    },
+    "Lenkstockschalter": {
+     "sysId": "0x0f36",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f36×1"
+    },
+    "PASM": {
+     "sysId": "0x0f13",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f13×1"
+    },
+    "PDC": {
+     "sysId": "0x0f12",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f12×1"
+    },
+    "Quersperre": {
+     "sysId": "0x0f53",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f53×1"
+    },
+    "RDK3": {
+     "sysId": "0x0f37",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f37×1"
+    },
+    "Rueckfahrkamera_II": {
+     "sysId": "0x0f51",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0F comm 子表 sysId→名字精确 join 4 票 → 0x0f51×4（次高 0）"
+    },
+    "SCHEINWERFER": {
+     "sysId": "0x0f58",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f58×1"
+    },
+    "SWA2": {
+     "sysId": "0x0f4d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f4d×1"
+    },
+    "Sitzsteuergeraet": {
+     "sysId": "0x0f4c",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 2 票 → 0x0f4c×1"
+    },
+    "TUER_HINTEN": {
+     "sysId": "0x0f4f",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 2 票 → 0x0f4f×1"
+    },
+    "TUER_VORNE": {
+     "sysId": "0x0f1e",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 2 票 → 0x0f1e×1"
+    },
+    "TVTuner": {
+     "sysId": "0x0f4b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f4b×1"
+    },
+    "Verstaerker": {
+     "sysId": "0x0f41",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f41×1"
+    },
+    "Zusatzheizung": {
+     "sysId": "0x0f55",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f55×1"
+    },
+    "Zusatzinstrument": {
+     "sysId": "0x0f1d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0F 变体名投票 1 票 → 0x0f1d×1"
+    }
+   }
+  },
+  "CS1": {
+   "gen": null,
+   "confidence": "low",
+   "genEvidence": "精确交集 top1=type 0x0E×218 次高=218 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "systems": 17,
+   "modulesResolved": 0,
+   "routeOwnerCount": 0,
+   "modules": {}
+  },
+  "E1": {
+   "gen": null,
+   "confidence": "low",
+   "genEvidence": "精确交集 top1=type 0x0F×7 次高=7 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "systems": 48,
+   "modulesResolved": 0,
+   "routeOwnerCount": 0,
+   "modules": {}
+  },
+  "E2": {
+   "gen": "0x0b",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x0B×332 次高=186 gap=44.0%；type 子表 48 个 sysId（高字节=type 自证）",
+   "systems": 60,
+   "modulesResolved": 59,
+   "routeOwnerCount": 12,
+   "modules": {
+    "ACC3": {
+     "sysId": "0x0b40",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b40×1"
+    },
+    "Airbag": {
+     "sysId": "0x0b04",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b04×1"
+    },
+    "Allrad": {
+     "sysId": "0x0b35",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b35×1"
+    },
+    "Anhaenger": {
+     "sysId": "0x0b54",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b54×1"
+    },
+    "BCM_hinten": {
+     "sysId": "0x0b23",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b23×1"
+    },
+    "BCM_vorne": {
+     "sysId": "0x0b20",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b20×1"
+    },
+    "BKE": {
+     "sysId": "0x0b07",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b07×1"
+    },
+    "BMS2": {
+     "sysId": "0x0b42",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b42×1"
+    },
+    "BV_ActuaForExterNoiseUDS": {
+     "sysId": "0x0b82",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b82×1"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x0b57",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 2 票 → 0x0b57×2"
+    },
+    "BV_AirCondiComprUDS": {
+     "sysId": "0x0b48",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b48×1"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x0b70",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b70×1"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x0b42",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 3 票 → 0x0b42×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS_A01": {
+     "sysId": "0x0b43",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b43×1"
+    },
+    "BV_ECM30TFS": {
+     "sysId": "0x0b01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 6 票 → 0x0b01×6（次高 0）"
+    },
+    "BV_ECM30TNF": {
+     "sysId": "0x0b01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b01×1"
+    },
+    "BV_ECM30_GEN2_TNF": {
+     "sysId": "0x0b01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 8 票 → 0x0b01×8（次高 0）"
+    },
+    "BV_ECM36FSI": {
+     "sysId": "0x0b01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 7 票 → 0x0b01×7（次高 0）"
+    },
+    "BV_ECM42TDI": {
+     "sysId": "0x0b01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b01×1"
+    },
+    "BV_ECM_UDS": {
+     "sysId": "0x0b01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 7 票 → 0x0b01×7（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x0b46",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b46×1"
+    },
+    "BV_MediaPlayePosit1UDS": {
+     "sysId": "0x0b80",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b80×1"
+    },
+    "BV_RealTopView2": {
+     "sysId": "0x0b51",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 3 票 → 0x0b51×3（次高 0）"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x0b41",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 2 票 → 0x0b41×2"
+    },
+    "BV_TVTunerUDS": {
+     "sysId": "0x0b4b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b4b×1"
+    },
+    "BV_TrailFunctUDS": {
+     "sysId": "0x0b54",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b54×1"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x0b02",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b02×1"
+    },
+    "CAN_CAN_Gateway": {
+     "sysId": "0x0b09",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b09×1"
+    },
+    "DME_BDE_Continental": {
+     "sysId": "0x0b01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b01×1"
+    },
+    "DME_SIMOS_30_TFSI": {
+     "sysId": "0x0b01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 4 票 → 0x0b01×4（次高 0）"
+    },
+    "EPB": {
+     "sysId": "0x0b32",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b32×1"
+    },
+    "ERA_GLONASS": {
+     "sysId": "0x0ba5",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0ba5×1"
+    },
+    "ESP_Colorado": {
+     "sysId": "0x0b05",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b05×1"
+    },
+    "Frontkamera": {
+     "sysId": "0x0b4a",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b4a×1"
+    },
+    "Head_Unit": {
+     "sysId": "0x0b46",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b46×1"
+    },
+    "Heckklappe": {
+     "sysId": "0x0b34",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b34×1"
+    },
+    "Kombiinstrument": {
+     "sysId": "0x0b08",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b08×1"
+    },
+    "Kompass": {
+     "sysId": "0x0b49",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b49×1"
+    },
+    "Lenkhilfe": {
+     "sysId": "0x0b45",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b45×1"
+    },
+    "Lenkstockschalter": {
+     "sysId": "0x0b36",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b36×1"
+    },
+    "PASM": {
+     "sysId": "0x0b13",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b13×1"
+    },
+    "PDC": {
+     "sysId": "0x0b12",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b12×1"
+    },
+    "PDCC": {
+     "sysId": "0x0b2b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b2b×1"
+    },
+    "Quersperre": {
+     "sysId": "0x0b53",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b53×1"
+    },
+    "RDK": {
+     "sysId": "0x0b37",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b37×1"
+    },
+    "RDK3": {
+     "sysId": "0x0b37",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 7 票 → 0x0b37×7（次高 0）"
+    },
+    "Rueckfahrkamera": {
+     "sysId": "0x0b51",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b51×1"
+    },
+    "Rueckfahrkamera_II": {
+     "sysId": "0x0b51",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b51×1"
+    },
+    "SCHEINWERFER": {
+     "sysId": "0x0b58",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b58×1"
+    },
+    "SWA": {
+     "sysId": "0x0b4d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b4d×1"
+    },
+    "SWA2": {
+     "sysId": "0x0b4d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0B comm 子表 sysId→名字精确 join 2 票 → 0x0b4d×2（次高 0）"
+    },
+    "SWSG_mit_AFS_ALWR": {
+     "sysId": "0x0b2f",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 2 票 → 0x0b2f×1"
+    },
+    "Sitzsteuergeraet": {
+     "sysId": "0x0b4c",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 2 票 → 0x0b4c×1"
+    },
+    "TUER_HINTEN": {
+     "sysId": "0x0b4f",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 2 票 → 0x0b4f×1"
+    },
+    "TUER_VORNE": {
+     "sysId": "0x0b1e",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 2 票 → 0x0b1e×1"
+    },
+    "TVTuner": {
+     "sysId": "0x0b4b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b4b×1"
+    },
+    "Verstaerker": {
+     "sysId": "0x0b41",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b41×1"
+    },
+    "Zusatzheizung": {
+     "sysId": "0x0b55",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b55×1"
+    },
+    "Zusatzinstrument": {
+     "sysId": "0x0b1d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0B 变体名投票 1 票 → 0x0b1d×1"
+    }
+   }
+  },
+  "E3": {
+   "gen": "0x12",
+   "confidence": "medium",
+   "genEvidence": "精确交集 top1=type 0x12×396 次高=349 gap=11.9%；type 子表 91 个 sysId（高字节=type 自证）",
+   "systems": 114,
+   "modulesResolved": 84,
+   "routeOwnerCount": 4,
+   "modules": {
+    "BV_ActivAccelPedalUDS": {
+     "sysId": "0x128a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x128a×1（次高 0）"
+    },
+    "BV_ActuaForExterNoiseUDS": {
+     "sysId": "0x1282",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1282×6（次高 0）"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x1281",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1281×4（次高 0）"
+    },
+    "BV_AdaptCruisContrInnoDriveUDS": {
+     "sysId": "0x128e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x128e×2（次高 0）"
+    },
+    "BV_AdaptCruisContrUDS": {
+     "sysId": "0x12aa",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 5 票 → 0x12aa×5（次高 0）"
+    },
+    "BV_AerodContrUnitUDS": {
+     "sysId": "0x1293",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1293×6（次高 0）"
+    },
+    "BV_AirCondiComprSubUDS": {
+     "sysId": "0x1248",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1248×1（次高 0）"
+    },
+    "BV_AirCondiUDS": {
+     "sysId": "0x1207",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1207×3（次高 0）"
+    },
+    "BV_AirbaUDS": {
+     "sysId": "0x1204",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 5 票 → 0x1204×5（次高 0）"
+    },
+    "BV_AnaloClockUDS": {
+     "sysId": "0x1249",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1249×1（次高 0）"
+    },
+    "BV_AuxilParkiHeateUDS": {
+     "sysId": "0x1255",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1255×2（次高 0）"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x1270",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 22 票 → 0x1270×22（次高 0）"
+    },
+    "BV_BatteEnergContrModul2UDS": {
+     "sysId": "0x125d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x125d×4（次高 0）"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x1242",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1242×3（次高 0）"
+    },
+    "BV_BatteJunctBoxUDS": {
+     "sysId": "0x129e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129e×2（次高 0）"
+    },
+    "BV_BatteMonitContrModulUDS": {
+     "sysId": "0x125e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x125e×2（次高 0）"
+    },
+    "BV_BedienSG_hi_MSB": {
+     "sysId": "0x1267",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1267×6（次高 0）"
+    },
+    "BV_BedienSG_vo_MSB": {
+     "sysId": "0x1266",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1266×6（次高 0）"
+    },
+    "BV_Brake1UDS": {
+     "sysId": "0x1205",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 20 票 → 0x1205×20（次高 0）"
+    },
+    "BV_BrakeBoostUDS": {
+     "sysId": "0x1286",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 11 票 → 0x1286×11（次高 0）"
+    },
+    "BV_CamerSysteRearViewUDS": {
+     "sysId": "0x1251",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1251×3（次高 0）"
+    },
+    "BV_CeiliLightModulUDS": {
+     "sysId": "0x1283",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1283×2（次高 0）"
+    },
+    "BV_CellModulContr1UDS": {
+     "sysId": "0x1295",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1295×2（次高 0）"
+    },
+    "BV_CellModulContr2UDS": {
+     "sysId": "0x1296",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1296×2（次高 0）"
+    },
+    "BV_CellModulContr3UDS": {
+     "sysId": "0x1297",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1297×2（次高 0）"
+    },
+    "BV_CellModulContr4UDS": {
+     "sysId": "0x1298",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1298×2（次高 0）"
+    },
+    "BV_CellModulContr5UDS": {
+     "sysId": "0x1299",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1299×2（次高 0）"
+    },
+    "BV_CellModulContr6UDS": {
+     "sysId": "0x129a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129a×2（次高 0）"
+    },
+    "BV_CellModulContr7UDS": {
+     "sysId": "0x129b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129b×2（次高 0）"
+    },
+    "BV_CellModulContr8UDS": {
+     "sysId": "0x129c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129c×2（次高 0）"
+    },
+    "BV_CentrElectUDS": {
+     "sysId": "0x1220",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 15 票 → 0x1220×15（次高 0）"
+    },
+    "BV_CentrModulComfoSysteUDS": {
+     "sysId": "0x1223",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 14 票 → 0x1223×14（次高 0）"
+    },
+    "BV_Charg1MobilDevicUDS": {
+     "sysId": "0x12b1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12b1×3（次高 0）"
+    },
+    "BV_ChassContrUDS": {
+     "sysId": "0x1213",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 25 票 → 0x1213×25（次高 0）"
+    },
+    "BV_ClutcContrUnitSubUDS": {
+     "sysId": "0x129f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129f×2（次高 0）"
+    },
+    "BV_ContrHeadRearLeftUDS": {
+     "sysId": "0x1261",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1261×3（次高 0）"
+    },
+    "BV_ContrHeadRearRightUDS": {
+     "sysId": "0x1262",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1262×3（次高 0）"
+    },
+    "BV_ContrModulForSunroUDS": {
+     "sysId": "0x122d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x122d×7（次高 0）"
+    },
+    "BV_ContrUnitForWiperMotorUDS": {
+     "sysId": "0x1292",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1292×1（次高 0）"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x1260",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1260×3（次高 0）"
+    },
+    "BV_DCDCConveContrModulUDS": {
+     "sysId": "0x127f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127f×3（次高 0）"
+    },
+    "BV_DashBoardUDS": {
+     "sysId": "0x1208",
+     "method": "name9-vote",
+     "evidence": "代际 0x12 变体名投票 1 票 → 0x1208×1"
+    },
+    "BV_DeckLidContrUnitUDS": {
+     "sysId": "0x1234",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1234×3（次高 0）"
+    },
+    "BV_DisplUnit3ForMultiSysteUDS": {
+     "sysId": "0x1285",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1285×2（次高 0）"
+    },
+    "BV_DisplUnit4ForMultiSysteUDS": {
+     "sysId": "0x1284",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1284×2（次高 0）"
+    },
+    "BV_DoorElectDriveSideUDS": {
+     "sysId": "0x1279",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1279×3（次高 0）"
+    },
+    "BV_DoorElectPasseSideUDS": {
+     "sysId": "0x127a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127a×3（次高 0）"
+    },
+    "BV_DoorElectRearDriveSideUDS": {
+     "sysId": "0x127b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127b×3（次高 0）"
+    },
+    "BV_DoorElectRearPasseSideUDS": {
+     "sysId": "0x127c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127c×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS": {
+     "sysId": "0x1243",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 15 票 → 0x1243×15（次高 0）"
+    },
+    "BV_ElectAdjusSteerColumUDS": {
+     "sysId": "0x128c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x128c×2（次高 0）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x1201",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1201×2（次高 0）"
+    },
+    "BV_FreshAirBloweFrontUDS": {
+     "sysId": "0x1289",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1289×2（次高 0）"
+    },
+    "BV_FrontSensoDriveAssisSysteUDS": {
+     "sysId": "0x124a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x124a×1（次高 0）"
+    },
+    "BV_GaragDoorOpeneContrModulUDS": {
+     "sysId": "0x1291",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1291×2（次高 0）"
+    },
+    "BV_GatewUDS": {
+     "sysId": "0x1209",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 10 票 → 0x1209×10（次高 0）"
+    },
+    "BV_GearShiftContrModulUDS": {
+     "sysId": "0x1244",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1244×3（次高 0）"
+    },
+    "BV_HeadUpDisplUDS": {
+     "sysId": "0x129d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129d×2（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x1246",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x1246×7（次高 0）"
+    },
+    "BV_InfotInterUDS": {
+     "sysId": "0x12b2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12b2×3（次高 0）"
+    },
+    "BV_LaneChangAssisUDS": {
+     "sysId": "0x125f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x125f×3（次高 0）"
+    },
+    "BV_LightContrLeft2UDS": {
+     "sysId": "0x126a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x126a×7（次高 0）"
+    },
+    "BV_LightContrLeftUDS": {
+     "sysId": "0x1268",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1268×3（次高 0）"
+    },
+    "BV_LightContrRight2UDS": {
+     "sysId": "0x126b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x126b×7（次高 0）"
+    },
+    "BV_LightContrRightUDS": {
+     "sysId": "0x1269",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1269×3（次高 0）"
+    },
+    "BV_LockElectUDS": {
+     "sysId": "0x1253",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1253×4（次高 0）"
+    },
+    "BV_MediaPlayePosit1UDS": {
+     "sysId": "0x1280",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1280×2（次高 0）"
+    },
+    "BV_NightVisioUDS": {
+     "sysId": "0x128d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 8 票 → 0x128d×8（次高 0）"
+    },
+    "BV_RearAxleSteerUDS": {
+     "sysId": "0x1290",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 9 票 → 0x1290×9（次高 0）"
+    },
+    "BV_ReducContrModulUDS": {
+     "sysId": "0x12a3",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x12a3×2（次高 0）"
+    },
+    "BV_RollContrSysteUDS": {
+     "sysId": "0x1264",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1264×3（次高 3）"
+    },
+    "BV_SeatAdjusDriveSideUDS": {
+     "sysId": "0x126c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x126c×2（次高 0）"
+    },
+    "BV_SeatAdjusPasseSideUDS": {
+     "sysId": "0x126d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x126d×2（次高 0）"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x1241",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1241×6（次高 0）"
+    },
+    "BV_SteerAssisUDS": {
+     "sysId": "0x1245",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 13 票 → 0x1245×13（次高 0）"
+    },
+    "BV_SteerColumElectUDS": {
+     "sysId": "0x1236",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1236×4（次高 0）"
+    },
+    "BV_SteerColumLockiUDS": {
+     "sysId": "0x128b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x128b×4（次高 0）"
+    },
+    "BV_TelemCommuUnitUDS": {
+     "sysId": "0x12a2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x12a2×6（次高 0）"
+    },
+    "BV_TelemDiagnContrUnitUDS": {
+     "sysId": "0x12b3",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12b3×3（次高 0）"
+    },
+    "BV_ThermManagUDS": {
+     "sysId": "0x1288",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1288×4（次高 0）"
+    },
+    "BV_TirePressMonit1UDS": {
+     "sysId": "0x1237",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1237×4（次高 0）"
+    },
+    "BV_TrailFunctUDS": {
+     "sysId": "0x1254",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1254×4（次高 0）"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x1202",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1202×1（次高 0）"
+    },
+    "BV_VehicTrackSysteUDS": {
+     "sysId": "0x1294",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1294×3（次高 0）"
+    }
+   }
+  },
+  "G1": {
+   "gen": "0x0c",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x0C×305 次高=174 gap=43.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "systems": 47,
+   "modulesResolved": 46,
+   "routeOwnerCount": 14,
+   "modules": {
+    "ACC3": {
+     "sysId": "0x0c40",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c40×1"
+    },
+    "Airbag": {
+     "sysId": "0x0c04",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c04×1"
+    },
+    "Anhaenger": {
+     "sysId": "0x0c54",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c54×1"
+    },
+    "BCM_hinten": {
+     "sysId": "0x0c23",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c23×1"
+    },
+    "BCM_vorne": {
+     "sysId": "0x0c20",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c20×1"
+    },
+    "BKE": {
+     "sysId": "0x0c07",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c07×1"
+    },
+    "BMS2": {
+     "sysId": "0x0c42",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c42×1"
+    },
+    "BV_AirCondiComprUDS": {
+     "sysId": "0x0c48",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c48×1"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x0c70",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c70×1"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x0c42",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0C comm 子表 sysId→名字精确 join 3 票 → 0x0c42×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS_A01": {
+     "sysId": "0x0c43",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c43×1"
+    },
+    "BV_ECM30TFS": {
+     "sysId": "0x0c01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c01×1"
+    },
+    "BV_ECM30_GEN2_TNF": {
+     "sysId": "0x0c01",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0C comm 子表 sysId→名字精确 join 8 票 → 0x0c01×8（次高 0）"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x0c02",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c02×1"
+    },
+    "CAN_CAN_Gateway": {
+     "sysId": "0x0c09",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c09×1"
+    },
+    "DME_BDE_Continental": {
+     "sysId": "0x0c01",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c01×1"
+    },
+    "EPB": {
+     "sysId": "0x0c32",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c32×1"
+    },
+    "Frontkamera": {
+     "sysId": "0x0c4a",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c4a×1"
+    },
+    "Getriebesteuerung_PDK": {
+     "sysId": "0x0c02",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c02×1"
+    },
+    "Head_Unit": {
+     "sysId": "0x0c46",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c46×1"
+    },
+    "Heckklappe": {
+     "sysId": "0x0c34",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c34×1"
+    },
+    "Kombiinstrument": {
+     "sysId": "0x0c08",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c08×1"
+    },
+    "Lenkhilfe": {
+     "sysId": "0x0c45",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c45×1"
+    },
+    "Lenkstockschalter": {
+     "sysId": "0x0c36",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c36×1"
+    },
+    "PASM": {
+     "sysId": "0x0c13",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c13×1"
+    },
+    "PDC": {
+     "sysId": "0x0c12",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c12×1"
+    },
+    "PDCC": {
+     "sysId": "0x0c2b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c2b×1"
+    },
+    "PSM": {
+     "sysId": "0x0c05",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c05×1"
+    },
+    "Quersperre": {
+     "sysId": "0x0c53",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c53×1"
+    },
+    "RDK": {
+     "sysId": "0x0c37",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0C comm 子表 sysId→名字精确 join 3 票 → 0x0c37×3（次高 0）"
+    },
+    "RDK3": {
+     "sysId": "0x0c37",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c37×1"
+    },
+    "RealTopview": {
+     "sysId": "0x0c51",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c51×1"
+    },
+    "Rueckfahrkamera": {
+     "sysId": "0x0c51",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c51×1"
+    },
+    "Rueckfahrkamera_II": {
+     "sysId": "0x0c51",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x0C comm 子表 sysId→名字精确 join 4 票 → 0x0c51×4（次高 0）"
+    },
+    "SCHEINWERFER": {
+     "sysId": "0x0c58",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c58×1"
+    },
+    "SWA": {
+     "sysId": "0x0c4d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c4d×1"
+    },
+    "SWA2": {
+     "sysId": "0x0c4d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 2 票 → 0x0c4d×2"
+    },
+    "SWSG_mit_AFS_ALWR": {
+     "sysId": "0x0c2f",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 2 票 → 0x0c2f×1"
+    },
+    "Sitzsteuergeraet": {
+     "sysId": "0x0c4c",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 2 票 → 0x0c4c×1"
+    },
+    "TUER_HINTEN": {
+     "sysId": "0x0c4f",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 2 票 → 0x0c4f×1"
+    },
+    "TUER_VORNE": {
+     "sysId": "0x0c1e",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 2 票 → 0x0c1e×1"
+    },
+    "TVTuner": {
+     "sysId": "0x0c4b",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c4b×1"
+    },
+    "Verstaerker": {
+     "sysId": "0x0c41",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c41×1"
+    },
+    "Waehlhebel": {
+     "sysId": "0x0c44",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c44×1"
+    },
+    "Zusatzheizung": {
+     "sysId": "0x0c55",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c55×1"
+    },
+    "Zusatzinstrument": {
+     "sysId": "0x0c1d",
+     "method": "name9-vote",
+     "evidence": "代际 0x0C 变体名投票 1 票 → 0x0c1d×1"
+    }
+   }
+  },
+  "G2": {
+   "gen": "0x12",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x12×465 次高=363 gap=21.9%；type 子表 91 个 sysId（高字节=type 自证）",
+   "systems": 102,
+   "modulesResolved": 90,
+   "routeOwnerCount": 4,
+   "modules": {
+    "BV_ActivAccelPedalUDS": {
+     "sysId": "0x128a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x128a×1（次高 0）"
+    },
+    "BV_ActuaForExterNoiseUDS": {
+     "sysId": "0x1282",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1282×6（次高 0）"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x1281",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1281×4（次高 0）"
+    },
+    "BV_AdaptCruisContr2UDS": {
+     "sysId": "0x12a9",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12a9×3（次高 0）"
+    },
+    "BV_AdaptCruisContrInnoDriveUDS": {
+     "sysId": "0x128e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x128e×2（次高 0）"
+    },
+    "BV_AdaptCruisContrUDS": {
+     "sysId": "0x12aa",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 5 票 → 0x12aa×5（次高 0）"
+    },
+    "BV_AerodContrUnitUDS": {
+     "sysId": "0x1293",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1293×6（次高 0）"
+    },
+    "BV_AirCondiComprSubUDS": {
+     "sysId": "0x1248",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1248×1（次高 0）"
+    },
+    "BV_AirCondiUDS": {
+     "sysId": "0x1207",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1207×3（次高 0）"
+    },
+    "BV_AirbaUDS": {
+     "sysId": "0x1204",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 5 票 → 0x1204×5（次高 0）"
+    },
+    "BV_AnaloClockUDS": {
+     "sysId": "0x1249",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1249×1（次高 0）"
+    },
+    "BV_AuxilParkiHeateUDS": {
+     "sysId": "0x1255",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1255×2（次高 0）"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x1270",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 22 票 → 0x1270×22（次高 0）"
+    },
+    "BV_BatteEnergContrModul2UDS": {
+     "sysId": "0x125d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x125d×4（次高 0）"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x1242",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1242×3（次高 0）"
+    },
+    "BV_BatteJunctBoxUDS": {
+     "sysId": "0x129e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129e×2（次高 0）"
+    },
+    "BV_BatteMonitContrModulUDS": {
+     "sysId": "0x125e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x125e×2（次高 0）"
+    },
+    "BV_BedienSG_hi_MSB": {
+     "sysId": "0x1267",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1267×6（次高 0）"
+    },
+    "BV_BedienSG_vo_MSB": {
+     "sysId": "0x1266",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1266×6（次高 0）"
+    },
+    "BV_Brake1UDS": {
+     "sysId": "0x1205",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 20 票 → 0x1205×20（次高 0）"
+    },
+    "BV_BrakeBoostUDS": {
+     "sysId": "0x1286",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 11 票 → 0x1286×11（次高 0）"
+    },
+    "BV_CamerSysteRearViewUDS": {
+     "sysId": "0x1251",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1251×3（次高 0）"
+    },
+    "BV_CeiliLightModulUDS": {
+     "sysId": "0x1283",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1283×2（次高 0）"
+    },
+    "BV_CellModulContr1UDS": {
+     "sysId": "0x1295",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1295×2（次高 0）"
+    },
+    "BV_CellModulContr2UDS": {
+     "sysId": "0x1296",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1296×2（次高 0）"
+    },
+    "BV_CellModulContr3UDS": {
+     "sysId": "0x1297",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1297×2（次高 0）"
+    },
+    "BV_CellModulContr4UDS": {
+     "sysId": "0x1298",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1298×2（次高 0）"
+    },
+    "BV_CellModulContr5UDS": {
+     "sysId": "0x1299",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1299×2（次高 0）"
+    },
+    "BV_CellModulContr6UDS": {
+     "sysId": "0x129a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129a×2（次高 0）"
+    },
+    "BV_CellModulContr7UDS": {
+     "sysId": "0x129b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129b×2（次高 0）"
+    },
+    "BV_CellModulContr8UDS": {
+     "sysId": "0x129c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129c×2（次高 0）"
+    },
+    "BV_CentrElectUDS": {
+     "sysId": "0x1220",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 15 票 → 0x1220×15（次高 0）"
+    },
+    "BV_CentrModulComfoSysteUDS": {
+     "sysId": "0x1223",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 14 票 → 0x1223×14（次高 0）"
+    },
+    "BV_Charg1MobilDevicUDS": {
+     "sysId": "0x12b1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12b1×3（次高 0）"
+    },
+    "BV_ChassContrUDS": {
+     "sysId": "0x1213",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 25 票 → 0x1213×25（次高 0）"
+    },
+    "BV_ClutcContrUnitSubUDS": {
+     "sysId": "0x129f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129f×2（次高 0）"
+    },
+    "BV_ContrHeadRearLeftUDS": {
+     "sysId": "0x1261",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1261×3（次高 0）"
+    },
+    "BV_ContrHeadRearRightUDS": {
+     "sysId": "0x1262",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1262×3（次高 0）"
+    },
+    "BV_ContrModul2ForSunroUDS": {
+     "sysId": "0x12a8",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x12a8×4（次高 0）"
+    },
+    "BV_ContrModulForSunroUDS": {
+     "sysId": "0x122d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x122d×7（次高 0）"
+    },
+    "BV_ContrUnitForWiperMotorUDS": {
+     "sysId": "0x1292",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 1 票 → 0x1292×1（次高 0）"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x1260",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1260×3（次高 0）"
+    },
+    "BV_DCDCConveContrModulUDS": {
+     "sysId": "0x127f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127f×3（次高 0）"
+    },
+    "BV_DashBoardUDS": {
+     "sysId": "0x1208",
+     "method": "name9-vote",
+     "evidence": "代际 0x12 变体名投票 1 票 → 0x1208×1"
+    },
+    "BV_DeckLidContrUnitUDS": {
+     "sysId": "0x1234",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1234×3（次高 0）"
+    },
+    "BV_DisplUnit3ForMultiSysteUDS": {
+     "sysId": "0x1285",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1285×2（次高 0）"
+    },
+    "BV_DisplUnit4ForMultiSysteUDS": {
+     "sysId": "0x1284",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1284×2（次高 0）"
+    },
+    "BV_DoorElectDriveSideUDS": {
+     "sysId": "0x1279",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1279×3（次高 0）"
+    },
+    "BV_DoorElectPasseSideUDS": {
+     "sysId": "0x127a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127a×3（次高 0）"
+    },
+    "BV_DoorElectRearDriveSideUDS": {
+     "sysId": "0x127b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127b×3（次高 0）"
+    },
+    "BV_DoorElectRearPasseSideUDS": {
+     "sysId": "0x127c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x127c×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS": {
+     "sysId": "0x1243",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 15 票 → 0x1243×15（次高 0）"
+    },
+    "BV_ERA_GLONASS": {
+     "sysId": "0x12a5",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x12a5×2（次高 0）"
+    },
+    "BV_ElectAdjusSteerColumUDS": {
+     "sysId": "0x128c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x128c×2（次高 0）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x1201",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 39 票 → 0x1201×39（次高 0）"
+    },
+    "BV_FreshAirBloweFrontUDS": {
+     "sysId": "0x1289",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1289×2（次高 0）"
+    },
+    "BV_FrontSensoDriveAssisSysteUDS": {
+     "sysId": "0x124a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x124a×2（次高 0）"
+    },
+    "BV_GaragDoorOpeneContrModulUDS": {
+     "sysId": "0x1291",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1291×2（次高 0）"
+    },
+    "BV_GatewUDS": {
+     "sysId": "0x1209",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 10 票 → 0x1209×10（次高 0）"
+    },
+    "BV_GearShiftContrModulUDS": {
+     "sysId": "0x1244",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1244×3（次高 0）"
+    },
+    "BV_HeadUpDisplUDS": {
+     "sysId": "0x129d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x129d×2（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x1246",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x1246×7（次高 0）"
+    },
+    "BV_InfotInterUDS": {
+     "sysId": "0x12b2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12b2×3（次高 0）"
+    },
+    "BV_LaneChangAssisUDS": {
+     "sysId": "0x125f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x125f×3（次高 0）"
+    },
+    "BV_LightContrLeft2UDS": {
+     "sysId": "0x126a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x126a×7（次高 0）"
+    },
+    "BV_LightContrLeftUDS": {
+     "sysId": "0x1268",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1268×3（次高 0）"
+    },
+    "BV_LightContrRight2UDS": {
+     "sysId": "0x126b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 7 票 → 0x126b×7（次高 0）"
+    },
+    "BV_LightContrRightUDS": {
+     "sysId": "0x1269",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1269×3（次高 0）"
+    },
+    "BV_LockElectUDS": {
+     "sysId": "0x1253",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1253×4（次高 0）"
+    },
+    "BV_MediaPlayePosit1UDS": {
+     "sysId": "0x1280",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x1280×2（次高 0）"
+    },
+    "BV_NightVisioUDS": {
+     "sysId": "0x128d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 8 票 → 0x128d×8（次高 0）"
+    },
+    "BV_RearAxleSteerUDS": {
+     "sysId": "0x1290",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 9 票 → 0x1290×9（次高 0）"
+    },
+    "BV_ReducContrModulUDS": {
+     "sysId": "0x12a3",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x12a3×2（次高 0）"
+    },
+    "BV_RollContrSysteUDS": {
+     "sysId": "0x1264",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1264×3（次高 3）"
+    },
+    "BV_SeatAdjusDriveSideUDS": {
+     "sysId": "0x126c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x126c×2（次高 0）"
+    },
+    "BV_SeatAdjusPasseSideUDS": {
+     "sysId": "0x126d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x126d×2（次高 0）"
+    },
+    "BV_SeatAdjusRearDriveSideUDS": {
+     "sysId": "0x12a0",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x12a0×2（次高 0）"
+    },
+    "BV_SeatAdjusRearPasseSideUDS": {
+     "sysId": "0x12a1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 2 票 → 0x12a1×2（次高 0）"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x1241",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x1241×6（次高 0）"
+    },
+    "BV_SteerAssisUDS": {
+     "sysId": "0x1245",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 13 票 → 0x1245×13（次高 0）"
+    },
+    "BV_SteerColumElectUDS": {
+     "sysId": "0x1236",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1236×4（次高 0）"
+    },
+    "BV_SteerColumLockiUDS": {
+     "sysId": "0x128b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x128b×4（次高 0）"
+    },
+    "BV_TVTunerUDS": {
+     "sysId": "0x124b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x124b×3（次高 0）"
+    },
+    "BV_TelemCommuUnitUDS": {
+     "sysId": "0x12a2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 6 票 → 0x12a2×6（次高 0）"
+    },
+    "BV_TelemDiagnContrUnitUDS": {
+     "sysId": "0x12b3",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x12b3×3（次高 0）"
+    },
+    "BV_ThermManagUDS": {
+     "sysId": "0x1288",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1288×4（次高 0）"
+    },
+    "BV_TirePressMonit1UDS": {
+     "sysId": "0x1237",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1237×4（次高 0）"
+    },
+    "BV_TrailFunctUDS": {
+     "sysId": "0x1254",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 4 票 → 0x1254×4（次高 0）"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x1202",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 16 票 → 0x1202×16（次高 0）"
+    },
+    "BV_VehicTrackSysteUDS": {
+     "sysId": "0x1294",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1294×3（次高 0）"
+    }
+   }
+  },
+  "G3": {
+   "gen": "0x16",
+   "confidence": "medium",
+   "genEvidence": "精确交集 top1=type 0x16×415 次高=376 gap=9.4%；type 子表 65 个 sysId（高字节=type 自证）",
+   "systems": 93,
+   "modulesResolved": 64,
+   "routeOwnerCount": 0,
+   "modules": {
+    "BV_ActuaForExterNoiseUDS": {
+     "sysId": "0x1682",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1682×6（次高 0）"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x1681",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1681×4（次高 0）"
+    },
+    "BV_AdaptCruisContrUDS": {
+     "sysId": "0x1640",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 5 票 → 0x1640×5（次高 0）"
+    },
+    "BV_AerodContrUnitUDS": {
+     "sysId": "0x1693",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1693×6（次高 0）"
+    },
+    "BV_AirCondiUDS": {
+     "sysId": "0x1607",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1607×3（次高 0）"
+    },
+    "BV_AirbaUDS": {
+     "sysId": "0x1604",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1604×6（次高 0）"
+    },
+    "BV_AntenContrModulUDS": {
+     "sysId": "0x1663",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1663×4（次高 0）"
+    },
+    "BV_AuxilParkiHeateUDS": {
+     "sysId": "0x1655",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x1655×2（次高 0）"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x1670",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 20 票 → 0x1670×20（次高 0）"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x1642",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1642×3（次高 0）"
+    },
+    "BV_BeameModulMatriHeadlLeftUDS": {
+     "sysId": "0x16b9",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x16b9×2（次高 0）"
+    },
+    "BV_BeameModulMatriHeadlRightUDS": {
+     "sysId": "0x16b8",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x16b8×2（次高 0）"
+    },
+    "BV_BedienSG_hi_MSB": {
+     "sysId": "0x1667",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1667×6（次高 0）"
+    },
+    "BV_BedienSG_vo_MSB": {
+     "sysId": "0x1666",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1666×6（次高 0）"
+    },
+    "BV_Brake1UDS": {
+     "sysId": "0x1605",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 23 票 → 0x1605×23（次高 0）"
+    },
+    "BV_BrakeBoostUDS": {
+     "sysId": "0x1686",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 10 票 → 0x1686×10（次高 0）"
+    },
+    "BV_CamerSysteRearViewUDS": {
+     "sysId": "0x1651",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1651×3（次高 0）"
+    },
+    "BV_CentrElectUDS": {
+     "sysId": "0x1620",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 15 票 → 0x1620×15（次高 0）"
+    },
+    "BV_CentrModulComfoSysteUDS": {
+     "sysId": "0x1623",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 14 票 → 0x1623×14（次高 0）"
+    },
+    "BV_Charg1MobilDevicUDS": {
+     "sysId": "0x16b1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x16b1×3（次高 0）"
+    },
+    "BV_Charg2MobilDevicUDS": {
+     "sysId": "0x16ba",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x16ba×2（次高 0）"
+    },
+    "BV_ChassContrUDS": {
+     "sysId": "0x1613",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 25 票 → 0x1613×25（次高 0）"
+    },
+    "BV_ContrModul2ForSunroUDS": {
+     "sysId": "0x16a8",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x16a8×4（次高 0）"
+    },
+    "BV_ContrModulForSunroUDS": {
+     "sysId": "0x162d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 7 票 → 0x162d×7（次高 0）"
+    },
+    "BV_ContrUnitDigitMatriLightUDS": {
+     "sysId": "0x1658",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1658×4（次高 0）"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x1660",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1660×3（次高 0）"
+    },
+    "BV_DCDCConveContrModulHVUDS": {
+     "sysId": "0x16b4",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x16b4×3（次高 0）"
+    },
+    "BV_DashBoardUDS": {
+     "sysId": "0x1608",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 9 票 → 0x1608×9（次高 0）"
+    },
+    "BV_DeckLidContrUnitUDS": {
+     "sysId": "0x1634",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1634×3（次高 0）"
+    },
+    "BV_DoorElectDriveSideUDS": {
+     "sysId": "0x1679",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1679×3（次高 0）"
+    },
+    "BV_DoorElectPasseSideUDS": {
+     "sysId": "0x167a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x167a×3（次高 0）"
+    },
+    "BV_DoorElectRearDriveSideUDS": {
+     "sysId": "0x167b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x167b×3（次高 0）"
+    },
+    "BV_DoorElectRearPasseSideUDS": {
+     "sysId": "0x167c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x167c×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS": {
+     "sysId": "0x1643",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 15 票 → 0x1643×15（次高 0）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x1601",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 41 票 → 0x1601×41（次高 0）"
+    },
+    "BV_FrontCorneRadar1UDS": {
+     "sysId": "0x167e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x167e×2（次高 0）"
+    },
+    "BV_FrontCorneRadar2UDS": {
+     "sysId": "0x167d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x167d×2（次高 0）"
+    },
+    "BV_FrontSensoDriveAssisSysteUDS": {
+     "sysId": "0x168f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x168f×6（次高 0）"
+    },
+    "BV_GatewUDS": {
+     "sysId": "0x1609",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 5 票 → 0x1609×5（次高 0）"
+    },
+    "BV_GearShiftContrModulUDS": {
+     "sysId": "0x1644",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x1644×3（次高 0）"
+    },
+    "BV_HeadUpDisplUDS": {
+     "sysId": "0x169d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x169d×2（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x1646",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1646×4（次高 0）"
+    },
+    "BV_InfotInterUDS": {
+     "sysId": "0x16b2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x16b2×4（次高 0）"
+    },
+    "BV_LaneChangAssisUDS": {
+     "sysId": "0x165f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 3 票 → 0x165f×3（次高 0）"
+    },
+    "BV_LightContrLeft2UDS": {
+     "sysId": "0x166a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 7 票 → 0x166a×7（次高 0）"
+    },
+    "BV_LightContrRight2UDS": {
+     "sysId": "0x166b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 7 票 → 0x166b×7（次高 0）"
+    },
+    "BV_LockElectUDS": {
+     "sysId": "0x1653",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1653×4（次高 0）"
+    },
+    "BV_NightVisioUDS": {
+     "sysId": "0x168d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 8 票 → 0x168d×8（次高 0）"
+    },
+    "BV_RearAxleSteerUDS": {
+     "sysId": "0x1690",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 9 票 → 0x1690×9（次高 0）"
+    },
+    "BV_RollContrSysteUDS": {
+     "sysId": "0x1664",
+     "method": "comm-join",
+     "confidence": "low",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1664×3（次高 3）"
+    },
+    "BV_SeatAdjusDriveSideUDS": {
+     "sysId": "0x166c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x166c×2（次高 0）"
+    },
+    "BV_SeatAdjusPasseSideUDS": {
+     "sysId": "0x166d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x166d×2（次高 0）"
+    },
+    "BV_SeatAdjusRearDriveSideUDS": {
+     "sysId": "0x16a0",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x16a0×2（次高 0）"
+    },
+    "BV_SeatAdjusRearPasseSideUDS": {
+     "sysId": "0x16a1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 2 票 → 0x16a1×2（次高 0）"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x1641",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x1641×6（次高 0）"
+    },
+    "BV_SteerAssisUDS": {
+     "sysId": "0x1645",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 13 票 → 0x1645×13（次高 0）"
+    },
+    "BV_SteerColumElectUDS": {
+     "sysId": "0x1636",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1636×4（次高 0）"
+    },
+    "BV_SteerColumLockiUDS": {
+     "sysId": "0x168b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x168b×4（次高 0）"
+    },
+    "BV_TelemCommuUnitUDS": {
+     "sysId": "0x16a2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 6 票 → 0x16a2×6（次高 0）"
+    },
+    "BV_TelemDiagnContrUnitUDS": {
+     "sysId": "0x16b3",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x16b3×4（次高 0）"
+    },
+    "BV_ThermManagUDS": {
+     "sysId": "0x1688",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 5 票 → 0x1688×5（次高 0）"
+    },
+    "BV_TirePressMonit1UDS": {
+     "sysId": "0x1637",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 5 票 → 0x1637×5（次高 0）"
+    },
+    "BV_TrailFunctUDS": {
+     "sysId": "0x1654",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 4 票 → 0x1654×4（次高 0）"
+    },
+    "BV_TransContrModulUDS": {
+     "sysId": "0x1602",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x16 comm 子表 sysId→名字精确 join 16 票 → 0x1602×16（次高 0）"
+    }
+   }
+  },
+  "J1": {
+   "gen": "0x15",
+   "confidence": "high",
+   "genEvidence": "精确交集 top1=type 0x15×375 次高=318 gap=15.2%；type 子表 71 个 sysId（高字节=type 自证）",
+   "systems": 77,
+   "modulesResolved": 69,
+   "routeOwnerCount": 0,
+   "modules": {
+    "BV_ActuaForExterNoiseUDS": {
+     "sysId": "0x1582",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 5 票 → 0x1582×5（次高 0）"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "sysId": "0x1581",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1581×4（次高 0）"
+    },
+    "BV_AdaptCruisContrUDS": {
+     "sysId": "0x1540",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 5 票 → 0x1540×5（次高 0）"
+    },
+    "BV_AerodContrUnitUDS": {
+     "sysId": "0x1593",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 5 票 → 0x1593×5（次高 0）"
+    },
+    "BV_AirCondiComprSubUDS": {
+     "sysId": "0x1548",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x1548×1（次高 0）"
+    },
+    "BV_AirCondiUDS": {
+     "sysId": "0x1507",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x1507×3（次高 0）"
+    },
+    "BV_AirbaUDS": {
+     "sysId": "0x1504",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 6 票 → 0x1504×6（次高 0）"
+    },
+    "BV_AnaloClockUDS": {
+     "sysId": "0x1549",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x1549×1（次高 0）"
+    },
+    "BV_AntenContrModulUDS": {
+     "sysId": "0x1563",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1563×4（次高 0）"
+    },
+    "BV_BatteChargContrModulUDS": {
+     "sysId": "0x1570",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 20 票 → 0x1570×20（次高 0）"
+    },
+    "BV_BatteEnergContrModulUDS": {
+     "sysId": "0x1542",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 20 票 → 0x1542×20（次高 0）"
+    },
+    "BV_BatteMonitContrModulUDS": {
+     "sysId": "0x155e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x155e×4（次高 0）"
+    },
+    "BV_BeameModulMatriHeadlLeftUDS": {
+     "sysId": "0x15b9",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x15b9×2（次高 0）"
+    },
+    "BV_BeameModulMatriHeadlRightUDS": {
+     "sysId": "0x15b8",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x15b8×2（次高 0）"
+    },
+    "BV_BedienSG_hi_MSB": {
+     "sysId": "0x1567",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 6 票 → 0x1567×6（次高 0）"
+    },
+    "BV_Brake1UDS": {
+     "sysId": "0x1505",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 23 票 → 0x1505×23（次高 0）"
+    },
+    "BV_BrakeBoostUDS": {
+     "sysId": "0x1586",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 10 票 → 0x1586×10（次高 0）"
+    },
+    "BV_CamerSysteRearViewUDS": {
+     "sysId": "0x1551",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x1551×3（次高 0）"
+    },
+    "BV_CeiliLightModulUDS": {
+     "sysId": "0x1583",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x1583×2（次高 0）"
+    },
+    "BV_CentrElectUDS": {
+     "sysId": "0x1520",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 15 票 → 0x1520×15（次高 0）"
+    },
+    "BV_CentrModulComfoSysteUDS": {
+     "sysId": "0x1523",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 14 票 → 0x1523×14（次高 0）"
+    },
+    "BV_Charg1MobilDevicUDS": {
+     "sysId": "0x15b1",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x15b1×3（次高 0）"
+    },
+    "BV_ChassContrUDS": {
+     "sysId": "0x1513",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 25 票 → 0x1513×25（次高 0）"
+    },
+    "BV_ContrModulForSunroUDS": {
+     "sysId": "0x152d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 7 票 → 0x152d×7（次高 0）"
+    },
+    "BV_ContrUnitDigitMatriLightUDS": {
+     "sysId": "0x1558",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1558×4（次高 0）"
+    },
+    "BV_ContrUnitForWiperMotorUDS": {
+     "sysId": "0x1592",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x1592×1（次高 0）"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "sysId": "0x1560",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x1560×3（次高 0）"
+    },
+    "BV_DCDCConveContrModulHV2UDS": {
+     "sysId": "0x15b5",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x15b5×2（次高 0）"
+    },
+    "BV_DCDCConveContrModulHVUDS": {
+     "sysId": "0x15b7",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x15b7×4（次高 0）"
+    },
+    "BV_DashBoardUDS": {
+     "sysId": "0x1508",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 9 票 → 0x1508×9（次高 0）"
+    },
+    "BV_DeckLidContrUnitUDS": {
+     "sysId": "0x1534",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x1534×3（次高 0）"
+    },
+    "BV_DoorElectDriveSideUDS": {
+     "sysId": "0x1579",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x1579×3（次高 0）"
+    },
+    "BV_DoorElectPasseSideUDS": {
+     "sysId": "0x157a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x157a×3（次高 0）"
+    },
+    "BV_DoorElectRearDriveSideUDS": {
+     "sysId": "0x157b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x157b×3（次高 0）"
+    },
+    "BV_DoorElectRearPasseSideUDS": {
+     "sysId": "0x157c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x157c×3（次高 0）"
+    },
+    "BV_DriveMotorContrModulUDS": {
+     "sysId": "0x1543",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 6 票 → 0x1543×6（次高 0）"
+    },
+    "BV_ElectAdjusSteerColumUDS": {
+     "sysId": "0x158c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x158c×2（次高 0）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x1501",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 7 票 → 0x1501×7（次高 0）"
+    },
+    "BV_FrontCorneRadar1UDS": {
+     "sysId": "0x157e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x157e×2（次高 0）"
+    },
+    "BV_FrontCorneRadar2UDS": {
+     "sysId": "0x157d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x157d×2（次高 0）"
+    },
+    "BV_FrontSensoDriveAssisSysteUDS": {
+     "sysId": "0x158f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 6 票 → 0x158f×6（次高 0）"
+    },
+    "BV_GaragDoorOpeneContrModulUDS": {
+     "sysId": "0x1591",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x1591×2（次高 0）"
+    },
+    "BV_GatewUDS": {
+     "sysId": "0x1509",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 5 票 → 0x1509×5（次高 0）"
+    },
+    "BV_GearShiftContrModulUDS": {
+     "sysId": "0x1544",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x1544×3（次高 0）"
+    },
+    "BV_HeadUpDisplUDS": {
+     "sysId": "0x159d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x159d×2（次高 0）"
+    },
+    "BV_InforContrUnit1UDS": {
+     "sysId": "0x1546",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1546×4（次高 0）"
+    },
+    "BV_InfotInterUDS": {
+     "sysId": "0x15b2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x15b2×4（次高 0）"
+    },
+    "BV_LaneChangAssisUDS": {
+     "sysId": "0x155f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 3 票 → 0x155f×3（次高 0）"
+    },
+    "BV_LightContrLeft2UDS": {
+     "sysId": "0x156a",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 7 票 → 0x156a×7（次高 0）"
+    },
+    "BV_LightContrRight2UDS": {
+     "sysId": "0x156b",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 7 票 → 0x156b×7（次高 0）"
+    },
+    "BV_LockElectUDS": {
+     "sysId": "0x1553",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1553×4（次高 0）"
+    },
+    "BV_NightVisioUDS": {
+     "sysId": "0x158d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 8 票 → 0x158d×8（次高 0）"
+    },
+    "BV_OverTheAirFunctContrUnitUDS": {
+     "sysId": "0x15b6",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x15b6×2（次高 0）"
+    },
+    "BV_RearAxleSteerUDS": {
+     "sysId": "0x1590",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 9 票 → 0x1590×9（次高 0）"
+    },
+    "BV_RollContrSysteUDS": {
+     "sysId": "0x1564",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 8 票 → 0x1564×5（次高 3）"
+    },
+    "BV_SeatAdjusDriveSideUDS": {
+     "sysId": "0x156c",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x156c×2（次高 0）"
+    },
+    "BV_SeatAdjusPasseSideUDS": {
+     "sysId": "0x156d",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 2 票 → 0x156d×2（次高 0）"
+    },
+    "BV_SoundSysteUDS": {
+     "sysId": "0x1541",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 6 票 → 0x1541×6（次高 0）"
+    },
+    "BV_SteerAssisUDS": {
+     "sysId": "0x1545",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 15 票 → 0x1545×15（次高 0）"
+    },
+    "BV_SteerColumElectUDS": {
+     "sysId": "0x1536",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1536×4（次高 0）"
+    },
+    "BV_TelemCommuUnitUDS": {
+     "sysId": "0x15a2",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 6 票 → 0x15a2×6（次高 0）"
+    },
+    "BV_TelemDiagnContrUnitUDS": {
+     "sysId": "0x15b3",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x15b3×4（次高 0）"
+    },
+    "BV_ThermManagUDS": {
+     "sysId": "0x1588",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 5 票 → 0x1588×5（次高 0）"
+    },
+    "BV_TirePressMonit1UDS": {
+     "sysId": "0x1537",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 5 票 → 0x1537×5（次高 0）"
+    },
+    "BV_TrailFunctUDS": {
+     "sysId": "0x1554",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 4 票 → 0x1554×4（次高 0）"
+    },
+    "BV_ValveBlock1InDriveSideFrontSeatUDS": {
+     "sysId": "0x156e",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x156e×1（次高 0）"
+    },
+    "BV_ValveBlock1InPasseSideFrontSeatUDS": {
+     "sysId": "0x156f",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x156f×1（次高 0）"
+    },
+    "BV_ValveBlock2InDriveSideFrontSeatUDS": {
+     "sysId": "0x1577",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x1577×1（次高 0）"
+    },
+    "BV_ValveBlock2InPasseSideFrontSeatUDS": {
+     "sysId": "0x1578",
+     "method": "comm-join",
+     "confidence": "high",
+     "evidence": "type 0x15 comm 子表 sysId→名字精确 join 1 票 → 0x1578×1（次高 0）"
+    }
+   }
+  }
+ },
+ "models": {
+  "Boxster（981）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "Boxster（982）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "Boxster（986）": {
+   "platform": "9X6",
+   "gen": null,
+   "confidence": "unresolved",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "Boxster（987）": {
+   "platform": "9X7",
+   "gen": null,
+   "confidence": "low",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "Cayman（981）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "Cayman（982）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "Cayman（987）": {
+   "platform": "9X7",
+   "gen": null,
+   "confidence": "low",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "Cayman GT4 Clubsport": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "911（992）": {
+   "platform": "992",
+   "gen": "0x14",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 58
+  },
+  "911（991）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "911（997）": {
+   "platform": "9X7",
+   "gen": null,
+   "confidence": "low",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "911（996）": {
+   "platform": "9X6",
+   "gen": null,
+   "confidence": "unresolved",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "GT2（996）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "GT3（996）": {
+   "platform": "9X1",
+   "gen": "0x0e",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 48
+  },
+  "911（964/993）": {
+   "platform": "9X6",
+   "gen": null,
+   "confidence": "unresolved",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "Macan": {
+   "platform": "CAJUN",
+   "gen": "0x0f",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 55
+  },
+  "Cayenne-9PA（至2010年款止）": {
+   "platform": "G1",
+   "gen": "0x0c",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 46
+  },
+  "Cayenne-92A（2011 - 2017）": {
+   "platform": "G2",
+   "gen": "0x12",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 90
+  },
+  "Cayenne-9YA（自2018年款起）": {
+   "platform": "G3",
+   "gen": "0x16",
+   "confidence": "medium",
+   "applyPlatformSysIds": true,
+   "moduleCount": 64
+  },
+  "Panamera-970（至2016年款止）": {
+   "platform": "E1",
+   "gen": null,
+   "confidence": "low",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "Panamera-971（2017-2024）": {
+   "platform": "E2",
+   "gen": "0x0b",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 59
+  },
+  "Panamera-YA（自2024年款起）": {
+   "platform": "E3",
+   "gen": "0x12",
+   "confidence": "medium",
+   "applyPlatformSysIds": true,
+   "moduleCount": 84
+  },
+  "918 Spyder": {
+   "platform": "918S",
+   "gen": "0x10",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 28
+  },
+  "Carrera GT": {
+   "platform": "CS1",
+   "gen": null,
+   "confidence": "low",
+   "applyPlatformSysIds": false,
+   "moduleCount": 0
+  },
+  "Taycan": {
+   "platform": "J1",
+   "gen": "0x15",
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 69
+  }
+ }
+}

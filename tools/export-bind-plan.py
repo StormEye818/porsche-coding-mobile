@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""export-bind-plan.py — 多源「进模块绑定计划」生成器（2026-11-10 重写，0x0E 代静态化）。
+"""export-bind-plan.py — 多源「进模块绑定计划」生成器（2026-11-11 全车型推广）。
+
+2026-11-10 在 981（0x0E 代）证实；2026-11-11 按 RE-CODINGADDR §6 推广到全量车型：
+  · 代际泛化：gen = sysId>>8；gen≥0x0E 的条目全部走多源分级（含 0x10-0x16 新代，
+    即使 drivelinks-v3 无键也由路由表/comm 子表给 sysId 建条目）。
+  · DME 路由组自动注入：对每代 g，owner=(g<<8)|0x0C 存在即作为 (g<<8)|0x01 的
+    路由组；优先取该 owner 的 0x7E0-0x7EF can 行（0x0E0C 自证），无则退全量。
+  · 跨代候选泛化：all-model-sysids.json 的同名模块在各平台的 sysId 全部作为
+    「同系统跨代 sysId」→ 旧代表A 候选 ∩ 路由表 can（精确交集）。
+  · 旧代 0x05/0x06/0x0B-0x0D 条目保留表A join 逻辑（test-align431 对账基线，不改）。
 
 依据：
   RE-DISCOVERY-20261110 §1（DriveLinksMode_1001 @LINK:0x18f00）：n==0 → 直接绑定；
@@ -39,14 +48,15 @@ V3 = ROOT / 'data' / 'drivelinks-v3.json'
 ADDR = ROOT / 'data' / 'ecu-addresses.json'
 CODING = ROOT / 'data' / 'coding-v2.json'
 ROUTING = ROOT / 'data' / 'sysdata-routing.json'
+ROOT_TABLE = ROOT / 'data' / 'sysdata-root-table.json'
 SYSIDS = ROOT / 'data' / '981-sysids.json'
+ALL_SYSIDS = ROOT / 'data' / 'all-model-sysids.json'
 OUT = ROOT / 'data' / 'bind-plan.json'
 
 DIAG_LO, DIAG_HI = 0x600, 0x7FF
 
-# DME 家族路由组 owner（0x_0C 各代同构；限 0x7E0-0x7EF，0x0E0C 另拥有 0x6A6-0x6AA/0x6B9
-# 属其它网段）。证据：owner 0x0E0C 行 0x7E1-0x7E8 + 网关 0x0C09 拥有 0x7E0 + v3 候选 0x7E8-0x7EC。
-FAMILY_ROUTE_OWNERS = {'0x0e01': ('0x0E0C', 0x7E0, 0x7EF)}
+# DME 家族路由组：不再硬编码代际 —— 运行时按「该代 owner=(g<<8)|0x0C 是否存在」自动注入
+# （0x_0C 各代同构，根表 type=代际前缀；见 tools/export-sysdata-routing.py parse_root_table）。
 
 # 换表前 981 模块 → 0x0B 代 sysId（git 历史 module-ecu-map.js 顶层块口径）。
 # 仅用于旧代 0x0B 条目的 firstRead（coding-v2 按模块名查首参数）。
@@ -85,7 +95,9 @@ def main():
     addr = json.loads(ADDR.read_text())
     coding = json.loads(CODING.read_text())
     routing = json.loads(ROUTING.read_text())
+    root_table = json.loads(ROOT_TABLE.read_text())
     sysids_doc = json.loads(SYSIDS.read_text())
+    all_sysids = json.loads(ALL_SYSIDS.read_text())
 
     # ---- 公共：模块名 → 首参数 lid / 族（readSid 众数） ----
     by_mod = {}
@@ -114,6 +126,18 @@ def main():
             k = s.lower()
             if name not in sys_to_mods[k]:
                 sys_to_mods[k].append(name)
+    # 全车型：只把 high/medium 平台的模块名纳入（low/unresolved 不猜、不覆盖）
+    module_sids_all = defaultdict(set)
+    for p, e in (all_sysids.get('platforms') or {}).items():
+        if e.get('confidence') not in ('high', 'medium'):
+            continue
+        for name, m in (e.get('modules') or {}).items():
+            s = (m.get('sysId') or '').lower()
+            if not s:
+                continue
+            module_sids_all[name].add(s)
+            if name not in sys_to_mods[s]:
+                sys_to_mods[s].append(name)
 
     def first_read_of(sid):
         best = None
@@ -154,10 +178,24 @@ def main():
         if e.get('tx') is not None and DIAG_LO <= int(e['tx'], 16) <= DIAG_HI:
             prov_tx_by_sys[e['sysId'].lower()] = int(e['tx'], 16)
 
-    # ---- 981 模块 → sysIds / 旧代投票 ----
+    # ---- 981 模块 → sysIds / 旧代投票 + 全车型同系统跨代 sysId ----
     mod_sysids = {n: [s.lower() for s in (m.get('sysIds') or [])]
                   for n, m in sysids_doc.get('modules', {}).items()}
     mod_votes = sysids_doc.get('votes') or {}
+
+    # 自动 DME 路由组：每代 owner=(g<<8)|0x0C 存在 → 注入 (g<<8)|0x01
+    # 优先取 0x7E0-0x7EF 行（0x_0C 组的 DME 段），该代无 0x7Ex 行才退全量。
+    family_route = {}
+    for g in range(0x01, 0x17):
+        owner = f'0x{(g << 8) | 0x0C:04x}'
+        cans = route_by_owner.get(owner)
+        if not cans:
+            continue
+        dme = f'0x{(g << 8) | 0x01:04x}'
+        hi = {c for c in cans if 0x7E0 <= c <= 0x7EF} or cans
+        family_route[dme] = (owner, sorted(hi))
+    print(f'自动注入 DME 路由组（全代）：{len(family_route)} 个 → ' +
+          ', '.join(f'{k}/{v[0]}' for k, v in sorted(family_route.items())))
 
     # v3 键的工具函数
     def v3_rows(sid):
@@ -177,19 +215,27 @@ def main():
                     cands.add(v)
         return keys, cands
 
-    def crossgen_cands_of(module):
-        """S4：旧代 sysId 的表A 候选 ∩ 路由表 can（精确交集）。返回 (cands, provenance)。"""
+    def crossgen_cands_of(module, cur_sid):
+        """S4：同系统跨代 sysId 的表A 候选 ∩ 路由表 can（精确交集，非近似 join）。
+
+        跨代 sysId 来源：① 981 变体名投票旧代；② all-model-sysids.json 同名模块在
+        其它平台的 sysId（全车型推广）；③ 名字前缀唯一命中（app.js aliasEntryFor 同构）。
+        """
+        cur_gen = int(cur_sid, 16) >> 8
         old_sys = set()
         for sid_s in (mod_votes.get(module) or {}):
             s = sid_s.lower()
-            if (int(sid_s, 16) >> 8) != 0x0E and cand_by_sys.get(s):
+            if (int(sid_s, 16) >> 8) != cur_gen and cand_by_sys.get(s):
                 old_sys.add(s)
-        # 名字前缀规则（app.js aliasEntryFor 同构）：MODULE_TO_ECUID 键为模块名前缀且有条目
+        for s in module_sids_all.get(module, ()):
+            if (int(s, 16) >> 8) != cur_gen and cand_by_sys.get(s):
+                old_sys.add(s)
+        # 名字前缀规则（app.js aliasEntryFor 同构）：非当前代且唯一命中才用
         if not old_sys:
             norm = re.sub(r'[^A-Z0-9]', '', module.upper())
             hits = set()
             for sid, names in sys_to_mods.items():
-                if sid.startswith('0x0e'):
+                if (int(sid, 16) >> 8) == cur_gen:
                     continue
                 for n in names:
                     nn = re.sub(r'[^A-Z0-9]', '', n.upper())
@@ -197,6 +243,14 @@ def main():
                         hits.add(sid)
             if len(hits) == 1:
                 old_sys = hits
+            elif len(hits) > 1:
+                # 全车型推广后前缀可能命中多个 sysId：按「表A候选∩路由表can 存活数」
+                # 取并列 top 的全部（都是精确交集、证据等强；旧代同系统常共享同一候选集）。
+                scored = [(len({int(t, 16) for t, _ in cand_by_sys.get(s, [])} & routing_all), s)
+                          for s in hits]
+                best = max((n for n, _ in scored), default=0)
+                if best > 0:
+                    old_sys = {s for n, s in scored if n == best}
         cands, prov = set(), []
         for s in sorted(old_sys):
             cs = {int(t, 16) for t, _ in cand_by_sys.get(s, [])}
@@ -207,10 +261,20 @@ def main():
                              'note': f'表A候选∩路由表can（{len(keep)}/{len(cs)} 条存活）'})
         return cands, prov
 
-    # ---- 收集 981 需要的 0x0E sysId 集 ----
+    # ---- 目标 sysId 集：981 全 sysId + 全车型 high/medium 平台 sysId + 根表 22 type 的
+    #      comm 子表 sysId（新代无 drivelinks-v3 键，也能按路由表建条目） ----
     target_sids = set()
     for sids in mod_sysids.values():
         target_sids.update(sids)
+    for p, e in (all_sysids.get('platforms') or {}).items():
+        if e.get('confidence') not in ('high', 'medium'):
+            continue
+        target_sids.update((m.get('sysId') or '').lower() for m in (e.get('modules') or {}).values())
+    for t, e in (root_table.get('types') or {}).items():
+        # 只补 0x10+ 新代（旧代 0x01-0x0F 已由 v3 键/表A 覆盖，避免无意义空条目膨胀）
+        if e.get('genConsistent') and int(t, 16) >= 0x10:
+            target_sids.update(s.lower() for s in e.get('sysIds') or [])
+    target_sids.discard('')
 
     out, stats = {}, Counter()
     notes = {}
@@ -225,8 +289,9 @@ def main():
         ns = [((r.get('record') or {}).get('n') or 0) for r in rows]
         n_min = min(ns) if ns else None
 
-        if sid.startswith('0x0e') or sid.startswith('0x0f'):
-            # ===== 0x0E 代：多源分级 =====
+        gen = int(sid, 16) >> 8
+        if gen >= 0x0E:
+            # ===== 0x0E+ 代（含 0x10-0x16 新代）：多源分级（全车型推广） =====
             src_map = defaultdict(set)   # can -> 源名集合
             def mark(cans, name):
                 for c in cans:
@@ -243,19 +308,18 @@ def main():
             own = route_by_owner.get(sid)
             if own:
                 mark(own, 'routing')
-            # S0：家族路由组（DME）
-            fg = FAMILY_ROUTE_OWNERS.get(sid)
+            # S0：家族路由组（DME）——全代自动注入，无需车型特判
+            fg = family_route.get(sid)
             if fg:
-                gowner, lo, hi = fg[0].lower(), fg[1], fg[2]
-                gc = {c for c in route_by_owner.get(gowner, set()) if lo <= c <= hi}
+                gowner, gc = fg[0], set(fg[1])
                 if gc:
                     mark(gc, 'routeGroup')
 
-            # S4'：跨代已证 tx（模块旧代投票 sysId 的表A proven tx 落在 tierA 内 → 加权）
+            # S4'：跨代已证 tx（同系统跨代 sysId 的表A proven tx 落在 tierA 内 → 加权）
             for m in sys_to_mods.get(sid, []):
-                for sid_s in (mod_votes.get(m) or {}):
+                for sid_s in list((mod_votes.get(m) or {}).keys()) + list(module_sids_all.get(m, set())):
                     s = sid_s.lower()
-                    if (int(sid_s, 16) >> 8) != 0x0E:
+                    if (int(sid_s, 16) >> 8) != gen:
                         pt = prov_tx_by_sys.get(s)
                         if pt is not None:
                             mark({pt}, 'crossgenProven')
@@ -274,7 +338,7 @@ def main():
                 mods = sys_to_mods.get(sid, [])
                 cands, prov = set(), []
                 for m in mods:
-                    cs, p = crossgen_cands_of(m)
+                    cs, p = crossgen_cands_of(m, sid)
                     cands |= cs
                     prov += p
                 if cands:
@@ -319,28 +383,42 @@ def main():
         rows = [r for b in ent.get('blocks', []) for r in b.get('rows', [])]
         if rows:
             add_entry(sid)
-    # 981 0x0E/F sysId（含 v3 无键的，如 0x0e44/0x0e57/0x0ea5）
+    # 全车型 sysId（含 0x10-0x16 新代：comm 子表目录，v3 无键也建条目）
     for sid in sorted(target_sids):
         add_entry(sid)
 
+    def cand_of(s):
+        return [int(c, 16) for c in out.get(s, {}).get('cands') or []]
+
+    # 全车型静态覆盖统计（按平台）
+    coverage = {}
+    for p, e in sorted((all_sysids.get('platforms') or {}).items()):
+        mods = e.get('modules') or {}
+        if not mods:
+            coverage[p] = {'modules': 0, 'static': 0, 'gen': e.get('gen'), 'confidence': e.get('confidence')}
+            continue
+        st = sum(1 for m in mods.values() if cand_of((m.get('sysId') or '').lower()))
+        coverage[p] = {'modules': len(mods), 'static': st, 'gen': e.get('gen'),
+                       'confidence': e.get('confidence')}
+
     doc = {
-        'schemaVersion': 2,
-        'source': 'drivelinks-v3 + sysdata-routing(路由表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)',
-        'rule': ('多源分级：tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) '
-                 '∪ DME路由组(0x_0C)；tierA 空→跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
-                 '候选序=多源收敛数降序。cands/pairs 仅诊断段 0x600-0x7FF；rx=tx+8（0x0E 代路由表无 rx 独立字段）。'
-                 'firstRead=该 sysId 首参数读帧（绑定后验证）。0x0B 旧代条目=原表A join 逻辑（对账用）。'),
+        'schemaVersion': 3,
+        'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + all-model-sysids(全车型换表) '
+                   '+ ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
+        'rule': ('全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) '
+                 '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
+                 'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
+                 '旧代 0x05/0x06/0x0B-0x0D 保留表A join（test-align431 对账基线）。'
+                 '候选序=多源收敛数降序；cands/pairs 仅诊断段 0x600-0x7FF；rx=tx+8。'),
         'stats': dict(stats),
+        'coverage': coverage,
         'ecu': dict(sorted(out.items())),
     }
     OUT.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding='utf-8')
     print('写出', OUT.relative_to(ROOT), f'{OUT.stat().st_size / 1024:.0f}KB')
     print('sysId', len(out), dict(stats))
 
-    # ---- 验收自检（RE-SYSDATA-ROWS §7 开放项 ①②③④ 口径） ----
-    def cand_of(sid):
-        return [int(c, 16) for c in out.get(sid, {}).get('cands') or []]
-
+    # ---- 验收自检（981 五项 + 全车型覆盖） ----
     checks = []
     dme = cand_of('0x0e01')
     checks.append(('DME=0x7E0', 0x7E0 in dme))
@@ -356,7 +434,15 @@ def main():
         print(('  ✅' if okk else '  ❌'), name)
     if not all(okk for _, okk in checks):
         raise SystemExit('验收自检失败')
-    print('  未静态解出：', sorted(set(mod_sysids) - set(resolved)))
+    print('  未静态解出（981）：', sorted(set(mod_sysids) - set(resolved)))
+    print('\n全车型静态覆盖（bind-plan 按平台）：')
+    for p, c in coverage.items():
+        if c['modules']:
+            print(f"  {p:8s} gen={str(c['gen']):6s} conf={c['confidence']:10s} "
+                  f"静态 {c['static']:3d}/{c['modules']:3d} 模块")
+    tot_m = sum(c['modules'] for c in coverage.values())
+    tot_s = sum(c['static'] for c in coverage.values())
+    print(f'  合计 {tot_s}/{tot_m}（{tot_s / tot_m * 100:.1f}%）')
 
 
 if __name__ == '__main__':
