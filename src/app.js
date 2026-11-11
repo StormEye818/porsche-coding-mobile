@@ -51,6 +51,43 @@ function bindPlanFor(sysId) {
 }
 
 /**
+ * SYS_DATA comm 表（data/sysdata-comm.json，2026-11-11 逆取收口）：
+ * 每个 sysId 的**原厂进模块命令序列**（经 COMMAND.GAG 解析成帧）。
+ * 由此可查「该 ECU 的原厂会话号」——981 实测：16 个模块 10 89、32 个模块 10 03，
+ * 即原厂**并非一律 10 89**。当前 enterSession 仍按族流程发帧，与原厂逐 ECU 序列
+ * 的差异用日志显式暴露（对齐缺口可见化），不静默冒充已对齐。
+ */
+let sysComm = undefined;
+async function ensureSysComm() {
+  if (sysComm !== undefined) return sysComm;
+  try {
+    const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), 1500) : null;
+    const r = await fetch('data/sysdata-comm.json', ctl ? { signal: ctl.signal } : {});
+    if (timer) clearTimeout(timer);
+    sysComm = r.ok ? await r.json() : null;
+  } catch { sysComm = null; }
+  return sysComm;
+}
+/** sysId → 原厂进模块会话号（序列里第一个 10 xx）；查不到返回 null。 */
+function oemSessionForSysId(sysId) {
+  const e = sysComm?.ecu?.[String(sysId).toLowerCase()];
+  if (!e) return null;
+  for (const blk of e.blocks || []) {
+    for (const f of blk.frames || []) {
+      if (Array.isArray(f) && f.length >= 4 && f[2] === 0x10) return f[3];
+    }
+  }
+  return null;
+}
+/** sysId → 原厂进模块命令帧（仅第一条 comm 记录的子记录 0）；查不到返回 null。 */
+function oemEnterFramesForSysId(sysId) {
+  const e = sysComm?.ecu?.[String(sysId).toLowerCase()];
+  const frames = e?.blocks?.[0]?.frames;
+  return Array.isArray(frames) && frames.length ? frames : null;
+}
+
+/**
  * 模块记录家族统计（data/module-family.json）。
  *
  * ⚠️ 2026-11-10：此前三处各自内联加载，且 `familyFor()` 在**加载之前**就被调用 →
@@ -2755,10 +2792,12 @@ async function enterSystem(sys) {
   // ★ 2026-11-05 会话定案（有据）。★ 2026-11-11 注释收口：
   //   原厂序列 = 10 03 → 3E/识别 → 10 89 → 读写（GAG 真机序列取证）。
   //   **会话号实现为固定 `0x89`（SESSION_FOR_SERVICE.coding）** —— 抓包 10 89×6 是绝对
-  //   主模板，KWP 流直接建、UDS 流在 10 03/识别后建。旧注释称「会话字节=每 ECU ODX XML
-  //   SESSIONS 数据驱动」，但 ODX SESSIONS 不在提取包内、drivelinks 的 securityModel
-  //   param_1（u32>>16）语义未证 → **不用于发帧**（避免发错会话号）。此处如实标注为
-  //   「固定主会话模板 + 数据缺口」，不再声称数据驱动。
+  //   主模板，KWP 流直接建、UDS 流在 10 03/识别后建。
+  //   ★ 2026-11-11 逆取收口（推翻旧「ODX SESSIONS 不在包内」结论）：原厂**逐 ECU 会话**
+  //     就在 SYS_DATA comm 记录里（data/sysdata-comm.json，命令经 COMMAND.GAG 解帧）。
+  //     981 实测分布：16 个模块 `10 89`、32 个模块 `10 03` —— **并非一律 10 89**。
+  //     当前实现仍按族流程发帧（KWP 直建 0x89 / UDS 10 03→…→0x89），与原厂逐 ECU
+  //     序列的差异用日志显式暴露（对齐缺口可见化），不静默冒充已对齐。
   //   构帧/发送方逐指令零「失败换会话」分支（PorscheSetEnterFrameInit 模板单发）——
   //   原「10 89 失败回退 10 03」是自创恢复，已删。
   //   两步是**序列步**（非重试）：各自尽力而为（NRC 容忍=序列取证行为）；写路径
@@ -2766,6 +2805,17 @@ async function enterSystem(sys) {
   // ★ 会话流（任务清单⑤ / RE-FLOWSPEC §1.3·§7）：一次 enterSession 完成整条流 ——
   //   KWP 流 = `10 89` 直接建会话（不发 10 03 —— 实车 `7F 10 12` 断点修）；
   //   UDS 流 = `10 03`→保活→识别→`10 89`（序列步，非重试）；家族未证=抓包序容错。
+  {
+    const oemSid = sysIdForLabel(sys.label) || sysIdForMod(sys.label) || sysIdForModules(sys.modules);
+    await ensureSysComm();
+    const oemSess = oemSessionForSysId(oemSid);
+    if (oemSess != null && oemSess !== 0x89) {
+      const frames = (oemEnterFramesForSysId(oemSid) || [])
+        .map((f) => (Array.isArray(f) ? f.slice(2).map((x) => x.toString(16).padStart(2, '0')).join(' ') : '?'));
+      log(`  ⚠️ 原厂会话=10 ${oemSess.toString(16).padStart(2, '0')}（${sys.label}，comm 表），`
+        + `当前实现按族流程发 10 89 —— 未对齐；原厂序列: ${frames.join(' → ')}`, 'warn');
+    }
+  }
   let sessDead = 0;
   try {
     await coder.enterSession(0x89, { family: enterFamily });
