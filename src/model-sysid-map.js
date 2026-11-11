@@ -870,22 +870,6 @@ export function sysIdForModule(name, modelLabel) {
   return PLATFORM_MODULES[i.platform]?.modules?.[name] ?? null;
 }
 
-/**
- * 中文菜单标签 / 全局 sysId → 当前平台同系统 sysId。
- * 规则（981 已证、全代精确）：系统家族低字节跨代不变（IC 0x0?08、PSM 0x0?05、
- * ACC3 0x0?40 …），所以把 981 全局 sysId 的低字节在当前平台模块表里精确反查。
- * 命中多个（左右件）时取最小那枚（与 981 双记录取首枚一致）；零命中返回 null。
- */
-export function platformSysIdByLowByte(globalSysId, modelLabel) {
-  const i = platformInfoFor(modelLabel);
-  if (!i || !globalSysId || !/^0x[0-9a-fA-F]{4}$/.test(globalSysId)) return null;
-  const low = lowByte(globalSysId);
-  const mods = PLATFORM_MODULES[i.platform]?.modules;
-  if (!mods) return null;
-  const hits = Object.values(mods).filter((s) => lowByte(s) === low).sort();
-  return hits.length ? hits[0] : null;
-}
-
 /** sysId → 模块名（平台专属优先，全局表兜底）。 */
 export function modulesForSysId(sysId, modelLabel) {
   const i = platformInfoFor(modelLabel);
@@ -905,15 +889,19 @@ export function modulesForSysId(sysId, modelLabel) {
  * 还会经 aliasEntryFor 回退到旧代地址（错代）。此函数用平台映射直接给出键。
  * 顺序与 addrEntryFor 一致：①中文菜单标签 ②模块名 ③旧表条目 sysId（兜底）。
  */
+/**
+ * ★ 2026-11-11 431 对齐（CODE-AUDIT §4.2 偏离⑧）：bind-plan 键只按
+ * ①**模块名精确查**平台映射（all-model-sysids 的精确 join）② 981 全局标签基值
+ * ③旧地址表实际命中的 sysId 兜底。删除「家族低字节跨代平移」自创推断。
+ * 顺序与 addrEntryFor 一致：模块名 → 中文标签（仅 981）→ 旧表条目 sysId。
+ */
 export function planSysIdFor(label, modules, modelLabel, entrySysId) {
-  const g = SYSTEM_LABEL_BASE[String(label ?? '')] || null;
-  // 未定案/低置信平台：不套用 981 全局值，优先用旧地址表实际命中的 sysId（不猜）。
-  if (!platformInfoFor(modelLabel)) return entrySysId || g;
-  const byLabel = g ? (platformSysIdByLowByte(g, modelLabel) || g) : null;
-  if (byLabel) return byLabel;
   for (const m of modules || []) {
     const s = sysIdForModule(m, modelLabel);
     if (s) return s;
   }
+  const info = platformInfoFor(modelLabel);
+  const g = SYSTEM_LABEL_BASE[String(label ?? '')] || null;
+  if (info && info.gen === '0x0e') return g || entrySysId || null;
   return entrySysId || null;
 }

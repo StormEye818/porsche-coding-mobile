@@ -14,7 +14,7 @@ import { parseAddrPair, overrideFor } from './src/addr.js';
 import { LinkDoctor } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
 import { autoPickVariant } from './src/variant.js';
-import { probeDecision, familyCandidates, identMatch } from './src/probe.js';
+import { familyCandidates, identMatch } from './src/probe.js';
 import { specialFunctionsFor } from './src/special-catalog.js';
 import { MockAdapter } from './src/mock-adapter.js';
 
@@ -115,9 +115,13 @@ console.log('\n[4] VIN validate / year / model');
   ok('short VIN rejected', isValidVin('WP0AA2A99FS1234') === false);
   ok('binary garbage rejected', isValidVin('xWP0AA2A99FS123') === false);
 
-  ok('year F -> 2015', decodeVinYear('WP0AA2A99FS123456') === 2015);
-  ok('year A -> 2010', decodeVinYear('WP0AA2A99AS123456') === 2010);
-  ok('year 1 -> 2001', decodeVinYear('WP0AA2A991S123456') === 2001);
+  // ★ 2026-11-11 原厂对齐：年款表按 modelId 三档基数（RE-MODELADDR §1.2 逐指令表）
+  ok('year F -> 2015（modelId>10，字母档 2001+idx）', decodeVinYear('WP0AA2A99FS123456', 13) === 2015);
+  ok('year A -> 2010（modelId>10，字母档）', decodeVinYear('WP0AA2A99AS123456', 13) === 2010);
+  ok('year 1 -> 2031（modelId>10，数字档=下轮）', decodeVinYear('WP0AA2A991S123456', 13) === 2031);
+  ok('year 1 -> 2001（modelId≤10，数字档）', decodeVinYear('WP0AA2A991S123456', 5) === 2001);
+  ok('year E -> 2014（modelId=13，981 真机口径）', decodeVinYear('WP0AB2983EK190083', 13) === 2014);
+  ok('modelId 未知 -> null（不猜）', decodeVinYear('WP0AA2A99FS123456', null) === null);
 
   // 2026-11-05：断言改为 参考诊断仪 `PorscheGetYearAndModel` 分派行为（旧手写码表=自创，已废弃）
   const g1 = guessModelFromVin('WP0AB2983EK190083', 2014);
@@ -205,40 +209,25 @@ console.log('\n[5] ECU address table');
   ok('candidates do not clash with measured ids', clash.length === 0, clash.join(','));
 }
 
-// ===== 5b. 探活判定（参考诊断仪 语义，RE-FLOWSPEC §1.6/2.3 转写）=====
-console.log('\n[5b] probeDecision 探活判定');
+// ===== 5b. 识别串原语（431 GetSubSysDataAddr 语义：strcmp/前缀≥4/strstr≥4）=====
+// ★ 2026-11-11 431 对齐：原 probeDecision（「NRC 不算候选」旧模型）已删除 ——
+//   431 DriveLinksMode_1001 只看「有没有回来」（含 NRC），身份在进模块后读帧裁决。
+//   这里只保留仍被生产代码使用的 identMatch 原语断言。
+console.log('\n[5b] identMatch 识别串原语（431 语义）');
 {
-  // ★ NRC = 该地址有 ECU 但身份不符 —— 不算候选，NRC 字节不许当识别串（真车 0x7F1 教训）
-  const nrc = probeDecision('7F2212', '', { label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'] });
-  ok('NRC 7F 22 12 → nrc-reject（不算候选）', nrc.verdict === 'nrc-reject' && nrc.ident === '', nrc.verdict);
-  const nrc2 = probeDecision('7F1A11', '7F 1A 11', { label: 'IC(仪表)' });
-  ok('NRC 7F 1A 11 → nrc-reject（NRC 字节不当识别串）', nrc2.verdict === 'nrc-reject' && !nrc2.ident, nrc2.ident);
-  // 识别串匹配模块名（strcmp/前缀/strstr）才算候选
-  const hit = probeDecision('6211024B6F6D6269', 'Kombiinstrument_A2_2', {
-    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'],
-  });
-  ok('识别串 Kombiinstrument… → accept（前缀 memcmp）', hit.verdict === 'accept', hit.verdict);
-  const hit2 = probeDecision('5A9F4B6F6D62695F49435F397831', 'Kombi_IC_9x1', {
-    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'],
-  });
-  ok('识别串 Kombi_IC_9x1 → accept（Kombi 语义前缀 ≥4）', hit2.verdict === 'accept', hit2.verdict);
-  const mis = probeDecision('5A9F42434D5F766F726E655F397831', 'BCM_vorne_9x1_Basis', {
-    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'], otherLabels: ['前端电子设备', 'BCM_vorne'],
-  });
-  ok('识别串指向邻居 BCM → other-module 排除', mis.verdict === 'other-module', mis.verdict);
-  const no = probeDecision('5A9F414141313233', 'AAA123', {
-    label: 'IC(仪表)', moduleKeys: ['Kombiinstrument'],
-  });
-  ok('正响应但识别串不匹配 → no-match（不算候选）', no.verdict === 'no-match', no.verdict);
-  ok('no-answer → no-answer', probeDecision('', '', { label: 'X' }).verdict === 'no-answer');
-  // 短键（<4）只接受全等，防任意串误命中
-  ok('短键 IC 不误命中任意含 IC 串', !identMatch('TRAFIC_LIGHT', ['IC']));
-  ok('短键全等可命中', identMatch('IC', ['IC']));
-  // ★ 候选族生成（通用 DRIVELINKS tx 表族规则）：joinState=unresolved 扫全库族并集
+  ok('全等命中（strcmp）', identMatch('Kombiinstrument_A2_2', ['Kombiinstrument']));
+  ok('前缀 ≥4 命中（memcmp）', identMatch('Kombi_IC_9x1', ['Kombiinstrument']));
+  ok('strstr ≥4 命中', identMatch('XX_Kombiinstrument_YY', ['Kombiinstrument']));
+  ok('无公共前缀/包含 → 不命中', !identMatch('BCM_vorne_9x1_Basis', ['Kombiinstrument']));
+  ok('短键（<4）只接受全等', !identMatch('TRAFIC_LIGHT', ['IC']) && identMatch('IC', ['IC']));
+  // ★ 候选族生成（通用 DRIVELINKS tx 表族规则）：app.js 已改传空 globalFamilies（431 无全库并集）
   const entry = { joinState: 'unresolved', family: [{ tx: 0x722, rx: 0x72A, recOff: 'dec.bin:0xF2DA' }] };
   const fam = familyCandidates(entry, [{ tx: 0x371, rx: 0x379 }, { tx: 0x722, rx: 0x72A }, { tx: 0x50, rx: 0x58 }]);
   ok('未决模块族=自身族∪全库族并集（去重、过滤域外）',
     fam.map((f) => f.tx.toString(16)).join(',') === '722,371', fam.map((f) => f.tx.toString(16)).join(','));
+  const fam0 = familyCandidates(entry, []);
+  ok('app.js 实际调用（globalFamilies=[]）→ 只用自身族（431 无全库并集）',
+    fam0.map((f) => f.tx.toString(16)).join(',') === '722', fam0.map((f) => f.tx.toString(16)).join(','));
   const fam2 = familyCandidates({ family: [{ tx: 0x742 }] }, [{ tx: 0x371 }]);
   ok('join 无未决模块族=自身族（不扫全库，探测轻量）',
     fam2.map((f) => f.tx.toString(16)).join(',') === '742', fam2.map((f) => f.tx.toString(16)).join(','));
@@ -436,14 +425,14 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
   {
     const appSrc = (await import('node:fs')).readFileSync('./src/app.js', 'utf8');
     const app = appSrc;
-    // 2026-11-10 撤回：blockKey→`21 01 00 01` 映射**没有 431 出处**（发现函数里也没有 21 01 常量），
-    //   且 21 01 是读数据不是探活；改用 431 实证的两帧：22 14 09 → 22 11 02（KWP 走 1A 9F）。
+    // 2026-11-11：原厂 DriveLinksMode_1001 逐指令 —— **每候选只发 1 帧** 22 14 09；
+    //   补帧 22 11 02 只发生在 n=0 链路绑定失败。已删除 2026-11-10 的多帧族链自创扩展。
     ok('A8 已撤回（不再按 blockKey 猜探针帧）',
        !/PROBE_CMDS_BY_BLOCKKEY/.test(app) && !/probeCmdsForEntry/.test(app));
-    ok('族探针链 = 431 实证帧（UDS: 221409→221102）',
+    ok('族探针链 = 原厂单帧（UDS/KWP 每候选 1 帧）',
        /function probeChainFor/.test(app)
-       && /'uds'\)\s*return \['221409', '221102'\]/.test(app)
-       && /'kwp'\)\s*return \['1A9F', '3E'\]/.test(app));
+       && /family === 'kwp'\) return \['1A9F'\]/.test(app)
+       && /return \['221409'\]/.test(app));
     // 2026-11-10：flags 解析 / 表头裁剪两个函数**从未接线**（死代码），已删除。
     // 断言改为「确实删掉且不留假对齐」——不再要求源码里存在这两个名字。
     ok('探测 flags/裁剪死代码已退休（未接线 → 删除，不冒充已对齐）',

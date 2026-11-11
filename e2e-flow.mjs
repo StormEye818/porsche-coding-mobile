@@ -234,8 +234,9 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     const code = grab('isValidVin') + '\n' + grab('decodeVinYear') + '\n' + grab('guessModelFromVin');
     const fn = new Function('tree', code + '\nreturn {isValidVin, decodeVinYear, guessModelFromVin};');
     const { guessModelFromVin, decodeVinYear } = fn(null);
-    const year = decodeVinYear(idn.vin);
-    const g = guessModelFromVin(idn.vin, year);
+    // ★ 2026-11-11 原厂对齐：年款表按 modelId 三档 → 先分派 modelId 再算年款
+    const g = guessModelFromVin(idn.vin);
+    const year = decodeVinYear(idn.vin, g && g.modelId);
     const byName = pickModelByName(g.models, idn.name);
     ok('显示=Cayman（981）（应答文本 strcmp 落定，非 Boxster）',
       !!byName && byName.name === 'Cayman（981）', byName && byName.name);
@@ -461,7 +462,8 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     const code = grab('isValidVin') + '\n' + grab('decodeVinYear') + '\n' + grab('guessModelFromVin');
     const fn = new Function('tree', code + '\nreturn {isValidVin, decodeVinYear, guessModelFromVin};');
     const { guessModelFromVin, decodeVinYear } = fn(null);
-    const g718 = guessModelFromVin(idn718.vin, decodeVinYear(idn718.vin));
+    const g718 = guessModelFromVin(idn718.vin);
+    const y718 = decodeVinYear(idn718.vin, g718 && g718.modelId);
     const byName718 = pickModelByName(g718.models, idn718.name);
     ok('718 显示=Boxster（982）（应答文本落定）', !!byName718 && byName718.name === 'Boxster（982）',
       byName718 && byName718.name);

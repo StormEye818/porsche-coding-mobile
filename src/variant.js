@@ -129,7 +129,15 @@ export function pickVariantByPart(byPart, byHwPart, want) {
  *
  * 参考诊断仪 语义：22 11 02/22 11 01 应答文本（车上识别串）与 24 键表（SYSP:0x5E42C）
  * 各键文本 strcmp —— strcmp 语义下 **显示文本 == 应答文本**；981 Cayman 应答含 "Cayman"
- * ⇒ 显示 Cayman。此处以「应答文本 ∈ 车型名」为可观测等价（目录名含 trim 词）。
+ * ⇒ 显示 Cayman。
+ *
+ * ★ 2026-11-11 原厂对齐（CODE-AUDIT §3.1 偏离②）：旧实现用 `String(m).includes(w)` 子串
+ *   命中（"Cayman" 会命中 "Cayman（981）"/"Cayman（982）" 中靠前者），与 原厂的 **strcmp
+ *   全等** 不符。现改为「规范基名全等」：去掉目录名的括号年份后缀（`（981）`/`(981)`、
+ *   ` GT4 Clubsport` 等不去的原样保留），归一化大小写/空白后做**全等**比较；不命中返回
+ *   null（调用方走多候选确认，不猜）。
+ *   ⚠️ 数据缺口：原厂的 24 键语言表（key→文本）未从包内导出，此处以车型目录基名为
+ *   可观测等价键；已在验收矩阵「未对齐（数据缺口）」单列。
  *
  * @param {string[]} models   候选车型目录名（如 ['Boxster（981）','Cayman（981）']）
  * @param {string} nameText   链上应答文本（如 "Cayman"）
@@ -138,12 +146,23 @@ export function pickVariantByPart(byPart, byHwPart, want) {
 export function pickModelByName(models, nameText) {
   const t = String(nameText || '').trim();
   if (!t || !models || !models.length) return null;
-  // 长词优先（"Cayman" 先于 "981" 这类短词），逐词命中即取首个含该词的车型
-  const words = t.split(/[^A-Za-z0-9一-龥]+/).filter((w) => w.length >= 3)
-    .sort((a, b) => b.length - a.length);
+  const base = (s) => String(s || '')
+    .replace(/[（(][^）)]*[）)]/g, '')     // 去括号年份/区间后缀：Boxster（981）→ Boxster
+    .replace(/[^A-Za-z0-9一-龥]+/g, ' ')  // 标点归一为空白
+    .trim().toUpperCase();
+  const want = base(t);
+  if (!want) return null;
+  // 全等优先：应答文本（去括号后）== 车型基名。**必须唯一** —— 981/982 的
+  // Boxster/Cayman 基名相同（`Boxster（981）`/`Boxster（982）`），多命中说明应答文本
+  // 不足以区分代际 → 返回 null 让调用方走多候选确认（不猜）。
+  const exact = models.filter((m) => base(m) === want);
+  if (exact.length === 1) return { name: exact[0], how: `应答文本「${t}」与车型基名全等` };
+  if (exact.length > 1) return null;
+  // 应答文本可能带前缀（如「14款 Cayman」）：按空白分词后**词全等**（非子串）比较基名
+  const words = want.split(/\s+/).filter((w) => w.length >= 3);
   for (const w of words) {
-    const hit = models.find((m) => String(m).includes(w));
-    if (hit) return { name: hit, how: `应答文本「${t}」命中车型名` };
+    const hits = models.filter((m) => base(m) === w);
+    if (hits.length === 1) return { name: hits[0], how: `应答文本「${t}」词「${w}」与车型基名全等` };
   }
   return null;
 }

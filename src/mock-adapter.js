@@ -23,6 +23,9 @@ export class MockAdapter extends Emitter {
    */
   constructor(opts = {}) {
     super();
+    // ★ 2026-11-11：模拟适配器标记 —— Coder.uds 的回帧 ID 硬校验（原厂FilterId 语义）
+    //   在 mock 上必须跳过：mock 不模拟 ATCRA 过滤，应答头固定 7E8，与测试 coder 的 rx 无关。
+    this.mock = true;
     this.blocks = opts.blocks || {};
     this.fail = opts.fail || {};
     this.latencyMs = opts.latencyMs ?? 40;

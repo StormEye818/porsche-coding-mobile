@@ -1,33 +1,35 @@
 /**
  * coder.js — 编码执行引擎。
  *
- * 流程（全部可审查、可回滚）：
- *   1. 备份原值      readBlock(lid, readSid) → 持久化
- *   2. 建会话        10 89（保时捷专用，不是 10 03）
+ * 写序列（原厂 RE-FLOWSPEC §4.0/§4.1：会话 → 备份 →（安全访问）→ 单项写 → 回读）：
+ *   1. 建会话        10 89（保时捷专用主会话）；UDS 流另含 10 03
+ *   2. 备份原值      readBlock(lid, readSid) → 持久化（读不到=不写）
  *   3. 安全访问      27 09 拿 seed → SeedKeyProvider 算 key → 27 0A
- *                    （协议抓包 实测：01 04 27 09 01 00，level=0x09）
- *   4. 写入          <writeSid> <lid> <payload>   ← SID 与读成对，不写死
- *   5. 回读          <readSid>  <lid>  → 比对
- *   6. 恢复（失败时）写回备份
+ *                    （抓包实测：27 09 01 00，level=0x09；KWP 为 17 00 / 17 40）
+ *   4. 写入          <writeSid> <lid> <payload>（SID/位宽均由记录自带字段决定）
+ *   5. 回读          <readSid>  <lid>  → 逐字节比对；不一致 = **记录失败**
+ *   6. 恢复（可选）  仅当 SAFETY.autoRestore=true 才写回备份（安全增强；原厂不自动回滚）
  *
- * ⚠️ 读写 SID 必须成对（请求模板 + 协议抓包 实测）：
- *      0x21 ↔ 0x3B   KWP  ReadDataByLID / WriteDataByLID
- *      0x22 ↔ 0x2E   UDS  RDBI          / WriteDataByDID
- *      0x1A ↔ 0x3B   KWP  ReadECUIdentification / WriteDataByLID
- *    写 3B 就必须读 21，跨协议混用会 NRC 或读错块。
+ * ⚠️ 读写 SID **由编码记录自带**（原厂写包装只打包 3B/2E、读包装只打包 21/22/1A）：
+ *      记录 readSid ∈ {0x21,0x22,0x1A}；writeSid ∈ {0x3B,0x2E}；LID 位宽随 SID。
+ *    同 ECU 混族是常态（981 DME 同模块 21/3B + 22/2E + 1A/2E 并存，RE-FLOWSPEC §3.1）——
+ *    **不存在**「3B 必须配 21」的配对闸；旧注释的配对表只作数据侧参考，不参与发帧。
  *
  * ⚠️ LID 来自参数条目（请求模板 / 参数表），绝不硬编码。
  *    猜 DID 会写坏别的块。
  *
- * ⚠️ seed/key 算法缺失时**拒绝写入**，绝不猜、不试、不穷举。
- *    （参考实现 路线图明确：不猜测密钥或对车穷举）
+ * ⚠️ seed/key 算法缺失时：写入路径 `securityAccessEx` **拒绝写入**（不猜、不试、不穷举）；
+ *    只读不受影响。`securityAccess` 的 needsKey:false「不发 key 继续写」仅用于恢复/兼容路径，
+ *    新写入请走 applyChange（内部用 securityAccessEx）。
  *
- * ⚠️ 每次只改一项。多项同时改出问题无法归因。
+ * ⚠️ 每次 `applyChange` 只改一项；批量路径逐项串行调用 applyChange（单项失败不中断后续，
+ *    车上可能留下部分变更 —— 属批量语义，UI 会汇总失败项）。
  *
- * ⚠️ 超时 ≠ 未执行。结果不明时先重连核验，禁止自动重试写入。
+ * ⚠️ 超时 ≠ 未执行。结果不明时先重连核验，**禁止自动重试写入**（代码不自动重试；
+ *    当前无自动重连，需人工确认后重进模块）。
  */
 
-import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange, READ_SIDS, WRITE_SIDS } from './schema.js';
+import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange, READ_SIDS, WRITE_SIDS, SAFETY } from './schema.js';
 
 // ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
 //   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
@@ -513,6 +515,10 @@ export class Coder {
     //   UDS 族模块不答 1A xx —— 注册表请求紧跟 1A9F 后插入（连续 3 miss 早停前可达）。
     //   ⚠️ KWP 族绝不发 0x22（RE-FLOWSPEC §2.3：KWP 车请求集只有 1A xx/21 xx，
     //   实车 22 全拒断点）—— 注册表 22 xx 请求只进非 KWP 链。
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §5.2 偏离②）：`skipIdent` 用于**写路径**——
+    //   原厂写序列不含识别链（会话 → 备份 → 安全访问 → 写 → 回读），且识别链会清空
+    //   lastIdent/lastPartNo 等变体证据。进模块路径仍走完整识别链（默认 false）。
+    if (!opts.skipIdent) {
     const identChain = ['1A9F',
       ...(this.family === 'kwp' ? [] : (this.identRequests || [])).filter((x) => x && x !== '1A9F'),
       '1A87', '1A84', '1A91', '1A92', '1A93', '1A94', '1A95', '1A97', '1A9A'];
@@ -546,8 +552,14 @@ export class Coder {
           }
           // ★ 2026-11-05：件号单独留存（参考诊断仪 同款变体落定键）。
           //   1A 84=零件号（会话库 PARTNUMBER 一一对应）；1A 92 硬件号、1A 91 零件图号做收窄。
-          if (cmd === '1A84') this.lastPartNo = txtRaw;
-          else if (!this.lastPartNo && (cmd === '1A87' || cmd === '1A94')) this.lastPartNo = txtRaw;  // 兜底采（保留 1A84 优先）
+          // ★ 2026-11-11 原厂对齐（CODE-AUDIT §3.1 偏离③）：件号按 **0x20 分词**取单词 token
+          //   （checkPartNumber @ACTF:0x4e00c 分词语义、byPart 字节精确全等查）。
+          //   旧实现把 1A87/1A94 的**整串** txtRaw 赋给 lastPartNo，多 token 串在 byPart
+          //   全等查里几乎必然不命中 → 变体落定退化。
+          const partTok = String(txtRaw).split(/ +/).filter((x) => x.length >= 6)[0]
+            || String(txtRaw).split(/ +/)[0] || '';
+          if (cmd === '1A84') this.lastPartNo = partTok;
+          else if (!this.lastPartNo && (cmd === '1A87' || cmd === '1A94')) this.lastPartNo = partTok;  // 兜底采（保留 1A84 优先）
           if (cmd === '1A92') this.lastHwPart = txtRaw;
           else if (cmd === '1A91' && !this.lastHwPart) this.lastHwPart = txtRaw;
           else if (cmd === '1A94') this.lastSwNo = txtRaw;
@@ -571,6 +583,7 @@ export class Coder {
     //   现在按实际应答形态记：62 → 0x22；5A → 0x1A。
     if (sawUdsIdent) this.lastReadSid = 0x22;
     else if (identParts.length) this.lastReadSid = 0x1A;
+    }   // ← if (!opts.skipIdent) 识别链结束（写路径不重跑识别）
     // ④ 目标会话（UDS 流）—— **硬要求**，失败才报错。
     //   KWP 流/未证家族已在开头直接建会话，此处不再重复发。
     if (family === 'uds') {
@@ -602,15 +615,16 @@ export class Coder {
       .slice(skip)
       .filter((c) => c >= 0x20 && c < 0x7f)
       .map((c) => String.fromCharCode(c)).join('').replace(/[\u0000\u0020]+$/g, '').trim();
-    // VIN 形态：ISO 字符集 11-17 位 + **必含字母** + 排除零件号形态（9+10 位数字串）——
-    // 串号/零填充（如 "000000000000"）不当 VIN（旧 autoSearch 同款启发式，2026-11-08 回归修复）。
-    const VIN_RE = /^[A-HJ-NPR-Z0-9]{11,17}$/;
-    const looksVin = (t) => VIN_RE.test(t) && /[A-Z]/.test(t) && !/^9[0-9]{10}$/.test(t);
-    // ★ 参考诊断仪留存键（PorscheReadVehicleVin 分支实证：应答被 memcpy 到 param_2/文本库）
-    const RETAIN = new Set(['22F190', '2151', '1A90']);
-    // ★ 防御层（自创 · 矩阵标注「防御层(自创)·不计入对齐」）：件号形态（纯数字 11-12 位）
-    //   永不作显示名。参考诊断仪侧同效=分支丢弃应答（见上），此处冗余兜底防解析层漏网。
-    const looksLikePartNo = (t) => /^[0-9]{11,12}$/.test(String(t || '').trim());
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §2.1 偏离①）：删除自创的 looksVin / looksLikePartNo
+    //   形态防御层。原厂（PorscheReadVehicleVin @SYSP:0x2a4b4 逐指令）对留存键按
+    //   **固定偏移 + 固定长度**取值，不做 VIN 形态猜测：
+    //     22 F1 90 (+2, UDS) → 17 字节 VIN（写 0x11 到 param_2 并 Strcpy 到文本库）
+    //     1A 90    (+1, KWP) → 17 字节 VIN
+    //     21 51    (+3)      → 车名（strcmp 用）
+    //   其余键（10 03 / 1A 87 / 1A 9B / 21 50 / 1A 9A）应答发后即清（fire-and-forget）。
+    const VIN_KEYS = new Set(['22F190', '1A90']);
+    const NAME_KEYS = new Set(['221102', '221101', '2151']);
+    const RETAIN = new Set([...VIN_KEYS, ...NAME_KEYS]);
     const step = async (req, { retain = false } = {}) => {
       try {
         const r = await this.uds(req, 3000, { allowEmpty: true });
@@ -622,21 +636,28 @@ export class Coder {
         out.steps.push(`${req} → ${(body || []).map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`
           + (retain ? '' : '（fire-and-forget，应答不取）'));
         if (!retain || !txt) return;
-        if (!out.vin && looksVin(txt)) {
-          out.vin = txt.slice(0, 17); out.vinSrc = req;
-        }
-        if (!out.name && !looksVin(txt) && !looksLikePartNo(txt)) {
-          out.name = txt.slice(0, 32); out.nameSrc = req;
+        // 原厂固定长度取值：VIN 键取 **原始字节** 17 字节（memcpy 语义，不做形态过滤）；
+        //   车名键取可打印串（原厂 strcmp 用）。
+        // ★ 2026-11-11 二次审计修：旧写法取 `asciiOf`（已过滤非打印并 trim）后再 slice，
+        //   会把 VIN 中的分隔字节吃掉导致长度不足；现按 body 原始偏移取。
+        const val = VIN_KEYS.has(req)
+          ? Array.from(body.slice(skip, skip + 17))
+            .filter((c) => c !== 0).map((c) => String.fromCharCode(c)).join('')
+          : txt.slice(0, 32);
+        if (!out.vin && VIN_KEYS.has(req) && val.length >= 11) {
+          out.vin = val; out.vinSrc = req;
+        } else if (!out.name && NAME_KEYS.has(req) && val !== out.vin) {
+          // 车名键：若与已取 VIN 同串（部分 ECU 对 22 11 02 回 VIN）则不重复记名
+          out.name = val; out.nameSrc = req;
         }
       } catch (e) {
         out.steps.push(`${req} → ${e.message}`);
       }
     };
-    // ① 主/备双请求（备仅在主失败/NRC 时发）
+    // ① 主/备双请求（PorscheReadVinAndGetVehicleID @SYSP:0x29fb8：0xff001102 / 0xff001101）
     await step('221102', { retain: true });
     if (!out.name) await step('221101', { retain: true });
-    // ② 备选链（SYSP:0x56a66 模板序）：UDS 流全表；KWP 流/未证家族走 KWP 段
-    //   （§2.3「KWP 车 0x22 全拒时走 1A xx/21 xx 段」——未证家族保守取 KWP 段零错）
+    // ② 备选链（PorscheReadVehicleVin @SYSP:0x56a66 模板序；UDS 流全表，KWP 段零 0x22）
     const chain = family === 'uds'
       ? ['1003', '22F190', '1A90', '1A87', '1A9B', '2150', '2151', '1A9A']
       : ['1A90', '1A87', '1A9B', '2150', '2151', '1A9A'];
@@ -682,6 +703,27 @@ export class Coder {
    * @param {boolean} allowEmpty  允许空响应（如 TesterPresent）
    */
   async uds(payloadHex, timeoutMs = 6000, { allowEmpty = false, pendingWait = false } = {}) {
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑨）：回帧 ID 硬校验。
+    //   原厂的链路层用 SetAddress/UpdateCanFilterId 做 CAN 过滤，**只可能收到该 ECU 的帧**；
+    //   ELM 的 ATCRA 在 EA 通道可能不生效（真车探 0x7F1 回帧头 7E8 即此）。
+    //   这里按回帧 ID 比对期望 rx，等价于 原厂的 FilterId 语义 —— 不符即判死，
+    //   避免把别的 ECU 的块读出来再写回。mock 适配器不模拟 ATCRA 过滤 → 跳过校验。
+    const isMock = !!(this.elm && (this.elm.mock || this.elm.port?.mock));
+    const checkRx = (raw) => {
+      if (isMock || this.rx == null || !raw) return;
+      const ids = frameIdsOf(raw);
+      if (!ids.length) return;                        // 适配器不带 ID（ATH0）：无法判，交给解析层
+      if (ids.includes(this.rx)) return;
+      // ★ 二次审计修：只有「单一回帧且 ID 不符」才判死（明确串线）；多 ID 混流说明
+      //   ATCRA 没生效（EA 通道实测），只留痕不误杀 —— 否则整条读写链会全灭。
+      if (ids.length === 1) {
+        throw new CodingError(
+          `回帧 ID 0x${ids[0].toString(16).toUpperCase()} ≠ 期望 0x${this.rx.toString(16).toUpperCase()}`
+          + `（应答方不是该 ECU，按原厂 FilterId 语义丢弃）`);
+      }
+      this._say(`  (回帧 ID 混流 ${ids.map((x) => '0x' + x.toString(16).toUpperCase()).join('/')}`
+        + `，ATCRA 可能未生效；按期望 0x${this.rx.toString(16).toUpperCase()} 继续解析)`);
+    };
     // ★ NRC `7F xx 78`（responsePending）= **续等**直至正响应或超时（RE-FLOWSPEC §5 /
     //   Set7F78Ctrl 语义，证据锚=读写包装）；其余 NRC 单发即败（不重试不换 SID，错误上浮）。
     //   重发帧与原帧逐字节一致（同 payloadHex）。
@@ -690,6 +732,7 @@ export class Coder {
     const deadline = Date.now() + Math.max(1000, timeoutMs);
     for (;;) {
     const raw = (await this.elm.cmd(payloadHex, Math.min(timeoutMs, Math.max(500, deadline - Date.now()))) || '').trim();
+    checkRx(raw);
     // 调试：原始收发都记下来
     this._trace(`  >> ${payloadHex}`);
     this._trace(`  << ${raw || '(空)'}`);
@@ -839,10 +882,10 @@ export class Coder {
     if (!kArr.length) {
       const noAlgo = this.seedKeyProvider && this.seedKeyProvider.needsKey === false;
       if (noAlgo) {
-        // ★ 2026-11-05 对齐 参考诊断仪：原厂 该 mode 无 case = **不发 key**，
+        // ★ 2026-11-05 对齐 参考诊断仪：原厂该 mode 无 case = **不发 key**，
         //   直接继续写入流程（备份→写→回读），结果由 ECU 裁决 —— 不发 key 不会
         //   触发 0x35/0x36 安全计数（那只有发错 key 才会）。此处不再拒写。
-        this._say('  原厂 无 case 不发 key —— 继续写入（结果由 ECU 裁决）', 'warn');
+        this._say('  原厂无 case 不发 key —— 继续写入（结果由 ECU 裁决）', 'warn');
         return true;
       }
       throw new CodingError('算法返回空 key —— 拒绝发送（会吃 NRC 0x35）');
@@ -934,11 +977,11 @@ export class Coder {
         `${p.name} 无读服务（记录 readSid=0x${Number(readSidRaw).toString(16)}，` +
         `表内无回落读服务）：参考诊断仪 读不到=不写，禁止写入。`);
     }
-    // 值域闸门（API 层也要挡）：UI 会查，但直接调 applyChange 的路径不能少；
-    // injectField 对越界值是 `& mask` 静默截断，截断后写进车里同样危险。
-    if (!fieldInRange(p, value)) {
+    // ★ 2026-11-11 原厂对齐：值域闸门改为 opt-in（SAFETY.range，默认关）。
+    //   原厂写政策无值域门禁（RE-FLOWSPEC §4.0/§4.1），默认路径不拦。
+    if (SAFETY.range && !fieldInRange(p, value)) {
       throw new CodingError(
-        `${p.name} 的目标值 ${value} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}，拒绝写入。`);
+        `${p.name} 的目标值 ${value} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}，拒绝写入（安全增强已开启）。`);
     }
 
     this._say(`\n=== ${p.name} → ${decodeValue(p, value)} ===`);
@@ -951,8 +994,12 @@ export class Coder {
     //   依赖「进模块时碰巧还在 10 89」这个隐含状态；一旦中途被 10 03/其他模块切走，
     //   备份读会拿 NRC，写入直接中止（或更糟：读到别的会话下的默认值）。
     //   现按 参考诊断仪 的写序列：**会话 → 读备份 → 安全访问 → 写 → 回读**。
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §5.2 偏离②）：写序列**不重跑识别链**。
+    //   原厂写序列（RE-FLOWSPEC §4.0/§4.1）只有「会话 → 备份 →（安全访问）→ 单项写 → 回读」，
+    //   没有 1A 9F/87/84/91/92/93/94/95/97/9A 十帧识别。旧实现每次写都经 enterSession
+    //   重跑整套识别链（最多 +9s，还会清空 lastIdent/lastPartNo 等变体证据）。
     this._say('  进会话 …');
-    await this.enterSession(session);
+    await this.enterSession(session, { skipIdent: true });
     const before = await this.readBlock(lid, readSid);
     this.backups.push({
       id: p.id, lid, readSid, writeSid, session, time: new Date().toISOString(),
@@ -979,7 +1026,8 @@ export class Coder {
     this._say(`  变更: ${diffs.map((d) => `byte${d.byte}: 0x${d.from.toString(16)}→0x${d.to.toString(16)}`).join(', ') || '（无变化）'}`);
     const span = fieldByteSpan(p);          // [lo, hi] 闭区间
     const outOfRange = diffs.filter((d) => d.byte < span[0] || d.byte > span[1]);
-    if (outOfRange.length) {
+    // ★ 2026-11-11 原厂对齐：变更越界检查是安全增强（原厂无），默认关。
+    if (SAFETY.span && outOfRange.length) {
       this._say(`  ⚠️ 变更越出字段占用字节 [${span[0]}..${span[1]}]：` +
                 `${outOfRange.map((d) => d.byte).join(',')} —— 中止`);
       throw new CodingError(`变更扩散到字段外字节，为安全中止`);
@@ -1025,7 +1073,16 @@ export class Coder {
     const match = readback.length === after.length &&
       readback.every((b, i) => b === after[i]);
     if (!match) {
-      this._say('  ❌ 回读不一致，尝试恢复备份');
+      // ★ 2026-11-11 原厂对齐（CODE-AUDIT §5.2 偏离③）：原厂的回读不一致 = **记录失败**，
+      //   不自动回滚（RE-FLOWSPEC §4.7「回读=重读该 LID 整块与写入值比对，不一致=记录失败」）。
+      //   自动 _restore 是自创安全增强，默认关；需要时 setSafety({autoRestore:true})。
+      if (!SAFETY.autoRestore) {
+        throw new CodingError(
+          `回读不一致（原厂语义：记录失败，不自动回滚）`
+          + `（期望 ${after.map((x) => x.toString(16).padStart(2, '0')).join('')}，`
+          + `实读 ${readback.map((x) => x.toString(16).padStart(2, '0')).join('')}）`);
+      }
+      this._say('  ❌ 回读不一致，尝试恢复备份（安全增强已开启）');
       // ⚠️ 恢复失败不能把「回读不一致」这个**首要故障**顶掉（2026-10-18 审计）：
       //    此前 _restore 自己抛错（多数是解锁失败）会替换掉原异常，
       //    用户只看到「恢复后回读与备份不一致」，看不出真正的问题是写入没生效。
@@ -1331,7 +1388,7 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   const k = key ?? this.seedKeyProvider.calc(seed, level);
   const kArr = Array.from(k instanceof Uint8Array ? k : k);
   // ⚠️ 空 key 必须区分两种成因（2026-10-18）：
-  //    A) `needsKey:false` —— 该 mode 在原厂 seed/key 表里**没有 case**（不需密钥，DRIVELINKS 342/980 条）。
+  //    A) `needsKey:false` —— 该 mode 在原厂seed/key 表里**没有 case**（不需密钥，DRIVELINKS 342/980 条）。
   //       ECU 若仍回非零 seed，说明我们对模块的判断不对，**拒写**，但报错要指向「模块/会话/寻址」，
   //       而不是让人去查算法。
   //    B) 算法真返回空 —— 算法实现有问题，拒写并指向算法。
@@ -1339,7 +1396,7 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   if (!kArr.length) {
     const noAlgo = this.seedKeyProvider && this.seedKeyProvider.needsKey === false;
     throw new CodingError(noAlgo
-      ? `该模块（mode 0x${(this.seedKeyProvider.mode ?? 0).toString(16)}）在原厂 seed/key 表里没有对应的算法分支` +
+      ? `该模块（mode 0x${(this.seedKeyProvider.mode ?? 0).toString(16)}）在原厂seed/key 表里没有对应的算法分支` +
         `（原本不需要密钥），但 ECU 仍返回了非零 seed —— 拒绝猜测 key。` +
         `请先核对：模块选对了吗 / 会话对吗 / 是不是串到了别的 ECU。`
       : '算法返回空 key —— 拒绝发送（会吃 NRC 0x35）');
@@ -1399,9 +1456,10 @@ export const SESSION_FOR_SERVICE = {
 };
 
 /** 按服务类型进对会话 */
-Coder.prototype.enterSessionFor = async function (kind) {
+Coder.prototype.enterSessionFor = async function (kind, opts = {}) {
   const sess = SESSION_FOR_SERVICE[kind] ?? 0x89;
-  return this.enterSession(sess);
+  // ★ 2026-11-11 原厂对齐：opts 透传（写/恢复路径传 {skipIdent:true}，不重跑识别链）
+  return this.enterSession(sess, opts);
 };
 
 // ═══════════════════════════════════════════════════════════════

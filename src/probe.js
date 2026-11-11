@@ -1,18 +1,23 @@
 /**
- * 探测判定 + 候选族生成（2026-11-09，RE-ICADDR-20261109）。
+ * 识别串原语 + 候选族生成。
  *
- * 探活判定转写自 参考诊断仪（RE-FLOWSPEC §1.6/2.3）：
- *   - 接受条件 = **识别串匹配模块名**（strcmp / 前缀 memcmp / strstr —— GetSubSysDataAddr
- *     @FILE.so:0x15c18 名字注册表原语；前缀 memcmp 0x1d9808、strstr 0x1d96d4）才算候选；
- *   - **NRC 应答 = 该地址有 ECU 但身份不符，不算候选**（真车 0x7F1 `7F 22 12` 教训：
- *     NRC 字节不许当识别串、不许当存活候选）；
- *   - 无应答 = 候选死，换下一候选（§1.6 原文）。
+ * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑤）：本文件原来的 `probeDecision`
+ *   （「NRC 不算候选 / 识别串匹配才算候选」）是 2026-11-09 RE-ICADDR 阶段的旧模型，
+ *   已被 2026-11-10 `RE-DISCOVERY-20261110 §1` 的 **DriveLinksMode_1001 @LINK:0x18f00
+ *   逐指令** 推翻并删除：
+ *     · 原厂发现阶段对每个候选只发 1 帧 `22 14 09`，**只看有没有回来**（含 NRC = 该地址
+ *       有 ECU 应答），不看识别串；
+ *     · 身份裁决在**进模块后的真实读帧**（首参数 DID/LID）+ `GetSubSysDataAddr` 名字表。
+ *   现保留的 `identMatch` 只服务于「进模块后身份文本匹配」（430 原语：strcmp /
+ *   前缀 memcmp≥4 / strstr≥4；来源 GetSubSysDataAddr @FILE.so:0x15c18）。
  *
  * 候选族生成（通用规则，零特判）：
  *   - 主候选 = 表行序（ecu-addresses cands，GetDriveLinksAddress 行序）；
  *   - 兜底族 = DRIVELINKS 14B 记录族（GetDriveLinksData FILE:0x18b74 mode 0x1001/0x1002
- *     循环 @0x18d9a 的记录 u16，见 export-ecu-address.py extract_families）；
- *   - joinState='unresolved' 的模块（无精确表A 行）兜底扫**全库族并集** —— 真车自证。
+ *     循环 @0x18d9a 的记录 u16，见 export-ecu-address.py extract_families）。
+ *   ⚠️ 2026-11-11：`joinState='unresolved'` 的「全库族并集」兜底已由 app.js 删除
+ *     （2026-11-10 真车 IC 事故根因：扫全库族会拿车门/PDC 地址扫 32 个必然全灭）。
+ *     本函数仍接受 globalFamilies 参数，但 app.js 传空数组。
  */
 
 /** 归一化：大写 + 去非字母数字（与 autoPickVariant 同口径）。 */
@@ -50,36 +55,14 @@ export function identMatch(text, keys) {
  * @param {object} opts     { label, variantNames, moduleKeys, modRecords, autoPick, otherLabels }
  * @returns {{verdict:'accept'|'nrc-reject'|'other-module'|'no-match'|'no-answer', ident?:string}}
  */
-export function probeDecision(bodyHex, text, opts = {}) {
-  const body = String(bodyHex || '').toUpperCase();
-  const T = String(text || '');
-  if (!body && !T) return { verdict: 'no-answer' };
-  if (body.startsWith('7F')) {
-    // ★ NRC = 有 ECU 但身份不符（或服务不支持）—— 绝不算候选，NRC 字节绝不当识别串。
-    return { verdict: 'nrc-reject', ident: '' };
-  }
-  const positive = /^(5A|62|61|21)/.test(body) || body.startsWith('4F') || !!T;
-  if (!positive) return { verdict: 'no-answer' };
-
-  // ① 识别串匹配模块名（strcmp/前缀/strstr 组合）→ accept
-  const keys = [opts.label, ...(opts.moduleKeys || []), ...(opts.variantNames || [])].filter(Boolean);
-  let hit = identMatch(T, keys);
-  if (!hit && Array.isArray(opts.modRecords) && typeof opts.autoPick === 'function') {
-    for (const mi of opts.modRecords) {
-      const r = opts.autoPick(mi, T);
-      if (r && String(r.how || '').includes('命中')) { hit = true; break; }
-    }
-  }
-  if (hit) return { verdict: 'accept', ident: T.slice(0, 32) };
-
-  // ② 文本指向其他模块家族 → 排除（不把邻居 ECU 当目标）
-  const N = normIdent(T);
-  const others = (opts.otherLabels || []).filter((L) => L && normIdent(L).length >= 3);
-  if (others.some((L) => N.includes(normIdent(L)) || normIdent(L).includes(N))) {
-    return { verdict: 'other-module', ident: T.slice(0, 32) };
-  }
-  return { verdict: 'no-match', ident: T.slice(0, 32) };
-}
+/**
+ * ★ 2026-11-11 原厂对齐：`probeDecision` 已删除（2026-11-09 旧模型，零调用）。
+ *   - 旧语义「NRC→nrc-reject、识别串不匹配→no-match，都不算候选」与 原厂
+ *     `DriveLinksMode_1001` 的「有回来即绑定（含 NRC）」冲突；
+ *   - 身份裁决位置也不同：原厂在进模块后的真实读帧，而旧模型在发现阶段。
+ *   发现阶段的判定现在只有 app.js `probeAddressFor.tryAddr` 一处（回帧 ID + body）。
+ *   如需按识别串拒候选（安全增强），请用 `identMatch` 显式实现，不要恢复本函数。
+ */
 
 /**
  * 候选族生成（通用，DRIVELINKS tx 表族规则，零特判）：

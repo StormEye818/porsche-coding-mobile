@@ -13,9 +13,10 @@
  *   read-confirmed   —— 实车读回验证过
  *   write-confirmed  —— 实车写入+回读验证过
  *
- * ⚠️ 当前政策（2026-10-18）：`WRITE_ENABLED=true`，`level` 是**验证状态标注**而不是硬门禁；
- *    `source-defined` 仍允许写，但 UI 会显示“仅源定义”，且必须走 canWrite/值域/回读校验。
- *    想恢复“只有 write-confirmed 才能写”的严格模式，把 `WRITE_ENABLED` 改 false。
+ * ⚠️ 当前政策（2026-11-11 原厂对齐）：默认按原厂行为 —— `level` 只是**验证状态标注**，
+ *    不是写入门禁；值域/地址态/自动回滚等保护全部收敛到下方 `SAFETY` 开关（默认全关）。
+ *    需要严格模式时：`setSafety({ level:true, range:true, addrState:true, autoRestore:true })`
+ *    （`level:true` 且 `WRITE_ENABLED=false` 才要求 write-confirmed）。
  */
 
 export const LEVELS = ['source-defined', 'read-confirmed', 'write-confirmed'];
@@ -241,25 +242,39 @@ export function fieldInRange(p, v) {
   return true;
 }
 
-/** 能否写入（等级 + 风险） */
 /**
- * 能否写入。
+ * ★ 2026-11-11 原厂对齐（CODE-AUDIT §5.2 偏离①）：**安全增强开关，默认全关 = 原厂原行为**。
  *
- * ⚠️ 策略变更（对齐参考诊断仪）：对照表数据已离线全量核验
- *   （byte/bit 锚点对照、LID/SID 99.9% 配对、口令算法逐位校验、请求格式实测），
- *   `level` 改为**验证状态标注**，不再作为写入门禁。
- *   真正拦住错误写入的是 coder.js 里的 参考诊断仪 同款结构性闸门：
- *     只读项（记录无 3B/2E 写服务） / 缺 LID / 变更越界 / 回读不一致。
- *   ⚠️ 读写 SID 配对表已拆（2026-11-08 覆盖审计②）：参考诊断仪 直接用记录自带
- *   readSid/writeSid 发帧，1a/2e 等混族记录按记录写（RE-FLOWSPEC §3.1）。
+ * 原厂侧（RE-FLOWSPEC §4.0/§4.1 逐指令）的写政策是「备份 →（安全访问）→ 单项写 → 回读」，
+ * **没有**值域门禁、没有 level/地址态拒写、没有回读不一致自动回滚（不一致 = 记录失败）。
+ * 这些能力是本项目为防止写坏车加的自创保护，现全部改为显式 opt-in：
+ *   默认 `false` → 运行时逐帧、逐判定与 原厂一致（验收矩阵「有意偏离 原厂」单列说明）。
+ *   打开对应开关才会启用保护（测试/高风险场景可显式 `setSafety({range:true,...})`）。
  *
- * 想恢复严格门禁：把 WRITE_ENABLED 改 false，会回到「必须 write-confirmed 才能写」。
+ * 注意：`hasWriteService`（记录只认 3B/2E）与 LID 位宽校验**不在此列** ——
+ *   它们有 原厂证据（写包装只打包 3B/2E；标识符位宽按记录），属于对齐本身，永远生效。
  */
+export const SAFETY = {
+  range: false,        // 值域门禁（fieldInRange）—— 原厂无
+  level: false,        // level/WRITE_ENABLED 严格门禁 —— 原厂无
+  addrState: false,    // 地址态拒写（addrSafeForAction）—— 原厂无
+  autoRestore: false,  // 回读不一致自动回滚 —— 原厂只记失败
+  span: false,         // 变更字节越界检查 —— 原厂无
+};
+
+/** 显式开启/关闭安全增强（测试与高风险场景用；默认不调用 = 原厂行为）。 */
+export function setSafety(overrides = {}) {
+  Object.assign(SAFETY, overrides);
+  return { ...SAFETY };
+}
+
+/** 严格门禁开关：只在 `SAFETY.level=true` 时参与判定（默认不参与 = 原厂行为）。 */
 export const WRITE_ENABLED = true;
 
 export function canWrite(p) {
-  if (!hasWriteService(p)) return false;          // 只读项（记录无 3B/2E 写服务）永远不给写
-  if (p.lid == null && p.did == null) return false; // 无 LID 不能写
+  if (!hasWriteService(p)) return false;            // 原厂写包装只打包 3B/2E —— 对齐，永远生效
+  if (p.lid == null && p.did == null) return false; // 无 LID 无法构帧 —— 对齐，永远生效
+  if (!SAFETY.level) return true;                   // 原厂：有写服务 + 有 LID 即可写（无 level 门禁）
   if (!WRITE_ENABLED) return p.level === 'write-confirmed';
   return true;
 }

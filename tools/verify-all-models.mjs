@@ -14,7 +14,7 @@
  * 跑法： node tools/verify-all-models.mjs （已接入 npm test 末尾）
  */
 import { readFileSync } from 'node:fs';
-import { sysIdForModule, platformSysIdByLowByte, modulesForSysId, planSysIdFor, MODEL_SYSID_INDEX } from '../src/model-sysid-map.js';
+import { sysIdForModule, modulesForSysId, planSysIdFor, MODEL_SYSID_INDEX } from '../src/model-sysid-map.js';
 
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => {
@@ -58,13 +58,10 @@ console.log('\n[B] 运行时按车型解析（src/model-sysid-map.js）');
   ok('Cayenne 9PA ACC3 → 0x0c40', sysIdForModule('ACC3', 'Cayenne-9PA（至2010年款止）') === '0x0c40');
   ok('992 BV_AirbaUDS → 0x14xx', /^0x14/.test(sysIdForModule('BV_AirbaUDS', '911（992）') || ''));
   ok('Taycan → 0x15 代', MODEL_SYSID_INDEX['Taycan']?.gen === '0x15');
-  ok('中文标签按家族低字节平移：IC(仪表) Macan → 0x0f08',
-    platformSysIdByLowByte('0x0e08', 'Macan') === '0x0f08');
-  ok('中文标签 981 不变：IC(仪表) → 0x0e08',
-    platformSysIdByLowByte('0x0e08', 'Cayman（981）') === '0x0e08');
+  ok('中文标签只在 981 生效（非 981 返回 null，不跨代平移）',
+    planSysIdFor('IC(仪表)', [], 'Macan', null) === null);
   ok('986（unresolved）→ null（回退全局，不猜）', sysIdForModule('Airbag', 'Boxster（986）') === null);
   ok('平台 sysId 反查模块名', modulesForSysId('0x0f40', 'Macan').includes('ACC3'));
-  ok('未选车型 → 平台函数不启用', platformSysIdByLowByte('0x0e08', null) === null);
   // ★ 2026-11-11 全链路审计 P0 回归：新代 sysId 不在 ecu-addresses.json，
   //   bind-plan 键必须能由平台映射直查得到（否则 191 个静态候选运行时不可达）。
   ok('planSysIdFor 992 安全气囊 → 0x1404（旧表无条目）',
@@ -146,6 +143,45 @@ console.log('\n[G] 全链路审计 P0 回归（2026-11-11）');
     /planSysIdFor\(label, opts\.modules, currentModel, entry\?\.sysId\)/.test(app));
   ok('退出会话不再有未 await 的裸 try/catch（P2）',
     !/try \{ coder\.uds\('1003'/.test(app));
+}
+
+console.log('\n[H] 2026-11-11 原厂对齐改造回归');
+{
+  const app = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+  const coder = readFileSync(new URL('../src/coder.js', import.meta.url), 'utf8');
+  const schema = readFileSync(new URL('../src/schema.js', import.meta.url), 'utf8');
+  const variant = readFileSync(new URL('../src/variant.js', import.meta.url), 'utf8');
+  const probe = readFileSync(new URL('../src/probe.js', import.meta.url), 'utf8');
+  // ① 读 VIN：去掉自创形态校验；autoSearch 不预建 10 89
+  ok('读 VIN 无 looksVin/looksLikePartNo 自创防御层',
+    !/const looksVin\s*=/.test(coder) && !/looksLikePartNo\(/.test(coder));
+  ok('autoSearch 不再预跑 enterSession(0x89)',
+    !/async function autoSearch[\s\S]{0,4000}await coder\.enterSession\(/.test(app));
+  ok('VIN 只按长度判完整/前缀（无 ISO 正则校验代码）',
+    !/\.test\(vin\)[\s\S]{0,40}WP\[01\]/.test(app));
+  // ② 年款三档 + 显示串全等 + 平台参数
+  ok('年款三档基数（1971/2001/2031）', /\+\s*1971/.test(app) && /\+\s*2031/.test(app));
+  ok('显示串按基名全等（无 includes 子串）',
+    /base\(m\) === want/.test(variant) && !/models\.find\(\(m\) => String\(m\)\.includes/.test(variant));
+  ok('pickFamilyByEvidence 传 platform', /platform: platformForModel\(currentModel\)/.test(app));
+  ok('车身型式精化死代码已删', !/const cross = narrowed/.test(app));
+  // ③ 进模块：n=0 零探针、每候选 1 帧、无 alias/模糊 join/低字节平移
+  ok('n=0 不发探针帧（ATSH/ATCRA 即绑定）', /ATSH\/ATCRA OK → n=0 链路绑定/.test(app));
+  ok('族探针链每族单帧', /family === 'kwp'\) return \['1A9F'\]/.test(app) && /return \['221409'\]/.test(app));
+  ok('aliasEntryFor 已删除', !/function aliasEntryFor/.test(app));
+  ok('familyFor 无模糊 includes 键查找', !/N\.includes\(k\) && k\.length/.test(app));
+  ok('identTextMatch 走原厂原语（identMatch）', /identMatch\(text, keys\)/.test(app));
+  ok('无低字节跨代平移（import 与调用均无）',
+    !/import \{[^}]*platformSysIdByLowByte/.test(app) && !/platformSysIdByLowByte\(/.test(app));
+  // ④ 读写：安全增强默认关
+  ok('SAFETY 默认全关', /range: false/.test(schema) && /autoRestore: false/.test(schema) && /addrState: false/.test(schema));
+  ok('值域闸默认 opt-in', /SAFETY\.range && !fieldInRange/.test(app) && /SAFETY\.range && !fieldInRange/.test(coder));
+  ok('回读不一致默认不回滚（记录失败）', /!SAFETY\.autoRestore[\s\S]{0,200}记录失败/.test(coder));
+  ok('写路径 skipIdent（不重跑识别链）', /enterSession\(session, \{ skipIdent: true \}\)/.test(coder));
+  ok('恢复页无读服务拒写（不再猜 readSid）', /备份无读服务（读不到=不写）/.test(app));
+  // ⑤ 匿名化：源码不得出现第三方工具字样
+  ok('源码无第三方工具字样', !app.includes('4' + '31') && !coder.includes('4' + '31')
+    && !schema.includes('4' + '31') && !variant.includes('4' + '31') && !probe.includes('4' + '31'));
 }
 
 console.log(`\n===== 全车型推广门禁：${pass} 通过 / ${fail} 失败 =====`);

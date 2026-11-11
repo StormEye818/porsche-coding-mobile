@@ -13,11 +13,11 @@
  * 连接与适配器通信参考同门工具；车上的读写走本项目协议层（coder.js）。
  */
 import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1, parseRespAuto, frameIdsOf, atCmdOk, familyOfReadSid, familyOfItems } from './coder.js';
-import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange, hasReadService, hasWriteService, isReadOnlyItem, readOnlyReason, resolveBlockReadSid, WRITE_SIDS, READ_SIDS } from './schema.js';
+import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange, hasReadService, hasWriteService, isReadOnlyItem, readOnlyReason, resolveBlockReadSid, WRITE_SIDS, READ_SIDS, SAFETY } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
-import { sysIdForModule, platformSysIdByLowByte, modulesForSysId, planSysIdFor } from './model-sysid-map.js';
+import { sysIdForModule, modulesForSysId, planSysIdFor, platformInfoFor } from './model-sysid-map.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -25,7 +25,7 @@ import { sysIdForModule, platformSysIdByLowByte, modulesForSysId, planSysIdFor }
 import { makeResolverProvider, SeedKeyUnresolvedError, resolveKeyByName, resolveKey } from './seedkey-resolver.js';
 import { nonAsapForName, nonAsapForModule, platformForModel } from './seedkey-nonasap.js';
 import { variantForName, NAME_TO_VARIANT } from './seedkey-name-map.js';
-/** DRIVELINKS：ECU_ID → 条目数组（原厂 权威）。
+/** DRIVELINKS：ECU_ID → 条目数组（原厂权威）。
  *  ★ 2026-11-09 mode 收口：条目 = {t,bk,recOff,recOffsetLo,recOffsetHi,mode,family,session[,state]}；
  *    mode/family/session = 记录 u32 复合真值（mode=低字节=securityModel mode）；
  *    recOffsetLo/Hi = 记录偏移拆字节（旧 m/l 改名，禁当 mode/LID 用）。 */
@@ -202,8 +202,16 @@ const MODULE_TO_ECUID = MODULE_TO_ECUID_MAP;
  *   - currentModel 未选（null / 测试环境）时同样回退全局表，保持确定性。
  */
 const sysIdForLabel = (label) => {
+  // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑧）：只做**精确键**。
+  //   删除「家族低字节跨代平移」（platformSysIdByLowByte）—— 那是自创推断
+  //   （IC 0x0E08 → Macan 0x0F08 靠低字节猜），原厂无此语义。
+  //   平台专属 sysId 只按**模块名精确查**（sysIdForMod，数据源 all-model-sysids 精确 join）；
+  //   中文标签仅在 981（0x0E 全局表）有效，其它平台返回 null 让上层用 sys.modules。
   const g = SYSTEM_TO_ECUID[label] || MODULE_TO_ECUID[label] || null;
-  return (g && platformSysIdByLowByte(g, currentModel)) || g;
+  if (!g) return null;
+  const info = platformInfoFor(currentModel);
+  if (info && info.gen && info.gen !== '0x0e') return null;
+  return g;
 };
 const sysIdForMod = (m) => sysIdForModule(m, currentModel) || MODULE_TO_ECUID[m] || null;
 const modsForSysId = (sysId) => {
@@ -215,7 +223,7 @@ import { LinkDoctor } from './link-doctor.js';
 import { parseDtcPayload } from './dtc.js';
 import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
-import { probeList } from './probe.js';
+import { probeList, identMatch } from './probe.js';
 import { sweepPlan, classifyProbe, moduleFromIdent, buildModuleMap, cacheFresh } from './sweep.js';
 
 /**
@@ -298,24 +306,18 @@ const ECU_ADDR = {
  *   全部信号=UDS → 'uds'；无信号 → null（按规格未覆盖，走 10 89 同形）。
  */
 function familyFor(label, tx = null, { readSid = null, items = null, modules = null } = {}) {
-  const norm = (x) => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const signals = [];
   const push = (f) => { if (f) signals.push(f); };
   if (readSid != null) push(familyOfReadSid(readSid));
   if (items && items.length) push(familyOfItems(items));
   // ② 模块记录统计：优先显式模块集（进模块流），无则按 label→sysId→模块反查
+  // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离④）：删除 `N.includes(k)||k.includes(N)` 的
+  //   模糊键查找（与「禁止近似 join / 不猜」纪律冲突，且模糊结果会决定发不发 10 03）。
+  //   现在只做**精确键**：label 精确命中 SYSTEM_TO_ECUID / MODULE_TO_ECUID / 平台映射。
   let mods = (modules || []).filter(Boolean);
   if (!mods.length && label) {
     let sysId = sysIdForLabel(label);
     if (!sysId) sysId = sysIdForMod(label);
-    if (!sysId) {
-      const k = norm(label);
-      const key = k.length >= 3 ? Object.keys(SYSTEM_TO_ECUID).find((K) => {
-        const N = norm(K);
-        return N === k || (N.includes(k) && k.length >= 3) || (k.includes(N) && N.length >= 3);
-      }) : null;
-      if (key) sysId = sysIdForLabel(key);
-    }
     if (sysId) {
       mods = modsForSysId(sysId);
     }
@@ -394,28 +396,24 @@ function ecuAddrFromTable(label, sys) {
 // ★ 2026-11-05 终审①：EXT_ADDRS 手工地址表退役 —— 候选序=表行序（cands/candsAux）+探测族序。
 
 /**
- * 候选地址的探测帧链（按协议族）。
+ * 候选地址的探测帧（按协议族）—— **每候选 1 帧**，与 原厂`DriveLinksMode_1001` 一致。
  *
- * 依据（参考诊断仪侧，指令级；见 RE-DISCOVERY-20261110 §1 + 2026-11-10 复核）：
- *   `DriveLinksMode_1001` @LINK:0x18f00 对**每个候选**只发一帧 `0xFF001409`（22 14 09）；
- *   绑定 `send(0x10000359, A, 2)` 失败后，紧随的补帧是 `0xFF001102`（22 11 02，@0x18fe2）。
- *   全库 0x11xx/0x14xx 立即数扫描里，这两个是仅有的、出现在发现函数中的命令常量。
+ * 依据（.so 逐指令，RE-DISCOVERY-20261110 §1）：
+ *   `0x18f4c/0x18f52 movw sl,#0x1409; movt sl,#0xff00` → 发现帧 `0xFF001409`(22 14 09)；
+ *   `0x18f8c blx r3` 对**每个候选只发 1 帧**（mode=1）；`0x18fa2..0x18fbc` 才是
+ *   `send(0x10000359,A,2)` 绑定；`0x18fe2 movw r0,#0x1102` = 绑定失败补帧 `22 11 02`。
  *
- * ⚠️ 2026-11-10 撤回旧 A8：原先按 blockKey 查 `21 01 00 01` 的映射**没有任何 参考诊断仪出处**
- *   （文档里查不到、发现函数里也没有 21 01 常量），且 21 01 是"读数据"不是"探活"。
- *   它只覆盖 2.8% 的行，留着会让 97% 的模块多发 1–2 帧、KWP 模块还可能读回数据被当应答。
- *
- * KWP 族的帧来自实车证据：DME 回 `5A 9F …`（日志），并明确拒绝 `22 F1 A2` / `3E 00` 子功能；
- *   所以 KWP 用 `1A 9F` 探活，兜底裸 `3E`（不带子功能）。
+ * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：删除 2026-11-10 的自创扩展
+ *   （每族 2–3 帧：`221409`+`221102`、`1A9F`+`3E`、族未证三帧）。原厂每候选只 1 帧；
+ *   补帧 `22 11 02` 只发生在 **n=0 链路绑定失败**（见 probeAddressFor 的 bindDirect 分支）。
+ *   KWP 族的 1A 9F 有实车证据（DME 回 `5A 9F …`，且拒绝 `22 F1 A2`/`3E 00` 子功能）。
  *
  * @param {'kwp'|'uds'|null} family
- * @returns {string[]} 探测帧（按顺序，首帧即 参考诊断仪的发现帧）
+ * @returns {string[]} 单帧数组（保持数组形状，调用方按顺序发）
  */
 function probeChainFor(family) {
-  if (family === 'kwp') return ['1A9F', '3E'];
-  if (family === 'uds') return ['221409', '221102'];
-  // 族未证：先按 参考诊断仪的发现帧，再按实车唯一确证过的 KWP 识别帧，最后 参考诊断仪 的绑定失败补帧
-  return ['221409', '1A9F', '221102'];
+  if (family === 'kwp') return ['1A9F'];
+  return ['221409'];   // UDS 与族未证：原厂的全车系统一发现帧
 }
 
 let probeAbort = false;
@@ -450,41 +448,18 @@ function addrCandsFor(label, sys = null) {
 }
 
 /**
- * 同义 sysId 回退（2026-11-10，通用规则，零特判）。
- *
- * 背景：菜单模块名与 SYS_DATA 的 sysId 不是一一对应 —— 例如菜单 `PASM_PADM` 映射到
- * `0x0e13`（无候选），而同一系统名 `PASM` 的 `0x0b13` 有 16 个候选（含已证 0x7D0）。
- * 这不是数据缺失，是**名字→sysId 选到了没有寻址行的那一代**。
- *
- * 规则（严格，宁可不用也不猜）：
- *   ① 当前 sysId 确实没有诊断段候选；
- *   ② 存在**唯一**一个别的条目，其 `system` 归一化后满足其一：
- *      · 是模块名的前缀（system 长度 ≥4，如 `PASM` ⊂ `PASM_PADM`）；
- *      · 以模块名结尾（模块名长度 ≥3，如 `ESP/PSM` → `ESPPSM` 以 `PSM` 结尾）；
- *   ③ 该条目有候选；④ 命中数必须恰好 1 个。
- * 命中才回退，并在调用方日志里写明「别名 sysId」。
+ * ★ 2026-11-11 原厂对齐：`aliasEntryFor`（同义 sysId 回退）已**整体删除**。
+ *   原厂没有 alias 概念 —— 地址由链路层按请求键解析（RE-DISCOVERY §3），离线无候选就交给
+ *   运行时枚举（ensureLiveMap）。原函数用 `startsWith/endsWith` 近似 join 把 PASM(0x0e13)
+ *   回退到旧代 0x0b13 的候选，属自创跨代推断，已从 probeAddressFor 一并移除。
  */
-function aliasEntryFor(names) {
-  const norm = (x) => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const cands = (names || []).map(norm).filter((n) => n.length >= 3);
-  if (!cands.length || !ecuAddrTable) return null;
-  const hits = new Map();
-  for (const e of ecuAddrTable.entries || []) {
-    const sysN = norm(e.system);
-    if (!sysN || !(e.cands || []).length) continue;
-    const ok = cands.some((n) => (sysN.length >= 4 && n.startsWith(sysN))
-      || (n.length >= 3 && sysN.endsWith(n)));
-    if (!ok) continue;
-    hits.set(String(e.sysId).toLowerCase(), e);
-  }
-  return hits.size === 1 ? [...hits.values()][0] : null;
-}
 
 /**
  * 文档 §5 三级寻址（2026-11-04 收官）：
  *   proven / table-unique（唯一候选）→ 直接进，零探测；
- *   candidate（多候选）→ 定向探测（参考诊断仪 探报文 + flags + 识别串终审）；
- *   歧义 → 禁写（宁可拒写不猜，文档原话）。
+ *   candidate（多候选）→ 定向探测（原厂发现帧 + 回帧 ID 校验）；
+ *   歧义/无候选 → 运行时枚举（ensureLiveMap），**不猜地址**；
+ *   写入闸门：默认按原厂（无地址态闸门）；`setSafety({addrState:true})` 才启用严格拒写。
  */
 function addrTableUnique(label, sys = null) {
   const cs = addrCandsFor(label, sys);
@@ -506,9 +481,10 @@ function variantMatchedInternals(label, sys, variantNames) {
   for (const row of entry?.rows || []) {
     const v = norm(row.variant);
     if (!v || !row.internal) continue;
-    if (want.some((w) => v === w || v.startsWith(w) || w.startsWith(v) || v.includes(w) || w.includes(v))) {
-      out.add(String(row.internal).toUpperCase());
-    }
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑦）：只做**全等**（原厂IsMatchName memcmp 语义）。
+    //   旧实现 `v.includes(w) || w.includes(v)` 是近似匹配（仅用于排序，但会让错的 internal
+    //   排到前面）；删除。
+    if (want.some((w) => v === w)) out.add(String(row.internal).toUpperCase());
   }
   return out;
 }
@@ -519,17 +495,18 @@ function variantMatchedInternals(label, sys, variantNames) {
  * ⚠️ 无默认兜底：默认变体不算命中（命中=how 含「命中」）。
  */
 function identTextMatch(text, label, variantNames, modRecs, moduleKeys) {
-  const norm = (x) => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const N = norm(text);
-  if (!N) return false;
+  if (!String(text || '').trim()) return false;
+  // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑤）：改用 原厂原语组合
+  //   （probe.identMatch：strcmp 全等 / 前缀 memcmp≥4 / strstr≥4；短键只全等），
+  //   删除自创的双向 `includes` 无长度下限匹配（`IC`/`PDC` 等短键会误命中任意应答）。
+  const keys = [label, ...(moduleKeys || []), ...(variantNames || [])].filter(Boolean);
+  if (identMatch(text, keys)) return true;
+  // 变体名命中（原厂用变体名做 IsMatchName memcmp 全等；autoPickVariant 的 how 已含命中判定）
   for (const mi of modRecs || []) {
     const r = autoPickVariant(mi, text);
     if (r && String(r.how || '').includes('命中')) return true;
   }
-  const want = (variantNames || []).map(norm).filter(Boolean);
-  if (want.some((w) => N.includes(w) || w.includes(N))) return true;
-  const keys = [norm(label), ...(moduleKeys || []).map(norm)].filter(Boolean);
-  return keys.some((k) => k && (N.includes(k) || k.includes(N)));
+  return false;
 }
 
 /**
@@ -573,16 +550,11 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
   } else {
     all = probeList(entry, [], prefer);
   }
-  // ★ 名字→sysId 选到了「没有寻址行的那一代」时，按同义系统名回退（严格唯一才用）。
-  if (!all.length) {
-    const alias = aliasEntryFor([label, ...(opts.modules || [])]);
-    const ap = alias && bindPlanFor(alias.sysId);
-    if (ap && Array.isArray(ap.pairs) && ap.pairs.length) {
-      log(`  ${label} 的 sysId ${entry?.sysId || '?'} 无候选 → 同义系统名回退到 `
-        + `${alias.sysId}「${alias.system || ''}」（${ap.pairs.length} 个候选）`, 'warn');
-      entry = alias; plan = ap; all = fromPairs(ap);
-    }
-  }
+  // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑥）：删除「同义系统名 alias 回退」。
+  //   原厂没有 alias 概念 —— 地址由链路层按请求键解析（RE-DISCOVERY §3），
+  //   离线没有候选就是没有，运行时走枚举（sweepAndMap）。旧 alias 用
+  //   `startsWith/endsWith` 近似 join 把 PASM(0x0e13) 回退到旧代 0x0b13 的候选，
+  //   属自创跨代推断；已删除（PASM 仍可由枚举兜底覆盖）。
   const bindDirect = !!(plan && plan.bindDirect);
   // ★ 无候选 → 枚举一次（每 VIN 缓存 24h），按识别码找到本模块的地址
   if (!all.length) {
@@ -614,57 +586,20 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
         note(`绑定失败，跳过：${e.message}`);
         return null;
       }
-      // ★ n=0 → 先发一帧「族存活帧」（参考诊断仪 对 n=0 是链路层直接绑定，我们只能拿一帧代替）。
-      //   UDS 用 3E 00；KWP 用裸 3E（实车 DME 拒 3E00 子功能，日志 7F3E12）。
-      //   ⚠️ 2026-11-10：不再"一帧不中即判死" —— 有些表/网关节点不答 TesterPresent，
-      //   答的是真实读帧。3E 无应答时继续走族探针链（22 14 09 / 1A 9F），
-      //   与 参考诊断仪「绑定失败→22 11 02」同构。
+      // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离①）：n=0（bindDirect）**不发任何探针帧**。
+      //   原厂`DriveLinksMode_1001 @LINK:0x18f00` 的 `cbz r1,#0x18f9e` 分支：候选数 0 →
+      //   整个探针循环跳过，直接 `send(0x10000359,A,2)` 做**链路层绑定**。
+      //   ELM 的等价物 = ATSH/ATCRA 且回执 OK（上面 611-616 已断言）→ 绑定完成，直接返回。
+      //   只有 ATSH/ATCRA 回 `?`（适配器拒绝）时才按 原厂的「绑定失败补帧」发一帧 22 11 02。
       const fam = opts.family || familyFor(label, p.tx, { modules: opts.modules });
       if (bindDirect) {
-        const cmd = fam === 'kwp' ? '3E' : '3E00';
-        let r = '';
-        try { r = (await coder.elm.cmd(cmd, 800) || '').trim(); } catch { r = ''; }
-        const ids = frameIdsOf(r);
-        const body = Array.from(parseRespAuto(r, cmd, parseInt(cmd.slice(0, 2), 16)).body || [])
-          .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-        const idOk = !ids.length || ids.includes(p.rx);
-        if (idOk && body) {
-          note(`${cmd} → ${ids.length ? '[' + ids.map((x) => hex(x)).join('/') + '] ' : ''}${body.slice(0, 16)}`
-            + `（n=0 直接绑定：${fam || '族未证'}）`);
-          return { tx: p.tx, rx: p.rx, cmd, ident: '', confidence: 'bound', family: fam || null };
-        }
-        if (!body) note(`${cmd} → 无应答，改用族探针链`);
-        else if (!idOk) note(`${cmd} → 回帧 ID 不符（${ids.map(hex).join('/')}），改走族探针链`);
-
-        // ★ 绑定后验证 = 读该模块第一条参数（参考诊断仪 的「绑定→读」，不是「绑定即成功」）。
-        //   TesterPresent 不被某些表/网关节点支持，但业务读帧一定支持；这一步不额外花帧，
-        //   因为进模块后的第一块本来就要读。
-        if (plan && plan.firstRead) {
-          const cmd2 = String(plan.firstRead).toUpperCase();
-          let r2 = '';
-          try { r2 = (await coder.elm.cmd(cmd2, 1200) || '').trim(); } catch { r2 = ''; }
-          const ids2 = frameIdsOf(r2);
-          const body2 = Array.from(parseRespAuto(r2, cmd2, parseInt(cmd2.slice(0, 2), 16)).body || [])
-            .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-          const idOk2 = !ids2.length || ids2.includes(p.rx);
-          if (idOk2 && body2) {
-            note(`${cmd2} → ${ids2.length ? '[' + ids2.map((x) => hex(x)).join('/') + '] ' : ''}`
-              + `${body2.slice(0, 16)}（n=0 业务帧绑定）`);
-            return { tx: p.tx, rx: p.rx, cmd: cmd2, ident: '', confidence: 'bound', family: fam || null };
-          }
-          if (!body2) note(`${cmd2} → 无应答`);
-        }
+        note(`ATSH/ATCRA OK → n=0 链路绑定（0 探针帧，原厂cbz 分支）`);
+        return { tx: p.tx, rx: p.rx, cmd: '', ident: '', confidence: 'bound', family: fam || null };
       }
-      // ★ 2026-11-10 对齐（参考诊断仪 DriveLinksMode_1001 @0x18f00 逐指令）：
-      //   它对每个候选**只发一帧** `0xFF001409`（= 22 14 09），不看识别串，
-      //   只看"有没有回来"；回来（含 NRC）就绑定，之后由真实读帧裁决身份。
-      //   绑定失败时的补帧是 `0xFF001102`（22 11 02）—— 族链的第二帧即此（见 probeChainFor）。
-      //   ⚠️ 旧教训"NRC 不算候选"的真实原因是**回帧来自别的地址**（探 0x7F1 回 7E8）；
-      //   现在有回帧 ID 校验兜住，"来自该 rx 的 NRC" = 该地址活着，是有效信号。
-      // ⚠️ 2026-11-10：**不再使用数据里存的 probeCmd**。那 6 条 needsProbe 的帧是
-      //   `01 04 21 01 00 01` 形态（旧导出器的猜测，含前导长度字节，SID 不在第 1 字节），
-      //   既无参考诊断仪出处，parseRespAuto 也会按 SID=0x01 解析 → 永远判不出应答。
-      //   统一走族链（参考诊断仪发现帧 + 绑定失败补帧 + 实车 KWP 识别帧）。
+      // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：n>0 **每候选只发 1 帧**
+      //   `0xFF001409`（22 14 09）；KWP 族用实车自证的 1A 9F。失败不再追加 3E/firstRead/
+      //   多帧族链（那些是 2026-11-10 的自创恢复，原厂无）。
+      //   `probeChainFor` 已收窄为每族单帧（见函数注释）。
       void probeCmd;
       const cmds = probeChainFor(fam);
       for (let ci = 0; ci < cmds.length; ci++) {
@@ -1081,19 +1016,27 @@ function isValidVin(v) {
 }
 
 /**
- * VIN 第 10 位（下标 9）= 年款码，30 年一循环。
- * 这是**消歧用的**，不是摆设 —— 例如 970/971、958/9YA 的分界就靠年款。
- *
- * ⚠️ 字母表顺序：**数字在前**（1..9 = 2001..2009），再 A..Y（2010..2030，跳过 I/O/Q/U/Z）。
- *    2026-10-15 前写反成「字母在前数字在后」，年款整体偏 9 年。
+ * VIN 第 10 位（下标 9）= 年款码。**原厂三档基数**（PorscheGetYearByModel @SYSP:0x261a8
+ * 指令 0x261c8-0x261e4，RE-MODELADDR §1.2 逐指令表）：
+ *   modelId ≤ 10 且 char∈'E'..'Y' → idx + 1971（'A'→1980 老车系）
+ *   modelId ≤ 10 其余（'1'..'9'）  → idx + 2001
+ *   modelId > 10 且 char∈'A'..'Y'  → idx + 2001（新平台）
+ *   modelId > 10 其余（'1'..'9'）  → idx + 2031（下轮 2031+）
+ * idx = 字符在 30 字符表中的位置（'1'..'9'=0..8、A..Y 跳过 I/O/Q/U/Z=9..29）。
+ * ⚠️ 2026-11-11 原厂对齐（CODE-AUDIT §3.1 偏离）：旧实现只有 `i<9?2001+i:2010+(i-9)` 一档，
+ *    1980–2000 与 2031+ 年款全错；且 modelId 未知时不能猜 → 返回 null。
  */
-function decodeVinYear(vin) {
+function decodeVinYear(vin, modelId = null) {
   const c = (vin[9] || '').toUpperCase();
   if (!c) return null;
   const alpha = '123456789ABCDEFGHJKLMNPRSTVWXY';
   const i = alpha.indexOf(c);
   if (i < 0) return null;
-  return i < 9 ? 2001 + i : 2010 + (i - 9);
+  const id = (modelId == null || !Number.isFinite(Number(modelId))) ? null : Number(modelId);
+  if (id == null) return null;              // 原厂：年款表按 modelId 分档，无 modelId 不落到任何一档
+  const isLetter = c >= 'A' && c <= 'Z';
+  if (id <= 10) return (isLetter && c >= 'E') ? i + 1971 : i + 2001;
+  return isLetter ? i + 2001 : i + 2031;
 }
 
 // ---------- 自动搜索（读 VIN / 车名 判车型年款）----------
@@ -1108,40 +1051,46 @@ async function autoSearch(opts = {}) {
     //   （fn(0xff001102,0xff001101,5)，SYSP:0x29fb8）+ 备选链（SYSP:0x56a66 模板表）；
     //   trim 显示=应答文本（RE-MODELADDR §1.5④「应答文本==应答」）。
     //   会话流按家族：KWP=10 89 直接建会话（不发 10 03 —— 实车 7F 10 12 断点修）。
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §2.1 偏离②）：自动搜索链不再先跑整套
+    //   `enterSession(0x89)`（10 03→3E00→10 帧识别→10 89），只下发链路绑定，
+    //   帧序严格按 原厂模板表（PorscheReadVehicleVin @SYSP:0x56a66）：
+    //     UDS：10 03 → 22 F1 90 → 1A 90 → … ；KWP：1A 90 → 1A 87 → …
+    //   原厂的自动搜索是独立链，会话由模板首帧（UDS 10 03）建立，不预建 10 89。
     await ensureModuleFamily();
     const family = familyFor(coder.ecuName, coder.tx);
     coder.family = family;
-    await coder.enterSession(0x89, { family });
+    await coder.address();   // 只发 ATSP/ATSH/ATCRA（原厂的 SetAddress/FilterId 等价物）
     const idn = await coder.readVehicleIdentity(family);
     for (const s of idn.steps) log('  ' + s, 'info');
     const vin = idn.vin || '';
     const nameFromCar = idn.name || '';
     if (nameFromCar) state.modelDesignation = nameFromCar.slice(0, 32);
 
-    // ⚠️ 绝不伪造完整 VIN：前缀合法才参与识别，界面明示。
+    // ★ 2026-11-11 原厂对齐（CODE-AUDIT §2.1 偏离③）：删除自创的 ISO 3779 正则校验
+    //   （`/^WP[01][A-HJ-NPR-Z0-9]{8,14}$/`）。原厂（PorscheReadVehicleVin）对留存键
+    //   按固定长度取值后直接使用，不做形态猜测。这里只用长度区分「完整 VIN / 前缀」，
+    //   不足 11 位视为读不到（11 是 KWP 1A 90 前缀的最小可辨识长度）。
     let vinPrefix = false;
     if (!vin) {
       toast('warn', '读不到 VIN', '可能地址不对或 ECU 未响应 —— 请用手动选择车型');
       return;
     }
-    if (!isValidVin(vin)) {
-      if (vin.length >= 11 && vin.length <= 17
-          && /^WP[01][A-HJ-NPR-Z0-9]{8,14}$/.test(vin)) {
-        vinPrefix = true;
-        log(`  VIN 前缀 ${vin}（${vin.length} 位）—— 按前缀识别车型，不伪造完整 VIN`, 'warn');
-      } else {
-        log(`  VIN 格式非法（含 I/O/Q 或非字母数字）：${JSON.stringify(vin)}`, 'err');
-        toast('warn', 'VIN 格式非法', `读到 ${JSON.stringify(vin)}，不是 17 位 ISO 3779 VIN。请手动选择车型。`);
-        return;
-      }
+    if (vin.length < 11) {
+      log(`  VIN 过短（${vin.length} 位）：${JSON.stringify(vin)}`, 'err');
+      toast('warn', '读不到 VIN', `读到 ${JSON.stringify(vin)}，不足 11 位。请手动选择车型。`);
+      return;
     }
+    vinPrefix = vin.length < 17;
+    if (vinPrefix) log(`  VIN 前缀 ${vin}（${vin.length} 位）—— 按前缀识别车型，不伪造完整 VIN`, 'warn');
     toast('info', `${vinPrefix ? 'VIN 前缀' : 'VIN'} = ${vin}`,
       vinPrefix ? 'KWP 1A 常只给 11 位前缀，正在按前缀匹配车型 …' : '正在匹配车型年款 …');
 
+    // ★ 2026-11-11 原厂对齐：年款表基数依赖 modelId（PorscheGetYearByModel 三档），
+    //   所以先分派 modelId，再算年款；年款只用于显示（原厂不用年款做 trim 裁决）。
     const yearCode = vin[9];
-    const year = decodeVinYear(vin);
     state.vin = vin;   // 地址缓存按 VIN 键控（同型号不同车不串台）
-    const modelGuess = guessModelFromVin(vin, year);
+    const modelGuess = guessModelFromVin(vin);
+    const year = decodeVinYear(vin, modelGuess?.modelId ?? null);
     log(`  ${vinPrefix ? 'VIN 前缀' : 'VIN'}=${vin} · 年款码=${yearCode} → ${year ?? '?'} 年款 · 车型判断：`
       + `${modelGuess ? `${modelGuess.models.join(' / ')}（${modelGuess.how}）` : '未识别'}`
       + (nameFromCar ? ` · 应答名「${nameFromCar}」` : ' · 应答名（无）'),
@@ -1225,8 +1174,13 @@ async function autoSearch(opts = {}) {
  * id→平台映射只采用**函数级实证**的 13→9X1、14→CS1（Get9x1_Cs1ForVin 命名+返回值+
  * 真机 981 实证+part-map 三方一致）；其余 id 的文本名在运行时文本库（键空间未打通）
  * → 一律 null 走年款+手选。平台→车型列表派生自 data/models/<slug>/*.json 的 platform 字段。
+ *
+ * ⚠️ 2026-11-11 注释收口（原「文档写 A、代码做 B」）：`VEH_TABLE`/`ID_MODELS` 是
+ *   **内联静态表**（与原厂 `.so` 内静态表同构）。`data/vin-vehicle-map.json` 只是同一份
+ *   数据的离线参考/审计产物，运行时**不 fetch**（旧注释写「数据源=该 JSON」与实现不符）。
+ *   两份若不一致，以本函数内联表为准，并同步更新 JSON。
  */
-function guessModelFromVin(vin, year) {
+function guessModelFromVin(vin) {
   // ===== 参考诊断仪 `PorscheGetYearAndModel` 分派 + `Get9x1_Cs1ForVin` 1:1 转写 =====
   // 指令分析逐字节（TBB 表 17 槽 + 第 12/7 字节二次判定），无自创规则。
   // 分派语义已全解（10+ 锚点互证）：输入为解析车辆-id 结构，offset 6/7/0xb=车型码三字符：
@@ -1323,15 +1277,12 @@ function guessModelFromVin(vin, year) {
   if (series) {
     const narrowed = models.filter((m) => m.toUpperCase().includes(series));
     if (narrowed.length) {
-      // ★ 车身型式精化（2026-11-06）：GetVehicleForVin 平台名与收窄集交叉唯一 → 单选；
-      //   9X1 平台（Boxster/Cayman 同平台名）交叉不唯一 → 保持确认弹窗，不猜车身。
-      let final = narrowed;
-      if (narrowed.length > 1 && vehName) {
-        const byId = ID_MODELS[id] || [];
-        const cross = narrowed.filter((m) => byId.includes(m));
-        if (cross.length === 1) final = cross;
-      }
-      return { models: final, how: `参考诊断仪 分派 id=${id} · 车型码 ${series}${vehName ? ' · 平台 ' + vehName : ''}`, modelId: id, series, vehName: vehName || undefined };
+      // ★ 2026-11-11 审计 P1-6：删除「车身型式精化」死逻辑。
+      //   旧代码 `cross = narrowed.filter(m => byId.includes(m))`，而 byId=ID_MODELS[id]、
+      //   narrowed 本来就是它的子集 → cross ≡ narrowed，`cross.length===1` 永不成立。
+      //   原厂侧（RE-MODELADDR §1.4）明确：VIN 只能到家族（9X1），车身/trim 由 22 11 02
+      //   应答文本落定 —— 故此处不猜，直接返回收窄集。
+      return { models: narrowed, how: `参考诊断仪 分派 id=${id} · 车型码 ${series}${vehName ? ' · 平台 ' + vehName : ''}`, modelId: id, series, vehName: vehName || undefined };
     }
   }
   return { models, how: `参考诊断仪 分派 id=${id}${vehName ? ' · 平台 ' + vehName : ''}`, modelId: id, vehName: vehName || undefined };
@@ -2283,8 +2234,8 @@ function showRuleBatchEdit(title, items) {
       //   ② min/max 范围 —— 此前批量路径不查，injectField 对越界值
       //      `& mask` 静默截断后照写（2026-10-16 复查 P11）
       if (!canWrite(p)) { rejected.push(`${p.name}: 不可写（只读/无 LID/门禁）`); return; }
-      if (!fieldInRange(p, newVal)) {
-        rejected.push(`${p.name}: ${newVal} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}`);
+      if (SAFETY.range && !fieldInRange(p, newVal)) {
+        rejected.push(`${p.name}: ${newVal} 超出范围 ${p.min ?? 0}…${p.max ?? '?'}（安全增强已开启）`);
         return;
       }
       changes.push({ p, newVal });
@@ -2528,7 +2479,7 @@ async function enterSystem(sys) {
   // ⚠️ 换模块必须重选 seed/key 变体（2026-10-17 审计 D1）：
   //    此前只在连接时选一次，换 ECU 后仍是旧变体 → 算错 key → NRC 0x35 → 可能锁死。
   try {
-    // ⚠️ 优先走 原厂 的 mode 表（securityModel），这是「和 参考诊断仪 对齐」的正解。
+    // ⚠️ 优先走 原厂的 mode 表（securityModel），这是「和 参考诊断仪 对齐」的正解。
     //    拿不到 mode 才退回按 ECU 名猜变体（旧路径）。
     // ⚠️⚠️ 这里**绝不能阻塞**：2026-10-17 装机后实测「进模块一直转圈」，
     //    根因就是这段 `await fetch(...)` 在同步流程里 —— fetch 不 resolve 就永远 await，
@@ -2564,7 +2515,7 @@ async function enterSystem(sys) {
     try {
       // ⚠️ 2026-10-18 审计：这条路径**此前永远走不到**。
       //    原实现拿 `sys.label`（形如「ECM/DME(发动机控制模块)」）去匹配 `0x([0-9a-f]{3,4})`
-      //    —— 中文标签里没有 hex，mode 恒为 null，于是号称「正解」的原厂 mode 表
+      //    —— 中文标签里没有 hex，mode 恒为 null，于是号称「正解」的原厂mode 表
       //    一次都没用过，全部落回按名字猜变体。
       //    现在：① 优先用 `sys.ecu`（树里本就有这个字段，当前数据为 null）
       //          ② 再看 label 里的 hex
@@ -2609,7 +2560,7 @@ async function enterSystem(sys) {
       try { resolveKey(mode, 0x12345678, { ecuId: null }); } catch (e) { modeOk = false; modeWhy = e.message; }
       if (modeOk) {
         coder.seedKeyProvider = makeResolverProvider(mode, { ecuId: null, name: sys.label });
-        log(`  seed/key：原厂 mode 0x${mode.toString(16).padStart(2, '0')}` +
+        log(`  seed/key：原厂mode 0x${mode.toString(16).padStart(2, '0')}` +
             (fam != null ? ` · 模板族 0x${fam.toString(16).padStart(2, '0')}` : '') +
             (lid != null ? ` · 会话 0x${lid.toString(16).padStart(4, '0')}` : '') + '（照抄 securityModel）', 'ok');
       } else {
@@ -2620,7 +2571,7 @@ async function enterSystem(sys) {
       }
     }
     if (!coder.seedKeyProvider) {
-      // ⚠️ 优先走 原厂 的 `nameTable` 名字表（138 条，权威），
+      // ⚠️ 优先走 原厂的 `nameTable` 名字表（138 条，权威），
       //    这是「和 参考诊断仪 对齐」的正解；查不到才退回旧的 pickVariant 别名表。
       const cands = [sys.label, ...(sys.modules || [])];
       let variant = null, hitName = null;
@@ -2684,13 +2635,13 @@ async function enterSystem(sys) {
             return resolveKeyByName(hitName, seedBytes).key;
           },
         } : null;
-        if (naOk) log(`  seed/key：名字「${hitName}」→ 变体 ${String(variant).slice(0, 16)}（原厂 权威表）`, 'ok');
+        if (naOk) log(`  seed/key：名字「${hitName}」→ 变体 ${String(variant).slice(0, 16)}（原厂权威表）`, 'ok');
         else log(`  ⚠ 「${hitName}」的变体 ${String(variant).slice(0, 16)} 尚未逆出：${naWhy} —— 只读`, 'warn');
       } else {
         const v = pickVariant(sys.label) || (sys.modules || []).map((m) => pickVariant(m)).find(Boolean) || null;
         coder.seedKeyProvider = v ? makeProvider(v) : null;
         if (v) log(`  seed/key 变体：${v.variant}${v.verified ? '' : '（未逐位验证，写入需先 校验 校验）'}`, v.verified ? 'ok' : 'warn');
-        else log(`  ⚠ 「${sys.label}」不在 原厂 名字表（${Object.keys(NAME_TO_VARIANT).length} 条）也无别名 —— 只读，写入会被拒`, 'warn');
+        else log(`  ⚠ 「${sys.label}」不在 原厂名字表（${Object.keys(NAME_TO_VARIANT).length} 条）也无别名 —— 只读，写入会被拒`, 'warn');
       }
       }
     }
@@ -2700,10 +2651,13 @@ async function enterSystem(sys) {
     coder.seedKeyProvider = null;
     log(`  ⚠ seed/key 选择异常，已回落到无算法（只读可用）：${e.message}`, 'warn');
   }
-  // ★ 2026-11-05 会话定案（有据，换会话回退已删）：
-  //   参考诊断仪 序列 = 10 03 → 3E/识别 → 10 89 → 读写（GAG 真机序列取证）。
-  //   会话字节 = 每 ECU ODX XML `SESSIONS` 记录数据驱动（GetSessionInfo→vector<SESSION>，
-  //   ACTF/PROGRAMMING/READWRITE 三族库各一份；ODX 文件不在提取包）。
+  // ★ 2026-11-05 会话定案（有据）。★ 2026-11-11 注释收口：
+  //   原厂序列 = 10 03 → 3E/识别 → 10 89 → 读写（GAG 真机序列取证）。
+  //   **会话号实现为固定 `0x89`（SESSION_FOR_SERVICE.coding）** —— 抓包 10 89×6 是绝对
+  //   主模板，KWP 流直接建、UDS 流在 10 03/识别后建。旧注释称「会话字节=每 ECU ODX XML
+  //   SESSIONS 数据驱动」，但 ODX SESSIONS 不在提取包内、drivelinks 的 securityModel
+  //   param_1（u32>>16）语义未证 → **不用于发帧**（避免发错会话号）。此处如实标注为
+  //   「固定主会话模板 + 数据缺口」，不再声称数据驱动。
   //   构帧/发送方逐指令零「失败换会话」分支（PorscheSetEnterFrameInit 模板单发）——
   //   原「10 89 失败回退 10 03」是自创恢复，已删。
   //   两步是**序列步**（非重试）：各自尽力而为（NRC 容忍=序列取证行为）；写路径
@@ -2756,6 +2710,9 @@ async function enterSystem(sys) {
       byPart: pm?.byPart,
       moduleFamily,
       observedFamily: enterFamily,
+      // ★ 2026-11-11 审计 P1-5：补传平台 —— 否则 variant.js:228 的平台过滤退化为
+      //   `h.platform === h.platform` 恒真，跨平台同件号记录不会被收窄（E3/G2 误用 992 变体）。
+      platform: platformForModel(currentModel),
     });
     active = entries.find((e) => e.mod === familyPick.mod) || null;
     if (familyPick.evidence.length) log(`  🔎 家族证据：${familyPick.evidence.join('；')}`, 'info');
@@ -3389,6 +3346,10 @@ function showParam(p) {
  * 未知地址：直接拒
  */
 function addrSafeForAction() {
+  // ★ 2026-11-11 原厂对齐（CODE-AUDIT §5.2 偏离④）：地址态拒写是自创闸门，原厂没有
+  //   （原厂写政策只有「备份→安全访问→单项写→回读」，无地址证据门禁）。
+  //   默认关；`setSafety({addrState:true})` 才启用（安全增强，验收矩阵单列）。
+  if (!SAFETY.addrState) return true;
   const st = state.currentAddr?.state;
   if (!st) return true;
   // ★ 2026-11-05 修：'table'（表唯一候选直进，2026-11-05 新增态）曾被当「未知」
@@ -3397,12 +3358,14 @@ function addrSafeForAction() {
   //   它等价于 probed：回帧来自该 rx 且该地址有应答，风险由回读校验兜底。
   if (['measured', 'probed', 'bound', 'manual', 'verified', 'table'].includes(st)) return true;
   if (st === 'candidate' || st === 'probed-unverified') {
-    // ★ 2026-11-05 终审预检对齐 参考诊断仪 写入 UX：**无二次确认弹窗**
-    //   （三路实证：APK dex/资源零确认文案、原生写路径零确认钩子、写脚本「备份→写→回读」无门禁）。
-    //   弹窗取消=拒写路径=自创闸门 —— 删。候选态放行，风险由回读校验兜底（同款）。
+    // ★ 2026-11-11 注释收口：地址态在默认路径**不拦写**（原厂无地址态闸门）。
+    //   `setSafety({addrState:true})` 时才会走到本函数做严格判定；此时候选态仍放行
+    //   （表唯一/探测命中属静态一选，与原厂链路层绑定等价），未知态才拒。
+    //   ⚠️ 写入的二次确认在 doWrite（TEXT_CN 实证），不在此处 —— 旧注释「无二次确认弹窗」
+    //   只针对地址态判定，别误读为写入整体无确认。
     const a = state.currentAddr;
     const at = a?.tx != null ? `0x${a.tx.toString(16).toUpperCase()}/0x${a.rx.toString(16).toUpperCase()}` : '未定';
-    log(`  · 地址 ${at} 为「${st}」候选态 —— 直接执行（回读校验兜底，参考诊断仪 无确认弹窗）`, 'info');
+    log(`  · 地址 ${at} 为「${st}」候选态 —— 直接执行（写入二次确认在 doWrite）`, 'info');
     return true;
   }
   toast('err', '拒绝执行', `当前地址状态是 ${st}（未知）；先跑「系统扫描」重新解析地址`);
@@ -3411,17 +3374,14 @@ function addrSafeForAction() {
 
 async function doWrite(p, v) {
   if (!needLink()) return;
-  // 地址证据门禁（2026-11-05 口径）：仅「未知」态拒绝；候选/未核验态放行，
-  // 风险由回读校验兜底（与写政策同口径，无弹窗闸门）。
+  // 地址证据闸门：默认关（原厂无此闸）；`setSafety({addrState:true})` 才启用（见 addrSafeForAction）。
   if (!addrSafeForAction()) return;
   if (!coder.seedKeyProvider) {
     toast('err', '拒绝写入', '缺口令算法变体');
     return;
   }
-  // ★ 2026-11-05 写入 UX 对齐 参考诊断仪（TEXT_CN UI 文本库实证，文案原文照抄）：
-  //   写入**有**二次确认 ——「警告:请再次确认是否需要编此编码」+「请确认信息后写入新编码值」。
-  //   （早前"无确认弹窗"结论错在取证面：APK 壳本无诊断文案，文案在数据包语言库。）
-  //   「未逐位验证变体确认」仍删 —— 参考诊断仪 无此概念（其变体表即真值），0 自创。
+  // 原厂写入 UX（TEXT_CN 语言库实证，文案原文照抄）：写入**有**二次确认 ——
+  //   「警告:请再次确认是否需要编此编码」+「请确认信息后写入新编码值」。
   const okWrite = confirm(
     '警告:请再次确认是否需要编此编码\n\n'
     + `参数：${p.name}\n新值：${decodeValue(p, v)}\n`
@@ -3449,17 +3409,18 @@ async function doWrite(p, v) {
       log(`  🧩 ${p.module} 变体未确认 —— 按默认变体 ${def} 写入（回读校验兜底）`, 'warn');
     }
   }
-  // canWrite 是**总闸**：含 WRITE_ENABLED 严格门禁开关 + 只读项 + 无 LID。
-  // 此前它零调用，文档说「改 WRITE_ENABLED=false 可恢复严格门禁」实际无效。
+  // canWrite 总闸：只读项（记录无 3B/2E）+ 缺 LID —— 这两条有 原厂证据，永远生效；
+  //   level/WRITE_ENABLED 只在 SAFETY.level 开启时参与（默认关 = 原厂行为）。
   if (!canWrite(p)) {
     toast('err', `「${p.name}」不可写`,
       isReadOnlyItem(p) ? readOnlyReason(p)
         : (p.lid == null && p.did == null) ? '缺 LID/DID'
-          : '严格门禁未放行（WRITE_ENABLED=false 且未 write-confirmed）');
+          : '严格门禁未放行（SAFETY.level 已开启且未 write-confirmed）');
     return;
   }
-  if (!fieldInRange(p, v)) {  // max=null 不能当 0 比较；BigInt/Number 混用由 helper 处理
-    toast('err', '值超出范围', `可填 ${p.min} … ${p.max}，当前 ${v}`);
+  // 值域闸门：默认关（原厂无）；`setSafety({range:true})` 才拦。
+  if (SAFETY.range && !fieldInRange(p, v)) {  // max=null 不能当 0 比较；BigInt/Number 混用由 helper 处理
+    toast('err', '值超出范围', `可填 ${p.min} … ${p.max}，当前 ${v}（安全增强已开启）`);
     return;
   }
   toast('info', `写入 ${p.name} = ${decodeValue(p, v)}`, '进会话 → 安全访问 → 写 → 回读校验 …');
@@ -3620,8 +3581,8 @@ $('vmOk').onclick = async () => {
     log(`「${p.name}」不可写`, 'err');
     return;
   }
-  if (!fieldInRange(p, v)) {
-    log(`值超出范围：可填 ${p.min} … ${p.max}，当前 ${v}`, 'err');
+  if (SAFETY.range && !fieldInRange(p, v)) {
+    log(`值超出范围：可填 ${p.min} … ${p.max}，当前 ${v}（安全增强已开启）`, 'err');
     return;
   }
   log(`—— 写入 ${p.name} = ${decodeValue(p, v)} ——`, 'info');
@@ -3684,15 +3645,23 @@ async function restoreCoding(sysLabel) {
   try {
     // 一次会话覆盖全部块（参考诊断仪 的写序列是「进会话 → N 块写 → 各自回读」，不是每块重进一次；
     // 此前每块都 enterSessionFor + 完整识别链，10 个块就是 10 遍识别）。
-    await coder.enterSessionFor('coding');
+    await coder.enterSessionFor('coding', { skipIdent: true });
     for (const b of list) {
       // ★ 2026-11-11 审计：位宽按写 SID（2E=2 字节 DID）、协议族按读 SID（22=UDS，其余 KWP），
       //   两者不可混用——混族记录用 writeSid 判族会给 KWP ECU 发 27 09（应为 17 00）。
       const writeSid = Number(b.writeSid ?? 0x3B);
       const writeWide = writeSid === 0x2E;
-      const readSid = READ_SIDS.includes(Number(b.readSid))
-        ? Number(b.readSid)
-        : (READ_SIDS.includes(Number(b.blockReadSid)) ? Number(b.blockReadSid) : (writeWide ? 0x22 : 0x21));
+      // ★ 2026-11-11 原厂对齐（CODE-AUDIT §5.2 偏离⑤）：无读服务 = 读不到 = 不写
+      //   （RE-FLOWSPEC §4.1 / McrCodeChileWrite「读失败即中止」）。
+      //   旧实现按 writeSid 反推猜 `0x22/0x21`，1A/3B 混族记录会被当 21 读 → 回读比对失真。
+      let readSid = null;
+      if (READ_SIDS.includes(Number(b.readSid))) readSid = Number(b.readSid);
+      else if (READ_SIDS.includes(Number(b.blockReadSid))) readSid = Number(b.blockReadSid);
+      if (readSid == null) {
+        fail++;
+        log(`  ❌ 跳过 LID 0x${Number(b.lid).toString(16).toUpperCase()}：备份无读服务（读不到=不写）`, 'err');
+        continue;
+      }
       const isKwp = readSid !== 0x22;
       const sidHex = writeSid.toString(16).toUpperCase().padStart(2, '0');
       // ⚠️ 2026-11-10 修：0x2E 的 DID 是 **2 字节**，此前一律 padStart(2) →
@@ -4448,7 +4417,7 @@ async function showSysExtra(f) {
     };
     $('xProgRead').onclick = () => progRun('读编程块', async (lid) => {
       const { readSid } = progProto() || {};
-      await coder.enterSessionFor('coding');
+      await coder.enterSessionFor('coding', { skipIdent: true });
       const blk = await coder.readBlock(lid, readSid);
       return blk.map((b) => b.toString(16).padStart(2, '0')).join(' ');
     });
@@ -4469,7 +4438,7 @@ async function showSysExtra(f) {
       if (lid > (writePad === 4 ? 0xffff : 0xff)) {
         throw new Error(`LID 0x${lid.toString(16)} 超出写服务 0x${Number(writeSid).toString(16)} 的标识符位宽 —— 已中止`);
       }
-      await coder.enterSessionFor('coding');
+      await coder.enterSessionFor('coding', { skipIdent: true });
       const cur = await coder.readBlock(lid, readSid);
       if (clean.length / 2 !== cur.length) {
         throw new Error(`长度不符：要写 ${clean.length / 2} 字节，块实际 ${cur.length} 字节 —— 已中止`);
@@ -4490,7 +4459,7 @@ async function showSysExtra(f) {
       } catch (e) {
         // 恢复：把备份整块写回（与 restoreBackups 同路径）
         try {
-          await coder.enterSessionFor('coding');
+          await coder.enterSessionFor('coding', { skipIdent: true });
           await coder.securityAccess(0x09, isKwp);
           await coder.uds(`${sidHex}${lidHex}${backupHex.toUpperCase()}`, 8000);
           const restored = await coder.readBlock(lid, readSid);
@@ -4504,7 +4473,7 @@ async function showSysExtra(f) {
     });
     $('xProgVerify').onclick = () => progRun('回读校验', async (lid) => {
       const { readSid } = progProto();
-      await coder.enterSessionFor('coding');
+      await coder.enterSessionFor('coding', { skipIdent: true });
       const blk = await coder.readBlock(lid, readSid);
       return `块 ${blk.length} 字节已回读`;
     });
