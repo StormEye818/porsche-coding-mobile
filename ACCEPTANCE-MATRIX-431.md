@@ -89,7 +89,7 @@
 | `src/variant.js` | `pickModelByName` 基名全等（不再 includes） | §3.1② |
 | `src/mock-adapter.js` | 加 `mock=true`（回帧 ID 校验在 mock 上跳过） | §4.2⑨ |
 | `tools/build-model-sysid-map.mjs` | 删 `platformSysIdByLowByte`；`planSysIdFor` 只按模块名精确查 + 981 标签基值 | §4.2⑧ |
-| `tools/verify-all-models.mjs` | 新增 [H] 21 条改造回归断言（共 66 条门禁） | 全部 |
+| `tools/verify-all-models.mjs` | 新增 [H] 19 条改造回归断言（共 66 条门禁） | 全部 |
 | `smoke-fixes.mjs` / `e2e-flow.mjs` | 年款三档/族链单帧/去 probeDecision/年款调用顺序同步 | — |
 
 ## 5. 验收结果

@@ -322,7 +322,7 @@
 |---|---|
 | `npm test` | **全绿**：36 + 359 + 105 + 84 + **66**，0 失败 |
 | `node --check` 全量 `src/*.js` | 通过 |
-| 新增门禁 `[H]` 21 条 | 全部通过（无自创层 / 三档年款 / 全等显示 / 单帧探针 / 无 alias / 无平移 / SAFETY 默认关 / 不重跑识别链 / 无第三方字样） |
+| 新增门禁 `[H]` 19 条 | 全部通过（无自创层 / 三档年款 / 全等显示 / 单帧探针 / 无 alias / 无平移 / SAFETY 默认关 / 不重跑识别链 / 无第三方字样） |
 | 981 回归 | 44/48 静态解出、DME 0x7E0、PASM 含 0x7D0、IC≠PSM 保持 |
 | 全车型回归 | 566 sysId / 351/601 静态候选保持 |
 | 源码匿名化 | `src/*.js` 无第三方工具字样（`[H]` 断言） |
@@ -376,6 +376,7 @@
 | P0-8 | `src/module-ecu-map.js` | esbuild 报 24 组重复键，16 组值冲突，后者静默覆盖前者。例 `Allrad 0x0e52→0x0b35`、`PDCC_2 0x0e2b→0x0b2b`、`RDK3 0x0e37→0x0c37`、`BV_EnginContrModul1UDS 0x0e01→0x0b01` | 全局/回退/反查表拿错代 sysId；测试只警告不失败 |
 | P0-9 | `coder.js:937-978,1110` | 公共写 API 对缺 writeSid 默认 0x3B，绕过只读闸；`Number(null)=0`，null lid 可进入 `3B 00…`；自动恢复还对缺 writeSid 默认 3B | 调用方可绕开 UI，发出源记录并未定义的写帧 |
 | P0-10 | `app.js:2515-2556` | `let hit` 定义在 2515 的 inner try 内，2556 在块外求值。当前 drivelinks 记录 mode 非空，因此必走到 `hit` 并抛 `ReferenceError`，被 2648 外层 catch 吞成「无算法」；旧 provider 同时被清掉 | 原厂 mode 路径在当前数据下不可达，并可能把本来可用的名字分派算法一并清掉 |
+| P0-11 | `app.js:2184-2195,2222-2230,2263` | bitsize>53 的 select 用 `Number(k)` 生成 value 和比较 currentValue，BigInt 变体被截断且无选中项，浏览器回退第一项。真实 BKE 项期望 4606130000000000，未触碰却被改成 2604080000000000；成功后 p.currentValue 再被赋成截断值。扫描见 54 个宽枚举，至少 9 个 key 已失精 | 用户未修改的字段也会被批量写入，破坏真实 ECU 配置 |
 
 ### 11.4 P1/P2：功能错误、431 偏离与安全策略不一致
 
@@ -385,10 +386,10 @@
 | P1-2 | `app.js:359-365,898-906` + `981-sysids.json` | 地址解析在识别前取首个有 sysId 的模块；5 个双 sysId 模块只展开首枚，其余静态候选不可达；平台缺失时可回退全局旧代表 |
 | P1-3 | `coder.js:541,546` + `variant.js:106-124,246-251,278` | `trim()` 破坏 856 个尾空格件号键；750 个逗号变体键未先拆分，`names.includes(整串)` 永远 false；platform 过滤仍恒真；partHit 可能来自别的模块 |
 | P1-4 | `app.js:3202,3332` | 两个主参数 UI 仍无条件 `fieldInRange` 并 return，SAFETY.range=false 也拦；验收矩阵所称「只是提示」不成立 |
-| P1-5 | `app.js:4453-4471,4454,4464` | 编程页不看 SAFETY.autoRestore，任何写/回读异常都自动恢复；写帧与恢复帧不传 `pendingWait:true`，NRC 0x78 直接失败 |
+| P1-5 | `app.js:4453-4471,4454,4464` | 编程页不看 SAFETY.autoRestore，任何写/回读异常都自动恢复；写帧与恢复帧不传 `pendingWait:true`，NRC 0x78 直接失败。当前 program 分支可能没有可达 UI，但一旦挂接就会生效，不能按死代码豁免 |
 | P1-6 | `coder.js:190,215-231` | FF 后未设 `expectedSeq=1`，第一个 CF 不校序号。最小用例 FF 后首 CF=2 仍返回 `kind:'ok'` |
 | P1-7 | `coder.js:816-828,1063-1067` | 只校验正响应 SID，不校验 LID/DID 回显；最小用例请求 LID=1、应答 `61 99 22` 被接受并返回 `[0x22]` |
-| P1-8 | `app.js:2379,4404-4406` | 模拟路径仍用旧 entry 查 plan；编程页 progRun 按 readPad 做写前预检，混族记录可在进入 writePad 检查前被误拒 |
+| P1-8 | `app.js:2379` | 模拟路径仍用旧 entry 查 plan，新代 planSysIdFor 未同步，不能代表真实进模块路径。补充：`progRun` 的 readPad 与写路径 writePad 两层检查分别保证可读/可写，按记录位宽是必要条件，**不再列为写溢出 bug** |
 | P1-9 | `app.js:251` + `variant.js:67-125,215-289` | 多件号/变体歧义仍取首；默认变体可放行写入；`variantFitsBlocks` 对 object enum 恒生成空 keys，枚举约束失效（coding-v2 中 3802 条为 object） |
 | P1-10 | `app.js:37-45,48-51,90-147,150-161` | bind-plan/枚举可静默回退；内存 liveMap 不重新比 VIN，换车仍可能用上一辆；KWP 枚举统一 221409/22F1A2，覆盖不完整 |
 | P1-11 | `app.js:2530,2556` + `data/drivelinks.json` | 当前 1072 行 `modeVerified` 全空，但 mode 本身非空，所以「无 modeVerified 就不用」不能解释失败；真正原因是 P0-10 的块作用域 ReferenceError。会话仍固定 0x89，drivelinks 会话字只进日志 |
@@ -399,6 +400,8 @@
 | P1-16 | `tools/export-bind-plan.py:218-253` | 仍保留模块名前缀/最佳交集跨代推断，当前 151 个 crossgen 条目；与「无近似 join」口径冲突，需逐项区分精确证据与启发式 |
 | P1-17 | `src/mfi-port.js:67-73,88-90` + 恢复/编程/例程路径 | addListener 句柄未保存，close 不移除，重连可累积 data/closed 回调；恢复/编程/例程不统一使用 `_writeBusy`，Elm 只保证单命令串行，不保证写事务完整，真机重连后可能重复处理或交错 |
 | P1-18 | `app.js:37-46,60-69,166-183` | bind-plan/module-family/part-map/ident-registry 首次异常静默写 null 且永不重试；一次网络/打包失败会让整个生命周期降级 |
+| P1-19 | `app.js:3375-3436` | 单项 UI 在 applyChange 成功后直接把用户目标值赋给 p.currentValue；最小复现 1 位字段目标 2、mask 后实际 0，UI 仍显示 2，读回值/目标值/显示值可三者不一致 |
+| P1-20 | `data/models` 导出器/产物 | 同一 id 多平台聚合只存首个 platform/module/variant。`GT2_996_/Hinterachslenkung_BaseSys.json` 同 id 同时有 9X1/writeSid=46 与 918S/writeSid=0；全量 112899 行/28.67% 有跨模型重复 ID，前项遮蔽后项，写入与备份归属不可信 |
 | P2-1 | `app.js:1014,2349` + `variant.js:196` + `schema.js:206` | `isValidVin`、`identMatchesSys`、`looksLikePartNumber`、`encodeValue` 等死代码/自创防御层仍在；测试还在验证运行时不再调用的 VIN 正则 |
 | P2-2 | `schema.js:173` | 负数按绝对值 mask，不是补码：8 位写 -1 得 `[1]`，16 位写 -2 得 `[2,0]`；当前数据未发现负 min，故列 P2 |
 | P2-3 | `app.js:3352-3355` | 开启 addrState 后 `!st` 仍 return true，与「未知地址拒绝」注释不符 |
@@ -406,6 +409,8 @@
 | P2-5 | `schema.js:224-242,158-183` | 即使显式开启 range，也只比较 min/max，不检查位宽/有限数；实测 1 位字段写 2 被认为在范围内，随后 mask 成 0——安全增强开启也不能防非法值 |
 | P2-6 | `tools/export-all-model-sysids.py:23` + `scripts/sync.mjs:106-110` + `rebuild:all-models` | 工具引用另一项目绝对路径，批量删除当前 project data/www data，无执行前清单/备份/小批校验；clean checkout 不可独立重建，当前 npm test 也因批量删除护栏中断 |
 | P2-7 | `README.md:62-99,230` | 仍介绍值域拦截、可变 LID、19 失败切 18 等与当前实现不符的行为；`model-sysid-map.js:893` 仍有第三方工具名，匿名化门禁只覆盖 5 个文件，文档不是可信规范 |
+| P2-8 | `elm327.js:58-71` | 注释宣称 ATSH/ATCRA 失败即报错，实际空回执/非标准回执只留痕返回，测试还写成 ok；n=0 绑定不能因此声称必有 OK，文档把「可能未落地」写成「已确认」 |
+| P2-9 | `app.js:4424-4436,4020-4021` | 编程块输入删除所有非 hex 后再接受，可把 G1→1、00Z1→001 静默改值；该分支当前不可达。特殊功能入口 hexToInt 则正确拒绝非法字符，挂接后会被错误接受 |
 
 ### 11.5 「文档写 A、代码做 B」仍未收口的直接例子
 
@@ -437,6 +442,9 @@
 - `tools/verify-pending.mjs` 对 `mode 0x1d` 打印 `FAIL 0/32`，最终仍 exit 0；`e2e-flow` 多处绕过真实入口，模拟旧版 `runSequence` 输出、构造源码不存在的 `runReadBack`/`out` 等对象，不能把「参数存在且能跑通」当成实现一致。
 - 项目已有实车诊断 `RE-RECOVERY-20261105` 本身记录 32 失败、0 可写，不是 0 失败；e2e 把通过数写成 105，HANDOFF/验收表又写成 84，是同一套件不同快照的混写。
 - `probeAddressFor` 在 raw `elm.cmd` 改适配器地址后，`.setAddress` 仍显式改 tx/rx，不能把「没有 ReferenceError」当成链路已验证；必须检查实际候选和回帧。
+- `tools/ui-automator.mjs` 有 5 个 FAIL 仍输出「测试全部通过」；`tools/name-map-coverage.mjs:129` 直接断言 type 与实际 `0x0f` 不符却照常通过；walkthrough 的协议锁 Promise 未 await，存在未捕获拒绝风险。
+- 宽枚举批量写入 3 个真实用例已复现：未触碰字段被改成第一枚举项；这些是运行时 DOM 级证据，不是静态推测。
+- 「真·有算法」smoke 只证明独立 resolver 能算，未走 `app.js` 的 `hit` 作用域错误与 provider 陈旧路径；`BV_SteerAssisUDS` 在 992 的独立真值通过，与 app calc 丢上下文失败并不矛盾，验收必须分测两层。
 
 ### 11.8 建议修复顺序（先安全，再对齐）
 
