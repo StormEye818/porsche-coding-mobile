@@ -58,8 +58,16 @@ OVERRIDES = {
     'RDK3': ('0x0e37', 'adjacency', '981 段 RDK3 记录@81722+ 全 flag=0，紧随 RDK_BaseSys(0x0E37@81582)；0x0C/0x0F 代 RDK3 独立 sysId 不适用于 981'),
     # SWSG：981 无独立名字记录；0x0B 代同构 SWSG_mit_AFS_ALWR=0x0B2F/0x0B30 ↔ SCHEINWERFER_LED 0x0E2F/0x0E30
     'SWSG': ('0x0e2f', 'isomorphic', 'SWSG 981 无名字记录；0x0B 代 SWSG_mit_AFS_ALWR=0x0B2F/0x0B30 与 SCHEINWERFER_LED 0x0E2F/0x0E30 同构；DRIVELINKS 0x0E2F/0x0E30 均含直连键 0x00300763/0x00300764（=SWSG 大灯随动）'),
-    # LCA：无名字记录；DRIVELINKS 中唯一持有 0x6CC-0x6CF 直连键的 ecu 键为 0x0F4D
-    'BV_ContrUnitLaneChangAssis2UDS': ('0x0f4d', 'drivelinks-key', '无名字记录；drivelinks-v3 键 0x0f4d 独占直连键 0x003006CC-0x003006CF（lane change assist 惯用段）'),
+    # LCA：981 无名字记录；**系统身份**在 0x0E 代 comm 子表精确 join 到 0x0E5F/0x0E60
+    #   （`BV_ContrUnitLaneChangAssis2UDS_BaseSys`，2026-11-11 复核），
+    #   但 DRIVELINKS 只有 0x0F4D 持有 0x6CC-0x6CF 直连键 —— 即「身份 sysId」与
+    #   「地址记录键」不是同一个。运行时要地址必须用 0x0F4D，身份/菜单归属是 0x0E5F/0x0E60。
+    #   两者都记录，不合并、不互相冒充。
+    'BV_ContrUnitLaneChangAssis2UDS': ('0x0f4d', 'drivelinks-key',
+                                       '地址键=0x0F4D（drivelinks 独占直连键 0x003006CC-0x003006CF）；'
+                                       '身份 sysId=0x0E5F/0x0E60（0x0E 代 comm 子表 '
+                                       'BV_ContrUnitLaneChangAssis2UDS_BaseSys 精确 join）；'
+                                       '两者语义不同，禁止互相替代'),
     # Head_Unit 与 BV_InforContrUnit1UDS 同为 0x0E46（投票双确认）
     'Head_Unit': ('0x0e46', 'vote', 'Head_Unit_BaseSys@74583 flag=1 sysId=0x0E46'),
 }

@@ -1122,7 +1122,20 @@ async function autoSearch(opts = {}) {
     coder.family = family;
     const idn = await coder.readVehicleIdentity(family, preflight);
     for (const s of idn.steps) log('  ' + s, 'info');
-    const vin = idn.vin || '';
+    let vin = idn.vin || '';
+    // 主链读不到 VIN 时，补一条 OBD 广播读（21 09 05 → 09 02）。
+    // 这是**适配层扩展**：原厂由 VCI 盒按「一对多」发 21 09 05，目的 CAN ID 不在包内；
+    // 我方只能用标准 OBD 功能地址 0x7DF，并只认 61 09 05/49 02 + 17 位 VIN 的严格正响应。
+    if (!vin) {
+      const obd = await coder.readVinByObd().catch((e) => ({ vin: '', tried: [], err: e.message }));
+      if (obd?.vin) {
+        vin = obd.vin;
+        log(`  OBD 通道读到 VIN（${obd.src}）：${vin}`, 'ok');
+      } else {
+        log(`  OBD 通道未取到 VIN（尝试 ${(obd?.tried || []).join(' / ') || '—'}`
+          + `${obd?.err ? '；' + obd.err : ''}）`, 'info');
+      }
+    }
     const nameFromCar = idn.name || '';
     if (nameFromCar) state.modelDesignation = nameFromCar.slice(0, 32);
 

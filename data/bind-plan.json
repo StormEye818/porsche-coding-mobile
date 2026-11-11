@@ -1,7 +1,7 @@
 {
  "schemaVersion": 3,
  "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + all-model-sysids(全车型换表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
- "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。pairs 优先保留表A原始 rx；无证据时才用不回绕的 +8 适配器惯例；协议不合法或歧义 rx 进 rejectedPairs，不进运行时。",
+ "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
  "stats": {
   "legacy": 152,
   "rxPreserved": 2091,
@@ -348,9 +348,9 @@
    "rejectedPairs": [
     {
      "tx": "0x07FD",
-     "rx": "0x0805",
-     "reason": "rx-not-valid-for-tx-protocol",
-     "source": "tableA-same-sys"
+     "rx": null,
+     "reason": "tx-in-response-range",
+     "source": "address-table"
     }
    ],
    "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
@@ -3353,9 +3353,9 @@
    "rejectedPairs": [
     {
      "tx": "0x07FC",
-     "rx": "0x0804",
-     "reason": "rx-not-valid-for-tx-protocol",
-     "source": "tableA-same-sys"
+     "rx": null,
+     "reason": "tx-in-response-range",
+     "source": "address-table"
     }
    ],
    "provenance": [

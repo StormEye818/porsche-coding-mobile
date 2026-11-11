@@ -9,7 +9,7 @@
  * ```
  * SendSysSeedKey(TOKEN*)                        core.so 
  *   └─ PorscheKeySendCmd(mode)                 选 4 字节命令模板对（rodata 6 对）
- *        └─ securityModel(session, mode)  ← 本文件
+ *        └─ securityModel(seedFamily, mode)  ← 本文件
  *             ├─ 发取 seed 命令 → 收 seed（2 或 4 字节大端）
  *             ├─ switch(mode) 算 key
  *             └─ 回发 key：27 05 01 <4B> / 27 03 04 <2B>
@@ -22,8 +22,12 @@
  * 0x88d8a  01 02 10 85      0x88d8f  01 02 10 88
  * ```
  *
- * ## session（securityModel 的 param_1）决定取 seed 的命令与 seed 宽度
- * | session | 取 seed 命令 | 响应长度 | seed 宽度 |
+ * ## seedFamily（securityModel 的 param_1）决定取 seed 的命令与 seed 宽度
+ * ⚠️ 2026-11-11 逆取纠名：这个参数**不是诊断会话号**。它的合法取值是
+ *    `0 / 0x100 / 0x102 / 0x304 / 0x506`，来自 DRIVELINKS 记录复合字 P 的
+ *    `P>>16`（`P = mode | family<<8 | seedFamily<<16`），只用于选 seed 命令与宽度。
+ *    把它当 `10 xx` 会话号会拼出畸形帧（如 `10304`）。
+ * | seedFamily | 取 seed 命令 | 响应长度 | seed 宽度 |
  * |---|---|---|---|
  * | `0x000` | `&0x88d72`（3 字节） | 2 | **2 字节** |
  * | `0x100` | `&0x88d68`（4 字节） | 4 | 4 |

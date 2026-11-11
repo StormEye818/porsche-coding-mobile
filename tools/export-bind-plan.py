@@ -54,6 +54,8 @@ ALL_SYSIDS = ROOT / 'data' / 'all-model-sysids.json'
 OUT = ROOT / 'data' / 'bind-plan.json'
 
 DIAG_LO, DIAG_HI = 0x600, 0x7FF
+# 11 位诊断**请求**段：0x7F8-0x7FF 是应答段（tx+8 必然溢出），不能当请求地址发 ATSH。
+REQ_HI = 0x7F7
 
 # DME 家族路由组：不再硬编码代际 —— 运行时按「该代 owner=(g<<8)|0x0C 是否存在」自动注入
 # （0x_0C 各代同构，根表 type=代际前缀；见 tools/export-sysdata-routing.py parse_root_table）。
@@ -175,7 +177,9 @@ def main():
                 continue
             v = int(tx, 16)
             if DIAG_LO <= v <= DIAG_HI:
-                # 没有原始 rx 时才允许使用未回绕的 +8 适配器惯例；有原始值必须保留。
+                # 表A 原始记录只有 tx（16B 路由行 [owner][sig][sel][ff][u32 can][u32 m]），
+                # 没有独立 rx 字段；ecu-addresses 的 rx 本身就是 tx+8 的派生值。
+                # 这里仍按「有 rx 就保留」处理，但不做 &0x7FF 回绕：越界值交给 rejectedPairs。
                 rx = c.get('rx') or (f'0x{v + 8:04X}' if v + 8 <= 0x7FF else None)
                 tx_s = f'0x{v:04X}'
                 rx_s = f'0x{int(rx, 16):04X}' if rx is not None else None
@@ -289,7 +293,7 @@ def main():
     notes = {}
 
     def rx_for(sid, can):
-        """保留原始 rx；跨代只有全局唯一证据才复用。绝不做 &0x7FF 回绕。"""
+        """rx 解析：同一 sysId 有实测值就用；否则仅在全局唯一时复用；绝不 &0x7FF 回绕。"""
         tx = f'0x{can:04X}'
         if rx_by_sys.get(sid, {}).get(tx):
             return rx_by_sys[sid][tx], 'tableA-same-sys'
@@ -388,17 +392,26 @@ def main():
 
         pairs, rejected_pairs = [], []
         for c in ordered:
-            rx, rx_source = rx_for(sid, c)
             tx_s = f'0x{c:04X}'
+            # 路由表/表A 的 can 值是 12 位空间，出现过 0x800+；0x7F8-0x7FF 是 11 位应答段。
+            # 这两类都不能当请求地址：发 ATSH 会绑到别的 ECU 或直接非法。
+            if c > REQ_HI:
+                rejected_pairs.append({
+                    'tx': tx_s, 'rx': None,
+                    'reason': 'tx-in-response-range' if c <= DIAG_HI else 'tx-not-11bit-request',
+                    'source': 'address-table',
+                })
+                stats['rxRejected'] += 1
+                continue
+            rx, rx_source = rx_for(sid, c)
             if rx is None:
                 rejected_pairs.append({'tx': tx_s, 'rx': None, 'reason': rx_source})
                 stats['rxDropped'] += 1
                 continue
             rx_v = int(rx, 16)
-            # tx<=0x7FF 时协议 6（11bit）；rx 超 11bit 的原始记录只能留证，不能发 ATCRA。
-            valid = (c <= 0x7FF and rx_v <= 0x7FF) or (c > 0x7FF and rx_v <= 0x1FFFFFFF)
-            if not valid:
-                rejected_pairs.append({'tx': tx_s, 'rx': rx, 'reason': 'rx-not-valid-for-tx-protocol', 'source': rx_source})
+            # 11 位请求 tx 的应答必须仍在 11 位内；超出的原始记录只留证，不发 ATCRA。
+            if rx_v > 0x7FF:
+                rejected_pairs.append({'tx': tx_s, 'rx': rx, 'reason': 'rx-not-valid-for-11bit', 'source': rx_source})
                 stats['rxRejected'] += 1
                 continue
             pairs.append((tx_s, rx))
@@ -415,10 +428,6 @@ def main():
             'pairs': [{'tx': t, 'rx': r} for t, r in pairs],
             'firstRead': (first_read_of(sid) or {}).get('frame'),
         }
-        if rejected_pairs:
-            rec['rejectedPairs'] = rejected_pairs
-        if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
-            rec['bindUnresolved'] = 'n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举'
         if rejected_pairs:
             rec['rejectedPairs'] = rejected_pairs
         if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
@@ -462,8 +471,9 @@ def main():
                  '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
                  'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
                  'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
-                 'pairs 优先保留表A原始 rx；无证据时才用不回绕的 +8 适配器惯例；'
-                 '协议不合法或歧义 rx 进 rejectedPairs，不进运行时。'),
+                 'rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；'
+                 'tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）'
+                 '一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。'),
         'stats': dict(stats),
         'coverage': coverage,
         'ecu': dict(sorted(out.items())),

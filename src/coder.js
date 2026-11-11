@@ -737,6 +737,79 @@ export class Coder {
   }
 
   /**
+   * OBD 通道读 VIN（`21 09 05`，备选 `09 02`）—— **本项目适配层，非原厂帧序**。
+   *
+   * 逆取结论（2026-11-11，详见 RE-CLOSURE-20261111.md）：
+   *   - 原厂 `DiagnoseService.open_readVinByObd()` **零参数**，只把 `21 09 05` 交给
+   *     「一对多发送」(ONE_TO_MORE) 的 VCI 盒；**目的 CAN ID 不在 APK / .so / 资源里**，
+   *     由盒子固件按协议填。包内三层都无地址字面量 ⇒ 无法声称「与 21 09 05 对齐到地址」。
+   *   - `21 09 01` 是应答确认（回空），不带 VIN；VIN 只在 `61 09 05` 的 17 字节里。
+   *   - 官方 OBD VIN 库（libReadOBDVIN.so）自身用的是 `09 02`，不是 `21 09 05`。
+   *
+   * 因此这里用 ISO 15765-4 的通用 OBD **功能地址 0x7DF 广播**（不是包内常量，
+   * 是标准值），并且**只认严格正响应**：
+   *   `61 09 05` + 17 位 VIN 字母表字符；或 `49 02` + 17 位。
+   * NRC / 空 / 错长度 / 非法字符一律判负，不猜、不扫描。
+   *
+   * 读失败不会影响任何写入（本方法只读），结束后恢复原物理寻址。
+   * @returns {Promise<{vin:string,src:string,tried:string[]}>}
+   */
+  async readVinByObd({ timeoutMs = 1500 } = {}) {
+    const prev = { tx: this.tx, rx: this.rx, protocol: this.protocol, ready: this._addressReady };
+    const tried = [];
+    const VIN_RE = /[A-HJ-NPR-Z0-9]{17}/;      // ISO 3779：无 I/O/Q
+    const vinOf = (body, hdr) => {
+      const b = Array.from(body || []);
+      for (let i = 0; i + hdr.length <= b.length; i++) {
+        // 头部必须逐字节相符（不做「包含」匹配，避免把别的服务当 VIN）
+        if (hdr.some((v, k) => b[i + k] !== v)) continue;
+        const txt = b.slice(i + hdr.length)
+          .map((c) => (c >= 0x20 && c < 0x7f ? String.fromCharCode(c) : ' '))
+          .join('')
+          .replace(/\s+/g, '');
+        const m = txt.match(VIN_RE);
+        if (m) return m[0];
+      }
+      return '';
+    };
+    try {
+      // 功能寻址：11 位 500k + 广播头 + 清接收过滤（广播会有多个应答方）
+      await atCmdOk(this.elm, 'ATSP6', 2000).catch(() => {});
+      await atCmdOk(this.elm, 'ATSH7DF', 2000).catch(() => {});
+      await this.elm.cmd('ATCRA', 1500).catch(() => {});
+      this._addressReady = false;
+      // ① 原厂 APK 同款请求
+      tried.push('210905');
+      try {
+        const r = await this.uds('210905', timeoutMs, { anyRx: true });
+        const vin = vinOf(r.body, [0x61, 0x09, 0x05]);
+        if (vin) return { vin, src: '21 09 05@0x7DF', tried };
+      } catch (e) {
+        this._say(`  (OBD 21 09 05 未取到：${e.message})`);
+      }
+      // ② 官方 OBD VIN 库同款（09 02，PID 01 的 VIN 计数 + 17 字节）
+      tried.push('0902');
+      try {
+        const r = await this.uds('0902', timeoutMs, { anyRx: true });
+        const vin = vinOf(r.body, [0x49, 0x02]);
+        if (vin) return { vin, src: '09 02@0x7DF', tried };
+      } catch (e) {
+        this._say(`  (OBD 09 02 未取到：${e.message})`);
+      }
+      return { vin: '', src: '', tried };
+    } finally {
+      // 恢复原寻址（即使失败也不能把后续读写留在 7DF 广播上）
+      this.tx = prev.tx;
+      this.rx = prev.rx;
+      this.protocol = prev.protocol;
+      this._addressReady = false;
+      if (prev.tx != null && prev.rx != null) {
+        await this.address().catch(() => {});
+      }
+    }
+  }
+
+  /**
    * 切换到某个 ECU 的物理地址。
    * ⚠️ 每个 ECU 的 tx/rx 不同 —— 硬编码一个地址读所有模块是读不到的（实车教训）。
    */
@@ -784,15 +857,17 @@ export class Coder {
    *
    * @param {boolean} allowEmpty  允许空响应（如 TesterPresent）
    */
-  async uds(payloadHex, timeoutMs = 6000, { allowEmpty = false, pendingWait = false } = {}) {
+  async uds(payloadHex, timeoutMs = 6000, { allowEmpty = false, pendingWait = false, anyRx = false } = {}) {
     // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑨）：回帧 ID 硬校验。
     //   原厂的链路层用 SetAddress/UpdateCanFilterId 做 CAN 过滤，**只可能收到该 ECU 的帧**；
     //   ELM 的 ATCRA 在 EA 通道可能不生效（真车探 0x7F1 回帧头 7E8 即此）。
     //   这里按回帧 ID 比对期望 rx，等价于 原厂的 FilterId 语义 —— 不符即判死，
     //   避免把别的 ECU 的块读出来再写回。mock 适配器不模拟 ATCRA 过滤 → 跳过校验。
+    //   `anyRx` 只给**功能寻址广播**（OBD 0x7DF）用：此时本来就没有唯一应答方，
+    //   调用方必须自己做更严的内容校验（见 readVinByObd）。
     const isMock = !!(this.elm && (this.elm.mock || this.elm.port?.mock));
     const checkRx = (raw) => {
-      if (isMock || this.rx == null || !raw) return;
+      if (anyRx || isMock || this.rx == null || !raw) return;
       // frameIdsOf 是逐帧数组；必须先按不同 ID 去重。只要混入一个非期望 ID，
       // 就不能把整段原始文本交给 parseRespAuto（它不会按 CAN ID 过滤）。
       const ids = [...new Set(frameIdsOf(raw))];
@@ -1491,7 +1566,7 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
       `实得 ${s.body.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`);
   }
   const seed = s.body.slice(kwp ? 1 : 2);
-  this._say(`  seed = ${seed.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`);
+  this._say(`  seed = ${seed.map((b) => b.toString(16).padStart(2, '0')).join(' ')}（${seed.length} 字节）`);
   // ⚠️ 空 seed 绝不能当「无需解锁」（2026-10-17 D4 的同类坑，这里之前漏了）：
   //    取 seed 请求本身可能回空（地址错 / 未进对会话 / 超时），而 `.every()` 对空数组返回 true。
   //    静默跳过解锁 → 写入必吃 NRC 0x33/0x35，甚至吃满尝试计数。
@@ -1501,6 +1576,26 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   if (seed.every((b) => b === 0)) {
     this._say('  seed 全零 = 无需解锁');
     return true;
+  }
+  // ★ seed 宽度闸门（2026-11-11 逆取）：原厂 `PORSCHESecurityModel(seedFamily, mode)`
+  //   的第一参数是 **seed 族**（0/1/2/3/4/6/8），它决定取 seed 命令与 seed **宽度**
+  //   （2/3/4 字节，见 seedkey-pswcalc.js 头表）。
+  //   现有算法里 2 字节与 4 字节都有真值校验过的实现，所以不能按宽度一刀切拒绝；
+  //   但**未声明支持**的 provider 拿到非常规宽度时要留痕，避免错 key 静默发出。
+  //   provider 可声明 `seedWidths:[2,4]` —— 声明后即为硬闸门（不在列表里直接拒发）。
+  const seedWidths = this.seedKeyProvider && this.seedKeyProvider.seedWidths;
+  if (Array.isArray(seedWidths) && seedWidths.length) {
+    if (!seedWidths.includes(seed.length)) {
+      throw new CodingError(
+        `seed 宽度 ${seed.length} 字节不在该算法已声明支持的宽度 [${seedWidths.join(',')}] 内 ——` +
+        `拒绝用错宽度算 key（会吃 NRC 0x35 → 0x36 锁死）。`);
+    }
+  } else if (![2, 3, 4, 6, 8].includes(seed.length)) {
+    throw new CodingError(
+      `seed 宽度 ${seed.length} 字节不是原厂 seed 族已知宽度（2/3/4/6/8）—— 拒绝计算。`);
+  } else if (seed.length !== 2) {
+    this._say(`  ⚠️ seed 宽度 ${seed.length} 字节（原厂 seed 族变体）：`
+      + `该 mode 未声明宽度支持，key 正确性无法离线保证`);
   }
   const k = key ?? this.seedKeyProvider.calc(seed, level);
   const kArr = Array.from(k instanceof Uint8Array ? k : k);

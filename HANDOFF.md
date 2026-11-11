@@ -5,7 +5,31 @@
 
 ---
 
-## ✅ 2026-11-11 16:55 · 第五阶段：按证据修复 + 真实行为回归（**当前有效状态**）
+## ✅ 2026-11-11 18:20 · 第六阶段：五项未收口全部逆到边界（**当前有效状态**）
+
+**主文档：[`RE-CLOSURE-20261111.md`](./RE-CLOSURE-20261111.md)**（逐指令/逐字节证据 + A/B/C 判定）
+
+- **24 键表已全量导出**：不是语言表，是 **24 条车型名 + vehicleId 白名单**，
+  `PorscheGetVehicleNameID @SYSP:0x24DE4` → 表 `0x5E42C` → `strcmp` 全等。
+  新增 `src/model-name-table.js`，`pickModelByName` 改为「白名单全等优先、基名兜底」。
+- **OBD VIN 地址证伪**：`open_readVinByObd()` 零参数、走 VCI「一对多」；APK/.so/资源
+  三层都没有目的 CAN ID。新增 `Coder.readVinByObd()`：0x7DF 广播 + 只认
+  `61 09 05`/`49 02` + 17 位 VIN，失败不扫描，结束恢复原寻址。
+- **逐 ECU 会话**：类别字节在 `PORSCHE_SYS_DATA.BIN` 的加密记录体里，静态不可导出；
+  **写序言 A/B/C/D 不是按 ECU 分派**（四个写入口内无分派读）——`runWritePrologue` 继续不挂。
+- **口径纠偏**：`PORSCHESecurityModel(param_1,param_2)` 的 `param_1` 是 **seed 族**（不是会话号），
+  决定 seed 宽度 2/3/4；`securityAccessEx` 增加宽度闸门（provider 可声明 `seedWidths`）。
+- **多 sysId**：平台内真正的双 sysId 只有 981 的 5 个模块，且两值地址候选完全相同；
+  真正要区分的是 LCA 的「身份 0x0E5F/0x0E60 ≠ 地址键 0x0F4D」。
+- **老平台代际**：9X6/9X7/CS1/E1 结构性不可证（同名子系统在每代都注册、ALLDATA 无代际字节）。
+- **表 A rx**：无独立 rx 字段，恒为 `tx+8`；`0x7F8-0x7FF` 与 `0x800+` 一律拒绝并留证，
+  不再 `&0x7FF` 回绕。
+- **回归**：`test-align431` 37、`smoke-fixes` 359、`verify-all-models` 66、`e2e-flow` 105、
+  `walkthrough` 84、`verify-runtime-safety` **21**，全部 0 失败。
+
+---
+
+## ✅ 2026-11-11 16:55 · 第五阶段：按证据修复 + 真实行为回归（上一状态）
 
 本轮按「先修不依赖新证据的 bug，再处理未逆项」执行，目前不再把旧审计结论当作当前实现。
 

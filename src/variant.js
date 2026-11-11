@@ -1,3 +1,5 @@
+import { matchModelNameExact } from './model-name-table.js';
+
 /**
  * 自动选变体 —— 对齐 参考诊断仪 的「进模块不弹变体选择」。
  *
@@ -125,44 +127,56 @@ export function pickVariantByPart(byPart, byHwPart, want) {
 }
 
 /**
- * 应答文本 → 车型（trim 落定，RE-MODELADDR §1.4/§1.5④ + 任务清单①）。
+ * 应答文本 → 车型（trim 落定）。
  *
- * 参考诊断仪 语义：22 11 02/22 11 01 应答文本（车上识别串）与 24 键表（SYSP:0x5E42C）
- * 各键文本 strcmp —— strcmp 语义下 **显示文本 == 应答文本**；981 Cayman 应答含 "Cayman"
- * ⇒ 显示 Cayman。
+ * 原厂语义（2026-11-11 逆取钉死）：
+ *   `PorscheGetVehicleNameID @SYSP:0x24DE4` 把应答串与 **SYSP:0x5E42C 的 24 条车型名**
+ *   逐条 `strcmp` 全等，首个命中即返回该条的 vehicleId。表已导出到
+ *   `src/model-name-table.js`（含 GBK 原文与 vehicleId）。
  *
- * ★ 2026-11-11 原厂对齐（CODE-AUDIT §3.1 偏离②）：旧实现用 `String(m).includes(w)` 子串
- *   命中（"Cayman" 会命中 "Cayman（981）"/"Cayman（982）" 中靠前者），与 原厂的 **strcmp
- *   全等** 不符。现改为「规范基名全等」：去掉目录名的括号年份后缀（`（981）`/`(981)`、
- *   ` GT4 Clubsport` 等不去的原样保留），归一化大小写/空白后做**全等**比较；不命中返回
- *   null（调用方走多候选确认，不猜）。
- *   ⚠️ 数据缺口：原厂的 24 键语言表（key→文本）未从包内导出，此处以车型目录基名为
- *   可观测等价键；已在验收矩阵「未对齐（数据缺口）」单列。
+ * 因此本函数分两层：
+ *   ① **白名单全等**（原厂行为）：命中条目且该条目能唯一映射到候选车型 → 直接返回；
+ *      条目是通用名（如 "Cayman"）或映射后仍多候选 → 返回 null，交调用方按 VIN/用户确认。
+ *   ② 兜底（**本项目扩展，不是原厂行为**）：应答串常带年款前缀（如「14款 Cayman」），
+ *      原厂 strcmp 在这种串上不命中；为不丢已有能力，再用「去括号基名全等」比较一次。
+ *      兜底结果在 `how` 里明确标注，便于日志区分。
  *
  * @param {string[]} models   候选车型目录名（如 ['Boxster（981）','Cayman（981）']）
  * @param {string} nameText   链上应答文本（如 "Cayman"）
- * @returns {{name:string, how:string}|null}  null=文本未命中（调用方走双候选合并，须注明）
+ * @returns {{name:string, how:string, exact?:boolean, vid?:number}|null}
  */
 export function pickModelByName(models, nameText) {
   const t = String(nameText || '').trim();
   if (!t || !models || !models.length) return null;
+
+  // ① 原厂 24 条白名单：strcmp 全等
+  const hit = matchModelNameExact(t);
+  if (hit?.catalog) {
+    const inCands = hit.catalog.filter((c) => models.includes(c));
+    if (inCands.length === 1) {
+      return {
+        name: inCands[0], exact: true, vid: hit.vid,
+        how: `应答文本「${t}」与原厂车型名表 vehicleId=${hit.vid} 全等`,
+      };
+    }
+    if (inCands.length > 1) return null;   // 平台已定但车身未定 → 让用户选，不猜
+  }
+
+  // ② 兜底：去括号基名全等（本项目扩展；原厂没有这一步）
   const base = (s) => String(s || '')
     .replace(/[（(][^）)]*[）)]/g, '')     // 去括号年份/区间后缀：Boxster（981）→ Boxster
     .replace(/[^A-Za-z0-9一-龥]+/g, ' ')  // 标点归一为空白
     .trim().toUpperCase();
   const want = base(t);
   if (!want) return null;
-  // 全等优先：应答文本（去括号后）== 车型基名。**必须唯一** —— 981/982 的
-  // Boxster/Cayman 基名相同（`Boxster（981）`/`Boxster（982）`），多命中说明应答文本
-  // 不足以区分代际 → 返回 null 让调用方走多候选确认（不猜）。
   const exact = models.filter((m) => base(m) === want);
-  if (exact.length === 1) return { name: exact[0], how: `应答文本「${t}」与车型基名全等` };
+  if (exact.length === 1) return { name: exact[0], how: `应答文本「${t}」与车型基名全等（扩展兜底）` };
   if (exact.length > 1) return null;
   // 应答文本可能带前缀（如「14款 Cayman」）：按空白分词后**词全等**（非子串）比较基名
   const words = want.split(/\s+/).filter((w) => w.length >= 3);
   for (const w of words) {
     const hits = models.filter((m) => base(m) === w);
-    if (hits.length === 1) return { name: hits[0], how: `应答文本「${t}」词「${w}」与车型基名全等` };
+    if (hits.length === 1) return { name: hits[0], how: `应答文本「${t}」词「${w}」与车型基名全等（扩展兜底）` };
   }
   return null;
 }

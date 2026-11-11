@@ -72,7 +72,7 @@
     "0x0f4d"
    ],
    "method": "drivelinks-key",
-   "evidence": "无名字记录；drivelinks-v3 键 0x0f4d 独占直连键 0x003006CC-0x003006CF（lane change assist 惯用段）"
+   "evidence": "地址键=0x0F4D（drivelinks 独占直连键 0x003006CC-0x003006CF）；身份 sysId=0x0E5F/0x0E60（0x0E 代 comm 子表 BV_ContrUnitLaneChangAssis2UDS_BaseSys 精确 join）；两者语义不同，禁止互相替代"
   },
   "BV_ECM_UDS": {
    "sysId": "0x0e01",
