@@ -55,6 +55,7 @@ export class LinkDoctor {
     this.port = null;
     this.elm = null;
     this.onStep = null;
+    this.identityBootstrap = null;
   }
 
   _ok(id, title, detail) {
@@ -161,7 +162,14 @@ export class LinkDoctor {
       // KWP 正响应 `5A`；UDS 正响应 `62`/`49`；负响应 `7F` 也算协议通（ECU 活着）
       const hit = /\b5A\b/i.test(r) || /\b62\b/i.test(r) || /\b49\b/i.test(r) || /\b7F\b/i.test(r);
       tries.push(`ATSP${p}(${desc})→${r.slice(0, 24) || '空'}`);
-      if (hit) { locked = p; break; }
+      if (hit) {
+        locked = p;
+        // 只保存可用于身份读取的正响应证据；7F/NRC 仅说明协议有回应，不能当 VIN 地址证据。
+        if (/5A\s*9F/i.test(r)) {
+          this.identityBootstrap = { tx: 0x7E0, rx: 0x7E8, family: 'kwp', command: '1A9F', raw: r, protocol: p };
+        }
+        break;
+      }
     }
     // ⚠️ 无论成败，**必须**把协议固定下来 —— 绝不能停在试到一半的波特率上。
     await this.elm.cmd(`ATSP${locked ?? 6}`, 2500);

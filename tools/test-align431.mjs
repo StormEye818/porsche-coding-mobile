@@ -66,7 +66,10 @@ console.log('\n[C] 绑定计划（data/bind-plan.json）');
   const { readFileSync } = await import('node:fs');
   const plan = JSON.parse(readFileSync(new URL('../data/bind-plan.json', import.meta.url), 'utf8'));
   const ic = plan.ecu['0x0b08'];
-  ok('IC n=0 → 直接绑定', ic && ic.bindDirect === true, JSON.stringify(ic));
+  ok('IC 混合 n → 禁止直绑（不能跨行吞并）', ic && ic.nMixed === true && ic.bindDirect === false, JSON.stringify(ic));
+  ok('所有直绑条目均为全行 n=0 且唯一合法地址',
+    Object.values(plan.ecu).filter((e) => e.bindDirect)
+      .every((e) => e.n === 0 && e.nMixed === false && e.pairs?.length === 1));
   ok('IC 候选只含 0x7F1', ic && ic.cands.length === 1 && ic.cands[0].toLowerCase() === '0x07f1', JSON.stringify(ic && ic.cands));
   const pdc = plan.ecu['0x0b12'];
   ok('PDC 候选含已证 0x7CF', pdc && pdc.cands.some((c) => c.toLowerCase() === '0x07cf'), JSON.stringify(pdc && pdc.cands));

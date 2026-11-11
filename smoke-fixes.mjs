@@ -1528,7 +1528,7 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
 
   const coderSrc = readFileSync('./src/coder.js', 'utf8');
   ok('setAddress 内部 await address()',
-     /async setAddress\(tx, rx, name = '', opts = \{\}\)[\s\S]{0,500}await this\.address\(\)/.test(coderSrc));
+     /async setAddress\([\s\S]*?await this\.address\(\);/.test(coderSrc));
   // ★ 任务清单⑤：KWP 流 10 89 直接建会话（不发 10 03）；NRC 7F 78 续等
   ok('KWP 流直接建会话（enterSession 不发 10 03）',
      /family === 'kwp'/.test(coderSrc) && /readVehicleIdentity/.test(coderSrc));

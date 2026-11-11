@@ -5,7 +5,31 @@
 
 ---
 
-## 🔴 2026-11-11 12:35 · 第三轮独立复核（**当前有效结论；先读这个**）
+## ✅ 2026-11-11 16:55 · 第五阶段：按证据修复 + 真实行为回归（**当前有效状态**）
+
+本轮按「先修不依赖新证据的 bug，再处理未逆项」执行，目前不再把旧审计结论当作当前实现。
+
+- **写入与状态安全**：备份携带车型/系统/地址/实际读 SID，恢复只接受同 ECU 且合法写服务；
+  `currentBlocks` 按 `(readSid,lid)` 隔离；换地址清 seed/身份/profile；修 `hit` 作用域、非 ASAP
+  上下文、回帧 ID、LID/DID 回显、ISO-TP 首 CF 序号、公共 API 默认 SID/LID。
+- **绑定数据**：`export-bind-plan.py` 保留逐行 `n/nMixed` 与原始 rx，混合 n 或地址不唯一禁止直绑；
+  非法/歧义 pair 留在 `rejectedPairs`，运行时过滤。`module-ecu-map.js` 拆 981 主表与旧代回退表，
+  重复键警告清零。
+- **会话与自动搜索**：`Coder._expectSession` 严格校验 `50 <session>`；`enterSessionFor` 为真实
+  Coder 方法；fresh 先 `1A90`，失败后 `1003→22F190`，只接受匹配正响应；自检保存地址证据，
+  进过模块后真车不沿用其地址；VIN 同串不再当车名。
+- **写 profile**：真实车辆默认只读，当前只放开证据完整的 981 Cayman DME 示例；模拟模式显式
+  使用 mock profile。未证实写 profile 在任何写帧前拒绝。
+- **回归**：`test-align431` 37、`smoke-fixes` 359、`verify-all-models` 66、`e2e-flow` 105、
+  `walkthrough` 84、新增 `verify-runtime-safety` 11，全部 0 失败；`boot-smoke`/`check-bundle` 通过。
+- **构建边界**：`npm run sync` 的 `www/data` 批量删除仍被 WorkBuddy safe-delete 护栏拦截；
+  本轮只用 esbuild 重建 `www/app.bundle.js`，没有绕过护栏或删除数据。
+- **仍未逆/未收口**：OBD VIN 地址、24 键语言表、逐 ECU ODX 会话与写序言分派、多 sysId 归属、
+  老平台代际。未证实项继续只读/保守探测，不把测试绿当作全量 431 对齐证明。
+
+---
+
+## 🔴 2026-11-11 12:35 · 第三轮独立复核（历史审计结论，已被本轮实现更新）
 
 **主文档：`CODE-AUDIT-FULLCHAIN-20261111.md §11`。上一轮「默认无自创 / 文档已收口 /
 全绿」的结论已废止，`ACCEPTANCE-MATRIX-431.md` 仅保留为历史快照，不得作为实车写入验收。**

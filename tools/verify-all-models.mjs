@@ -177,7 +177,7 @@ console.log('\n[H] 2026-11-11 原厂对齐改造回归');
   ok('SAFETY 默认全关', /range: false/.test(schema) && /autoRestore: false/.test(schema) && /addrState: false/.test(schema));
   ok('值域闸默认 opt-in', /SAFETY\.range && !fieldInRange/.test(app) && /SAFETY\.range && !fieldInRange/.test(coder));
   ok('回读不一致默认不回滚（记录失败）', /!SAFETY\.autoRestore[\s\S]{0,200}记录失败/.test(coder));
-  ok('写路径 skipIdent（不重跑识别链）', /enterSession\(session, \{ skipIdent: true \}\)/.test(coder));
+  ok('写路径 skipIdent（不重跑识别链）', /enterSession\(session, \{ skipIdent: true, strictSession: true \}\)/.test(coder));
   ok('恢复页无读服务拒写（不再猜 readSid）', /备份无读服务（读不到=不写）/.test(app));
   // ⑤ 匿名化：源码不得出现第三方工具字样
   ok('源码无第三方工具字样', !app.includes('4' + '31') && !coder.includes('4' + '31')

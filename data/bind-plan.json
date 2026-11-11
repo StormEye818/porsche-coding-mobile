@@ -1,12 +1,15 @@
 {
  "schemaVersion": 3,
  "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + all-model-sysids(全车型换表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
- "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。旧代 0x05/0x06/0x0B-0x0D 保留表A join（test-align431 对账基线）。候选序=多源收敛数降序；cands/pairs 仅诊断段 0x600-0x7FF；rx=tx+8。",
+ "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。pairs 优先保留表A原始 rx；无证据时才用不回绕的 +8 适配器惯例；协议不合法或歧义 rx 进 rejectedPairs，不进运行时。",
  "stats": {
   "legacy": 152,
-  "noCand": 263,
+  "rxPreserved": 2091,
+  "noCand": 264,
+  "rxRejected": 2,
   "crossgen": 151,
   "tierA": 63,
+  "rxDefaultPlus8": 122,
   "enumeration": 200
  },
  "coverage": {
@@ -98,8 +101,9 @@
  "ecu": {
   "0x0501": {
    "mode": "0x1005",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E7",
     "0x073C",
@@ -170,7 +174,8 @@
   "0x0502": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0714",
     "0x0715"
@@ -186,6 +191,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -196,6 +202,7 @@
   "0x0505": {
    "mode": "0x1005",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x06AE"
@@ -217,7 +224,8 @@
   "0x0507": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06E4",
     "0x0708",
@@ -283,6 +291,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -293,10 +302,12 @@
   "0x0508": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -307,6 +318,7 @@
   "0x050b": {
    "mode": "0x1005",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x0746"
@@ -328,17 +340,20 @@
   "0x050c": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
-   "cands": [
-    "0x07FD"
-   ],
-   "pairs": [
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [],
+   "pairs": [],
+   "firstRead": null,
+   "rejectedPairs": [
     {
      "tx": "0x07FD",
-     "rx": "0x0005"
+     "rx": "0x0805",
+     "reason": "rx-not-valid-for-tx-protocol",
+     "source": "tableA-same-sys"
     }
    ],
-   "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -349,10 +364,12 @@
   "0x0511": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -363,10 +380,12 @@
   "0x0512": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -377,10 +396,12 @@
   "0x051d": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -391,10 +412,12 @@
   "0x051e": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -405,7 +428,8 @@
   "0x051f": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x070A",
     "0x0716",
@@ -486,6 +510,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -496,10 +521,12 @@
   "0x0520": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -510,10 +537,12 @@
   "0x0522": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -524,10 +553,12 @@
   "0x0523": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -538,10 +569,12 @@
   "0x0525": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -552,6 +585,7 @@
   "0x0526": {
    "mode": "0x1005",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x06B4"
@@ -573,7 +607,8 @@
   "0x0527": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06EC",
@@ -639,6 +674,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -649,7 +685,8 @@
   "0x0528": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06EC",
@@ -715,6 +752,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -724,8 +762,9 @@
   },
   "0x0601": {
    "mode": "0x1005",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x073C",
     "0x0744",
@@ -785,8 +824,9 @@
   },
   "0x0602": {
    "mode": "0x1005",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -800,7 +840,8 @@
   "0x0605": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06EC",
     "0x06EE",
@@ -831,6 +872,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -841,10 +883,12 @@
   "0x0607": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -855,10 +899,12 @@
   "0x0608": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -869,10 +915,12 @@
   "0x060b": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -883,7 +931,8 @@
   "0x060c": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06ED",
     "0x0758",
@@ -909,6 +958,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -919,10 +969,12 @@
   "0x0611": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -933,7 +985,8 @@
   "0x0612": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0613",
     "0x061C"
@@ -949,6 +1002,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -959,7 +1013,8 @@
   "0x061d": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0613",
     "0x061C"
@@ -975,6 +1030,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -985,6 +1041,7 @@
   "0x061e": {
    "mode": "0x1005",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x0614"
@@ -1006,7 +1063,8 @@
   "0x061f": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0614",
     "0x06E2",
@@ -1027,6 +1085,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -1037,6 +1096,7 @@
   "0x0620": {
    "mode": "0x1005",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x0616"
@@ -1058,6 +1118,7 @@
   "0x0622": {
    "mode": "0x1005",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x0618"
@@ -1079,10 +1140,12 @@
   "0x0623": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -1093,7 +1156,8 @@
   "0x0626": {
    "mode": "0x1005",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06E4",
     "0x0760",
@@ -1124,6 +1188,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -1133,8 +1198,9 @@
   },
   "0x0b01": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E7",
     "0x073C",
@@ -1185,6 +1251,7 @@
   "0x0b02": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -1236,7 +1303,8 @@
   "0x0b04": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06E7",
     "0x073C",
@@ -1277,6 +1345,7 @@
     }
    ],
    "firstRead": "220000",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -1287,6 +1356,7 @@
   "0x0b05": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -1307,8 +1377,9 @@
   },
   "0x0b07": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -1328,8 +1399,9 @@
   },
   "0x0b08": {
    "mode": "0x1000",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -1349,8 +1421,9 @@
   },
   "0x0b09": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06E3",
@@ -1391,7 +1464,8 @@
   "0x0b12": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x07BA",
     "0x07BC",
@@ -1417,6 +1491,7 @@
     }
    ],
    "firstRead": "220033",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -1427,6 +1502,7 @@
   "0x0b13": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -1513,6 +1589,7 @@
   "0x0b1d": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -1553,8 +1630,9 @@
   },
   "0x0b1e": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06ED",
@@ -1624,8 +1702,9 @@
   },
   "0x0b1f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06ED",
@@ -1695,8 +1774,9 @@
   },
   "0x0b20": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DE",
     "0x06EB",
@@ -1771,8 +1851,9 @@
   },
   "0x0b23": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06E3",
@@ -1813,6 +1894,7 @@
   "0x0b2b": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -1888,8 +1970,9 @@
   },
   "0x0b2f": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E3",
     "0x06EC",
@@ -1959,8 +2042,9 @@
   },
   "0x0b30": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E3",
     "0x06EC",
@@ -2031,6 +2115,7 @@
   "0x0b32": {
    "mode": "0xffff",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07F1"
@@ -2052,6 +2137,7 @@
   "0x0b34": {
    "mode": "0x1010",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07F1"
@@ -2073,6 +2159,7 @@
   "0x0b35": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -2114,6 +2201,7 @@
   "0x0b36": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -2175,6 +2263,7 @@
   "0x0b37": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -2216,6 +2305,7 @@
   "0x0b40": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -2251,8 +2341,9 @@
   },
   "0x0b41": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07BA",
     "0x07BC",
@@ -2287,8 +2378,9 @@
   },
   "0x0b42": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DE",
     "0x06EE",
@@ -2364,6 +2456,7 @@
   "0x0b43": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -2440,6 +2533,7 @@
   "0x0b45": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -2520,8 +2614,9 @@
   },
   "0x0b46": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -2602,7 +2697,8 @@
   "0x0b48": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06F0",
     "0x06F1",
@@ -2638,6 +2734,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -2648,7 +2745,8 @@
   "0x0b49": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -2679,6 +2777,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -2689,7 +2788,8 @@
   "0x0b4a": {
    "mode": "0x1000",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -2720,6 +2820,7 @@
     }
    ],
    "firstRead": "2200AF",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -2729,8 +2830,9 @@
   },
   "0x0b4b": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -2771,7 +2873,8 @@
   "0x0b4c": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -2812,6 +2915,7 @@
     }
    ],
    "firstRead": "220007",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -2822,6 +2926,7 @@
   "0x0b4d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -2836,7 +2941,8 @@
   "0x0b4e": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -2877,6 +2983,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -2886,8 +2993,9 @@
   },
   "0x0b4f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -2967,8 +3075,9 @@
   },
   "0x0b50": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -3049,6 +3158,7 @@
   "0x0b51": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3063,6 +3173,7 @@
   "0x0b53": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3077,6 +3188,7 @@
   "0x0b54": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3091,6 +3203,7 @@
   "0x0b55": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3105,6 +3218,7 @@
   "0x0b57": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3119,6 +3233,7 @@
   "0x0b58": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3133,6 +3248,7 @@
   "0x0b70": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3147,6 +3263,7 @@
   "0x0b80": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3161,6 +3278,7 @@
   "0x0b82": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3175,6 +3293,7 @@
   "0x0ba5": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -3188,8 +3307,9 @@
   },
   "0x0c01": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E7",
     "0x073C",
@@ -3197,8 +3317,7 @@
     "0x0743",
     "0x0744",
     "0x0758",
-    "0x07B6",
-    "0x07FC"
+    "0x07B6"
    ],
    "pairs": [
     {
@@ -3228,13 +3347,17 @@
     {
      "tx": "0x07B6",
      "rx": "0x07BE"
-    },
-    {
-     "tx": "0x07FC",
-     "rx": "0x0004"
     }
    ],
    "firstRead": "21A4",
+   "rejectedPairs": [
+    {
+     "tx": "0x07FC",
+     "rx": "0x0804",
+     "reason": "rx-not-valid-for-tx-protocol",
+     "source": "tableA-same-sys"
+    }
+   ],
    "provenance": [
     {
      "source": "tableA",
@@ -3245,6 +3368,7 @@
   "0x0c02": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -3295,8 +3419,9 @@
   },
   "0x0c04": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": "220000",
@@ -3309,8 +3434,9 @@
   },
   "0x0c05": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": "2200F0",
@@ -3323,8 +3449,9 @@
   },
   "0x0c07": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0702",
     "0x076D",
@@ -3369,8 +3496,9 @@
   },
   "0x0c08": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -3390,8 +3518,9 @@
   },
   "0x0c09": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06E3",
@@ -3432,7 +3561,8 @@
   "0x0c12": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x07BA",
     "0x07BC",
@@ -3458,6 +3588,7 @@
     }
    ],
    "firstRead": "220033",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -3467,8 +3598,9 @@
   },
   "0x0c13": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -3554,6 +3686,7 @@
   "0x0c1d": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -3594,8 +3727,9 @@
   },
   "0x0c1e": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06ED",
@@ -3665,8 +3799,9 @@
   },
   "0x0c1f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06ED",
@@ -3736,8 +3871,9 @@
   },
   "0x0c20": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DE",
     "0x06EB",
@@ -3812,8 +3948,9 @@
   },
   "0x0c23": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06E3",
@@ -3854,6 +3991,7 @@
   "0x0c2b": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -3929,8 +4067,9 @@
   },
   "0x0c2f": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E3",
     "0x06EC",
@@ -4000,8 +4139,9 @@
   },
   "0x0c30": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E3",
     "0x06EC",
@@ -4071,8 +4211,9 @@
   },
   "0x0c32": {
    "mode": "0xffff",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -4093,6 +4234,7 @@
   "0x0c34": {
    "mode": "0x1010",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07F1"
@@ -4114,6 +4256,7 @@
   "0x0c36": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -4175,6 +4318,7 @@
   "0x0c37": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -4188,8 +4332,9 @@
   },
   "0x0c40": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": "220000",
@@ -4202,8 +4347,9 @@
   },
   "0x0c41": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": "2109",
@@ -4216,8 +4362,9 @@
   },
   "0x0c42": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DE",
     "0x06EE",
@@ -4293,6 +4440,7 @@
   "0x0c43": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -4369,6 +4517,7 @@
   "0x0c44": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -4383,6 +4532,7 @@
   "0x0c45": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -4463,8 +4613,9 @@
   },
   "0x0c46": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -4545,7 +4696,8 @@
   "0x0c48": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06F0",
     "0x06F1",
@@ -4581,6 +4733,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -4591,7 +4744,8 @@
   "0x0c4a": {
    "mode": "0x1000",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -4622,6 +4776,7 @@
     }
    ],
    "firstRead": "2200AF",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -4631,8 +4786,9 @@
   },
   "0x0c4b": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -4673,7 +4829,8 @@
   "0x0c4c": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -4714,6 +4871,7 @@
     }
    ],
    "firstRead": "220007",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -4724,6 +4882,7 @@
   "0x0c4d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -4738,7 +4897,8 @@
   "0x0c4e": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -4779,6 +4939,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -4788,8 +4949,9 @@
   },
   "0x0c4f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -4869,8 +5031,9 @@
   },
   "0x0c50": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -4951,6 +5114,7 @@
   "0x0c51": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -4965,6 +5129,7 @@
   "0x0c53": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -4979,6 +5144,7 @@
   "0x0c54": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -4993,6 +5159,7 @@
   "0x0c55": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5007,6 +5174,7 @@
   "0x0c58": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5021,6 +5189,7 @@
   "0x0c70": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5034,8 +5203,9 @@
   },
   "0x0d01": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07E0",
     "0x07E1",
@@ -5115,8 +5285,9 @@
   },
   "0x0d04": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5130,6 +5301,7 @@
   "0x0d05": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0746"
@@ -5150,8 +5322,9 @@
   },
   "0x0d07": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5164,8 +5337,9 @@
   },
   "0x0d08": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5178,8 +5352,9 @@
   },
   "0x0d09": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5192,8 +5367,9 @@
   },
   "0x0d12": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5207,6 +5383,7 @@
   "0x0d13": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5221,6 +5398,7 @@
   "0x0d1d": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5234,8 +5412,9 @@
   },
   "0x0d1e": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5248,8 +5427,9 @@
   },
   "0x0d1f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EC",
     "0x06EE",
@@ -5289,8 +5469,9 @@
   },
   "0x0d20": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5303,8 +5484,9 @@
   },
   "0x0d23": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5318,6 +5500,7 @@
   "0x0d27": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5332,10 +5515,12 @@
   "0x0d2f": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -5346,7 +5531,8 @@
   "0x0d30": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0763",
     "0x0764",
@@ -5427,6 +5613,7 @@
     }
    ],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -5436,8 +5623,9 @@
   },
   "0x0d32": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5450,8 +5638,9 @@
   },
   "0x0d36": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5465,6 +5654,7 @@
   "0x0d37": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5479,6 +5669,7 @@
   "0x0d40": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -5492,8 +5683,9 @@
   },
   "0x0d41": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5507,10 +5699,12 @@
   "0x0d45": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -5520,8 +5714,9 @@
   },
   "0x0d46": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5535,10 +5730,12 @@
   "0x0d4a": {
    "mode": "0x1000",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -5548,8 +5745,9 @@
   },
   "0x0d4b": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5563,10 +5761,12 @@
   "0x0d4c": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -5577,10 +5777,12 @@
   "0x0d4e": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "source": "tableA",
@@ -5590,8 +5792,9 @@
   },
   "0x0d51": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
@@ -5604,8 +5807,9 @@
   },
   "0x0e01": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07E0",
     "0x07E1",
@@ -5956,6 +6160,7 @@
   "0x0e02": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0725",
@@ -6033,8 +6238,9 @@
   },
   "0x0e04": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06F6",
     "0x0731",
@@ -6090,6 +6296,7 @@
   "0x0e05": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E6",
@@ -6156,8 +6363,9 @@
   },
   "0x0e07": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0735",
     "0x0736",
@@ -6282,8 +6490,9 @@
   },
   "0x0e08": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x060A",
     "0x0646",
@@ -6327,8 +6536,9 @@
   },
   "0x0e09": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0710"
    ],
@@ -6350,8 +6560,9 @@
   },
   "0x0e12": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0755",
     "0x07CF"
@@ -6385,6 +6596,7 @@
   "0x0e13": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07D0"
@@ -6408,6 +6620,7 @@
   "0x0e1d": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -6474,8 +6687,9 @@
   },
   "0x0e1e": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06ED",
@@ -6607,8 +6821,9 @@
   },
   "0x0e1f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06EB",
     "0x06ED",
@@ -6740,8 +6955,9 @@
   },
   "0x0e20": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07A3",
     "0x07A4",
@@ -6785,8 +7001,9 @@
   },
   "0x0e23": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06A7",
     "0x06A8",
@@ -7007,6 +7224,7 @@
   "0x0e27": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0765",
@@ -7052,6 +7270,7 @@
   "0x0e2b": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -7196,7 +7415,8 @@
   "0x0e2f": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0763",
     "0x0764"
@@ -7212,6 +7432,7 @@
     }
    ],
    "firstRead": "2200A0",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x0763",
@@ -7230,7 +7451,8 @@
   "0x0e30": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x0763",
     "0x0764"
@@ -7246,6 +7468,7 @@
     }
    ],
    "firstRead": "2200B0",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x0763",
@@ -7263,8 +7486,9 @@
   },
   "0x0e32": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0757",
     "0x075E",
@@ -7319,8 +7543,9 @@
   },
   "0x0e36": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0603",
     "0x0660",
@@ -7409,6 +7634,7 @@
   "0x0e37": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F"
@@ -7432,6 +7658,7 @@
   "0x0e40": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0760"
@@ -7454,8 +7681,9 @@
   },
   "0x0e41": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07CF"
    ],
@@ -7478,6 +7706,7 @@
   "0x0e44": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -7567,6 +7796,7 @@
   "0x0e45": {
    "mode": "0x1010",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x0762"
@@ -7589,8 +7819,9 @@
   },
   "0x0e46": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06E9",
     "0x06EA",
@@ -7668,7 +7899,8 @@
   "0x0e4a": {
    "mode": "0x1000",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -7699,6 +7931,7 @@
     }
    ],
    "firstRead": "2200AF",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06FA",
@@ -7734,8 +7967,9 @@
   },
   "0x0e4b": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x072D",
     "0x072E"
@@ -7769,7 +8003,8 @@
   "0x0e4c": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -7810,6 +8045,7 @@
     }
    ],
    "firstRead": "220007",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06FB",
@@ -7858,7 +8094,8 @@
   "0x0e4e": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -7899,6 +8136,7 @@
     }
    ],
    "firstRead": "220007",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06FB",
@@ -7947,6 +8185,7 @@
   "0x0e4f": {
    "mode": "0x1001",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07DB"
@@ -7970,6 +8209,7 @@
   "0x0e50": {
    "mode": "0x1001",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07DB"
@@ -7992,8 +8232,9 @@
   },
   "0x0e51": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0782"
    ],
@@ -8016,6 +8257,7 @@
   "0x0e52": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -8105,6 +8347,7 @@
   "0x0e57": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -8118,6 +8361,7 @@
   "0x0e58": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -8131,6 +8375,7 @@
   "0x0e59": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0767",
@@ -8165,6 +8410,7 @@
   "0x0e5a": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0767",
@@ -8199,6 +8445,7 @@
   "0x0e5b": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0771",
@@ -8255,6 +8502,7 @@
   "0x0ea5": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -8267,8 +8515,9 @@
   },
   "0x0f01": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06F6",
     "0x06F7",
@@ -8554,6 +8803,7 @@
   "0x0f02": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0601",
@@ -8588,7 +8838,8 @@
   "0x0f04": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06E7",
     "0x073C",
@@ -8629,6 +8880,7 @@
     }
    ],
    "firstRead": "220000",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06E7",
@@ -8677,6 +8929,7 @@
   "0x0f05": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0750"
@@ -8699,8 +8952,9 @@
   },
   "0x0f07": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0661",
     "0x0662",
@@ -8810,8 +9064,9 @@
   },
   "0x0f08": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x060A",
     "0x0645",
@@ -8877,8 +9132,9 @@
   },
   "0x0f09": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0710",
     "0x0762"
@@ -8912,6 +9168,7 @@
   "0x0f12": {
    "mode": "0x1010",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07CF"
@@ -8935,6 +9192,7 @@
   "0x0f13": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07D0"
@@ -8958,6 +9216,7 @@
   "0x0f1d": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -9024,8 +9283,9 @@
   },
   "0x0f1e": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0717"
    ],
@@ -9047,8 +9307,9 @@
   },
   "0x0f1f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0717"
    ],
@@ -9070,8 +9331,9 @@
   },
   "0x0f20": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06A5",
     "0x07D1"
@@ -9104,8 +9366,9 @@
   },
   "0x0f23": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06A6",
     "0x074F",
@@ -9183,6 +9446,7 @@
   "0x0f32": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0685",
@@ -9283,6 +9547,7 @@
   "0x0f34": {
    "mode": "0x1010",
    "n": 0,
+   "nMixed": false,
    "bindDirect": true,
    "cands": [
     "0x07F1"
@@ -9306,6 +9571,7 @@
   "0x0f35": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F"
@@ -9329,6 +9595,7 @@
   "0x0f36": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x065F",
@@ -9385,6 +9652,7 @@
   "0x0f37": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0691",
@@ -9430,6 +9698,7 @@
   "0x0f40": {
    "mode": "0x1010",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -9485,8 +9754,9 @@
   },
   "0x0f41": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x07CF"
    ],
@@ -9509,10 +9779,12 @@
   "0x0f45": {
    "mode": "0x1000",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
@@ -9521,8 +9793,9 @@
   },
   "0x0f46": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06DD",
     "0x06DE",
@@ -9676,8 +9949,9 @@
   },
   "0x0f49": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -9744,7 +10018,8 @@
   "0x0f4a": {
    "mode": "0x1000",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -9775,6 +10050,7 @@
     }
    ],
    "firstRead": "2200AF",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06FA",
@@ -9810,8 +10086,9 @@
   },
   "0x0f4b": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06FA",
     "0x06FB",
@@ -9878,7 +10155,8 @@
   "0x0f4c": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06FB",
     "0x06FC",
@@ -9919,6 +10197,7 @@
     }
    ],
    "firstRead": "220007",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06FB",
@@ -9966,8 +10245,9 @@
   },
   "0x0f4d": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06CC",
     "0x06CD",
@@ -10023,10 +10303,12 @@
   "0x0f4e": {
    "mode": "0x1002",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
@@ -10035,8 +10317,9 @@
   },
   "0x0f4f": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0717",
     "0x0718",
@@ -10091,8 +10374,9 @@
   },
   "0x0f50": {
    "mode": "0x1001",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x0717",
     "0x0718",
@@ -10137,6 +10421,7 @@
   "0x0f51": {
    "mode": "0x1000",
    "n": 1,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10150,6 +10435,7 @@
   "0x0f53": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10162,8 +10448,9 @@
   },
   "0x0f54": {
    "mode": "0x1010",
-   "n": 0,
-   "bindDirect": true,
+   "n": null,
+   "nMixed": true,
+   "bindDirect": false,
    "cands": [
     "0x06D8",
     "0x06D9",
@@ -10329,6 +10616,7 @@
   "0x0f55": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10342,10 +10630,12 @@
   "0x0f56": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [],
    "pairs": [],
    "firstRead": null,
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
@@ -10355,6 +10645,7 @@
   "0x0f57": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10368,7 +10659,8 @@
   "0x0f58": {
    "mode": "0x1010",
    "n": 0,
-   "bindDirect": true,
+   "nMixed": false,
+   "bindDirect": false,
    "cands": [
     "0x06B3",
     "0x06B7",
@@ -10394,6 +10686,7 @@
     }
    ],
    "firstRead": "220000",
+   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
    "provenance": [
     {
      "can": "0x06B3",
@@ -10424,6 +10717,7 @@
   "0x0f60": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10437,6 +10731,7 @@
   "0x0f80": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10450,6 +10745,7 @@
   "0x0fa5": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10463,6 +10759,7 @@
   "0x0fb1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10476,6 +10773,7 @@
   "0x1001": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -10521,6 +10819,7 @@
   "0x1002": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0782"
@@ -10544,6 +10843,7 @@
   "0x1004": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -10633,6 +10933,7 @@
   "0x1005": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -10646,6 +10947,7 @@
   "0x1007": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0702",
@@ -10735,6 +11037,7 @@
   "0x1008": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0708",
@@ -10802,6 +11105,7 @@
   "0x1009": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x0710"
@@ -10825,6 +11129,7 @@
   "0x1013": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07D0",
@@ -10991,6 +11296,7 @@
   "0x101e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -11124,6 +11430,7 @@
   "0x101f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11137,6 +11444,7 @@
   "0x1020": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07D1"
@@ -11160,6 +11468,7 @@
   "0x1023": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F"
@@ -11183,6 +11492,7 @@
   "0x1032": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -11206,6 +11516,7 @@
   "0x1037": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F"
@@ -11229,6 +11540,7 @@
   "0x1042": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -11373,6 +11685,7 @@
   "0x1043": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11386,6 +11699,7 @@
   "0x1044": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -11475,6 +11789,7 @@
   "0x1045": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -11630,6 +11945,7 @@
   "0x1048": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06F0",
@@ -11708,6 +12024,7 @@
   "0x1058": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11721,6 +12038,7 @@
   "0x1059": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11734,6 +12052,7 @@
   "0x105a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11747,6 +12066,7 @@
   "0x105b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11760,6 +12080,7 @@
   "0x1070": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11773,6 +12094,7 @@
   "0x1071": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -11917,6 +12239,7 @@
   "0x1072": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11930,6 +12253,7 @@
   "0x1073": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11943,6 +12267,7 @@
   "0x1074": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11956,6 +12281,7 @@
   "0x1075": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -11969,6 +12295,7 @@
   "0x1076": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -12080,6 +12407,7 @@
   "0x1201": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07E0",
@@ -12268,6 +12596,7 @@
   "0x1202": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -12357,6 +12686,7 @@
   "0x1204": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -12446,6 +12776,7 @@
   "0x1205": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -12459,6 +12790,7 @@
   "0x1207": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -12482,6 +12814,7 @@
   "0x1208": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -12495,6 +12828,7 @@
   "0x1209": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -12562,6 +12896,7 @@
   "0x1213": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -12575,6 +12910,7 @@
   "0x1220": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x063C"
@@ -12598,6 +12934,7 @@
   "0x1223": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -12742,6 +13079,7 @@
   "0x122d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -12755,6 +13093,7 @@
   "0x1234": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -12778,6 +13117,7 @@
   "0x1236": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -12791,6 +13131,7 @@
   "0x1237": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -12858,6 +13199,7 @@
   "0x1241": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07CF"
@@ -12881,6 +13223,7 @@
   "0x1242": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -13025,6 +13368,7 @@
   "0x1243": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -13114,6 +13458,7 @@
   "0x1244": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13127,6 +13472,7 @@
   "0x1245": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13140,6 +13486,7 @@
   "0x1246": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -13295,6 +13642,7 @@
   "0x1248": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13308,6 +13656,7 @@
   "0x1249": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -13375,6 +13724,7 @@
   "0x124a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -13442,6 +13792,7 @@
   "0x124b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -13509,6 +13860,7 @@
   "0x1251": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13522,6 +13874,7 @@
   "0x1253": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13535,6 +13888,7 @@
   "0x1254": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13548,6 +13902,7 @@
   "0x1255": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13561,6 +13916,7 @@
   "0x125d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -13705,6 +14061,7 @@
   "0x125e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -13849,6 +14206,7 @@
   "0x125f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13862,6 +14220,7 @@
   "0x1260": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -13875,6 +14234,7 @@
   "0x1261": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -14030,6 +14390,7 @@
   "0x1262": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -14185,6 +14546,7 @@
   "0x1264": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -14198,6 +14560,7 @@
   "0x1265": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -14211,6 +14574,7 @@
   "0x1266": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -14322,6 +14686,7 @@
   "0x1267": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -14433,6 +14798,7 @@
   "0x1268": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -14588,6 +14954,7 @@
   "0x1269": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -14743,6 +15110,7 @@
   "0x126a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -14898,6 +15266,7 @@
   "0x126b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -15053,6 +15422,7 @@
   "0x126c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -15142,6 +15512,7 @@
   "0x126d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -15231,6 +15602,7 @@
   "0x1270": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15244,6 +15616,7 @@
   "0x1279": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -15377,6 +15750,7 @@
   "0x127a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -15510,6 +15884,7 @@
   "0x127b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -15643,6 +16018,7 @@
   "0x127c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -15776,6 +16152,7 @@
   "0x127f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15789,6 +16166,7 @@
   "0x1280": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15802,6 +16180,7 @@
   "0x1281": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15815,6 +16194,7 @@
   "0x1282": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15828,6 +16208,7 @@
   "0x1283": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15841,6 +16222,7 @@
   "0x1284": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15854,6 +16236,7 @@
   "0x1285": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15867,6 +16250,7 @@
   "0x1286": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15880,6 +16264,7 @@
   "0x1288": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15893,6 +16278,7 @@
   "0x1289": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15906,6 +16292,7 @@
   "0x128a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15919,6 +16306,7 @@
   "0x128b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -15932,6 +16320,7 @@
   "0x128c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -16043,6 +16432,7 @@
   "0x128d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -16056,6 +16446,7 @@
   "0x128e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -16112,6 +16503,7 @@
   "0x1290": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -16125,6 +16517,7 @@
   "0x1291": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -16138,6 +16531,7 @@
   "0x1292": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -16151,6 +16545,7 @@
   "0x1293": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -16164,6 +16559,7 @@
   "0x1294": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -16177,6 +16573,7 @@
   "0x1295": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -16321,6 +16718,7 @@
   "0x1296": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -16465,6 +16863,7 @@
   "0x1297": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -16609,6 +17008,7 @@
   "0x1298": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -16753,6 +17153,7 @@
   "0x1299": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -16897,6 +17298,7 @@
   "0x129a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -17041,6 +17443,7 @@
   "0x129b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -17185,6 +17588,7 @@
   "0x129c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -17329,6 +17733,7 @@
   "0x129d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17342,6 +17747,7 @@
   "0x129e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -17486,6 +17892,7 @@
   "0x129f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17499,6 +17906,7 @@
   "0x12a0": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -17588,6 +17996,7 @@
   "0x12a1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -17677,6 +18086,7 @@
   "0x12a2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17690,6 +18100,7 @@
   "0x12a3": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17703,6 +18114,7 @@
   "0x12a5": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17716,6 +18128,7 @@
   "0x12a8": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17729,6 +18142,7 @@
   "0x12a9": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -17785,6 +18199,7 @@
   "0x12aa": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -17841,6 +18256,7 @@
   "0x12b1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -17854,6 +18270,7 @@
   "0x12b2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -18009,6 +18426,7 @@
   "0x12b3": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18022,6 +18440,7 @@
   "0x1301": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18035,6 +18454,7 @@
   "0x1302": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18048,6 +18468,7 @@
   "0x1304": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18061,6 +18482,7 @@
   "0x1305": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18074,6 +18496,7 @@
   "0x1307": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18087,6 +18510,7 @@
   "0x1308": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18100,6 +18524,7 @@
   "0x1309": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18113,6 +18538,7 @@
   "0x131e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18126,6 +18552,7 @@
   "0x131f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18139,6 +18566,7 @@
   "0x1320": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18152,6 +18580,7 @@
   "0x1323": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18165,6 +18594,7 @@
   "0x1336": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18178,6 +18608,7 @@
   "0x1337": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18191,6 +18622,7 @@
   "0x1344": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18204,6 +18636,7 @@
   "0x1345": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18217,6 +18650,7 @@
   "0x1401": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07E0",
@@ -18405,6 +18839,7 @@
   "0x1402": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -18494,6 +18929,7 @@
   "0x1404": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -18583,6 +19019,7 @@
   "0x1405": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18596,6 +19033,7 @@
   "0x1408": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18609,6 +19047,7 @@
   "0x1409": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -18676,6 +19115,7 @@
   "0x1413": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18689,6 +19129,7 @@
   "0x1420": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -18833,6 +19274,7 @@
   "0x1423": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -18977,6 +19419,7 @@
   "0x142d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -18990,6 +19433,7 @@
   "0x1435": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -19057,6 +19501,7 @@
   "0x1436": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19070,6 +19515,7 @@
   "0x1437": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -19137,6 +19583,7 @@
   "0x1440": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -19193,6 +19640,7 @@
   "0x1441": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07CF"
@@ -19216,6 +19664,7 @@
   "0x1442": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -19360,6 +19809,7 @@
   "0x1443": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -19449,6 +19899,7 @@
   "0x1444": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19462,6 +19913,7 @@
   "0x1445": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19475,6 +19927,7 @@
   "0x1446": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -19630,6 +20083,7 @@
   "0x1449": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -19697,6 +20151,7 @@
   "0x1451": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19710,6 +20165,7 @@
   "0x1458": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19723,6 +20179,7 @@
   "0x145e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -19867,6 +20324,7 @@
   "0x145f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19880,6 +20338,7 @@
   "0x1460": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19893,6 +20352,7 @@
   "0x1463": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19906,6 +20366,7 @@
   "0x1464": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19919,6 +20380,7 @@
   "0x1465": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -19932,6 +20394,7 @@
   "0x1466": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -20043,6 +20506,7 @@
   "0x146a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -20198,6 +20662,7 @@
   "0x146b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -20353,6 +20818,7 @@
   "0x146c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -20442,6 +20908,7 @@
   "0x146d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -20531,6 +20998,7 @@
   "0x1479": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -20664,6 +21132,7 @@
   "0x147a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -20797,6 +21266,7 @@
   "0x1481": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20810,6 +21280,7 @@
   "0x1483": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20823,6 +21294,7 @@
   "0x1486": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20836,6 +21308,7 @@
   "0x1488": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20849,6 +21322,7 @@
   "0x1489": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20862,6 +21336,7 @@
   "0x148b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20875,6 +21350,7 @@
   "0x148c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -20986,6 +21462,7 @@
   "0x148d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -20999,6 +21476,7 @@
   "0x148f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -21066,6 +21544,7 @@
   "0x1491": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21079,6 +21558,7 @@
   "0x1492": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21092,6 +21572,7 @@
   "0x1493": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21105,6 +21586,7 @@
   "0x1494": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21118,6 +21600,7 @@
   "0x149e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -21262,6 +21745,7 @@
   "0x14a2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21275,6 +21759,7 @@
   "0x14ab": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21288,6 +21773,7 @@
   "0x14ac": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21301,6 +21787,7 @@
   "0x14ad": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21314,6 +21801,7 @@
   "0x14ae": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21327,6 +21815,7 @@
   "0x14af": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21340,6 +21829,7 @@
   "0x14b1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21353,6 +21843,7 @@
   "0x14b4": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21366,6 +21857,7 @@
   "0x14b8": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21379,6 +21871,7 @@
   "0x14b9": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21392,6 +21885,7 @@
   "0x1501": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07E0",
@@ -21580,6 +22074,7 @@
   "0x1504": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -21669,6 +22164,7 @@
   "0x1505": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21682,6 +22178,7 @@
   "0x1507": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -21705,6 +22202,7 @@
   "0x1508": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21718,6 +22216,7 @@
   "0x1509": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -21785,6 +22284,7 @@
   "0x1513": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -21798,6 +22298,7 @@
   "0x1520": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -21942,6 +22443,7 @@
   "0x1523": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -22086,6 +22588,7 @@
   "0x152d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22099,6 +22602,7 @@
   "0x1534": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -22122,6 +22626,7 @@
   "0x1536": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22135,6 +22640,7 @@
   "0x1537": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -22202,6 +22708,7 @@
   "0x1540": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -22258,6 +22765,7 @@
   "0x1541": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07CF"
@@ -22281,6 +22789,7 @@
   "0x1542": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -22425,6 +22934,7 @@
   "0x1543": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -22514,6 +23024,7 @@
   "0x1544": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22527,6 +23038,7 @@
   "0x1545": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22540,6 +23052,7 @@
   "0x1546": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -22695,6 +23208,7 @@
   "0x1548": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22708,6 +23222,7 @@
   "0x1549": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -22775,6 +23290,7 @@
   "0x1551": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22788,6 +23304,7 @@
   "0x1553": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22801,6 +23318,7 @@
   "0x1554": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22814,6 +23332,7 @@
   "0x1558": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22827,6 +23346,7 @@
   "0x155e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -22971,6 +23491,7 @@
   "0x155f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22984,6 +23505,7 @@
   "0x1560": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -22997,6 +23519,7 @@
   "0x1563": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23010,6 +23533,7 @@
   "0x1564": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23023,6 +23547,7 @@
   "0x1565": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23036,6 +23561,7 @@
   "0x1567": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -23147,6 +23673,7 @@
   "0x156a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -23302,6 +23829,7 @@
   "0x156b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -23457,6 +23985,7 @@
   "0x156c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -23546,6 +24075,7 @@
   "0x156d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -23635,6 +24165,7 @@
   "0x156e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23648,6 +24179,7 @@
   "0x156f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23661,6 +24193,7 @@
   "0x1570": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23674,6 +24207,7 @@
   "0x1577": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23687,6 +24221,7 @@
   "0x1578": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -23700,6 +24235,7 @@
   "0x1579": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -23833,6 +24369,7 @@
   "0x157a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -23966,6 +24503,7 @@
   "0x157b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -24099,6 +24637,7 @@
   "0x157c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -24232,6 +24771,7 @@
   "0x157d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24245,6 +24785,7 @@
   "0x157e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24258,6 +24799,7 @@
   "0x1581": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24271,6 +24813,7 @@
   "0x1582": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24284,6 +24827,7 @@
   "0x1583": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24297,6 +24841,7 @@
   "0x1586": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24310,6 +24855,7 @@
   "0x1588": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24323,6 +24869,7 @@
   "0x158b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24336,6 +24883,7 @@
   "0x158c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -24447,6 +24995,7 @@
   "0x158d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24460,6 +25009,7 @@
   "0x158f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -24527,6 +25077,7 @@
   "0x1590": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24540,6 +25091,7 @@
   "0x1591": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24553,6 +25105,7 @@
   "0x1592": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24566,6 +25119,7 @@
   "0x1593": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24579,6 +25133,7 @@
   "0x159d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24592,6 +25147,7 @@
   "0x15a2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24605,6 +25161,7 @@
   "0x15b1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24618,6 +25175,7 @@
   "0x15b2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -24773,6 +25331,7 @@
   "0x15b3": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24786,6 +25345,7 @@
   "0x15b5": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24799,6 +25359,7 @@
   "0x15b6": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24812,6 +25373,7 @@
   "0x15b7": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24825,6 +25387,7 @@
   "0x15b8": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24838,6 +25401,7 @@
   "0x15b9": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -24851,6 +25415,7 @@
   "0x1601": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07E0",
@@ -25039,6 +25604,7 @@
   "0x1602": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -25128,6 +25694,7 @@
   "0x1604": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -25217,6 +25784,7 @@
   "0x1605": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -25230,6 +25798,7 @@
   "0x1607": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -25253,6 +25822,7 @@
   "0x1608": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -25266,6 +25836,7 @@
   "0x1609": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -25333,6 +25904,7 @@
   "0x1613": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -25346,6 +25918,7 @@
   "0x1620": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -25490,6 +26063,7 @@
   "0x1623": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -25634,6 +26208,7 @@
   "0x162d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -25647,6 +26222,7 @@
   "0x1634": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07F1"
@@ -25670,6 +26246,7 @@
   "0x1636": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -25683,6 +26260,7 @@
   "0x1637": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x074F",
@@ -25750,6 +26328,7 @@
   "0x1640": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06ED",
@@ -25806,6 +26385,7 @@
   "0x1641": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x07CF"
@@ -25829,6 +26409,7 @@
   "0x1642": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -25973,6 +26554,7 @@
   "0x1643": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06E7",
@@ -26062,6 +26644,7 @@
   "0x1644": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26075,6 +26658,7 @@
   "0x1645": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26088,6 +26672,7 @@
   "0x1646": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -26243,6 +26828,7 @@
   "0x1651": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26256,6 +26842,7 @@
   "0x1653": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26269,6 +26856,7 @@
   "0x1654": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26282,6 +26870,7 @@
   "0x1655": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26295,6 +26884,7 @@
   "0x1658": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26308,6 +26898,7 @@
   "0x165f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26321,6 +26912,7 @@
   "0x1660": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26334,6 +26926,7 @@
   "0x1663": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26347,6 +26940,7 @@
   "0x1664": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26360,6 +26954,7 @@
   "0x1665": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -26373,6 +26968,7 @@
   "0x1666": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -26484,6 +27080,7 @@
   "0x1667": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DE",
@@ -26595,6 +27192,7 @@
   "0x166a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -26750,6 +27348,7 @@
   "0x166b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x070A",
@@ -26905,6 +27504,7 @@
   "0x166c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -26994,6 +27594,7 @@
   "0x166d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -27083,6 +27684,7 @@
   "0x1670": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27096,6 +27698,7 @@
   "0x1679": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -27229,6 +27832,7 @@
   "0x167a": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -27362,6 +27966,7 @@
   "0x167b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -27495,6 +28100,7 @@
   "0x167c": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06EB",
@@ -27628,6 +28234,7 @@
   "0x167d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27641,6 +28248,7 @@
   "0x167e": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27654,6 +28262,7 @@
   "0x1681": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27667,6 +28276,7 @@
   "0x1682": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27680,6 +28290,7 @@
   "0x1686": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27693,6 +28304,7 @@
   "0x1688": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27706,6 +28318,7 @@
   "0x168b": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27719,6 +28332,7 @@
   "0x168d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27732,6 +28346,7 @@
   "0x168f": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FA",
@@ -27799,6 +28414,7 @@
   "0x1690": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27812,6 +28428,7 @@
   "0x1693": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27825,6 +28442,7 @@
   "0x169d": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -27838,6 +28456,7 @@
   "0x16a0": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -27927,6 +28546,7 @@
   "0x16a1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06FB",
@@ -28016,6 +28636,7 @@
   "0x16a2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28029,6 +28650,7 @@
   "0x16a8": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28042,6 +28664,7 @@
   "0x16b1": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28055,6 +28678,7 @@
   "0x16b2": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [
     "0x06DD",
@@ -28210,6 +28834,7 @@
   "0x16b3": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28223,6 +28848,7 @@
   "0x16b4": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28236,6 +28862,7 @@
   "0x16b8": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28249,6 +28876,7 @@
   "0x16b9": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],
@@ -28262,6 +28890,7 @@
   "0x16ba": {
    "mode": null,
    "n": null,
+   "nMixed": false,
    "bindDirect": false,
    "cands": [],
    "pairs": [],

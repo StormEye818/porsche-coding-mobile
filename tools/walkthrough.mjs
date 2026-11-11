@@ -57,6 +57,8 @@ async function link(ecu) {
   await elm.init({ protocol: 6 });
   const coder = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, ecuName: '演练ECU', verbose: false });
   coder.setAddress(0x7E0, 0x7E8, '演练ECU');
+  // 演练使用独立 mock profile，真实地址/车型证据不足时的默认只读门禁另行测试。
+  coder.diagProfile = { verified: true, reason: 'walkthrough mock profile' };
   return { elm, coder };
 }
 
@@ -155,7 +157,7 @@ console.log('\n[4] 读编码');
   const { coder } = await link(strictEcu());
   const b = await coder.readBlock(0x21, 0x21);
   ok('21 21 读回数据', b && b.length > 0, `${b?.length} 字节`);
-  const p = { id: 't', name: '测试字段', lid: 0x21, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
+  const p = { id: 't', name: '测试字段', lid: 0x21, readSid: 0x21, writeSid: 0x3B, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
   const v = extractField(b, p);
   ok('能按位取出字段', v !== null && v >= 0, `v=${v}`);
   const nb = injectField(b, p, 0x5A);
@@ -169,7 +171,7 @@ console.log('\n[5] 写入成功 + 回读一致');
   const ecu = strictEcu();
   const { coder } = await link(ecu);
   coder.seedKeyProvider = variantProvider();
-  const p = { id: 't1', name: '测试字段', lid: 0x21, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
+  const p = { id: 't1', name: '测试字段', lid: 0x21, readSid: 0x21, writeSid: 0x3B, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
   const before = await coder.readBlock(0x21, 0x21);
   const oldV = extractField(before, p);
   const newV = oldV === 0x5A ? 0x3C : 0x5A;
@@ -188,7 +190,7 @@ console.log('\n[6] ECU 拒写 → 必须报错，且原块不被改坏');
   const ecu = strictEcu({ writeVerify: () => false });   // ECU 一律拒写
   const { coder } = await link(ecu);
   coder.seedKeyProvider = variantProvider();
-  const p = { id: 't2', name: '测试字段', lid: 0x21, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
+  const p = { id: 't2', name: '测试字段', lid: 0x21, readSid: 0x21, writeSid: 0x3B, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
   const before = await coder.readBlock(0x21, 0x21);
   let threw = null;
   try { await coder.applyChange(p, 0x11, { dryRun: false, session: 0x89 }); } catch (e) { threw = e; }
@@ -212,7 +214,7 @@ console.log('\n[7] 回读不一致 → 触发恢复，且错误要说清');
   };
   const { coder } = await link(ecu);
   coder.seedKeyProvider = variantProvider();
-  const p = { id: 't3', name: '测试字段', lid: 0x21, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
+  const p = { id: 't3', name: '测试字段', lid: 0x21, readSid: 0x21, writeSid: 0x3B, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
   let threw = null;
   try { await coder.applyChange(p, 0x77, { dryRun: false, session: 0x89 }); } catch (e) { threw = e; }
   ok('回读不一致 → 抛错', !!threw, threw?.message?.slice(0, 60));
@@ -279,7 +281,7 @@ console.log('\n[9] 完整上车序列（会话 → 解锁 → 读 → 写 → �
   await coder.securityAccessEx({ level: 0x09, kwp: false });
   ok('① 进会话 + 解锁通过（key 经真值校验）', ecu.stats.keyRejects === 0);
 
-  const p = { id: 't4', name: '测试字段', lid: 0x21, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
+  const p = { id: 't4', name: '测试字段', lid: 0x21, readSid: 0x21, writeSid: 0x3B, byte: 0, bit: 0, bitsize: 8, risk: 'low' };
   const before = await coder.readBlock(0x21, 0x21);
   ok('② 读编码', before.length > 0);
 

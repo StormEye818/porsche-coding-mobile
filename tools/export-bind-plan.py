@@ -164,17 +164,26 @@ def main():
 
     # ---- 旧代表A 候选（沿用 ecu-addresses 导出，只取诊断段；rx 原样保留） ----
     cand_by_sys, prov_tx_by_sys = {}, {}
+    rx_by_sys, rx_votes = {}, defaultdict(set)
     for e in addr.get('entries', []):
         cs = []
+        sid = e['sysId'].lower()
+        rx_by_sys[sid] = {}
         for c in e.get('cands') or []:
             tx = c.get('tx')
             if not tx:
                 continue
             v = int(tx, 16)
             if DIAG_LO <= v <= DIAG_HI:
-                rx = c.get('rx') or f'0x{(v + 8) & 0x7FF:04X}'
-                cs.append((f'0x{v:04X}', f'0x{int(rx, 16):04X}'))
-        cand_by_sys[e['sysId'].lower()] = sorted(set(cs))
+                # 没有原始 rx 时才允许使用未回绕的 +8 适配器惯例；有原始值必须保留。
+                rx = c.get('rx') or (f'0x{v + 8:04X}' if v + 8 <= 0x7FF else None)
+                tx_s = f'0x{v:04X}'
+                rx_s = f'0x{int(rx, 16):04X}' if rx is not None else None
+                cs.append((tx_s, rx_s))
+                if rx_s is not None:
+                    rx_by_sys[sid][tx_s] = rx_s
+                    rx_votes[tx_s].add(rx_s)
+        cand_by_sys[sid] = sorted(set(cs))
         if e.get('tx') is not None and DIAG_LO <= int(e['tx'], 16) <= DIAG_HI:
             prov_tx_by_sys[e['sysId'].lower()] = int(e['tx'], 16)
 
@@ -279,6 +288,20 @@ def main():
     out, stats = {}, Counter()
     notes = {}
 
+    def rx_for(sid, can):
+        """保留原始 rx；跨代只有全局唯一证据才复用。绝不做 &0x7FF 回绕。"""
+        tx = f'0x{can:04X}'
+        if rx_by_sys.get(sid, {}).get(tx):
+            return rx_by_sys[sid][tx], 'tableA-same-sys'
+        votes = rx_votes.get(tx, set())
+        if len(votes) == 1:
+            return next(iter(votes)), 'tableA-crossgen-unique'
+        if len(votes) > 1:
+            return None, 'ambiguous-tableA-rx'
+        if can + 8 <= 0x7FF:
+            return f'0x{can + 8:04X}', 'adapter-plus8-unproven'
+        return None, 'rx-overflow-no-evidence'
+
     def add_entry(sid):
         sid = sid.lower()
         if sid in out:
@@ -286,8 +309,10 @@ def main():
         rows = v3_rows(sid)
         modes = Counter((r.get('record') or {}).get('mode') for r in rows)
         mode = modes.most_common(1)[0][0] if modes and rows else None
-        ns = [((r.get('record') or {}).get('n') or 0) for r in rows]
-        n_min = min(ns) if ns else None
+        ns = [((r.get('record') or {}).get('n')) for r in rows]
+        # n 是当前行 SpecArray 的候选数，不能跨行取最小值把 n>0 行吞成 n=0。
+        n_value = ns[0] if ns and all(n == ns[0] for n in ns) else None
+        n_mixed = bool(ns) and any(n != ns[0] for n in ns)
 
         gen = int(sid, 16) >> 8
         if gen >= 0x0E:
@@ -361,15 +386,43 @@ def main():
             stats['legacy'] += 1
             prov = [{'source': 'tableA', 'note': '表A 精确 join 候选（旧代路径保留）'}]
 
-        pairs = [(f'0x{c:04X}', f'0x{(c + 8) & 0x7FF:04X}') for c in ordered]
+        pairs, rejected_pairs = [], []
+        for c in ordered:
+            rx, rx_source = rx_for(sid, c)
+            tx_s = f'0x{c:04X}'
+            if rx is None:
+                rejected_pairs.append({'tx': tx_s, 'rx': None, 'reason': rx_source})
+                stats['rxDropped'] += 1
+                continue
+            rx_v = int(rx, 16)
+            # tx<=0x7FF 时协议 6（11bit）；rx 超 11bit 的原始记录只能留证，不能发 ATCRA。
+            valid = (c <= 0x7FF and rx_v <= 0x7FF) or (c > 0x7FF and rx_v <= 0x1FFFFFFF)
+            if not valid:
+                rejected_pairs.append({'tx': tx_s, 'rx': rx, 'reason': 'rx-not-valid-for-tx-protocol', 'source': rx_source})
+                stats['rxRejected'] += 1
+                continue
+            pairs.append((tx_s, rx))
+            stats['rxPreserved' if rx_source.startswith('tableA') else 'rxDefaultPlus8'] += 1
+        # 只有「全部相关行均 n=0 + 唯一合法地址」才允许免探针直绑。
+        # n=0 多候选或混合 n 必须继续探测/枚举，不能拿首项冒充唯一地址。
+        bind_direct = bool(rows) and not n_mixed and n_value == 0 and len(pairs) == 1
         rec = {
             'mode': f'0x{mode:04x}' if mode is not None else None,
-            'n': n_min,
-            'bindDirect': bool(rows) and n_min == 0,
+            'n': n_value,
+            'nMixed': n_mixed,
+            'bindDirect': bind_direct,
             'cands': [t for t, _ in pairs],
             'pairs': [{'tx': t, 'rx': r} for t, r in pairs],
             'firstRead': (first_read_of(sid) or {}).get('frame'),
         }
+        if rejected_pairs:
+            rec['rejectedPairs'] = rejected_pairs
+        if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
+            rec['bindUnresolved'] = 'n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举'
+        if rejected_pairs:
+            rec['rejectedPairs'] = rejected_pairs
+        if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
+            rec['bindUnresolved'] = 'n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举'
         if prov:
             rec['provenance'] = prov
         if sid in notes:
@@ -408,12 +461,30 @@ def main():
         'rule': ('全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) '
                  '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
                  'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
-                 '旧代 0x05/0x06/0x0B-0x0D 保留表A join（test-align431 对账基线）。'
-                 '候选序=多源收敛数降序；cands/pairs 仅诊断段 0x600-0x7FF；rx=tx+8。'),
+                 'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
+                 'pairs 优先保留表A原始 rx；无证据时才用不回绕的 +8 适配器惯例；'
+                 '协议不合法或歧义 rx 进 rejectedPairs，不进运行时。'),
         'stats': dict(stats),
         'coverage': coverage,
         'ecu': dict(sorted(out.items())),
     }
+    # 硬门禁：任何错误直绑、候选/pair 不一致或协议非法 rx 都不许落盘。
+    problems = []
+    for sid, rec in out.items():
+        pairs = rec.get('pairs') or []
+        if rec.get('bindDirect') and len(pairs) != 1:
+            problems.append(f'{sid}: bindDirect 但 pairs={len(pairs)}')
+        if rec.get('nMixed') and rec.get('bindDirect'):
+            problems.append(f'{sid}: 混合 n 却 bindDirect')
+        if (rec.get('cands') or []) != [p['tx'] for p in pairs]:
+            problems.append(f'{sid}: cands 与 pairs.tx 不一致')
+        for p in pairs:
+            tx, rx = int(p['tx'], 16), int(p['rx'], 16)
+            if not ((tx <= 0x7FF and rx <= 0x7FF) or (tx > 0x7FF and rx <= 0x1FFFFFFF)):
+                problems.append(f"{sid}: 协议非法 pair {p['tx']}→{p['rx']}")
+    if problems:
+        raise SystemExit('bind-plan 硬门禁失败：\n  ' + '\n  '.join(problems[:20]))
+
     OUT.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding='utf-8')
     print('写出', OUT.relative_to(ROOT), f'{OUT.stat().st_size / 1024:.0f}KB')
     print('sysId', len(out), dict(stats))

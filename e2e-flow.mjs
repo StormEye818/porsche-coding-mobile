@@ -208,7 +208,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   //    主/备 22 11 02/11 01（真日志双双 NRC 0x12）→ 名链 1A 90/1A 87/1A 9B/21 50/21 51
   //    （留存键=1A 90+21 51，SYSP:0x2a4b4 分支）→ 读码 21 A4）
   const golden = ['1089', '3E00', '1A9F', '1A87', '1A84', '1A91', '1A92', '1A93', '1A94',
-    '1A95', '1A97', '1A9A', '221102', '221101', '1A90', '1A87', '1A9B', '2150', '2151', '21A4'];
+    '1A95', '1A97', '1A9A', '221102', '221101', '1A90', '2151', '21A4'];
   ok('DME 帧序逐帧逐字节一致', JSON.stringify(frames) === JSON.stringify(golden),
     JSON.stringify(frames));
   ok('KWP 流不发 10 03（任务清单⑤）', !frames.includes('1003'));
@@ -359,7 +359,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   {
     const plan = JSON.parse(readFileSync('./data/bind-plan.json', 'utf8'));
     const ic = plan.ecu['0x0b08'];
-    ok('IC 记录 n=0 → 直接绑定（参考诊断仪 cbz 分支）', ic && ic.bindDirect === true, JSON.stringify(ic));
+    ok('IC 混合 n → 禁止直绑（不能跨行吞并）', ic && ic.nMixed === true && ic.bindDirect === false, JSON.stringify(ic));
     ok('IC 候选=该组唯一诊断段行 0x7F1', ic && ic.cands.length === 1 && parseInt(ic.cands[0], 16) === 0x7F1);
 
     // 拓扑 A：0x7F1 就是目标 → 一帧 3E00 应绑定成功

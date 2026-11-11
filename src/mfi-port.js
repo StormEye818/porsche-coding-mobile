@@ -44,6 +44,7 @@ export class MfiPort {
     this.opts = opts;
     this._dataCbs = [];
     this._closeCbs = [];
+    this._listeners = [];
     this._buf = new Uint8Array(0);
   }
 
@@ -64,13 +65,13 @@ export class MfiPort {
       connectionId: this.opts.connectionId,
       protocol: this.opts.protocol || null,
     });
-    await MfiSerial.addListener('data', (r) => {
+    this._listeners.push(await MfiSerial.addListener('data', (r) => {
       const bytes = base64ToBytes(r.data);
       for (const cb of this._dataCbs) cb(bytes);
-    });
-    await MfiSerial.addListener('closed', () => {
+    }));
+    this._listeners.push(await MfiSerial.addListener('closed', () => {
       for (const cb of this._closeCbs) cb();
-    });
+    }));
     return this;
   }
 
@@ -86,6 +87,11 @@ export class MfiPort {
   }
 
   async close() {
+    for (const h of this._listeners.splice(0)) {
+      try { await h.remove(); } catch { /* 已移除/插件不可用 */ }
+    }
+    this._dataCbs = [];
+    this._closeCbs = [];
     try { await MfiSerial.close(); } catch {}
   }
 }

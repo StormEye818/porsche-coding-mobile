@@ -325,7 +325,9 @@ export function resolveKeyByName(name, seed, ctx = {}) {
       nb = new Uint8Array(n);
       for (let i = 0; i < n; i++) nb[i] = (s32 >>> (24 - 8 * i)) & 0xff;
     }
-    const r = computeNonAsapKey(name, nb);
+    // nonAsapResolve 可能已经用 platform/module 选出了精确函数名；
+    // 计算时必须使用解析后的 na.name，不能再拿原模块名做全局查找。
+    const r = computeNonAsapKey(na.name, nb);
     return { key: r.key, variant: null, algo: r.algo, nonAsap: true };
   }
 
