@@ -92,6 +92,27 @@ export function modulesForSysId(sysId, modelLabel) {
   }
   return out;
 }
+
+/**
+ * ★ 2026-11-11 全链路审计 P0 修复：bind-plan 的键必须按「当前车型平台 sysId」直查。
+ * 旧链路 addrEntryFor() 只在 ecu-addresses.json（209 条旧代表A 条目）里找 sysId，
+ * 新代 0x10/0x12/0x14/0x15/0x16 的 sysId 全部不在该表 → entry=null →
+ * bindPlanFor(null) 拿不到计划 → 本轮生成的 191 个新代静态候选运行时不可达，
+ * 还会经 aliasEntryFor 回退到旧代地址（错代）。此函数用平台映射直接给出键。
+ * 顺序与 addrEntryFor 一致：①中文菜单标签 ②模块名 ③旧表条目 sysId（兜底）。
+ */
+export function planSysIdFor(label, modules, modelLabel, entrySysId) {
+  const g = SYSTEM_LABEL_BASE[String(label ?? '')] || null;
+  // 未定案/低置信平台：不套用 981 全局值，优先用旧地址表实际命中的 sysId（不猜）。
+  if (!platformInfoFor(modelLabel)) return entrySysId || g;
+  const byLabel = g ? (platformSysIdByLowByte(g, modelLabel) || g) : null;
+  if (byLabel) return byLabel;
+  for (const m of modules || []) {
+    const s = sysIdForModule(m, modelLabel);
+    if (s) return s;
+  }
+  return entrySysId || null;
+}
 `;
 const out = path.join(ROOT, 'src/model-sysid-map.js');
 writeFileSync(out, body, 'utf8');

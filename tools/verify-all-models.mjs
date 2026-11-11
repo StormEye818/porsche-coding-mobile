@@ -14,7 +14,7 @@
  * 跑法： node tools/verify-all-models.mjs （已接入 npm test 末尾）
  */
 import { readFileSync } from 'node:fs';
-import { sysIdForModule, platformSysIdByLowByte, modulesForSysId, MODEL_SYSID_INDEX } from '../src/model-sysid-map.js';
+import { sysIdForModule, platformSysIdByLowByte, modulesForSysId, planSysIdFor, MODEL_SYSID_INDEX } from '../src/model-sysid-map.js';
 
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => {
@@ -65,6 +65,20 @@ console.log('\n[B] 运行时按车型解析（src/model-sysid-map.js）');
   ok('986（unresolved）→ null（回退全局，不猜）', sysIdForModule('Airbag', 'Boxster（986）') === null);
   ok('平台 sysId 反查模块名', modulesForSysId('0x0f40', 'Macan').includes('ACC3'));
   ok('未选车型 → 平台函数不启用', platformSysIdByLowByte('0x0e08', null) === null);
+  // ★ 2026-11-11 全链路审计 P0 回归：新代 sysId 不在 ecu-addresses.json，
+  //   bind-plan 键必须能由平台映射直查得到（否则 191 个静态候选运行时不可达）。
+  ok('planSysIdFor 992 安全气囊 → 0x1404（旧表无条目）',
+    planSysIdFor('安全气囊', ['BV_AirbaUDS'], '911（992）', null) === '0x1404');
+  ok('planSysIdFor Macan CCS/ACC → 0x0f40',
+    planSysIdFor('CCS/ACC(巡航控制系统)', ['ACC3'], 'Macan', null) === '0x0f40');
+  ok('planSysIdFor 981 安全气囊 → 0x0e04（回归不变）',
+    planSysIdFor('安全气囊', ['Airbag'], 'Cayman（981）', null) === '0x0e04');
+  ok('planSysIdFor 未定案平台用旧表 sysId（不套 981 值）',
+    planSysIdFor('安全气囊', ['Airbag'], 'Boxster（986）', '0x0b04') === '0x0b04');
+  // 新代 sysId 在 bind-plan 里有条目且有候选（P0 修复的可达性前提）
+  ok('992 0x1404 在 bind-plan 有候选', (plan.ecu['0x1404']?.cands || []).length > 0);
+  ok('992 0x1404 不在 ecu-addresses（旧表缺口实证）',
+    !J('ecu-addresses.json').entries.some((e) => e.sysId?.toLowerCase() === '0x1404'));
 }
 
 console.log('\n[C] 步骤2 路由表（全代）');
@@ -117,6 +131,21 @@ console.log('\n[F] 步骤5 comm 共享键');
   ok('comm 记录 ≥400 条', comm.stats.parsedCommRecords >= 400);
   ok('共享键 0x03A7 锚点（≥2 个 sysId）', (comm.sharedKeys['0x03A7']?.sysIdCount || 0) >= 2);
   ok('flag 只含 0x10/0x20', Object.keys(comm.stats.flagCounts).every((f) => ['0x0010', '0x0020'].includes(f)));
+}
+
+console.log('\n[G] 全链路审计 P0 回归（2026-11-11）');
+{
+  const app = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+  ok('编程页不再引用未定义的 uds（P0-1）',
+    !/securityAccess\(0x09,\s*!uds\)/.test(app));
+  ok('写帧标识符位宽不再按 readSid 推导（P0-2）',
+    !/idPad:\s*readSid/.test(app) && /writePad:\s*writeSid === 0x2E/.test(app));
+  ok('恢复备份页位宽/族判定已拆分（P0-3）',
+    /const writeWide = writeSid === 0x2E/.test(app) && /const isKwp = readSid !== 0x22/.test(app));
+  ok('bind-plan 键按平台 sysId 直查（P0-4）',
+    /planSysIdFor\(label, opts\.modules, currentModel, entry\?\.sysId\)/.test(app));
+  ok('退出会话不再有未 await 的裸 try/catch（P2）',
+    !/try \{ coder\.uds\('1003'/.test(app));
 }
 
 console.log(`\n===== 全车型推广门禁：${pass} 通过 / ${fail} 失败 =====`);

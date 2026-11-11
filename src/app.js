@@ -17,7 +17,7 @@ import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFie
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, SYSTEM_TO_ECUID } from './module-ecu-map.js';
-import { sysIdForModule, platformSysIdByLowByte, modulesForSysId } from './model-sysid-map.js';
+import { sysIdForModule, platformSysIdByLowByte, modulesForSysId, planSysIdFor } from './model-sysid-map.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -556,7 +556,11 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
   await ensureBindPlan();
   const prefer = variantMatchedInternals(label, null, opts && opts.variantNames);
   let entry = addrEntryFor(label, opts && opts.sys);
-  let plan = bindPlanFor(entry?.sysId);
+  // ★ 2026-11-11 全链路审计 P0 修复：bind-plan 键按当前车型平台 sysId 直查，
+  //   不再依赖 ecu-addresses.json 的条目（新代 0x10/0x12/0x14-0x16 sysId 不在旧表，
+  //   旧写法 entry=null → plan=null → 191 个新代静态候选不可达且错误 alias 回退旧代）。
+  const planSysId = planSysIdFor(label, opts.modules, currentModel, entry?.sysId);
+  let plan = bindPlanFor(planSysId) || bindPlanFor(entry?.sysId);
   let all = [];
   const fromPairs = (p) => p.pairs.map((c) => ({
     tx: parseInt(c.tx, 16), rx: parseInt(c.rx, 16), proto: null, src: 'plan',
@@ -2366,7 +2370,10 @@ function exitSystem() {
   if (coder) {
     // 10 03 = 回默认会话；KWP 模块明确拒这个子功能（实车 7F 10 12）→ 不发，省一帧与一条 NRC。
     if (coder.family !== 'kwp') {
-      try { coder.uds('1003', 2000, { allowEmpty: true }); } catch { }
+      // ★ 2026-11-11 审计 P2 修复：旧写法 `try { coder.uds(...) } catch {}` 缺 await，
+      //   Promise 异常变成未处理拒绝（catch 根本不起作用）。本函数是同步的 → 用 .catch 链。
+      coder.uds('1003', 2000, { allowEmpty: true })
+        .catch((e) => log(`  (退出会话 10 03 未确认：${e.message})`, 'warn'));
     }
   }
   currentBlocks = {};
@@ -3679,17 +3686,20 @@ async function restoreCoding(sysLabel) {
     // 此前每块都 enterSessionFor + 完整识别链，10 个块就是 10 遍识别）。
     await coder.enterSessionFor('coding');
     for (const b of list) {
-      const uds = (b.writeSid ?? 0x3B) === 0x2E;
+      // ★ 2026-11-11 审计：位宽按写 SID（2E=2 字节 DID）、协议族按读 SID（22=UDS，其余 KWP），
+      //   两者不可混用——混族记录用 writeSid 判族会给 KWP ECU 发 27 09（应为 17 00）。
       const writeSid = Number(b.writeSid ?? 0x3B);
+      const writeWide = writeSid === 0x2E;
       const readSid = READ_SIDS.includes(Number(b.readSid))
         ? Number(b.readSid)
-        : (READ_SIDS.includes(Number(b.blockReadSid)) ? Number(b.blockReadSid) : (uds ? 0x22 : 0x21));
+        : (READ_SIDS.includes(Number(b.blockReadSid)) ? Number(b.blockReadSid) : (writeWide ? 0x22 : 0x21));
+      const isKwp = readSid !== 0x22;
       const sidHex = writeSid.toString(16).toUpperCase().padStart(2, '0');
       // ⚠️ 2026-11-10 修：0x2E 的 DID 是 **2 字节**，此前一律 padStart(2) →
       //    `2E 2A ...`（1 字节 DID）发出去，写的是 0x002A 之外的错地址；UDS 模块恢复必错。
-      const lidHex = Number(b.lid).toString(16).toUpperCase().padStart(uds ? 4 : 2, '0');
+      const lidHex = Number(b.lid).toString(16).toUpperCase().padStart(writeWide ? 4 : 2, '0');
       try {
-        await coder.securityAccess(0x09, !uds);
+        await coder.securityAccess(0x09, isKwp);
         const wr = await coder.uds(`${sidHex}${lidHex}${b.raw.toUpperCase()}`, 8000);
         const want = (writeSid + 0x40) & 0xFF;
         if (!wr.body.length || wr.body[0] !== want) {
@@ -4405,7 +4415,13 @@ async function showSysExtra(f) {
       if (!rec) return null;
       const readSid = Number(rec.readSid);
       const writeSid = rec.writeSid != null ? Number(rec.writeSid) : null;
-      return { readSid, writeSid, idPad: readSid === 0x22 ? 4 : 2 };
+      // ★ 2026-11-11 全链路审计 P0 修复：读写帧的标识符位宽**各自按自己的 SID**。
+      //   旧写法 idPad 只按 readSid → 混族记录（readSid=0x21 / writeSid=0x2E）会把
+      //   2 字节 DID 拼成 1 字节，写错地址。coder._readBlockImpl 已按 readSid 处理读帧，
+      //   这里 readPad 仅供 UI 位宽校验，writePad 才是写帧拼装用。
+      return { readSid, writeSid, readPad: readSid === 0x22 ? 4 : 2,
+               writePad: writeSid === 0x2E ? 4 : 2,
+               isKwp: readSid !== 0x22 };
     };
     const progRun = async (verb, fn) => {
       if (!needLink()) return;
@@ -4416,9 +4432,9 @@ async function showSysExtra(f) {
         toast('err', '缺记录 SID', '按规格未覆盖：读写 SID 只认编码记录（prefix[0]/[1]），不做协议族一刀切 —— 请先进入模块');
         return;
       }
-      const { idPad } = pp0;
-      if (lid < 0 || lid > (idPad === 4 ? 0xffff : 0xff)) {
-        toast('err', 'LID 超出位宽', idPad === 4 ? 'UDS DID 为 2 字节（0000–FFFF）' : 'KWP LID 为 1 字节（00–FF）');
+      const { readPad } = pp0;
+      if (lid < 0 || lid > (readPad === 4 ? 0xffff : 0xff)) {
+        toast('err', 'LID 超出位宽', readPad === 4 ? 'UDS DID 为 2 字节（0000–FFFF）' : 'KWP LID 为 1 字节（00–FF）');
         return;
       }
       toast('info', `${verb} …`, `LID 0x${lid.toString(16).toUpperCase()}`);
@@ -4445,9 +4461,13 @@ async function showSysExtra(f) {
       if (input == null || !input.trim()) return '已取消';
       const clean = input.replace(/[^0-9A-Fa-f]/g, '');
       if (!clean || clean.length % 2) throw new Error('十六进制内容非法（长度必须为偶数）');
-      const { readSid, writeSid, idPad } = progProto() || {};
+      const { readSid, writeSid, writePad, isKwp } = progProto() || {};
       if (!WRITE_SIDS.includes(Number(writeSid))) {
         throw new Error(`记录 writeSid=${writeSid == null ? '缺' : '0x' + Number(writeSid).toString(16)} 非写服务（参考诊断仪 写帧仅 0x3B/0x2E）—— 只读，不写`);
+      }
+      // 混族记录：写 SID 的标识符位宽容不下该 LID → 拒写（不猜、不截断）。
+      if (lid > (writePad === 4 ? 0xffff : 0xff)) {
+        throw new Error(`LID 0x${lid.toString(16)} 超出写服务 0x${Number(writeSid).toString(16)} 的标识符位宽 —— 已中止`);
       }
       await coder.enterSessionFor('coding');
       const cur = await coder.readBlock(lid, readSid);
@@ -4456,9 +4476,11 @@ async function showSysExtra(f) {
       }
       // 参考诊断仪 序列：写前备份整块（回读不一致时原样写回）
       const backupHex = cur.map((b) => b.toString(16).padStart(2, '0')).join('');
-      await coder.securityAccess(0x09, !uds);
+      // ★ 2026-11-11 审计 P0 修复：旧写法 `!uds` 里的 uds 在本作用域**未定义** →
+      //   点「写编程块」必抛 ReferenceError。族判定与 coder._applyChangeInner 同口径（读 SID）。
+      await coder.securityAccess(0x09, isKwp);
       const sidHex = writeSid.toString(16).toUpperCase().padStart(2, '0');
-      const lidHex = Number(lid).toString(16).toUpperCase().padStart(idPad, '0');
+      const lidHex = Number(lid).toString(16).toUpperCase().padStart(writePad, '0');
       try {
         await coder.uds(`${sidHex}${lidHex}${clean.toUpperCase()}`, 8000);
         const back = await coder.readBlock(lid, readSid);
@@ -4469,7 +4491,7 @@ async function showSysExtra(f) {
         // 恢复：把备份整块写回（与 restoreBackups 同路径）
         try {
           await coder.enterSessionFor('coding');
-          await coder.securityAccess(0x09, !uds);
+          await coder.securityAccess(0x09, isKwp);
           await coder.uds(`${sidHex}${lidHex}${backupHex.toUpperCase()}`, 8000);
           const restored = await coder.readBlock(lid, readSid);
           const ok = restored.map((b) => b.toString(16).padStart(2, '0')).join('') === backupHex.toUpperCase();

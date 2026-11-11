@@ -3,7 +3,8 @@
 > 承接 `RE-CODINGADDR-20261110.md` §6（全车型复用 5 步规则）。本轮**全部执行完毕**，
 > 零上车实验，全部证据来自包内字节（`~/porsche-mapper/ref/decoded/*.BIN` 与 X431 `.so`）。
 > 一键复现：`npm run rebuild:all-models`；全量门禁：`node tools/verify-all-models.mjs`
-> （已接入 `npm test` 链末尾）；`npm test` 全绿（36+359+105+84+38，0 失败）。
+> （已接入 `npm test` 链末尾）；`npm test` 全绿（36+359+105+84+49，0 失败；
+> 门禁数随 2026-11-11 全链路审计新增 [G] 组由 38 增至 49）。
 
 ## 0. 范围与结果概览
 
@@ -106,7 +107,7 @@ flag ∈ {0x10,0x20}
 |---|---|
 | 981 五项（DME 0x7E0 / PASM 0x7D0 / IC 0x7F1 / IC≠PSM / ≥40） | ✅ 44/48，与上轮一致 |
 | 0x0B 对账基线（0x0b08 cands=[0x07F1]、0x0b13 含 0x07D0） | ✅ 逐键不变 |
-| 全车型推广门禁 `verify-all-models.mjs` [A–F] | ✅ **38/38** |
+| 全车型推广门禁 `verify-all-models.mjs` [A–F] + 审计回归 [G] | ✅ **49/49**（[A–F] 38 + [B] P0-4 六条 + [G] 五条，见 `CODE-AUDIT-FULLCHAIN-20261111.md`） |
 | 全量既有套件 | ✅ 36 + 359 + 105 + 84，0 失败 |
 | app.js 打包（check-bundle） | ✅ |
 | 一键复现 `npm run rebuild:all-models` | ✅ 全流程重跑结果一致 |
@@ -134,7 +135,7 @@ G1 29/46、G2 48/90、G3 28/64、J1 27/69 → **351/601（58.4%）**。
 
 ```bash
 npm run rebuild:all-models    # 5 步工具链全量重跑（按依赖顺序）
-npm test                      # 981 回归 + 全车型门禁（38 条）
+npm test                      # 981 回归 + 全车型门禁 + 审计 P0 回归（49 条）
 ```
 
 数据文件（全部由工具生成，勿手改）：
