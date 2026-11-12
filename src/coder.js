@@ -31,6 +31,9 @@
 
 import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange, READ_SIDS, WRITE_SIDS, SAFETY } from './schema.js';
 import { oemSessionFor } from './oem-session-table.js';
+import {
+  oemEnterSequences, oemIsSessionless, selectOemSequence, OEM_SENDABLE_SID,
+} from './oem-enter-frames.js';
 
 // ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
 //   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
@@ -424,6 +427,11 @@ export class Coder {
     this.oemSession = null;
     this.oemSessionStrict = null;   // GAG 帧 flag：true=原厂要求正响应，false=尽力而为
     this.oemEnterSeq = '';          // 原厂进模块命令序列（证据展示/审计用）
+    // ★ 2026-11-12 全量收口：逐 ECU 逐地址的原厂**帧序列组**（src/oem-enter-frames.js）。
+    //   68 个老代 sysId 的序列只有 81 + 1A 识别、没有 10 xx —— 原厂不建 UDS 会话。
+    this.oemSequences = [];
+    this.oemSessionless = false;
+    this.oemSequenceUsed = '';     // 本次进模块实际执行的原厂序列（审计用）
     this.log = [];
   }
 
@@ -446,7 +454,7 @@ export class Coder {
    *
    * 查不到证据（sysId 不在表 / 无会话帧）→ 全部置 null，回退主会话 0x89。
    */
-  setOemContext(sysId) {
+  setOemContext(sysId, tx = null) {
     const key = sysId == null ? null : String(sysId).toLowerCase();
     let hit = oemSessionFor(sysId);
     // 防错代护栏：comm 表的 type 必须等于 sysId 高字节（全表 805 条只有 2 条跨代别名，
@@ -463,6 +471,12 @@ export class Coder {
     this.oemSession = hit ? hit.session : null;
     this.oemSessionStrict = hit ? hit.requireResponse : null;
     this.oemEnterSeq = hit ? hit.seq : '';
+    // 逐 ECU 逐地址的帧序列证据（1005 条序列 / 803 sysId）。tx 用于挑与当前绑定
+    // 地址一致的那条；同 ECU 多条功能序列时，按「地址匹配 > 会话号匹配」择一。
+    this.oemSequences = key ? oemEnterSequences(key) : [];
+    this.oemSessionless = key ? oemIsSessionless(key) : false;
+    this.oemSequenceUsed = '';
+    // 调用方（app 进模块日志）用 coder.oemSessionless 区分「无证据=回退」与「原厂不建会话」。
     return hit;
   }
 
@@ -529,6 +543,128 @@ export class Coder {
    *    而旧实现把这当成致命错误直接抛出 —— 后面的 `1A 9F` / `10 89` 根本没机会发。
    *    现改为：`10 03` **尽力而为**（失败只记日志），`10 <session>` 才是硬要求。
    */
+  /**
+   * ★ 2026-11-12 全量收口：按 SYS_DATA comm 子表的**逐帧原厂序列**进模块。
+   *
+   * 证据链：data/sysdata-comm.json → COMMAND.GAG 解帧 → src/oem-enter-frames.js
+   * （803 sysId / 1005 条序列 / 3350 帧）。每层规则都有包内出处，不靠猜：
+   *   - 序列按 cat/地址分组；同一 ECU 有多条功能序列时，选与当前绑定地址、
+   *     目标会话号最吻合的一条（selectOemSequence）。
+   *   - flag=1 → 原厂要求正响应；flag=0 → 尽力而为（会话/保活帧容忍无应答）。
+   *   - flag=3 复合脚本帧、81 快初始化、1800FF00 / 3070 / A00F00FF00FF 等
+   *     链路层或服务声明帧**不进模块发送**，只留痕（220 帧）。
+   *   - 68 个老代 sysId 的序列只有 81 + 1A 识别、没有 10 xx：原厂不建 UDS 会话，
+   *     不再错误回退 `10 89`（旧行为会给老 KWP ECU 发 UDS 帧）。
+   *
+   * 仅当调用方传 `opts.oemSequence === true` 且未显式指定会话时启用；
+   * 服务专属会话、无证据上下文仍走既有族流，避免改变已验证的写入路径。
+   */
+  async _enterByOemFrames(sess, opts = {}) {
+    await this.address();
+    const seq = selectOemSequence(this.oemSysId, this.tx, sess) || this.oemSequences[0];
+    if (!seq) return this.enterSession(sess, { ...opts, oemSequence: false });
+    const sendable = new Set(OEM_SENDABLE_SID);
+    this.oemSequenceUsed = seq.frames
+      .map((f) => `${f.flag}${f.script ? '!' : ''}:${f.hex}`).join(' ');
+    this._say(`  ✅ 原厂进模块序列（${this.oemSysId} · cat ${seq.cat} · `
+      + `${seq.frames.length} 帧${seq.tx != null ? ` · 0x${seq.tx.toString(16)}/0x${seq.rx.toString(16)}` : ''}）：`
+      + this.oemSequenceUsed);
+    if (this.oemSessionless) {
+      this._say('  ⓘ 老代 KWP 序列无 10 xx 会话帧 —— 原厂不建 UDS 会话（不再回退 10 89）');
+    }
+
+    // 识别证据随进模块重采（与族流识别链同语义：5A/62 剥离、0x20 分词、按应答形态定 SID）。
+    this.lastIdent = '';
+    this.identByCmd = {};
+    this.lastPartNo = '';
+    this.lastPartTokens = [];
+    this.lastHwPart = '';
+    this.lastSwNo = '';
+    const identParts = [];
+    let sawUdsIdent = false;
+    let sent = 0, skipped = 0;
+
+    for (const f of seq.frames) {
+      const sid = Number.parseInt(f.hex.slice(0, 2), 16);
+      if (f.script || f.flag === 3 || !sendable.has(sid)) {
+        skipped++;
+        this._say(`  (跳过 ${f.flag}${f.script ? '!' : ''}:${f.hex} —— 链路层/服务声明/复合脚本，不进模块发送)`);
+        continue;
+      }
+      const soft = f.flag === 0;
+      const isSession = sid === 0x10;
+      const sessByte = isSession ? Number.parseInt(f.hex.slice(2, 4), 16) : null;
+      // 只有「本次目标会话」且 flag=1 的会话帧才是硬要求；写路径 strictSession 一律硬要求。
+      const hard = isSession && !soft && (opts.strictSession === true || sessByte === sess);
+      try {
+        const r = await this.uds(f.hex, sid === 0x3e ? 2000 : 3000,
+          { allowEmpty: soft || sid === 0x3e });
+        sent++;
+        if (isSession) {
+          if (hard) this._expectSession(r, sessByte);
+          else this._say(`  (会话 ${f.hex} flag=0 —— 原厂尽力而为，不硬等 50 xx)`);
+        } else if (sid === 0x1a || sid === 0x22 || sid === 0x21) {
+          let b = Array.from(r?.body || []);
+          if (b[0] === 0x5a) b = b.slice(2);
+          else if (b[0] === 0x62) { b = b.slice(3); sawUdsIdent = true; }
+          const txtRaw = b.filter((c) => c >= 0x20 && c < 0x7f)
+            .map((c) => String.fromCharCode(c)).join('');
+          const txt = txtRaw.trim();
+          this._say(`  识别 ${f.hex} → ${(r?.body || []).map((x) => x.toString(16).padStart(2, '0')).join(' ')}`
+            + (txt ? `  「${txt}」` : ''));
+          if (txt) {
+            identParts.push(txt);
+            if (!this.identByCmd[f.hex]) this.identByCmd[f.hex] = txt;
+            for (const tok of String(txtRaw).split(/ +/).filter(Boolean)) {
+              if (tok.length >= 6 && !this.lastPartTokens.includes(tok)) this.lastPartTokens.push(tok);
+            }
+            const partTok = String(txtRaw).split(/ +/).filter((x) => x.length >= 6)[0]
+              || String(txtRaw).split(/ +/)[0] || '';
+            if (f.hex.startsWith('1A84')) this.lastPartNo = partTok;
+            else if (!this.lastPartNo && /^1A(87|94)/.test(f.hex)) this.lastPartNo = partTok;
+            if (f.hex.startsWith('1A92')) this.lastHwPart = txtRaw;
+            else if (f.hex.startsWith('1A91') && !this.lastHwPart) this.lastHwPart = txtRaw;
+            else if (f.hex.startsWith('1A94')) this.lastSwNo = txtRaw;
+          }
+        }
+      } catch (e) {
+        if (hard) throw e;
+        this._say(`  (${f.hex} 无正响应：${e.message} —— flag=${f.flag} 按原厂容错继续)`);
+      }
+    }
+    this.lastIdent = identParts.join(' ').trim();
+    if (sawUdsIdent) this.lastReadSid = 0x22;
+    else if (identParts.length) this.lastReadSid = 0x1A;
+
+    // 序列内识别帧全部无应答时补两条最小识别，保证变体选择仍有证据（不影响有应答时的帧序）。
+    if (!opts.skipIdent && !this.lastIdent) {
+      this._say('  (原厂序列未取到识别文本 —— 补采 1A9F / 22F1A2)');
+      for (const cmd of ['1A9F', '22F1A2']) {
+        try {
+          const r = await this.uds(cmd, 3000, { allowEmpty: true });
+          let b = Array.from(r?.body || []);
+          if (b[0] === 0x5a) b = b.slice(2);
+          else if (b[0] === 0x62) { b = b.slice(3); sawUdsIdent = true; }
+          const txt = b.filter((c) => c >= 0x20 && c < 0x7f)
+            .map((c) => String.fromCharCode(c)).join('').trim();
+          if (txt) {
+            identParts.push(txt);
+            this.identByCmd[cmd] = txt;
+            for (const tok of txt.split(/ +/).filter((x) => x.length >= 6)) {
+              if (!this.lastPartTokens.includes(tok)) this.lastPartTokens.push(tok);
+            }
+          }
+        } catch (e) { this._say(`  (补采 ${cmd}：${e.message})`); }
+      }
+      this.lastIdent = identParts.join(' ').trim();
+      if (sawUdsIdent) this.lastReadSid = 0x22;
+      else if (identParts.length) this.lastReadSid = 0x1A;
+    }
+    this._say(`  ✅ 原厂序列执行完毕：发送 ${sent} 帧 / 跳过 ${skipped} 帧`
+      + `${this.lastIdent ? ` / 识别「${this.lastIdent}」` : ' / 无识别文本'}`);
+    return true;
+  }
+
   _expectSession(r, session) {
     const body = Array.from(r?.body || []);
     if (body.length < 2 || body[0] !== 0x50 || body[1] !== (session & 0xff)) {
@@ -539,6 +675,12 @@ export class Coder {
   }
 
   async enterSession(session, opts = {}) {
+    // ★ 2026-11-12 全量收口：上层按证据开启「原厂序列模式」时，逐帧按 comm 记录发帧，
+    //   不再靠族流猜帧序。显式给 session（服务专属流程）或无证据序列时保持既有族流，
+    //   因此所有既有帧序门禁不受影响。
+    if (opts.oemSequence === true && session == null && this.oemSequences?.length) {
+      return this._enterByOemFrames(this.resolveSession(), opts);
+    }
     // ★ 2026-11-12 逐 ECU 原厂会话：未显式给 session 时取 setOemContext 绑定的证据值。
     //   无上下文（单测/自动搜索/未定案车型）→ 0x89，既有帧序门禁不受影响。
     const sess = this.resolveSession(session);
@@ -922,6 +1064,9 @@ export class Coder {
       this.oemSession = null;
       this.oemSessionStrict = null;
       this.oemEnterSeq = '';
+      this.oemSequences = [];
+      this.oemSessionless = false;
+      this.oemSequenceUsed = '';
     }
     if (opts.family !== undefined) this.family = opts.family;   // 会话流家族（kwp/uds/null）
     if (name) this.ecuName = name;
@@ -1250,7 +1395,15 @@ export class Coder {
     //   没有 1A 9F/87/84/91/92/93/94/95/97/9A 十帧识别。旧实现每次写都经 enterSession
     //   重跑整套识别链（最多 +9s，还会清空 lastIdent/lastPartNo 等变体证据）。
     this._say('  进会话 …');
-    await this.enterSession(sess, { skipIdent: true, strictSession: true });
+    if (this.oemSessionless && session == null) {
+      // ★ 2026-11-12 全量收口：68 个老代 sysId 的原厂序列是 81 快初始化 + 1A 识别，
+      //   **没有 10 xx 会话帧**。写路径不能沿用 resolveSession() 的 0x89 回退，
+      //   否则会给 KWP ECU 发 UDS 帧吃 NRC 0x12，把写流程卡在会话步。
+      await this.address();
+      this._say('  ⓘ 原厂老代 KWP 不建 UDS 会话 —— 写序列跳过会话建立（不回退 10 89）');
+    } else {
+      await this.enterSession(sess, { skipIdent: true, strictSession: true });
+    }
     const before = await this.readBlock(lid, readSid);
     this.backups.push({
       id: p.id, lid, readSid, writeSid, session: sess, time: new Date().toISOString(),

@@ -235,6 +235,32 @@ def main():
         stats[conf] += 1
         stats['modules'] += len(modules)
 
+    # ★ 2026-11-12 全量收口：显式「平台 → type」链接（DSN.BIN 头 22 项索引）。
+    #   老代 0x01-0x0A 的 sysDataOff 是 u32 数值表、没有 ASCII 名字，名字投票必然
+    #   平票/零交集 —— 这不是「包内不可证」，而是找错了载体。DSN 索引的 id 严格
+    #   ≡ SYS_DATA root type ≡ sysId 高字节，与 9 个已定案平台完全吻合。
+    #   **只定 gen，不动 confidence / modules**：这些平台的模块 sysId 仍缺证据，
+    #   运行时必须继续走全局表回退（apply=false），绝不因 gen 定案就猜模块地址。
+    pmap_path = ROOT / 'data' / 'platform-type-map.json'
+    if pmap_path.exists():
+        pmap = json.loads(pmap_path.read_text())
+        for plat, r in (pmap.get('resolvedPendingPlatforms') or {}).items():
+            e = platforms.get(plat)
+            if not e:
+                continue
+            e['typeCandidates'] = r.get('types') or []
+            e['genResolvedFrom'] = 'DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）'
+            if r.get('gen'):
+                e['gen'] = r['gen']
+                e['genEvidence'] = (f"显式定案：{r['basis']}；{e['genEvidence']}")
+            else:
+                e['genEvidence'] = (f"显式候选集 {','.join(r.get('types') or [])}"
+                                    f"（该平台占多个 type，不定唯一 gen）：{r['basis']}；{e['genEvidence']}")
+        for d in pmap.get('divergenceWithRuntime') or []:
+            e = platforms.get(d['platform'])
+            if e:
+                e['indexGenDivergence'] = d
+
     # D. 车型展开（只引用 high/medium 平台；其余保持全局表，不猜）
     models = {}
     for model, hits in mm['modelMap'].items():
@@ -251,8 +277,12 @@ def main():
 
     doc = {
         'schemaVersion': 1,
-        'source': 'PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json',
-        'method': '平台→代际=平台变体名∩type 子系统名字集精确交集(top1 gap≥15% high/≥5% medium)；模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48',
+        'source': 'PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + DSN.BIN 头 22 项索引(显式平台→type) '
+                  '+ 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json',
+        'method': '平台→代际优先取 DSN.BIN 显式索引（id≡root type≡sysId 高字节）；'
+                  '未定案平台再用变体名∩type 名字集交集(top1 gap≥15% high/≥5% medium)；'
+                  '模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48。'
+                  '显式定案只写 gen，不动 confidence/modules（模块无证据仍走全局表）',
         'rule': '只有 high/medium 平台在运行时启用平台专属 sysId；low/unresolved 保持全局 MODULE_TO_ECUID（宁可不覆盖也不猜）',
         'stats': {'platforms': len(platforms), 'models': len(models), **dict(stats)},
         'platforms': platforms,

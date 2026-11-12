@@ -58,6 +58,10 @@ ROOT_TABLE = ROOT / 'data' / 'sysdata-root-table.json'
 COMM = ROOT / 'data' / 'sysdata-comm.json'
 SYSIDS = ROOT / 'data' / '981-sysids.json'
 ALL_SYSIDS = ROOT / 'data' / 'all-model-sysids.json'
+# ★ 2026-11-12 全量收口：变体文件实际用到的 sysId 全集（tools/export-variant-sysids.mjs）。
+#   此前 target_sids 只来自 981/全车型平台/根表，漏了 126 个会被 sysIdForModule 解析到、
+#   却没有 bind-plan 条目的 sysId —— 进模块只能靠枚举兜底，是全链路真实断点。
+VARIANT_SYSIDS = ROOT / 'data' / 'variant-sysids.json'
 OUT = ROOT / 'data' / 'bind-plan.json'
 
 DIAG_LO, DIAG_HI = 0x600, 0x7FF
@@ -108,6 +112,7 @@ def main():
     comm_doc = json.loads(COMM.read_text())
     sysids_doc = json.loads(SYSIDS.read_text())
     all_sysids = json.loads(ALL_SYSIDS.read_text())
+    variant_sysids = json.loads(VARIANT_SYSIDS.read_text()) if VARIANT_SYSIDS.exists() else {'sysIds': []}
 
     # ---- 新代 0x14-0x16 的本代地址证据（2026-11-12 复核推翻「路由 owner 0 行=无地址」） ----
     # SYS_DATA comm cat=0x10 子表内嵌 (A,C) 地址对，解出 tx/rx 全部是合法 11 位，
@@ -124,6 +129,22 @@ def main():
                 tx, rx = s.get('tx'), s.get('rx')
                 if isinstance(tx, int) and isinstance(rx, int) and 0 < tx <= REQ_HI and 0 < rx <= 0x7FF:
                     comm_pairs.setdefault(sid.lower(), {})[tx] = rx
+
+    def family_default_pairs(sid):
+        """同代 cat=0x10 家族默认地址（仅作候选，必须探针验证）。
+
+        有些 ECU 的 comm 子表只有 cat=0x60 固定 4 帧模板，subs 里的 0x020-0x02D 是
+        索引而非 CAN 地址。此时按代际收集同代其它 ECU 的 cat=0x10 地址对作为**候选**，
+        provenance 明确标 family-default（非按车型唯一地址），不设免探针直绑。
+        """
+        gen = int(sid, 16) >> 8
+        merged = {}
+        for k, pairs in comm_pairs.items():
+            if (int(k, 16) >> 8) != gen:
+                continue
+            for tx, rx in pairs.items():
+                merged.setdefault(tx, rx)
+        return dict(sorted(merged.items())[:16])
 
     # ---- 公共：模块名 → 首参数 lid / 族（readSid 众数） ----
     by_mod = {}
@@ -311,6 +332,9 @@ def main():
         # 只补 0x10+ 新代（旧代 0x01-0x0F 已由 v3 键/表A 覆盖，避免无意义空条目膨胀）
         if e.get('genConsistent') and int(t, 16) >= 0x10:
             target_sids.update(s.lower() for s in e.get('sysIds') or [])
+    # ★ 全量收口：纳入变体文件实际解析到的 sysId（4588 变体 / 445 个 sysId）。
+    #   其中 126 个此前没有条目，补源见 add_entry 的 commCat10Exact / commFamilyDefault。
+    target_sids.update(s.lower() for s in variant_sysids.get('sysIds') or [])
     target_sids.discard('')
 
     out, stats = {}, Counter()
@@ -426,6 +450,35 @@ def main():
                      for c in sorted(cp)] + prov)
             stats['commCat10'] += 1
 
+        # ★ 2026-11-12 全量收口：变体实际用到、但 tierA/跨代/表A 全空的 sysId 不留 0 候选。
+        #   ① 63 个 ECU 的 comm cat=0x10 子表本就带本 ECU 地址对（不限新代）→ 直接用；
+        #   ② 63 个 ECU 只有 cat=0x60 固定 4 帧模板（subs 是 0x020-0x02D 索引，非 CAN 地址）
+        #      → 用同代 cat=0x10 家族默认地址，provenance 明确标「非按车型唯一，必须探针验证」。
+        #   两者都只作候选；bindDirect 仍由 n=0 + 唯一合法地址决定，绝不免探针直绑。
+        newly_sourced = False
+        if not ordered:
+            newly_sourced = True
+            exact = comm_pairs.get(sid)
+            if exact:
+                cp = exact
+                ordered = sorted(exact)[:16]
+                prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{exact[c]:04X}',
+                          'sources': ['commCat10Exact'],
+                          'note': 'SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）'}
+                         for c in ordered] + prov)
+                stats['commCat10Exact'] += 1
+            else:
+                fam = family_default_pairs(sid)
+                if fam:
+                    cp = fam
+                    ordered = sorted(fam)[:16]
+                    prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{fam[c]:04X}',
+                              'sources': ['commCat10-family-default'],
+                              'note': '本 ECU comm 仅 cat=0x60 固定模板无地址对；'
+                                      '候选=同代家族默认地址（非按车型唯一，必须探针验证）'}
+                             for c in ordered] + prov)
+                    stats['commFamilyDefault'] += 1
+
         pairs, rejected_pairs = [], []
         for c in ordered:
             tx_s = f'0x{c:04X}'
@@ -459,7 +512,10 @@ def main():
             stats['rxPreserved' if rx_source.startswith('tableA') else 'rxDefaultPlus8'] += 1
         # 只有「全部相关行均 n=0 + 唯一合法地址」才允许免探针直绑。
         # n=0 多候选或混合 n 必须继续探测/枚举，不能拿首项冒充唯一地址。
-        bind_direct = bool(rows) and not n_mixed and n_value == 0 and len(pairs) == 1
+        # ★ 新增补源（本 ECU comm 地址对 / 家族默认候选）一律禁止免探针直绑：
+        #   地址虽来自包内证据，但未经实车探针确认，n=0 也不能当成唯一实测地址。
+        bind_direct = bool(rows) and not n_mixed and n_value == 0 and len(pairs) == 1 \
+            and not newly_sourced
         rec = {
             'mode': f'0x{mode:04x}' if mode is not None else None,
             'n': n_value,
@@ -473,6 +529,9 @@ def main():
             rec['rejectedPairs'] = rejected_pairs
         if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
             rec['bindUnresolved'] = 'n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举'
+        if newly_sourced:
+            rec['bindUnresolved'] = ('候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），'
+                                     '未经实车探针确认 → 一律禁止免探针直绑')
         if prov:
             rec['provenance'] = prov
         if sid in notes:
@@ -505,13 +564,16 @@ def main():
                        'confidence': e.get('confidence')}
 
     doc = {
-        'schemaVersion': 4,
-        'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(newgen cat=0x10 地址对) '
-                   '+ all-model-sysids(全车型换表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
+        'schemaVersion': 5,
+        'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(cat=0x10 本代地址对) '
+                   '+ all-model-sysids(全车型换表) + variant-sysids(4588 变体实解析 sysId) '
+                   '+ ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
         'rule': ('全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) '
                  '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
                  'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
                  'gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。'
+                 '变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；'
+                 '仅 cat=0x60 模板无地址对 → 同代家族默认候选（标 family-default、必须探针验证）。'
                  'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
                  'rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；'
                  'tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）'
@@ -553,6 +615,13 @@ def main():
     # 48 模块静态解出数（模块任一 sysId 有候选即算）
     resolved = [n for n, sids in mod_sysids.items() if any(cand_of(s) for s in sids)]
     checks.append((f'≥40/48 静态解出（实际 {len(resolved)}/48）', len(resolved) >= 40))
+    # ★ 2026-11-12 全量收口：4588 个变体实际解析到的 sysId 必须全部有地址候选（0 链路断点）。
+    var_ids = [s.lower() for s in variant_sysids.get('sysIds') or []]
+    var_missing = [s for s in var_ids if not cand_of(s)]
+    checks.append((f'变体实解析 {len(var_ids)} 个 sysId 全部有地址候选（缺 {len(var_missing)}）',
+                   not var_missing))
+    if var_missing:
+        print('  缺失样本：', var_missing[:10])
     for name, okk in checks:
         print(('  ✅' if okk else '  ❌'), name)
     if not all(okk for _, okk in checks):

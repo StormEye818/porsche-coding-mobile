@@ -118,7 +118,7 @@ export const MODEL_SYSID_INDEX = {
  },
  "Panamera-970（至2016年款止）": {
   "platform": "E1",
-  "gen": null,
+  "gen": "0x03",
   "confidence": "low",
   "apply": false
  },
@@ -142,7 +142,7 @@ export const MODEL_SYSID_INDEX = {
  },
  "Carrera GT": {
   "platform": "CS1",
-  "gen": null,
+  "gen": "0x13",
   "confidence": "low",
   "apply": false
  },
@@ -896,10 +896,11 @@ export function modulesForSysId(sysId, modelLabel) {
  * 顺序与 addrEntryFor 一致：模块名 → 中文标签（仅 981）→ 旧表条目 sysId。
  */
 export function planSysIdFor(label, modules, modelLabel, entrySysId) {
-  for (const m of modules || []) {
-    const s = sysIdForModule(m, modelLabel);
-    if (s) return s;
-  }
+  const sids = [...new Set((modules || [])
+    .map((m) => sysIdForModule(m, modelLabel)).filter(Boolean))];
+  // 多候选模块映射到不同平台 sysId 时，必须等身份/变体证据，不能取首。
+  if (sids.length > 1) return null;
+  if (sids.length === 1) return sids[0];
   const info = platformInfoFor(modelLabel);
   const g = SYSTEM_LABEL_BASE[String(label ?? '')] || null;
   if (info && info.gen === '0x0e') return g || entrySysId || null;

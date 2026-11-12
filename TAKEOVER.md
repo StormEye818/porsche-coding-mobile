@@ -3,26 +3,34 @@
 > **新 agent 从这里开始读。** 读完这一份就能接着干，不用翻别的。
 > 细节在 `HANDOFF.md`（按时间追加的完整记录，78KB+），**别从头读它**，查具体踩坑时再 grep。
 >
-> 最后更新：**2026-11-12** · 第七阶段把 SYS_DATA comm 表接进运行时，收口进模块会话与新代地址
-> （完整审计见 `FULLCHAIN-ALIGN-20261112.md`；历史收口见 `RE-CLOSURE-20261111.md`）
+> 最后更新：**2026-11-12（全量收口）** · 全链路打通，**以 `FULLCHAIN-CLOSURE-20261112.md` 为准**；
+> 上一阶段审计 `FULLCHAIN-ALIGN-20261112.md` 的 §3 #10 / §5 / §7 已被推翻或收窄，仅作取证记录。
 >
 > ⚠️ 本页及续篇中的旧覆盖率/「已全对齐」表述均为历史资料，不再作为实车写入验收。
-> 当前真实行为门禁（`npm test` 全绿）：`test-align431` 37、`smoke-fixes` 359、
-> `verify-all-models` 67、`e2e-flow` 105、`walkthrough` 84、`verify-runtime-safety` 24、
-> `verify-sysdata-comm` 16、`verify-oem-session` 28，均 0 失败；真车默认只读，
-> 只有 981 Cayman DME 示例 profile 可写，其余未证 ECU 不得因测试通过而放行。
+> 当前真实行为门禁（`npm test` 全绿，14 项）：`test-align431` **38**、`smoke-fixes` 359、
+> `verify-all-models` **68**、`e2e-flow` 105、`walkthrough` 84、`verify-runtime-safety` 24、
+> `verify-sysdata-comm` 16、`verify-oem-session` 28、`verify-oem-frames` **34**、
+> `verify-fullchain` **30**，均 0 失败；真车默认只读，只有 981 Cayman DME 可写。
 >
-> **第七阶段（本轮）新增**：
-> - `src/oem-session-table.js`（生成器 `tools/build-oem-session-table.mjs`）：逐 ECU 原厂会话表，
->   805 sysId / 737 会话证据；运行时用到的 468 个零缺口；981 = 32×`10 03` + 16×`10 89`。
-> - `Coder.setOemContext(sysId)` / `resolveSession()`：进模块会话不再一律 `10 89`；
->   GAG 帧 flag=0 的会话按原厂「尽力而为」处理；`setAddress` 换模块清空上下文。
-> - `data/bind-plan.json` schemaVersion 4：新代 0x14-0x16 的 112 个 comm cat=0x10 本代地址对
->   接入为首选候选（保留原候选回退、不直绑），推翻「新代无地址证据」。981 不受影响。
-> - 两个生产 provider 显式声明 `seedWidths`，宽度闸门从降级变硬约束。
+> **全量收口（本轮）新增**：
+> - `src/oem-enter-frames.js`（生成器 `tools/build-oem-enter-frames.mjs`）：803 sysId /
+>   1005 条原厂进模块序列 / 3350 帧。`Coder._enterByOemFrames()` 按证据逐帧发送，
+>   不再靠族流猜帧序；flag=0 尽力而为、非 UDS/flag=3 脚本帧跳过留痕。
+> - **68 个「无会话」sysId 推翻**：全是老代 0x01–0x0A，原厂 `81` 快初始化 + `1A` 识别，
+>   **不建 UDS 会话**；写路径同步修掉误发 `10 89`（原会吃 NRC 0x12）。
+> - `data/variant-sysids.json`（生成器 `tools/export-variant-sysids.mjs`）：25 车型 / 4588 变体 /
+>   445 个运行时 sysId。`bind-plan.json` **schemaVersion 5** 补齐 126 个原本 0 候选的 sysId
+>   （111 本 ECU comm 地址对 + 92 同代家族默认候选），**新增补源一律禁止免探针直绑**。
+> - `data/platform-type-map.json`（生成器 `tools/build-platform-type-map.mjs`）：`DSN.BIN` 头
+>   22 项索引给出**平台→type 显式链接**（id ≡ root type ≡ sysId 高字节），与 9 个已定案平台吻合；
+>   CS1→0x13、E1→0x03 唯一定案，9X6→{0x01,0x02}、9X7→{0x04,0x05,0x06} 为多 type 候选集。
+>   只写 gen，不改 confidence / modules，运行时仍走全局表回退（不猜模块地址）。
+> - 写序言：逐帧统计证明 comm 表 3350 帧里核心写服务 17/27/2E/3B/31/32 **0 命中**，
+>   模板帧只出现在 2–3 个 ECU —— 包内**没有** ECU→写序言模式分派表，白名单因此不扩。
 >
-> **仍未证**：进模块完整帧序位置差异、老平台 9X6/9X7/CS1/E1 的车型→type 唯一链接、
-> 写序言按 ECU 分派（包内是固定模板+类别键）、OBD `21 09 05` 目的 CAN ID（盒固件层）。
+> **仍保留的边界**：9X6/9X7 无唯一 gen、4 个平台的模块 sysId 仍无法由老代 u32 数值表解析；
+> 写白名单仍只 981 Cayman DME 一条；E3 索引层 0x11 与运行时 0x12 双记录并存；
+> `0x050c` 无候选（不在任何变体文件，属枚举兜底项）。
 > `npm run sync` 的 `www/data` 删除仍受 safe-delete 护栏限制，不能绕过。
 >
 > ⚠️ **已有续篇：`TAKEOVER-20261018.md`。** 第二轮把待逆收编 + 功能审查 + REA/431 对照都推完了，

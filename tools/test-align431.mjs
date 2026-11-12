@@ -75,10 +75,19 @@ console.log('\n[C] 绑定计划（data/bind-plan.json）');
   ok('PDC 候选含已证 0x7CF', pdc && pdc.cands.some((c) => c.toLowerCase() === '0x07cf'), JSON.stringify(pdc && pdc.cands));
   const pasm = plan.ecu['0x0b13'];
   ok('PASM n=1 → 走探针（非直绑）', pasm && pasm.bindDirect === false && pasm.cands.some((c) => c.toLowerCase() === '0x07d0'), JSON.stringify(pasm));
-  ok('全部候选都在诊断段 0x600-0x7FF',
-    Object.values(plan.ecu).every((e) => e.cands.every((c) => {
-      const v = parseInt(c, 16); return v >= 0x600 && v <= 0x7ff;
+  // ★ 2026-11-12：旧代 KWP 的 comm cat=0x10 地址对落在 0x05xx/0x06xx（包内精确证据），
+  //   不属于 UDS 0x600-0x7FF 段。改为「合法 11 位 + 低段须有本 ECU/同代 comm 证据」双闸。
+  ok('全部地址对合法 11 位请求/应答（0<tx≤0x7F7, 0<rx≤0x7FF）',
+    Object.values(plan.ecu).every((e) => (e.pairs || []).every((p) => {
+      const tx = parseInt(p.tx, 16), rx = parseInt(p.rx, 16);
+      return tx > 0 && tx <= 0x7f7 && rx > 0 && rx <= 0x7ff;
     })));
+  const lowSeg = Object.entries(plan.ecu).flatMap(([sid, e]) => (e.cands || [])
+    .filter((c) => parseInt(c, 16) < 0x600)
+    .map((c) => ({ sid, prov: JSON.stringify(e.provenance || []) })));
+  ok('非 UDS 段候选 (<0x600) 全部来自旧代 comm 地址证据',
+    lowSeg.every((x) => (parseInt(x.sid, 16) >> 8) <= 0x0f && /commCat10/.test(x.prov)),
+    `低段候选 ${lowSeg.length} 条`);
   ok('pairs 保留原始 rx（IC = 0x7F1/0x7F9）',
     ic && ic.pairs && ic.pairs[0].tx.toLowerCase() === '0x07f1' && ic.pairs[0].rx.toLowerCase() === '0x07f9',
     JSON.stringify(ic && ic.pairs));

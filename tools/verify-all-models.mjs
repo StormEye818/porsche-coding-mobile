@@ -107,10 +107,21 @@ console.log('\n[D] 步骤3 绑定计划（全代多源）');
   ok('新代 0x10+ 条目已建立', allSids.some((s) => s.startsWith('0x10')) && allSids.some((s) => s.startsWith('0x14')));
   ok('全车型 coverage 已算且 ≥300 模块静态',
     Object.values(plan.coverage || {}).reduce((a, c) => a + (c.static || 0), 0) >= 300);
-  ok('候选全部落在诊断段 0x600-0x7FF',
-    Object.values(plan.ecu).every((e) => (e.cands || []).every((c) => {
-      const v = parseInt(c, 16); return v >= 0x600 && v <= 0x7ff;
+  // ★ 2026-11-12：旧代 KWP 的 comm cat=0x10 地址对确实落在 0x05xx/0x06xx（如
+  //   0x05F1→0x06F1），不是 UDS 的 0x600-0x7FF 段。原「一刀切 ≥0x600」把包内精确
+  //   证据误判成脏数据。改为更严格的双闸：全部合法 11 位 + 低段必须有 comm 证据且属旧代。
+  ok('全部地址对合法 11 位请求/应答（0<tx≤0x7F7, 0<rx≤0x7FF）',
+    Object.values(plan.ecu).every((e) => (e.pairs || []).every((p) => {
+      const tx = parseInt(p.tx, 16), rx = parseInt(p.rx, 16);
+      return tx > 0 && tx <= 0x7f7 && rx > 0 && rx <= 0x7ff;
     })));
+  const lowSeg = Object.entries(plan.ecu).flatMap(([sid, e]) => (e.cands || [])
+    .filter((c) => parseInt(c, 16) < 0x600)
+    .map((c) => ({ sid, c, prov: JSON.stringify(e.provenance || []) })));
+  ok('非 UDS 段候选 (<0x600) 全部来自旧代 comm 地址证据且带 rx',
+    lowSeg.every((x) => (parseInt(x.sid, 16) >> 8) <= 0x0f
+      && /commCat10/.test(x.prov)),
+    `低段候选 ${lowSeg.length} 条 / 涉及 ${new Set(lowSeg.map((x) => x.sid)).size} 个 sysId`);
 }
 
 console.log('\n[E] 步骤4 编码地址来源');

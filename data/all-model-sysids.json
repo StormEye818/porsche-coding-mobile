@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
- "source": "PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json",
- "method": "平台→代际=平台变体名∩type 子系统名字集精确交集(top1 gap≥15% high/≥5% medium)；模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48",
+ "source": "PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + DSN.BIN 头 22 项索引(显式平台→type) + 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json",
+ "method": "平台→代际优先取 DSN.BIN 显式索引（id≡root type≡sysId 高字节）；未定案平台再用变体名∩type 名字集交集(top1 gap≥15% high/≥5% medium)；模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48。显式定案只写 gen，不动 confidence/modules（模块无证据仍走全局表）",
  "rule": "只有 high/medium 平台在运行时启用平台专属 sysId；low/unresolved 保持全局 MODULE_TO_ECUID（宁可不覆盖也不猜）",
  "stats": {
   "platforms": 14,
@@ -622,7 +622,7 @@
       "0x0f4d"
      ],
      "method": "drivelinks-key",
-     "evidence": "无名字记录；drivelinks-v3 键 0x0f4d 独占直连键 0x003006CC-0x003006CF（lane change assist 惯用段）"
+     "evidence": "地址键=0x0F4D（drivelinks 独占直连键 0x003006CC-0x003006CF）；身份 sysId=0x0E5F/0x0E60（0x0E 代 comm 子表 BV_ContrUnitLaneChangAssis2UDS_BaseSys 精确 join）；两者语义不同，禁止互相替代"
     },
     "BV_ECM_UDS": {
      "sysId": "0x0e01",
@@ -969,20 +969,31 @@
   "9X6": {
    "gen": null,
    "confidence": "unresolved",
-   "genEvidence": "平台变体名与全部 type 子系统名字集零交集",
+   "genEvidence": "显式候选集 0x01,0x02（该平台占多个 type，不定唯一 gen）：DSN 索引 \"9x6\" → type 0x01/0x02；平台变体名与全部 type 子系统名字集零交集",
    "systems": 29,
    "modulesResolved": 0,
    "routeOwnerCount": 0,
-   "modules": {}
+   "modules": {},
+   "typeCandidates": [
+    "0x01",
+    "0x02"
+   ],
+   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）"
   },
   "9X7": {
    "gen": null,
    "confidence": "low",
-   "genEvidence": "精确交集 top1=type 0x0E×10 次高=10 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "genEvidence": "显式候选集 0x04,0x05,0x06（该平台占多个 type，不定唯一 gen）：DSN 索引 \"9x7\" → type 0x04/0x05/0x06；精确交集 top1=type 0x0E×10 次高=10 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
    "systems": 41,
    "modulesResolved": 0,
    "routeOwnerCount": 0,
-   "modules": {}
+   "modules": {},
+   "typeCandidates": [
+    "0x04",
+    "0x05",
+    "0x06"
+   ],
+   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）"
   },
   "CAJUN": {
    "gen": "0x0f",
@@ -1285,22 +1296,30 @@
    }
   },
   "CS1": {
-   "gen": null,
+   "gen": "0x13",
    "confidence": "low",
-   "genEvidence": "精确交集 top1=type 0x0E×218 次高=218 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "genEvidence": "显式定案：DSN 索引 \"CS1\" → type 0x13；精确交集 top1=type 0x0E×218 次高=218 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
    "systems": 17,
    "modulesResolved": 0,
    "routeOwnerCount": 0,
-   "modules": {}
+   "modules": {},
+   "typeCandidates": [
+    "0x13"
+   ],
+   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）"
   },
   "E1": {
-   "gen": null,
+   "gen": "0x03",
    "confidence": "low",
-   "genEvidence": "精确交集 top1=type 0x0F×7 次高=7 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "genEvidence": "显式定案：DSN 索引 \"E1\" → type 0x03；精确交集 top1=type 0x0F×7 次高=7 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
    "systems": 48,
    "modulesResolved": 0,
    "routeOwnerCount": 0,
-   "modules": {}
+   "modules": {},
+   "typeCandidates": [
+    "0x03"
+   ],
+   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）"
   },
   "E2": {
    "gen": "0x0b",
@@ -2127,6 +2146,13 @@
      "confidence": "high",
      "evidence": "type 0x12 comm 子表 sysId→名字精确 join 3 票 → 0x1294×3（次高 0）"
     }
+   },
+   "indexGenDivergence": {
+    "platform": "E3",
+    "runtimeGen": "0x12",
+    "indexTypes": [
+     "0x11"
+    ]
    }
   },
   "G1": {
@@ -3877,7 +3903,7 @@
   },
   "Panamera-970（至2016年款止）": {
    "platform": "E1",
-   "gen": null,
+   "gen": "0x03",
    "confidence": "low",
    "applyPlatformSysIds": false,
    "moduleCount": 0
@@ -3905,7 +3931,7 @@
   },
   "Carrera GT": {
    "platform": "CS1",
-   "gen": null,
+   "gen": "0x13",
    "confidence": "low",
    "applyPlatformSysIds": false,
    "moduleCount": 0

@@ -1,0 +1,346 @@
+{
+  "schemaVersion": 1,
+  "source": "DSN.BIN 头 22 项索引(@0x1 起连续变长记录) + PORSCHE_SYS_DATA.BIN 根表 22 项 + sysdata-comm.json",
+  "evidence": "id ≡ SYS_DATA root type ≡ comm 子表 sysId 高字节；22 个 type 严格等于 0x01..0x16",
+  "dsnLayout": "@0x0 [u8 count=22]；@0x1 起每条 [u8 id][u8 nameLen][u8 0][name\\0 × nameLen][u32 payloadOff]",
+  "verification": {
+    "commTypes": [
+      "0x01",
+      "0x02",
+      "0x03",
+      "0x04",
+      "0x05",
+      "0x06",
+      "0x07",
+      "0x08",
+      "0x09",
+      "0x0A",
+      "0x0B",
+      "0x0C",
+      "0x0D",
+      "0x0E",
+      "0x0F",
+      "0x10",
+      "0x11",
+      "0x12",
+      "0x13",
+      "0x14",
+      "0x15",
+      "0x16"
+    ],
+    "idSequence": "1..22",
+    "checked": true
+  },
+  "index": [
+    {
+      "id": 1,
+      "type": "0x01",
+      "sysIdHighByte": "0x01",
+      "platformName": "9x6",
+      "payloadOff": "0x3A5EF",
+      "recordOff": "0x1"
+    },
+    {
+      "id": 2,
+      "type": "0x02",
+      "sysIdHighByte": "0x02",
+      "platformName": "9x6",
+      "payloadOff": "0x3A5EF",
+      "recordOff": "0xC"
+    },
+    {
+      "id": 3,
+      "type": "0x03",
+      "sysIdHighByte": "0x03",
+      "platformName": "E1",
+      "payloadOff": "0x328EC",
+      "recordOff": "0x17"
+    },
+    {
+      "id": 4,
+      "type": "0x04",
+      "sysIdHighByte": "0x04",
+      "platformName": "9x7",
+      "payloadOff": "0x3E31F",
+      "recordOff": "0x21"
+    },
+    {
+      "id": 5,
+      "type": "0x05",
+      "sysIdHighByte": "0x05",
+      "platformName": "9x7",
+      "payloadOff": "0x3DFBE",
+      "recordOff": "0x2C"
+    },
+    {
+      "id": 6,
+      "type": "0x06",
+      "sysIdHighByte": "0x06",
+      "platformName": "9x7",
+      "payloadOff": "0x3E31F",
+      "recordOff": "0x37"
+    },
+    {
+      "id": 7,
+      "type": "0x07",
+      "sysIdHighByte": "0x07",
+      "platformName": "0",
+      "payloadOff": "0x0",
+      "recordOff": "0x42"
+    },
+    {
+      "id": 8,
+      "type": "0x08",
+      "sysIdHighByte": "0x08",
+      "platformName": "0",
+      "payloadOff": "0x0",
+      "recordOff": "0x4B"
+    },
+    {
+      "id": 9,
+      "type": "0x09",
+      "sysIdHighByte": "0x09",
+      "platformName": "0",
+      "payloadOff": "0x0",
+      "recordOff": "0x54"
+    },
+    {
+      "id": 10,
+      "type": "0x0A",
+      "sysIdHighByte": "0x0A",
+      "platformName": "0",
+      "payloadOff": "0x0",
+      "recordOff": "0x5D"
+    },
+    {
+      "id": 11,
+      "type": "0x0B",
+      "sysIdHighByte": "0x0B",
+      "platformName": "E2",
+      "payloadOff": "0xE7",
+      "recordOff": "0x66"
+    },
+    {
+      "id": 12,
+      "type": "0x0C",
+      "sysIdHighByte": "0x0C",
+      "platformName": "G1",
+      "payloadOff": "0xE0AC",
+      "recordOff": "0x70"
+    },
+    {
+      "id": 13,
+      "type": "0x0D",
+      "sysIdHighByte": "0x0D",
+      "platformName": "9x1",
+      "payloadOff": "0x19B8C",
+      "recordOff": "0x7A"
+    },
+    {
+      "id": 14,
+      "type": "0x0E",
+      "sysIdHighByte": "0x0E",
+      "platformName": "9x1",
+      "payloadOff": "0x19B8C",
+      "recordOff": "0x85"
+    },
+    {
+      "id": 15,
+      "type": "0x0F",
+      "sysIdHighByte": "0x0F",
+      "platformName": "cajun",
+      "payloadOff": "0x27F67",
+      "recordOff": "0x90"
+    },
+    {
+      "id": 16,
+      "type": "0x10",
+      "sysIdHighByte": "0x10",
+      "platformName": "918s",
+      "payloadOff": "0x44C28",
+      "recordOff": "0x9D"
+    },
+    {
+      "id": 17,
+      "type": "0x11",
+      "sysIdHighByte": "0x11",
+      "platformName": "E3",
+      "payloadOff": "0x4A185",
+      "recordOff": "0xA9"
+    },
+    {
+      "id": 18,
+      "type": "0x12",
+      "sysIdHighByte": "0x12",
+      "platformName": "G2",
+      "payloadOff": "0x5C4F3",
+      "recordOff": "0xB3"
+    },
+    {
+      "id": 19,
+      "type": "0x13",
+      "sysIdHighByte": "0x13",
+      "platformName": "CS1",
+      "payloadOff": "0x6C3A0",
+      "recordOff": "0xBD"
+    },
+    {
+      "id": 20,
+      "type": "0x14",
+      "sysIdHighByte": "0x14",
+      "platformName": "992",
+      "payloadOff": "0x735CA",
+      "recordOff": "0xC8"
+    },
+    {
+      "id": 21,
+      "type": "0x15",
+      "sysIdHighByte": "0x15",
+      "platformName": "J1",
+      "payloadOff": "0x89F77",
+      "recordOff": "0xD3"
+    },
+    {
+      "id": 22,
+      "type": "0x16",
+      "sysIdHighByte": "0x16",
+      "platformName": "G3",
+      "payloadOff": "0x94FE2",
+      "recordOff": "0xDD"
+    }
+  ],
+  "platformTypes": {
+    "992": [
+      "0x14"
+    ],
+    "9x6": [
+      "0x01",
+      "0x02"
+    ],
+    "E1": [
+      "0x03"
+    ],
+    "9x7": [
+      "0x04",
+      "0x05",
+      "0x06"
+    ],
+    "E2": [
+      "0x0B"
+    ],
+    "G1": [
+      "0x0C"
+    ],
+    "9x1": [
+      "0x0D",
+      "0x0E"
+    ],
+    "cajun": [
+      "0x0F"
+    ],
+    "918s": [
+      "0x10"
+    ],
+    "E3": [
+      "0x11"
+    ],
+    "G2": [
+      "0x12"
+    ],
+    "CS1": [
+      "0x13"
+    ],
+    "J1": [
+      "0x15"
+    ],
+    "G3": [
+      "0x16"
+    ]
+  },
+  "resolvedPendingPlatforms": {
+    "9X6": {
+      "types": [
+        "0x01",
+        "0x02"
+      ],
+      "gen": null,
+      "status": "multi-type",
+      "basis": "DSN 索引 \"9x6\" → type 0x01/0x02"
+    },
+    "9X7": {
+      "types": [
+        "0x04",
+        "0x05",
+        "0x06"
+      ],
+      "gen": null,
+      "status": "multi-type",
+      "basis": "DSN 索引 \"9x7\" → type 0x04/0x05/0x06"
+    },
+    "CS1": {
+      "types": [
+        "0x13"
+      ],
+      "gen": "0x13",
+      "status": "unique",
+      "basis": "DSN 索引 \"CS1\" → type 0x13"
+    },
+    "E1": {
+      "types": [
+        "0x03"
+      ],
+      "gen": "0x03",
+      "status": "unique",
+      "basis": "DSN 索引 \"E1\" → type 0x03"
+    }
+  },
+  "agreementWithRuntime": [
+    {
+      "platform": "992",
+      "gen": "0x14"
+    },
+    {
+      "platform": "918S",
+      "gen": "0x10"
+    },
+    {
+      "platform": "9X1",
+      "gen": "0x0e"
+    },
+    {
+      "platform": "CAJUN",
+      "gen": "0x0f"
+    },
+    {
+      "platform": "E2",
+      "gen": "0x0b"
+    },
+    {
+      "platform": "G1",
+      "gen": "0x0c"
+    },
+    {
+      "platform": "G2",
+      "gen": "0x12"
+    },
+    {
+      "platform": "G3",
+      "gen": "0x16"
+    },
+    {
+      "platform": "J1",
+      "gen": "0x15"
+    }
+  ],
+  "divergenceWithRuntime": [
+    {
+      "platform": "E3",
+      "runtimeGen": "0x12",
+      "indexTypes": [
+        "0x11"
+      ]
+    }
+  ],
+  "boundary": "代际已定 ≠ 模块 sysId 已定：老代 0x01-0x0A 的 sysDataOff 是 u32 数值表而非 ASCII 名字表，9X6/9X7 的 ALLDATA 系统名仍无法按 name-9 投票解析到 sysId，因此运行时继续走全局表回退（apply=false），不猜模块地址。",
+  "e3Note": "DSN 索引把 E3 列为 type 0x11，但运行时 E3 的 84 个模块 sysId 全为 0x12xx 且与 0x12 名字集精确交集。索引层（车型目录）与 comm 子表层（模块映射）是两类证据：运行时沿用 0x12 以保持模块映射一致，不覆盖已验收结果。"
+}

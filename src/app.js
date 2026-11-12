@@ -2773,9 +2773,11 @@ async function enterSystem(sys) {
   //   ★ 2026-11-11 逆取收口（推翻旧「ODX SESSIONS 不在包内」结论）：原厂**逐 ECU 会话**
   //     就在 SYS_DATA comm 记录里（data/sysdata-comm.json，命令经 COMMAND.GAG 解帧）。
   //     981 实测分布：16 个模块 `10 89`、32 个模块 `10 03` —— **并非一律 10 89**。
-  //   ★ 2026-11-12 缺口已收口：会话号改由 coder.setOemContext(sysId) 按证据取值，
-  //     不再硬编码 10 89；GAG 帧 flag=0 的会话按原厂「尽力而为」处理（不硬等 50 xx），
-  //     避免把 10 03 当成硬要求而在无应答 ECU 上卡死。帧序差异仍在审计文档中如实记录。
+  //   ★ 2026-11-12 全量收口：会话号由 coder.setOemContext(sysId) 按证据取值，
+  //     且进模块改走 `_enterByOemFrames` —— 逐帧按 SYS_DATA comm 记录的原厂序列发送
+  //     （803 sysId / 1005 条序列 / 3350 帧），不再是日志提示「未对齐」。
+  //     GAG flag=0 的会话按原厂「尽力而为」（不硬等 50 xx）；非 UDS 帧与 flag=3 复合脚本
+  //     跳过留痕；68 个老代 KWP sysId 原厂不建 UDS 会话。族流仅作无证据时的回退。
   //   构帧/发送方逐指令零「失败换会话」分支（PorscheSetEnterFrameInit 模板单发）——
   //   原「10 89 失败回退 10 03」是自创恢复，已删。
   //   两步是**序列步**（非重试）：各自尽力而为（NRC 容忍=序列取证行为）；写路径
@@ -2785,8 +2787,14 @@ async function enterSystem(sys) {
   //   UDS 流 = `10 03`→保活→识别→`10 89`（序列步，非重试）；家族未证=抓包序容错。
   {
     const oemSid = sysIdForLabel(sys.label) || sysIdForMod(sys.label) || sysIdForModules(sys.modules);
-    const oem = coder.setOemContext(oemSid);
-    if (oem) {
+    // ★ 2026-11-12 全量收口：绑定当前地址，让多序列 ECU 挑与地址/会话号吻合的那条。
+    const oem = coder.setOemContext(oemSid, coder.tx);
+    if (coder.oemSessionless) {
+      log(`  ✅ 原厂不建 UDS 会话（${sys.label} · sysId ${oemSid} · 老代 KWP 81 快初始化 + 1A 识别）`, 'ok');
+      if (coder.oemSequenceUsed === '') {
+        log('     原厂序列: ' + coder.oemSequences.map((s) => s.frames.map((f) => f.flag + ':' + f.hex).join(' ')).join(' | '), 'info');
+      }
+    } else if (oem) {
       log(`  ✅ 原厂会话=10 ${oem.session.toString(16).toUpperCase().padStart(2, '0')}`
         + `（${sys.label} · sysId ${oemSid} · 代际 ${oem.gen} · ${oem.requireResponse ? '要求正响应' : '尽力而为'}）`, 'ok');
       if (oem.seq) log(`     原厂进模块序列(flag:HEX): ${oem.seq}`, 'info');
@@ -2797,8 +2805,8 @@ async function enterSystem(sys) {
   }
   let sessDead = 0;
   try {
-    // 不显式传 session → Coder.resolveSession() 取当前 ECU 的原厂会话证据。
-    await coder.enterSession(undefined, { family: enterFamily });
+    // 不显式传 session → 按证据逐帧执行原厂进模块序列（无序列证据时自动保持既有族流）。
+    await coder.enterSession(undefined, { family: enterFamily, oemSequence: true });
   } catch (e) {
     if (/无应答|NO DATA/i.test(String(e.message))) sessDead++;
     log(`  (会话未建成：${e.message} —— ${sessDead ? '通讯失败' : '序列继续'})`, 'warn');
