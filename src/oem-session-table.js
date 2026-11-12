@@ -2,7 +2,7 @@
  * oem-session-table.js — 自动生成，勿手改。
  * 生成器：tools/build-oem-session-table.mjs（数据源 data/sysdata-comm.json）
  *
- * 每个 sysId 的原厂进模块会话与命令序列，来自 SYS_DATA comm 子表 + COMMAND.GAG 解帧。
+ * 每个 sysId 的原厂进模块会话与命令序列，来自 SYS_DATA comm 子表 + 原厂请求模板库 解帧。
  * 会话帧 flag=1 → 原厂要求正响应；flag=0 → 尽力而为（与协议层容错分级一致）。
  * 查不到会话号的 sysId 保持「未证」，调用方回退主会话 10 89，绝不猜。
  */

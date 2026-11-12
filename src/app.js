@@ -55,7 +55,7 @@ function bindPlanFor(sysId) {
 /**
  * SYS_DATA comm 表 → 逐 ECU 原厂会话（2026-11-12 已落地，不再是「只提示未对齐」）。
  *
- * 上一阶段把 874 条 comm 记录全量解出（805 sysId、命令经 COMMAND.GAG 解帧 0 缺失），
+ * 上一阶段把 874 条 comm 记录全量解出（805 sysId、命令经 原厂请求模板库 解帧 0 缺失），
  * 981 的 48 个模块 = 16×`10 89` + 32×`10 03`，证明原厂并非一律 10 89；
  * 但当时运行时仍硬编码 10 89，只在日志里打「未对齐」。
  *
@@ -255,7 +255,7 @@ import { LinkDoctor } from './link-doctor.js';
 import { parseDtcPayload } from './dtc.js';
 import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
-import { probeList, identMatch } from './probe.js';
+import { probeList, identMatch, identityAdjudicate, twinKeysFor } from './probe.js';
 import { sweepPlan, classifyProbe, moduleFromIdent, buildModuleMap, cacheFresh } from './sweep.js';
 
 /**
@@ -544,10 +544,12 @@ function identTextMatch(text, label, variantNames, modRecs, moduleKeys) {
  * 候选序 = **表行序**（cands 行序 + 变体选行收窄）→ candsAux → **DRIVELINKS 14B 记录族**
  *   （通用兜底族：entry.family；joinState=unresolved 模块扫全库族并集 —— 真车自证）。
  * 绑定判据（2026-11-10 对齐）：**帧来自该候选的 rx 且有 body**（正响应或 NRC 都算）即绑定；
- *   身份不在这一步裁决，交给进入模块后的首个参数读帧（DID/LID）。
+ *   ★ 2026-11-12 修复②：绑定后读身份帧（cat=0x60 模板：22F19E=ODX 文件标识、
+ *   1A9B=系统名）做身份裁决（identMatch/GetSubSysDataAddr 名字表语义），
+ *   不匹配换下一候选；6 对孪生（数据互换）标注「不承诺左右」，进哪个都过。
  *   回帧 ID 不符 = 不是它回的，按无应答处理（旧 0x7F1 事故的真实起因）。
  *   无应答 = 候选死，换下一候选。全失败 → null（调用方按「通讯失败」报错）。
- * 返回 { tx, rx, cmd, ident, confidence:'probed' } 或 null。
+ * 返回 { tx, rx, cmd, ident, identTwin?, confidence:'probed' } 或 null。
  */
 async function probeAddressFor(label, probeCmd, opts = {}) {
   if (!coder) return null;
@@ -623,7 +625,7 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
         // ★ 2026-11-12 第十阶段收口：按原厂 DriveLinksMode_1001 @LINK:0x18FC0 补发一帧。
         //   逐指令证据：`cmp r0,#1 / beq 0x194B8`（绑定返回值=1 → 成功分支）；
         //   ≠1 时 `0x18FE2 movw r0,#0x1102` + `movt r0,#0xFF00` → 命令 ID 0xFF001102，
-        //   经 `blx r3` 发出。COMMAND.GAG index 470 = `01 03 22 11 02` 正是该帧。
+        //   经 `blx r3` 发出。原厂请求模板库 index 470 = `01 03 22 11 02` 正是该帧。
         //   ⚠️ 只补帧留痕，**不改变绑定结果**：补帧响应不作为成功依据，仍跳过该候选
         //   （回执失败时继续发帧会打到上一个地址，R4 审计的安全约束保持）。
         try {
@@ -641,9 +643,33 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       //   ★ 第十阶段：ATSH/ATCRA 回执失败时按原厂补发一帧 221102 后跳过候选
       //   （补帧响应不作成功依据；逐指令证据 原厂链路库 @0x18FC0/0x18FE2）。
       const fam = opts.family || familyFor(label, p.tx, { modules: opts.modules });
+      // ★ 2026-11-12 修复②：绑定后身份裁决（RE-GAPVERIFY 落地，参考诊断仪 Mode_1000/1001
+      //   语义 = 应答即绑 + 进模块后身份裁决）。绑定候选后读身份帧（cat=0x60 模板：
+      //   22F19E 回 ODX 文件标识、1A9B 回系统名）→ identMatch（GetSubSysDataAddr
+      //   名字表语义）比对 → **不匹配换下一候选**。6 对孪生（数据互换）命中孪生组时
+      //   接受并显式标注「不承诺左右」（孪生对进哪个都过）。
+      const finish = async (hit) => {
+        // 期望键=GetSubSysDataAddr 名字表口径：模块名 + 变体/ODX 名（22F19E 回 ODX 文件标识、
+        // 1A9B 回系统名，真车文本形态与 DSN 变体名同族）+ label。
+        const names = [...new Set([...(opts.modules || []), ...(opts.variantNames || []), label]
+          .filter(Boolean).map((x) => String(x)))];
+        const expect = twinKeysFor(names);
+        await coder.elm.cmd('ATSTFF', 400, { noDelay: true }).catch(() => {});
+        const idv = await identityAdjudicate((hex, ms) => coder.elm.cmd(hex, ms), p, fam, expect);
+        await coder.elm.cmd('ATST0F', 400, { noDelay: true }).catch(() => {});
+        if (idv.verdict === 'mismatch') {
+          note(`身份裁决不符（身份帧「${idv.text.slice(0, 24)}」不匹配 ${expect.keys.slice(0, 3).join('/')}）→ 换下一候选`);
+          return null;
+        }
+        if (idv.verdict === 'twin-match') {
+          hit.identTwin = expect.note;    // 不承诺左右（孪生对数据互换）
+          note(`身份裁决命中孪生组「${expect.pair}」→ 接受（${expect.note}）`);
+        }
+        return hit;
+      };
       if (bindDirect) {
         note(`ATSH/ATCRA OK → n=0 链路绑定（0 探针帧，原厂cbz 分支）`);
-        return { tx: p.tx, rx: p.rx, cmd: '', ident: '', confidence: 'bound', family: fam || null };
+        return await finish({ tx: p.tx, rx: p.rx, cmd: '', ident: '', confidence: 'bound', family: fam || null });
       }
       // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：n>0 **每候选只发 1 帧**
       //   `0xFF001409`（22 14 09）；KWP 族用实车自证的 1A 9F。失败不再追加 3E/firstRead/
@@ -678,8 +704,9 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
         note(`${cmd} → ${ids.length ? '[' + ids.map((x) => hex(x)).join('/') + '] ' : ''}`
           + `${body.slice(0, 24) || r.slice(0, 24) || '(空)'}`);
         // 判定：帧来自该 rx 且有 body（正响应或 NRC 都算）→ 该地址活着，绑定。
-        // 身份不在这里裁决 —— 由进入模块后的真实读帧（首参数 DID/LID）裁决。
-        return { tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32), confidence: 'bound' };
+        // ★ 修复②：绑定后立刻身份裁决（finish 内读身份帧 22F19E/1A9B + identMatch），
+        //   不匹配换下一候选（参考诊断仪 应答即绑+进模块后身份裁决 同语义）。
+        return await finish({ tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32), confidence: 'bound' });
       }
     } catch (e) { note(`异常 ${e.message || e}`); }
     return null;
@@ -2784,7 +2811,7 @@ async function enterSystem(sys) {
   //   **2026-11-12 起会话号不再固定 0x89**：按 sysId 取 comm 表原厂值（981 有 32 个模块
   //   是 10 03），无证据才回退主会话 0x89。KWP 流直接建、UDS 流在 10 03/识别后建。
   //   ★ 2026-11-11 逆取收口（推翻旧「ODX SESSIONS 不在包内」结论）：原厂**逐 ECU 会话**
-  //     就在 SYS_DATA comm 记录里（data/sysdata-comm.json，命令经 COMMAND.GAG 解帧）。
+  //     就在 SYS_DATA comm 记录里（data/sysdata-comm.json，命令经 原厂请求模板库 解帧）。
   //     981 实测分布：16 个模块 `10 89`、32 个模块 `10 03` —— **并非一律 10 89**。
   //   ★ 2026-11-12 全量收口：会话号由 coder.setOemContext(sysId) 按证据取值，
   //     且进模块改走 `_enterByOemFrames` —— 逐帧按 SYS_DATA comm 记录的原厂序列发送

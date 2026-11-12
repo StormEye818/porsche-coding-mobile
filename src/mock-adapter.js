@@ -58,6 +58,8 @@ export class MockAdapter extends Emitter {
     // ★ 2026-11-07 wire 级仿真（治本：测试必须走真代码路径）：ecus 项支持
     //   dsn(1A9F 文本) / noIdent1A(1A 全族不应答=真车 KWP 静默模块) /
     //   ident22(22 11 02 文本) / ident22b(22 07 05 文本) / vo(22 14 09 应答)。
+    //   ★ 修复② 身份帧：sysName(1A9B 系统名，默认回 name) /
+    //   odxIdent(22F19E ODX 文件标识，默认回 dsn)。
     this.identText = null;
     this.identTextTx = null;
     // ★ 识别链文本：设置后 1A xx 一律回 ASCII —— 自动选变体靠它命中变体名
@@ -172,6 +174,12 @@ export class MockAdapter extends Emitter {
         const asc = [...ecu.dsn].map((c) => c.charCodeAt(0) & 0xff);
         return this.#frame([0x5A, 0x9F, ...asc]);
       }
+      // ★ 修复② 身份帧：1A9B 回系统名（cat=0x60 模板身份帧，绑定后身份裁决用）
+      if (sid === 0x1A && bytes[1] === 0x9B && (ecu.sysName || ecu.name)) {
+        const t = ecu.sysName || ecu.name;
+        const asc = [...t].map((c) => c.charCodeAt(0) & 0xff);
+        return this.#frame([0x5A, 0x9B, ...asc]);
+      }
     }
 
     // 注入故障
@@ -235,6 +243,13 @@ export class MockAdapter extends Emitter {
           const t = (ecu && (ecu.ident22b || ecu.ident22)) || (atTarget ? this.identText : '');
           if (!t) return '';
           return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
+        }
+        // ★ 修复② 身份帧：22F19E 回 ODX 文件标识（cat=0x60 模板身份帧）。
+        //   未知 ECU 不造随机块（旧行为会污染身份裁决）→ NO DATA。
+        if (sid === 0x22 && did === 0xF19E) {
+          const t = (ecu && (ecu.odxIdent || ecu.dsn)) || '';
+          if (!t) return '';
+          return this.#frame([0x62, 0xF1, 0x9E, ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }
         const data = this.#readBlock(id, sid);
         return this.#frame([sid + 0x40, ...id, ...data]);

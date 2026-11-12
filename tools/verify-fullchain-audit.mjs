@@ -220,7 +220,7 @@ console.log('\n[4] 审计其余修复回归');
   ok('两个安全访问入口对 needsKey:false 同口径（均拒写）',
     !/原厂无 case 不发 key —— 继续写入/.test(coderSrc)
     && /两个安全访问入口同口径/.test(coderSrc));
-  // ★ 第十阶段收口：补帧已按 libPORSCHE_LINK.so:0x18FC0/0x18FE2 实现，
+  // ★ 第十阶段收口：补帧已按 链路库:0x18FC0/0x18FE2 实现，
   //   断言改为「绑定失败时确实发 221102，且响应不作为绑定成功依据」。
   ok('22 11 02 绑定失败补帧已实现（按原厂 0x18FE2）',
     /cmd\('221102', 800\)/.test(app)
@@ -245,7 +245,7 @@ console.log('\n[4] 审计其余修复回归');
 console.log('\n[5] 文档一致性');
 {
   const docs = {
-    'ACCEPTANCE-MATRIX-431.md': '第十阶段全量审计标注',
+    'ACCEPTANCE-MATRIX.md': '第十阶段全量审计标注',
     'CODE-AUDIT-FULLCHAIN-20261111.md': '第十阶段全量审计标注',
     'FULLCHAIN-ALIGN-20261112.md': '第十阶段补充',
     'FULLCHAIN-CLOSURE-20261112.md': '第九阶段更新',
@@ -256,7 +256,7 @@ console.log('\n[5] 文档一致性');
     ok(`${f} 带最新状态标注`, R(`../${f}`).includes(marker));
   }
   ok('ACCEPTANCE-MATRIX 不再把「固定 0x89」当现行结论（有明确推翻说明）',
-    /已被推翻/.test(R('../ACCEPTANCE-MATRIX-431.md').slice(0, 1600)));
+    /已被推翻/.test(R('../ACCEPTANCE-MATRIX.md').slice(0, 1600)));
   ok('FULLCHAIN-CLOSURE 正文把旧白名单标为历史状态',
     /历史状态/.test(R('../FULLCHAIN-CLOSURE-20261112.md')));
   ok('coder.js 顶部注释不再写「DRIVELINKS 342/980」',
@@ -271,7 +271,7 @@ console.log('\n[5] 文档一致性');
   const closure = R('../FULLCHAIN-CLOSURE-20261112.md');
   const align = R('../FULLCHAIN-ALIGN-20261112.md');
   const reclos = R('../RE-CLOSURE-20261111.md');
-  const accept = R('../ACCEPTANCE-MATRIX-431.md');
+  const accept = R('../ACCEPTANCE-MATRIX.md');
   // analysis/ 被 .gitignore 忽略（本地工作台），跨环境 clone 后可能不存在
   let analysis = '';
   try { analysis = R('../analysis/seedkey-coverage-audit-20261108.md'); } catch { /* 不入仓，跳过 */ }
@@ -286,6 +286,101 @@ console.log('\n[5] 文档一致性');
     analysis ? '本地已标注（不入仓）' : '目录未随仓库分发，跳过');
   ok('WRITE-GATE-OPEN 修正「不是所有 ECU 都发 1089」口径',
     /会话帧不是所有 ECU 都等于/.test(R('../WRITE-GATE-OPEN-20261112.md')));
+}
+
+// ── ⑥ 修复③：DRIVELINKS 块边界修正（幻影条目归零）───────────────────
+console.log('\n[6] 修复③：块边界解析错位 1 字节修正（RE-GAPVERIFY §2）');
+{
+  const dl = JSON.parse(R('../data/drivelinks.json'));
+  const rows = [];
+  for (const [sid, arr] of Object.entries(dl.ecu)) {
+    for (const r of arr) rows.push({ sid, ...r });
+  }
+  // 原 2 条 recOff 越界拒写项归零
+  ok('recOff 越界拒写项归零（旧 2 条=幻影条目，非异文件引用）',
+    rows.every((r) => r.mode != null) && rows.filter((r) => r.mode == null).length === 0);
+  ok('无幻影 recOff 18537735/19267858（邻块头伪影已随边界修正消失）',
+    rows.every((r) => r.recOff !== 18537735 && r.recOff !== 19267858));
+  // 真 recOff 全在体内（含 0x1D+state 0x18BD 互证）
+  const byRec = (off) => rows.filter((r) => r.recOff === off);
+  ok('真 recOff 72413/72694（0x0f07）在体内且 mode 合法',
+    byRec(72413).some((r) => r.sid === '0x0f07' && r.mode === 0x4c)
+    && byRec(72694).some((r) => r.sid === '0x0f07' && r.mode === 0x4c));
+  ok('真 recOff 75265/75308（0x0f12）在体内，75265=0x1D+state 0x18BD（与 3 条 0x1D 状态集互证）',
+    byRec(75265).some((r) => r.sid === '0x0f12' && r.mode === 0x1d && r.state === 0x18bd)
+    && byRec(75308).some((r) => r.sid === '0x0f12' && r.mode === 0x2e));
+  // 参考诊断仪语义（bk>>8==sysIdLow 选行）1070/1070 不变
+  const viol = rows.filter((r) => (r.bk >> 8) !== (parseInt(r.sid, 16) & 0xff));
+  ok('选行结构不变量 bk>>8==sysId低字节 1070/1070（参考诊断仪选行语义不变）',
+    rows.length === 1070 && viol.length === 0, `rows=${rows.length} viol=${viol.length}`);
+  ok('0x0f41/0x0f51 各 2 条真行（count 多 1 的第 3 条=邻块头，已按块长截断）',
+    dl.ecu['0x0f41'].length === 2 && dl.ecu['0x0f51'].length === 2);
+}
+
+// ── ⑦ 修复②：绑定后身份裁决（mock 身份不符→换候选；孪生对进哪个都过）──
+console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch）');
+{
+  const { identityAdjudicate, identityFramesFor, identityVerdict, twinKeysFor, TWIN_GROUPS }
+    = await import('../src/probe.js');
+  ok('身份帧=cat=0x60 模板（UDS 22F19E+1A9B / KWP 仅 1A9B，KWP 绝不发 0x22）',
+    JSON.stringify(identityFramesFor('uds')) === JSON.stringify(['22F19E', '1A9B'])
+    && JSON.stringify(identityFramesFor('kwp')) === JSON.stringify(['1A9B']));
+  ok('6 对孪生显式标注「不承诺左右」',
+    TWIN_GROUPS.length === 6 && TWIN_GROUPS.every((g) => /不承诺左右/.test(g.note)));
+
+  // 与 app.probeAddressFor.tryAddr 同契约的候选循环：身份不符 → 换下一候选
+  const probeOne = async (elm, tx, rx, fam, expect) => {
+    await elm.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 400);
+    await elm.cmd(`ATCRA${rx.toString(16).toUpperCase()}`, 400);
+    const r = (await elm.cmd('221409', 600) || '').trim();
+    if (!r) return null;                                     // 无应答 → 候选死
+    const idv = await identityAdjudicate((h, ms) => elm.cmd(h, ms), { tx, rx }, fam, expect);
+    return idv.verdict === 'mismatch' ? null : { tx, ...idv }; // mismatch → 换下一候选
+  };
+
+  // mock 身份不符 → 换候选
+  {
+    const topo = new MockAdapter({
+      latencyMs: 0, strictAddress: true, caf: 1,
+      ecus: {
+        0x7E0: { name: 'Getriebesteuerung_PDK', odxIdent: 'EV_TCM_001', kwp: false },
+        0x7E1: { name: 'Kombiinstrument_9x1', odxIdent: 'EV_IC_001', kwp: false },
+      },
+    });
+    const elm = new Elm327(topo, { timeoutMs: 400 });
+    const expect = twinKeysFor(['Kombiinstrument']);
+    const dead = await probeOne(elm, 0x7E0, 0x7E8, 'uds', expect);
+    const hit = await probeOne(elm, 0x7E1, 0x7E9, 'uds', expect);
+    ok('mock 身份不符→换候选（0x7E0 身份不符被拒，0x7E1 身份命中绑定）',
+      dead === null && hit && hit.tx === 0x7E1 && hit.verdict === 'match',
+      `dead=${JSON.stringify(dead && dead.verdict)} hit=${hit && hit.verdict}`);
+  }
+  // 孪生对（数据互换）进哪个都过
+  {
+    const topo = new MockAdapter({
+      latencyMs: 0, strictAddress: true, caf: 1,
+      ecus: {
+        0x7D9: { name: 'BV_SeatAdjusPasseSideUDS', kwp: false },  // 数据互换：左位回右名
+        0x7DA: { name: 'BV_SeatAdjusDriveSideUDS', kwp: false },  // 数据互换：右位回左名
+      },
+    });
+    const elm = new Elm327(topo, { timeoutMs: 400 });
+    const eL = twinKeysFor(['BV_SeatAdjusDriveSideUDS']);
+    const eR = twinKeysFor(['BV_SeatAdjusPasseSideUDS']);
+    ok('孪生期望键并组 + 标注不承诺左右', eL.twin && eR.twin
+      && eL.keys.includes('BV_SeatAdjusPasseSideUDS') && /不承诺左右/.test(eL.note));
+    const h1 = await probeOne(elm, 0x7D9, 0x7E1, 'uds', eL);   // 目标=驾驶员侧，实答=乘客侧
+    const h2 = await probeOne(elm, 0x7DA, 0x7E2, 'uds', eR);   // 目标=乘客侧，实答=驾驶员侧
+    ok('孪生对进哪个都过（互换身份均 twin-match 接受）',
+      h1 && h1.verdict === 'twin-match' && h2 && h2.verdict === 'twin-match',
+      `${h1 && h1.verdict}/${h2 && h2.verdict}`);
+  }
+  // 纯函数边界：无身份文本不裁决（参考诊断仪应答即绑口径），非孪生严格比对
+  ok('身份帧无可裁决文本 → unknown 不裁决', identityVerdict(['--', ''], { keys: ['X'] }).verdict === 'unknown');
+  ok('非孪生不匹配 → mismatch（换下一候选）', identityVerdict(['Airbag'], { keys: ['Kombiinstrument'] }).verdict === 'mismatch');
+  // app.js 接线钉死：mismatch → 换下一候选；twin-match → 不承诺左右
+  ok('app.js 绑定后身份裁决已接线（mismatch→换下一候选；孪生→不承诺左右）',
+    /identityAdjudicate\(/.test(app) && /换下一候选/.test(app) && /不承诺左右/.test(app));
 }
 
 console.log(`\n===== 全链路审计门禁：${pass} 通过 / 0 失败 =====`);

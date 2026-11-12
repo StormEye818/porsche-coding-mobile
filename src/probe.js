@@ -1,5 +1,5 @@
 /**
- * 识别串原语 + 候选族生成。
+ * 识别串原语 + 候选族生成 + 绑定后身份裁决（2026-11-12 修复②）。
  *
  * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑤）：本文件原来的 `probeDecision`
  *   （「NRC 不算候选 / 识别串匹配才算候选」）是 2026-11-09 RE-ICADDR 阶段的旧模型，
@@ -19,6 +19,7 @@
  *     （2026-11-10 真车 IC 事故根因：扫全库族会拿车门/PDC 地址扫 32 个必然全灭）。
  *     本函数仍接受 globalFamilies 参数，但 app.js 传空数组。
  */
+import { parseRespAuto, frameIdsOf } from './coder.js';
 
 /** 归一化：大写 + 去非字母数字（与 autoPickVariant 同口径）。 */
 export function normIdent(x) {
@@ -122,4 +123,116 @@ export function probeList(entry, globalFamilies = [], prefer = null) {
   }
   for (const f of familyCandidates(entry, globalFamilies)) add(f.tx, f.rx, f.proto, 'family');
   return out;
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * ★ 2026-11-12 修复②（RE-GAPVERIFY 落地）：绑定后身份裁决。
+ *
+ * 参考诊断仪 语义（DriveLinksMode_1000/1001 逐指令已证）= **应答即绑 + 进模块后身份裁决**。
+ * 落地同语义：绑定候选后读身份帧（cat=0x60 模板：22F19E 回 ODX 文件标识、
+ * 1A9B 回系统名）→ 用 identMatch（GetSubSysDataAddr 名字表）比对模块名 →
+ * 不匹配换下一候选。
+ *
+ * 6 对孪生（数据互换/镜像，侧别审计「侧条目互为镜像」实证）显式标注：
+ * **不承诺左右** —— 孪生对进哪个都过，身份裁决不裁侧别。
+ * ──────────────────────────────────────────────────────────────── */
+
+/** 身份帧（cat=0x60 模板）：22F19E=ODX 文件标识、1A9B=系统名。KWP 车绝不发 0x22。 */
+export function identityFramesFor(family) {
+  return (family === 'kwp' ? ['1A9B'] : ['22F19E', '1A9B']).slice();
+}
+
+/**
+ * 6 对孪生（数据互换）——显式标注「不承诺左右」。
+ * 证据：侧别审计 §B3（981 门 632 条全同 / 992 门前部 1499 条全同 / 座椅 1638 条全同 /
+ * 前照灯 1438 条全同 / 变道主=从同模块同条数）+ 影响面「车门 4、座椅 2+、前照灯 2、
+ * 变道 2、后桥转向 2 侧条目互为镜像」。孪生组内身份数据互换 → 裁决只裁到组，不裁侧。
+ */
+export const TWIN_GROUPS = Object.freeze([
+  { pair: '前车门（驾驶员侧↔乘客侧）',
+    names: ['BV_DoorElectDriveSideUDS', 'BV_DoorElectPasseSideUDS', 'TUER_VORNE', 'TUER_HINTEN'],
+    evidence: '981 632 条全同 / 992 1499 条全同（侧别审计 §B3）',
+    note: '数据互换（镜像）· 不承诺左右' },
+  { pair: '后车门（驾驶员侧后↔乘客侧后）',
+    names: ['BV_DoorElectRearDriveSideUDS', 'BV_DoorElectRearPasseSideUDS'],
+    evidence: '侧别审计 影响面：车门 4 分列 2 对，侧条目互为镜像',
+    note: '数据互换（镜像）· 不承诺左右' },
+  { pair: '座椅（驾驶员侧↔乘客侧）',
+    names: ['BV_SeatAdjusDriveSideUDS', 'BV_SeatAdjusPasseSideUDS'],
+    evidence: '992 1638 条全同（侧别审计 §B3）',
+    note: '数据互换（镜像）· 不承诺左右' },
+  { pair: '前照灯（左↔右）',
+    names: ['SCHEINWERFER', 'SCHEINWERFER_LED', 'SWSG', 'SWSG_mit_AFS_ALWR'],
+    evidence: '981 左=右=中央 1438 条全同（侧别审计 §B3）',
+    note: '数据互换（镜像）· 不承诺左右' },
+  { pair: '变道辅助（右主↔左从）',
+    names: ['BV_ContrUnitLaneChangAssis2UDS', 'BV_LaneChangAssisUDS'],
+    evidence: '981/992 右（主）=左（从）同模块同条数（侧别审计 §B3）',
+    note: '数据互换（镜像）· 不承诺左右' },
+  { pair: '后桥转向（左主↔右从）',
+    names: ['Hinterachslenkung'],
+    evidence: '参考诊断仪 分列 2 系统（左主/右从），数据镜像合并（侧别审计 影响面）',
+    note: '数据互换（镜像）· 不承诺左右' },
+]);
+
+/** 目标模块名 → 期望身份键（含孪生组合并键）；非孪生返回 {twin:false}。 */
+export function twinKeysFor(names) {
+  const ns = (names || []).map((x) => String(x || '').trim()).filter(Boolean);
+  for (const g of TWIN_GROUPS) {
+    const hit = ns.some((n) => g.names.includes(n));
+    if (hit) {
+      return { keys: [...new Set([...ns, ...g.names])], twin: true, pair: g.pair, note: g.note };
+    }
+  }
+  return { keys: ns, twin: false, pair: null, note: null };
+}
+
+/**
+ * 身份裁决（纯函数）：身份帧文本 × 期望键（GetSubSysDataAddr 名字表语义）。
+ * @param {string[]} texts  身份帧应答 ASCII 文本（22F19E ODX 文件标识 / 1A9B 系统名）
+ * @param {{keys:string[], twin?:boolean, note?:string}} expect
+ * @returns {{verdict:'match'|'twin-match'|'mismatch'|'unknown', text:string, note?:string}}
+ *   unknown = 身份帧无可裁决文本（无应答/非识别文本）→ 不裁决，参考诊断仪 应答即绑口径；
+ *   mismatch = 有身份文本但不匹配名字表 → 调用方换下一候选；
+ *   twin-match = 孪生组命中（含组内互换身份）→ 接受，显式标注「不承诺左右」。
+ */
+export function identityVerdict(texts, expect) {
+  const ex = expect || { keys: [] };
+  const raw = (texts || []).map((t) => String(t ?? '')).filter((t) => normIdent(t));
+  if (!raw.length) return { verdict: 'unknown', text: '', note: '身份帧无可裁决文本，不裁决' };
+  const text = raw.join(' | ');
+  for (const t of raw) {
+    if (identMatch(t, ex.keys || [])) {
+      return ex.twin
+        ? { verdict: 'twin-match', text, note: ex.note || '不承诺左右' }
+        : { verdict: 'match', text };
+    }
+  }
+  return { verdict: 'mismatch', text };
+}
+
+/**
+ * 绑定后身份读（wire 注入：cmdFn(hex, ms) → 原始应答串）。
+ * 逐帧：回帧 ID 必须来自该候选 rx（R4）；文本提取与 app 探测同口径。
+ * 返回 identityVerdict 结果 + 各帧原始文本。
+ */
+export async function identityAdjudicate(cmdFn, p, fam, expect) {
+  const texts = [];
+  for (const cmd of identityFramesFor(fam)) {
+    let r = '';
+    try { r = String(await cmdFn(cmd, 800) || '').trim(); } catch { continue; }
+    if (!r) continue;
+    // R4：回帧 ID 不符 = 不是它回的，丢弃（该帧不参与裁决）
+    try {
+      const ids = [...new Set(frameIdsOf(r))];
+      if (ids.length && p && !ids.includes(p.rx)) continue;
+    } catch { /* 解析不出 ID 时按内容裁决 */ }
+    const sid = parseInt(String(cmd).slice(0, 2), 16) & 0xff;
+    const pr = parseRespAuto(r, String(cmd).replace(/[^0-9A-Fa-f]/g, ''), sid);
+    const text = Array.from(pr.body || [])
+      .filter((c) => c >= 0x20 && c < 0x7f)
+      .map((c) => String.fromCharCode(c)).join('').trim();
+    if (text) texts.push(text);
+  }
+  return { ...identityVerdict(texts, expect), texts };
 }

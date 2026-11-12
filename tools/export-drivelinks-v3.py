@@ -2,7 +2,7 @@
 """export-drivelinks-v3.py — 把 PORSCHE_DRIVELINKS.BIN 全量解成「模块 → 行 → 记录 → 候选/模板」。
 
 为什么要这个工具（RE-DISCOVERY-20261110）：
-  431 进模块 = 选行 → 取记录 → 0/1 帧绑定。记录形态有 5 种（mode）：
+  参考诊断仪进模块 = 选行 → 取记录 → 0/1 帧绑定。记录形态有 5 种（mode）：
     0x1001/0x1002 → SpecArray + 14B 记录族（旧导出器只认这两种，占 2.1%）
     0x1005        → u16 计数 + u32 数组
     0x1000        → 4×u32
@@ -21,6 +21,7 @@
   python3 tools/export-drivelinks-v3.py            # 生成 data/drivelinks-v3.json + 覆盖率报告
   python3 tools/export-drivelinks-v3.py --check    # 只跑自检（锚点行/记录）
 """
+import bisect
 import json
 import struct
 import sys
@@ -168,16 +169,31 @@ def main():
     # 记录边界：用全量 cmdptr 排序后的下一个作为上界（记录不重叠）
     all_rows = []
     blocks = []
+    # ★ 2026-11-12 块边界修正（RE-GAPVERIFY §2）：count 字节可能多 1（0x0f41/0x0f51），
+    #   条目数以「下一目录 blockOff 间距」为准，再按参考诊断仪选行不变量
+    #   bk>>8==sysId低字节 逐条校验（幻影条目=邻块头，不是异文件引用）。
+    block_offs = sorted({off for _, off in dirc})
     for sys_id, boff in dirc:
         if boff >= len(dl):
             continue
         cnt = dl[boff]
+        j = bisect.bisect_right(block_offs, boff)
+        span = (block_offs[j] - boff) if j < len(block_offs) else (len(dl) - boff)
+        max_n = max((span - 1) // 6, 0)
+        if cnt > max_n:
+            print(f'WARN 块 sysId 0x{sys_id:04x}@0x{boff:x} count={cnt} 超出块长 {span}B '
+                  f'→ 按 {max_n} 条解析（RE-GAPVERIFY §2 解析错位修正）', file=sys.stderr)
+            cnt = max_n
         q = boff + 1
         for _ in range(min(cnt, 64)):
             if q + 6 > len(dl):
                 break
             bk, ab = struct.unpack_from('<HI', dl, q)
             q += 6
+            if (bk >> 8) != (sys_id & 0xff):
+                print(f'WARN 条目 bk 0x{bk:04x} 违反 bk>>8==sysId低字节（0x{sys_id:04x}）→ 丢弃',
+                      file=sys.stderr)
+                continue
             state, rows, special = parse_block(dl, ab)
             if not rows:
                 continue

@@ -549,7 +549,7 @@ export class Coder {
   /**
    * 进诊断会话 —— 按 参考诊断仪 实测编排，但**分级容错**。
    *
-   * COMMAND.GAG 3139 条实测的会话 ID 分布：
+   * 原厂请求模板库 3139 条实测的会话 ID 分布：
    *   10 89 (×6) · 10 03 (×3) · 10 86 (×3) · 10 85 · 10 81 · 10 C0 · 10 00 · 10 4F
    *   → `10 03` 只在部分 ECU 上有效，`10 89` 才是保时捷主力。
    *
@@ -560,7 +560,7 @@ export class Coder {
   /**
    * ★ 2026-11-12 全量收口：按 SYS_DATA comm 子表的**逐帧原厂序列**进模块。
    *
-   * 证据链：data/sysdata-comm.json → COMMAND.GAG 解帧 → src/oem-enter-frames.js
+   * 证据链：data/sysdata-comm.json → 原厂请求模板库 解帧 → src/oem-enter-frames.js
    * （803 sysId / 1005 条序列 / 3350 帧）。每层规则都有包内出处，不靠猜：
    *   - 序列按 cat/地址分组；同一 ECU 有多条功能序列时，选与当前绑定地址、
    *     目标会话号最吻合的一条（selectOemSequence）。
@@ -1186,7 +1186,7 @@ export class Coder {
   /**
    * 读编码块 —— 与参考诊断仪 请求格式 1:1 对齐。
    *
-   * ⚠️ 标识符位宽因 SID 而异（抓包实测，COMMAND.GAG 3139 条）：
+   * ⚠️ 标识符位宽因 SID 而异（抓包实测，原厂请求模板库 3139 条）：
    *   `21 <1字节 LID>`   KWP ReadDataByLocalIdentifier    ← len=2
    *   `22 <2字节 DID>`   UDS ReadDataByIdentifier         ← len=3（主力，2050 条）
    *   `1A <1字节 LID>`   KWP ReadECUIdentification        ← len=2
@@ -1623,7 +1623,7 @@ export class Coder {
 
 // ═══════════════════════════════════════════════════════════════
 //  特殊功能 / 例程 / 执行器 / 故障码 —— 与参考诊断仪 服务集 1:1
-//  服务形态全部来自 COMMAND.GAG 3,139 条实测请求
+//  服务形态全部来自 原厂请求模板库 3,139 条实测请求
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -1981,7 +1981,7 @@ Coder.prototype.enterSessionFor = async function (kind, opts = {}) {
 
 /**
  * ⚠️ 2026-11-12 收口：下面 4 组**不是** 4 个可选的写前模式，而是
- * COMMAND.GAG 连续命令 ID 段的**滑动窗口伪影**（AUDIT-PROTOCOL §12.1 早期已疑）：
+ * 原厂请求模板库 连续命令 ID 段的**滑动窗口伪影**（AUDIT-PROTOCOL §12.1 早期已疑）：
  *   - 0x00000005..0x0D 是 9 条连续 `1A <LID>` 记录；从 0x05 起取 6 条就是「B」，
  *     其后紧跟 0x0000000E = `3B` 写帧，于是看起来像「1A ×6 → 3B」。
  *   - 0x0000170B..0x0F 是 5 条连续 `3B <LID>` 写帧；C 的 31/32 序列之后紧接它们，

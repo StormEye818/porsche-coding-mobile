@@ -167,3 +167,6 @@ data/module-disposition-252.tsv
 tools/build-module-disposition.py
 tools/pool0-names.py
 tools/pti-ids.py
+GAP-INVENTORY-*.md
+B-TO-A-CLOSURE-*.md
+ACCEPTANCE-MATRIX*.md

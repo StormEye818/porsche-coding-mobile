@@ -817,6 +817,9 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
   // ④ 覆盖率口径：ZERO 假成功不能算「已收编」
   //    ★ 2026-11-09 mode 收口：按记录真值 mode 出表（旧 m=记录偏移低字节已废）。
   //    总数 980→1072：旧生成器目录扫 0x570 截断（174 ECU），真目录 209 ECU/1072 条目。
+  //    ★ 2026-11-12 块边界修正（RE-GAPVERIFY §2）：1072→1070 —— 旧「recOff 越界 ×2」
+  //      是幻影条目（0x0f41/0x0f51 块 count 多 1，邻块头被当记录），不是异文件引用。
+  //      修解析边界后越界拒写归零（真 recOff 72413/72694/75265/75308 全在体内）。
   {
     const dl = JSON.parse(readFileSync('./data/drivelinks.json', 'utf8'));
     let real = 0, noAlgo = 0, threw = 0, tot = 0, nulls = 0;
@@ -830,11 +833,11 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
         } catch (e) { threw++; }
       }
     }
-    ok('DRIVELINKS 总数 1072（209 ECU 全目录）', tot === 1072, `tot=${tot}`);
+    ok('DRIVELINKS 总数 1070（209 ECU 全目录 · 块边界修正后幻影行归零）', tot === 1070, `tot=${tot}`);
     ok('真·有算法 ≥ 600 条', real >= 600, `real=${real}`);
     ok('「原厂无 case」条目被单独计数，不混入已收编', noAlgo > 0 && noAlgo < tot, `noAlgo=${noAlgo}`);
-    ok('明确拒写=mode 0x1d×4 + 记录越界×2（0x1d 为刻意拒写，越界回落名字分发）',
-      threw === 6 && nulls === 2, `threw=${threw} nulls=${nulls}`);
+    ok('明确拒写=mode 0x1d×4（记录越界拒写已按块边界修正归零）',
+      threw === 4 && nulls === 0, `threw=${threw} nulls=${nulls}`);
     console.log(`       （口径：有算法 ${real} / 无 case ${noAlgo} / 拒写 ${threw}（含越界 ${nulls}） = ${tot}）`);
   }
 }

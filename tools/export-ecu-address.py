@@ -20,6 +20,7 @@ ECU 寻址全量导出 v5.1 —— 结构化表B 多源 join（2026-11-05）。
 
 用法：python3 tools/export-ecu-address.py
 """
+import bisect
 import importlib.util
 import json
 import struct
@@ -258,14 +259,22 @@ def parse_addr_rows(dl_bytes):
         dirc.append((sysId, off))
         i += 8
     rows = []
+    # ★ 2026-11-12 块边界修正（RE-GAPVERIFY §2）：count 多 1 时按目录 blockOff 间距截断，
+    #   并按参考诊断仪选行不变量 bk>>8==sysId低字节 校验（幻影条目=邻块头）。
+    block_offs = sorted({off for _, off in dirc})
     for sysId, boff in dirc:
         if boff >= len(dl_bytes):
             continue
         cnt = dl_bytes[boff]
+        j = bisect.bisect_right(block_offs, boff)
+        span = (block_offs[j] - boff) if j < len(block_offs) else (len(dl_bytes) - boff)
+        cnt = min(cnt, max((span - 1) // 6, 0))
         q0 = boff + 1
         for k in range(cnt):
             bk, ab = struct.unpack_from('<HI', dl_bytes, q0)
             q0 += 6
+            if (bk >> 8) != (sysId & 0xff):
+                continue
             if ab >= len(dl_bytes):
                 continue
             grp, magic, n = struct.unpack_from('<HHH', dl_bytes, ab)

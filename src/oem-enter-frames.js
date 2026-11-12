@@ -2,7 +2,7 @@
  * oem-enter-frames.js — 自动生成，勿手改。
  * 生成器：tools/build-oem-enter-frames.mjs（数据源 data/sysdata-comm.json）
  *
- * 逐 ECU 逐地址的**原厂进模块帧序列**（SYS_DATA comm 子表 + COMMAND.GAG 解帧）。
+ * 逐 ECU 逐地址的**原厂进模块帧序列**（SYS_DATA comm 子表 + 原厂请求模板库 解帧）。
  * 编码：'cat,tx,rx|flag:HEX flag:HEX ...'；flag=3 记为 '3!'（复合脚本帧，不可直接发送）。
  * - 有 10 xx 会话帧的序列：按原厂帧序进模块，会话号/容错由该帧的 flag 决定。
  * - 无会话帧的 68 个老代 sysId：原厂是 81（KWP 快初始化）+1A 识别，**不建 UDS 会话**。
