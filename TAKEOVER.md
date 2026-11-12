@@ -3,15 +3,15 @@
 > **新 agent 从这里开始读。** 读完这一份就能接着干，不用翻别的。
 > 细节在 `HANDOFF.md`（按时间追加的完整记录，78KB+），**别从头读它**，查具体踩坑时再 grep。
 >
-> 最后更新：**2026-11-12（写闸门打开）** · **以 `WRITE-GATE-OPEN-20261112.md` 为准**；
-> `FULLCHAIN-CLOSURE-20261112.md` / `FULLCHAIN-ALIGN-20261112.md` 中「白名单仍只 981 DME」
-> 的表述已被推翻，仅作取证记录。
+> 最后更新：**2026-11-12（第十阶段全量审计）** · **以 `AUDIT-20261112.md` 为准**；
+> 闸门状态见 `WRITE-GATE-OPEN-20261112.md`。历史文档里「白名单仍只 981 DME」
+> 「0 卡点 / 全链路字节级对齐」「OBD 地址不可证」「平台结构性不可证」等表述均已被推翻或收窄。
 >
 > ⚠️ 本页及续篇中的旧覆盖率/「已全对齐」表述均为历史资料，不再作为实车写入验收。
-> 当前真实行为门禁（`npm test` 全绿，15 项）：`test-align431` **38**、`smoke-fixes` 359、
+> 当前真实行为门禁（`npm test` 全绿，16 项）：`test-align431` **38**、`smoke-fixes` 359、
 > `verify-all-models` **68**、`e2e-flow` 105、`walkthrough` 84、`verify-runtime-safety` 24、
 > `verify-sysdata-comm` 16、`verify-oem-session` 28、`verify-oem-frames` **34**、
-> `verify-fullchain` **30**、`verify-write-gate` **36**，均 0 失败。
+> `verify-fullchain` **30**、`verify-write-gate` **36**、`verify-fullchain-audit` **49**，均 0 失败。
 > **写闸门已按「逐帧对齐 431 主写模板」打开**：3817/3817 有静态地址证据的变体放行，
 > 另 771 个由全局表/枚举探针给出地址后同样放行；`setWriteGateMode('whitelist-only')` 可切回保守只读。
 >
@@ -36,7 +36,11 @@
 > **仍保留的边界**：9X6/9X7 无唯一 gen、4 个平台的模块 sysId 仍无法由老代 u32 数值表解析
 > （已坐实为纯数值位表、无 ASCII 名字，两套偏移空间交集 0）；写前编排为 ID 窗口伪影；
 > 安全 level 由运行时 TBB 选、我们不试错，6 条 mode 缺口由协议层显式拒写；E3 索引层 0x11 与运行时 0x12 双记录并存；
-> `0x050c` 无候选（不在任何变体文件，属枚举兜底项）。
+> `0x050c` 已补齐 comm 本 ECU 地址对 `0x5CA/0x6CA`（第九阶段）；bind-plan `noCand` 归零。
+> **第十阶段全量审计**：修 2 个会话卡点（flag=0 被 strictSession 卡死、sessionless 入口漏护栏）、
+> 补帧序证据上下文、取消 6 个重复免探针直绑、7F78 不重发写帧、统一探针低段地址口径与
+> 两个安全访问入口行为、清理 8 份历史文档；**结论：已验证链路无代码级卡点，但不能宣称整条链路
+> 字节级完全对齐 431**（B 级差异与 8 项已知边界见 `AUDIT-20261112.md` §2/§4）。
 > `npm run sync` 的 `www/data` 删除仍受 safe-delete 护栏限制，不能绕过。
 >
 > ⚠️ **已有续篇：`TAKEOVER-20261018.md`。** 第二轮把待逆收编 + 功能审查 + REA/431 对照都推完了，

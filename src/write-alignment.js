@@ -2,11 +2,17 @@
  * write-alignment.js — 自动生成，勿手改。
  * 生成器：tools/build-write-alignment.mjs（真实 Coder 路径实测 + 原厂主写模板逐帧比对）
  *
- * 依据：原厂主写序列是实车验证过的流程；我们的写序列在帧形态、帧数、顺序、
- * 读写 SID 来源、回读校验、默认安全行为上与它逐项一致（判定见 WRITE_ALIGNMENT.checks）。
- * 因此写闸门按「对齐矩阵」判定，不再要求逐模块重新做实车测试。
+ * 依据：原厂主写序列是实车验证过的流程；我们的**写帧构造、序列结构、回读校验、
+ * 默认安全行为**与它逐项一致（判定见 WRITE_ALIGNMENT.checks）。因此写闸门按
+ * 「对齐矩阵」判定，不再要求逐模块重新做实车测试。
  *
- * 原厂主写模板（验收矩阵 §5）：
+ * ⚠️ 会话帧不是所有 ECU 都等于 1089：原厂按 ECU 使用不同会话（981 = 32×10 03 + 16×10 89，
+ * 老代还有 10 86 / 10 85），68 个老代 KWP sysId 原厂不建 UDS 会话。运行时会话号由
+ * SYS_DATA comm 表按 sysId 证据驱动（src/oem-session-table.js），这是与原厂一致的做法，
+ * 不是偏离。measuredKwp/measuredUds 是无证据上下文（主会话 0x89）的实测；
+ * measuredWithContext 是绑定了证据会话后的实测，两者都固化在下面。
+ *
+ * 原厂主写模板（验收矩阵 §5，主会话 0x89 场景）：
  *   1089 → 3E00 → 2101(备份) → 170000(安全) → 3B0109000000(写) → 2101(回读)，无识别链
  */
 export const WRITE_ALIGNMENT = Object.freeze({
@@ -39,6 +45,34 @@ export const WRITE_ALIGNMENT = Object.freeze({
     "2E00215a531473f493d4b3b4d394f37413543334531473f493d4b3b4d394f374135433",
     "220021"
   ],
+  "measuredWithContext": {
+    "kwp": {
+      "sysId": "0x0108",
+      "evidenceSession": "0x86",
+      "frames": [
+        "1086",
+        "3E00",
+        "2121",
+        "170000",
+        "3B215a531473f493d4b3b4d394f37413543334531473f493d4b3b4d394f374135433",
+        "2121"
+      ]
+    },
+    "uds": {
+      "sysId": "0x0e13",
+      "evidenceSession": "0x03",
+      "frames": [
+        "3E00",
+        "1003",
+        "220021",
+        "27090100",
+        "270A1234",
+        "2E00215a531473f493d4b3b4d394f37413543334531473f493d4b3b4d394f374135433",
+        "220021"
+      ]
+    }
+  },
+  "sessionNote": "会话帧按 SYS_DATA comm 逐 ECU 证据驱动；对齐的是写帧构造/序列结构/回读，不是会话号字面值",
   "checks": [
     {
       "id": "kwp-frame-shape",
@@ -104,7 +138,19 @@ export const WRITE_ALIGNMENT = Object.freeze({
       "id": "address-probe",
       "grade": "A",
       "ok": true,
-      "detail": "地址由 bind-plan 候选 + 探针验证（原厂同款 n>0 逐候选一帧探测）"
+      "detail": "地址由 bind-plan 候选 + 探针收敛（原厂同款 n>0 逐候选一帧探测）；闸门只校验 11 位地址合法，原厂无地址态闸——风险由 coder.checkRx 回帧 ID 硬校验与回读校验兜底"
+    },
+    {
+      "id": "oem-context-kwp",
+      "grade": "A",
+      "ok": true,
+      "detail": "有证据上下文 KWP：会话帧 1086 = 该 ECU 证据会话 0x86，其余 5 帧与主写模板同形"
+    },
+    {
+      "id": "oem-context-uds",
+      "grade": "A",
+      "ok": true,
+      "detail": "有证据上下文 UDS：会话帧 1003 = 该 ECU 证据会话 0x03，7 帧按目标会话去重族流"
     }
   ],
   "rule": "记录驱动的读写帧 + 会话/序列证据 + 地址候选探针 + 回读校验；原厂无的自创增强默认全关；seed/key 按 drivelinks mode 表算 key，安全 level 由脚本命令字节决定（编码写默认 0x09，COMMAND.GAG 的 27 09 01 00 实证；KWP 归一 0x00）；取 seed 全零才跳过解锁；原厂无 case 且 ECU 回非零 seed 时明确拒写（不猜 key、不试错、不穷举 level）"

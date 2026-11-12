@@ -1,5 +1,18 @@
 # ACCEPTANCE-MATRIX-431 — 与原厂逐项对照验收矩阵
 
+> ⚠️ **2026-11-12 第十阶段全量审计标注：本文是 2026-11-11 的历史快照，以下结论已被推翻。**
+> - §3 #4「会话号已收口为固定 `0x89`（边界已证）／SYS_DATA 加密记录体静态不可导出」→ **错**。
+>   SYS_DATA 解码副本可读，已导出逐 ECU 原厂会话（`src/oem-session-table.js`，805 sysId）
+>   与逐帧进模块序列（`src/oem-enter-frames.js`，1005 序列 / 3350 帧）；981 是 32×`10 03` + 16×`10 89`，
+>   68 个老代 sysId 原厂不建 UDS 会话。
+> - §3 #5「9X6/9X7/CS1/E1 结构性不可证」→ **错**。`DSN.BIN` 头 22 项索引给出显式
+>   平台→type 链接（`data/platform-type-map.json`）；CS1→0x13、E1→0x03 唯一，9X6/9X7 给出候选集。
+> - 「写入仍只放开 981 DME」「解 SYS_DATA 容器加密后才可能数据驱动」→ **错**。写闸门已按
+>   「逐帧对齐原厂主写模板」全量打开（`src/write-alignment.js`、`WRITE-GATE-OPEN-20261112.md`）。
+> - §5 门禁数字 36/359/105/84/66 是当时快照；现行以 `npm test` 15 项门禁为准。
+> **当前状态以 `TAKEOVER.md` + `WRITE-GATE-OPEN-20261112.md` + `AUDIT-20261112.md` 为准**；本文保留作取证记录。
+
+
 > 2026-11-11 第二轮（按用户要求：偏离全部改成原厂行为、删除自创内容、文档↔代码收口）。
 > 判定基准：`RE-CODINGADDR-20261010`/`RE-FLOWSPEC`/`RE-DISCOVERY`/`RE-MODELADDR` 的
 > .so 逐指令（A）、BIN 字节（B）、实车日志（C）。行号基准：本轮改造后的最终磁盘。
@@ -74,11 +87,11 @@
 
 | # | 项 | 状态 | 原因 | 影响 | 补证方向 |
 |---|---|---|---|---|---|
-| 1 | OBD VIN 通道 `21 09 05` / `21 09 01` | **地址不可证（已实现适配层）** | 2026-11-11 复核：`open_readVinByObd()` 零参数、走 VCI「一对多」发送；APK/.so/资源三层均无目的 CAN ID（`libReadOBDVIN` 自身用 `09 02`） | 已实现 `Coder.readVinByObd()`：标准 OBD 功能地址 `0x7DF` 广播 + 只认 `61 09 05`/`49 02` + 17 位 VIN，失败不扫描 | 盒子固件或总线抓包（包内已到边界，见 `RE-CLOSURE §2`） |
+| 1 | OBD VIN 通道 `21 09 05` / `21 09 01` | **历史结论，已推翻（0xFBE0FD00→0x7DF/0x7E8）** | 2026-11-11 复核：`open_readVinByObd()` 零参数、走 VCI「一对多」发送；APK/.so/资源三层均无目的 CAN ID（`libReadOBDVIN` 自身用 `09 02`） | 已实现 `Coder.readVinByObd()`：标准 OBD 功能地址 `0x7DF` 广播 + 只认 `61 09 05`/`49 02` + 17 位 VIN，失败不扫描 | 盒子固件或总线抓包（包内已到边界，见 `RE-CLOSURE §2`） |
 | 2 | n=0 链路层绑定 | **能力差异** | 原厂 `send(0x10000359,A,2)` 是 VCI 链路层绑定；ELM 的等价物是 ATSH/ATCRA（已回执断言） | 已用 ATSH/ATCRA 回执 OK 作为绑定成功判据，帧数=0 与原厂一致；「绑定」语义在适配器层而非 ECU 层 | 无（适配器架构决定） |
-| 3 | 24 键车型名表 | **已收口（2026-11-11）** | 逆出 `PorscheGetVehicleNameID @SYSP:0x24DE4` → 表 `0x5E42C`：24 条 **车型名 + vehicleId**，`strcmp` 全等（不是语言表） | 已落地 `src/model-name-table.js`，`pickModelByName` 白名单全等优先、基名兜底 | 无需补证；文本随语言库变化时按模块文本表复导 |
-| 4 | 会话号数据驱动 | **已收口为固定 0x89（边界已证）** | 会话类别字节在 `PORSCHE_SYS_DATA.BIN` 的**加密记录体**里，静态不可导出；`securityModel param_1` 实为 **seed 族**，不是会话号（2026-11-11 纠正） | 固定 `0x89` 与抓包主模板一致；其它服务类型由 `SESSION_FOR_SERVICE` 选择；写入仍只放开 981 DME | 解 SYS_DATA 容器加密后才可能数据驱动 |
-| 5 | 9X6/9X7/CS1/E1 平台 sysId | **结构性不可证（已证边界）** | 同名子系统在**每一代** comm 子表都注册 → 名字 join 天然一对多；ALLDATA 目录无代际字节；name-9 投票对已知平台即失效 | 这些车型保持全局表/枚举兜底，不做平台专属映射 | 解 SYS_DATA 加密记录体，或按车型实测反推 |
+| 3 | 24 键车型名表 | **已收口（注：vid 非原厂返回值，匹配含归一化，见 AUDIT-20261112.md）** | 逆出 `PorscheGetVehicleNameID @SYSP:0x24DE4` → 表 `0x5E42C`：24 条 **车型名 + vehicleId**，`strcmp` 全等（不是语言表） | 已落地 `src/model-name-table.js`，`pickModelByName` 白名单全等优先、基名兜底 | 无需补证；文本随语言库变化时按模块文本表复导 |
+| 4 | 会话号数据驱动 | **历史结论，已推翻：逐 ECU 证据会话（见文件头）** | 会话类别字节在 `PORSCHE_SYS_DATA.BIN` 的**加密记录体**里，静态不可导出；`securityModel param_1` 实为 **seed 族**，不是会话号（2026-11-11 纠正） | 固定 `0x89` 与抓包主模板一致；其它服务类型由 `SESSION_FOR_SERVICE` 选择；写入仍只放开 981 DME | 解 SYS_DATA 容器加密后才可能数据驱动 |
+| 5 | 9X6/9X7/CS1/E1 平台 sysId | **历史结论，已推翻：DSN 22 项索引（见文件头）** | 同名子系统在**每一代** comm 子表都注册 → 名字 join 天然一对多；ALLDATA 目录无代际字节；name-9 投票对已知平台即失效 | 这些车型保持全局表/枚举兜底，不做平台专属映射 | 解 SYS_DATA 加密记录体，或按车型实测反推 |
 
 ## 4. 本轮改造清单（代码级）
 

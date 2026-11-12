@@ -101,10 +101,12 @@ export function probeList(entry, globalFamilies = [], prefer = null) {
   const seen = new Set();
   const add = (tx, rx, proto, src) => {
     if (!Number.isFinite(tx) || !Number.isFinite(rx)) return;
-    // 2026-11-10：诊断段从 0x700 放宽到 0x600 —— 表 A 里真实候选有 0x6DD/0x6E7/0x758/0x7B6 等，
-    //   旧的 0x700 下界会把它们静默丢掉（bind-plan 主路径不受影响，这里是兜底路径）。
-    if (tx < 0x600 || tx > 0x7FF) return;        // 11 位 CAN 合法域内的诊断段
-    if (rx < 0x600 || rx > 0x7FF || rx === tx) return;
+    // ★ 2026-11-12 全量审计修不一致：旧实现把 tx/rx 下界卡在 0x600，会静默丢掉
+    //   bind-plan 里来自 comm cat=0x10 的**本 ECU 老代 KWP 地址**（如 0x05CA/0x06CA）。
+    //   这些是 11 位合法且有包内证据的地址，生成器/app 都放行，只有这里丢弃 → 口径冲突。
+    //   统一为「合法 11 位请求/应答段」：0<tx≤0x7F7、0<rx≤0x7FF、rx≠tx。
+    if (tx <= 0 || tx > 0x7F7) return;
+    if (rx <= 0 || rx > 0x7FF || rx === tx) return;
     if (seen.has(tx)) return;
     seen.add(tx);
     out.push({ tx, rx, proto: proto ?? null, src });

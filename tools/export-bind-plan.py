@@ -552,6 +552,26 @@ def main():
     for sid in sorted(target_sids):
         add_entry(sid)
 
+    # ★ 2026-11-12 全量审计修 bug：同一个 (tx,rx) 被多个 sysId **免探针直绑**时，
+    #   该地址不可能同时是这些 ECU 的唯一实测地址。实测 0x07F1/0x07F9 被
+    #   0x0b32/0x0b34/0x0c34/0x0f34 四个不同模块直绑，而 0x07F1 正是真车日志里
+    #   「探 0x7F1 回帧头 7E8」的肇事地址；0x07DB/0x07E3 也被 2 个模块直绑。
+    #   全部取消 bindDirect，强制走探针 + 身份核验，不再让错绑地址免检进模块。
+    direct_by_pair = defaultdict(list)
+    for sid, rec in out.items():
+        ps = rec.get('pairs') or []
+        if rec.get('bindDirect') and len(ps) == 1:
+            direct_by_pair[(ps[0]['tx'], ps[0]['rx'])].append(sid)
+    for (tx, rx), sids in direct_by_pair.items():
+        if len(sids) < 2:
+            continue
+        for sid in sids:
+            out[sid]['bindDirect'] = False
+            out[sid]['bindUnresolved'] = (
+                f'地址 {tx}/{rx} 被 {len(sids)} 个 sysId 同时免探针直绑'
+                f'（{",".join(sids)}）—— 不可能都是唯一地址，强制探针 + 身份核验')
+        stats['duplicateDirectUnbound'] += len(sids)
+
     def cand_of(s):
         return [int(c, 16) for c in out.get(s, {}).get('cands') or []]
 
@@ -578,7 +598,9 @@ def main():
                  '变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；'
                  '仅 cat=0x60 模板无地址对 → 同代家族默认候选（标 family-default、必须探针验证）。'
                  'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
-                 'rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；'
+                 'rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先'
+                 '（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；'
+                 '无记录 rx 时才按 11 位请求 tx≤0x7F7 → rx=tx+8 派生；'
                  'tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）'
                  '一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。'),
         'stats': dict(stats),
@@ -593,6 +615,15 @@ def main():
             problems.append(f'{sid}: bindDirect 但 pairs={len(pairs)}')
         if rec.get('nMixed') and rec.get('bindDirect'):
             problems.append(f'{sid}: 混合 n 却 bindDirect')
+    # 硬门禁：同一地址不得被多个 sysId 免探针直绑（全量审计 0x07F1 肇事地址收口）
+    still_direct = defaultdict(list)
+    for sid, rec in out.items():
+        if rec.get('bindDirect'):
+            for p in (rec.get('pairs') or []):
+                still_direct[(p['tx'], p['rx'])].append(sid)
+    for pair, sids in still_direct.items():
+        if len(sids) > 1:
+            problems.append(f'{pair[0]}/{pair[1]}: 仍被 {len(sids)} 个 sysId 直绑 {sids}')
         if (rec.get('cands') or []) != [p['tx'] for p in pairs]:
             problems.append(f'{sid}: cands 与 pairs.tx 不一致')
         for p in pairs:

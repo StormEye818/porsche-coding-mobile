@@ -1,7 +1,7 @@
 {
  "schemaVersion": 5,
  "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(cat=0x10 本代地址对) + all-model-sysids(全车型换表) + variant-sysids(4588 变体实解析 sysId) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
- "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；仅 cat=0x60 模板无地址对 → 同代家族默认候选（标 family-default、必须探针验证）。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
+ "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；仅 cat=0x60 模板无地址对 → 同代家族默认候选（标 family-default、必须探针验证）。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；无记录 rx 时才按 11 位请求 tx≤0x7F7 → rx=tx+8 派生；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
  "stats": {
   "legacy": 152,
   "rxPreserved": 2088,
@@ -12,7 +12,8 @@
   "tierA": 63,
   "enumeration": 200,
   "commFamilyDefault": 92,
-  "commCat10": 112
+  "commCat10": 112,
+  "duplicateDirectUnbound": 6
  },
  "coverage": {
   "918S": {
@@ -2364,7 +2365,7 @@
    "mode": "0xffff",
    "n": 0,
    "nMixed": false,
-   "bindDirect": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -2380,13 +2381,14 @@
      "source": "tableA",
      "note": "表A 精确 join 候选（旧代路径保留）"
     }
-   ]
+   ],
+   "bindUnresolved": "地址 0x07F1/0x07F9 被 4 个 sysId 同时免探针直绑（0x0b32,0x0b34,0x0c34,0x0f34）—— 不可能都是唯一地址，强制探针 + 身份核验"
   },
   "0x0b34": {
    "mode": "0x1010",
    "n": 0,
    "nMixed": false,
-   "bindDirect": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -2402,7 +2404,8 @@
      "source": "tableA",
      "note": "表A 精确 join 候选（旧代路径保留）"
     }
-   ]
+   ],
+   "bindUnresolved": "地址 0x07F1/0x07F9 被 4 个 sysId 同时免探针直绑（0x0b32,0x0b34,0x0c34,0x0f34）—— 不可能都是唯一地址，强制探针 + 身份核验"
   },
   "0x0b35": {
    "mode": "0x1010",
@@ -5289,7 +5292,7 @@
    "mode": "0x1010",
    "n": 0,
    "nMixed": false,
-   "bindDirect": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -5305,7 +5308,8 @@
      "source": "tableA",
      "note": "表A 精确 join 候选（旧代路径保留）"
     }
-   ]
+   ],
+   "bindUnresolved": "地址 0x07F1/0x07F9 被 4 个 sysId 同时免探针直绑（0x0b32,0x0b34,0x0c34,0x0f34）—— 不可能都是唯一地址，强制探针 + 身份核验"
   },
   "0x0c36": {
    "mode": "0x1010",
@@ -11160,7 +11164,7 @@
    "mode": "0x1001",
    "n": 0,
    "nMixed": false,
-   "bindDirect": true,
+   "bindDirect": false,
    "cands": [
     "0x07DB"
    ],
@@ -11178,13 +11182,14 @@
       "crossgenProven"
      ]
     }
-   ]
+   ],
+   "bindUnresolved": "地址 0x07DB/0x07E3 被 2 个 sysId 同时免探针直绑（0x0e4f,0x0e50）—— 不可能都是唯一地址，强制探针 + 身份核验"
   },
   "0x0e50": {
    "mode": "0x1001",
    "n": 0,
    "nMixed": false,
-   "bindDirect": true,
+   "bindDirect": false,
    "cands": [
     "0x07DB"
    ],
@@ -11202,7 +11207,8 @@
       "crossgenProven"
      ]
     }
-   ]
+   ],
+   "bindUnresolved": "地址 0x07DB/0x07E3 被 2 个 sysId 同时免探针直绑（0x0e4f,0x0e50）—— 不可能都是唯一地址，强制探针 + 身份核验"
   },
   "0x0e51": {
    "mode": "0x1010",
@@ -12778,7 +12784,7 @@
    "mode": "0x1010",
    "n": 0,
    "nMixed": false,
-   "bindDirect": true,
+   "bindDirect": false,
    "cands": [
     "0x07F1"
    ],
@@ -12796,7 +12802,8 @@
       "crossgen"
      ]
     }
-   ]
+   ],
+   "bindUnresolved": "地址 0x07F1/0x07F9 被 4 个 sysId 同时免探针直绑（0x0b32,0x0b34,0x0c34,0x0f34）—— 不可能都是唯一地址，强制探针 + 身份核验"
   },
   "0x0f35": {
    "mode": "0x1010",

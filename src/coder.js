@@ -19,7 +19,7 @@
  *    猜 DID 会写坏别的块。
  *
  * ⚠️ seed/key 算法缺失时：写入路径 `securityAccessEx` **拒绝写入**（不猜、不试、不穷举）；
- *    只读不受影响。`securityAccess` 的 needsKey:false「不发 key 继续写」仅用于恢复/兼容路径，
+ *    只读不受影响。needsKey:false 且 seed 非零一律拒写（两个安全访问入口同口径），
  *    新写入请走 applyChange（内部用 securityAccessEx）。
  *
  * ⚠️ 每次 `applyChange` 只改一项；批量路径逐项串行调用 applyChange（单项失败不中断后续，
@@ -681,16 +681,28 @@ export class Coder {
     if (opts.oemSequence === true && session == null && this.oemSequences?.length) {
       return this._enterByOemFrames(this.resolveSession(), opts);
     }
+    // ★ 2026-11-12 全量审计修 bug：sessionless 护栏统一放在协议层入口，
+    //   覆盖 app.js 里 backupAllCoding / btnBackup 的裸 `enterSession()` 调用。
+    //   原护栏只在 enterSessionFor 与 _applyChangeInner，裸调用仍会给老 KWP ECU
+    //   发 10 89 并跑整套识别链。显式传 session（服务专属流程）不受影响。
+    if (this.oemSessionless && session == null) {
+      await this.address();
+      this._say('  ⓘ 原厂老代 KWP 不建 UDS 会话 —— 统一护栏跳过会话建立');
+      return true;
+    }
     // ★ 2026-11-12 逐 ECU 原厂会话：未显式给 session 时取 setOemContext 绑定的证据值。
     //   无上下文（单测/自动搜索/未定案车型）→ 0x89，既有帧序门禁不受影响。
     const sess = this.resolveSession(session);
     const family = opts.family ?? this.family ?? null;
-    // GAG 帧 flag=0 的会话（10 03 / 3E 00）原厂是尽力而为；写路径 strictSession 仍硬要求。
-    // 只在「本次目标会话确实来自该 ECU 的 flag=0 证据」时才放宽，
-    // 服务专属会话（10 40/10 85…）与调用方显式给的会话一律保持硬要求。
+    // GAG 帧 flag=0 的会话（10 03 / 3E 00）原厂是尽力而为。
+    // ★ 2026-11-12 全量审计修 bug：写/恢复路径一律传 strictSession:true，但那不能
+    //   覆盖「本次目标会话正是该 ECU 的 flag=0 证据会话」这一事实 —— 否则 PASM 等
+    //   32 个 10 03 模块在无 50 03 正响应时会直接抛错，写流程卡死。
+    //   只在「目标会话 == 证据会话且 flag=0」时放宽；服务专属会话（10 40/10 85…）、
+    //   调用方显式给的其它会话、flag=1 会话仍全部硬要求。
     const oemSoft = this.oemSession != null && sess === this.oemSession
       && this.oemSessionStrict === false;
-    const requirePositive = opts.strictSession === true || !oemSoft;
+    const requirePositive = !oemSoft;
     await this.address();
     const sessHex = `10${sess.toString(16).toUpperCase().padStart(2, '0')}`;
     // ★ 会话流（任务清单⑤ / RE-FLOWSPEC §1.3·§7，零特判）：
@@ -719,7 +731,7 @@ export class Coder {
           const sr = await this.uds('1003');
           this._expectSession(sr, 0x03);
         } catch (e) {
-          if (opts.strictSession) throw e;
+          if (requirePositive) throw e;
           this._say(`  (10 03 未支持：${e.message} —— 继续)`);
         }
       }
@@ -1121,6 +1133,16 @@ export class Coder {
     const p = parseRespAuto(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''), reqSid);
     if (p.kind === 'nrc') {
       if (pendingWait && (p.code || 0) === 0x78 && Date.now() < deadline) {
+        // ★ 2026-11-12 全量审计修 bug：写帧 / 解锁帧收到 7F 78 时**不重发原请求**。
+        //   NRC 0x78 是「ECU 已受理、正在处理」，最终响应随后到达；原实现 continue
+        //   会把 3B/2E 写帧或 27 0A key 帧原样再发一次 —— 等于重复写入 / 重复提交 key，
+        //   与 coder.js 顶部「超时≠未执行、禁止自动重试写入」红线直接冲突。
+        //   现在明确报错，让上层按「结果不明 → 重连核验」处理，绝不自动重发。
+        if (reqSid === 0x2e || reqSid === 0x3b || reqSid === 0x27 || reqSid === 0x17) {
+          throw new CodingError(
+            `写/解锁帧 ${payloadHex} 收到 7F 78（响应挂起）—— 不自动重发，`
+            + '避免重复写入或重复提交 key；请重连核验 ECU 实际结果后再操作');
+        }
         this._trace('  (7F 78 响应挂起 —— 续等重发原帧)');
         await new Promise((r) => setTimeout(r, 150));
         continue;
@@ -1273,11 +1295,12 @@ export class Coder {
     if (!kArr.length) {
       const noAlgo = this.seedKeyProvider && this.seedKeyProvider.needsKey === false;
       if (noAlgo) {
-        // ★ 2026-11-05 对齐 参考诊断仪：原厂该 mode 无 case = **不发 key**，
-        //   直接继续写入流程（备份→写→回读），结果由 ECU 裁决 —— 不发 key 不会
-        //   触发 0x35/0x36 安全计数（那只有发错 key 才会）。此处不再拒写。
-        this._say('  原厂无 case 不发 key —— 继续写入（结果由 ECU 裁决）', 'warn');
-        return true;
+        // ★ 2026-11-12 全量审计修不一致：旧 securityAccess() 在这里「不发 key 继续写」，
+        //   而实际写路径 securityAccessEx() 同条件**抛错拒写** —— 同 ECU 同 provider 两入口
+        //   行为相反。统一为拒写：seed 非零却算不出 key，说明模块/会话/寻址判断不对，
+        //   此时继续写只会吃 NRC 0x35 → 0x36 锁死。全零 seed 已在上面单独放行。
+        throw new CodingError('该模块在原厂 seed/key 表里无算法分支（原不需要密钥），'
+          + '但 ECU 返回了非零 seed —— 拒绝猜测 key；请核对模块/会话/寻址');
       }
       throw new CodingError('算法返回空 key —— 拒绝发送（会吃 NRC 0x35）');
     }
@@ -1406,7 +1429,10 @@ export class Coder {
     }
     const before = await this.readBlock(lid, readSid);
     this.backups.push({
-      id: p.id, lid, readSid, writeSid, session: sess, time: new Date().toISOString(),
+      id: p.id, lid, readSid, writeSid, session: sess,
+      // 记录写入时该 ECU 是否「原厂不建 UDS 会话」，供恢复路径在上下文被清空后仍能判断。
+      sessionless: this.oemSessionless === true,
+      time: new Date().toISOString(),
       model: this.modelLabel || p.model || null,
       module: p.module || null,
       sysLabel: this.ecuName || null,
@@ -1533,7 +1559,14 @@ export class Coder {
     const hex = bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
     const sid = bk.writeSid.toString(16).toUpperCase().padStart(2, '0');
     const idHex = bk.lid.toString(16).toUpperCase().padStart((bk.writeSid === 0x2E) ? 4 : 2, '0');
-    await this.enterSession(bk.session ?? 0x89, { skipIdent: true });
+    // ★ 2026-11-12 全量审计修 bug：老代 KWP 备份恢复不能沿用写入时的 0x89 回退值。
+    //   备份自带 sessionless 标志，即使换模块清空了 oemContext 也不会误发 UDS 会话。
+    if (bk.sessionless || this.oemSessionless) {
+      await this.address();
+      this._say('  ⓘ 原厂老代 KWP 不建 UDS 会话 —— 恢复序列跳过会话建立');
+    } else {
+      await this.enterSession(bk.session ?? 0x89, { skipIdent: true });
+    }
     const kwpRestore = bk.readSid !== 0x22;
     await this.securityAccessEx({ level: kwpRestore ? 0x00 : 0x09, kwp: kwpRestore });
     const wr = await this.uds(`${sid}${idHex}${hex}`, 8000, { pendingWait: true });
@@ -1834,7 +1867,7 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   const k = key ?? this.seedKeyProvider.calc(seed, level);
   const kArr = Array.from(k instanceof Uint8Array ? k : k);
   // ⚠️ 空 key 必须区分两种成因（2026-10-18）：
-  //    A) `needsKey:false` —— 该 mode 在原厂seed/key 表里**没有 case**（2026-11-12 复核：drivelinks 1072 条里 104 条 mode 0x00；旧注释 342/980 为早期口径作废）。needsKey:false 生产路径不可达，此分支仅在测试/历史数据里出现。
+  //    A) `needsKey:false` —— 该 mode 在原厂seed/key 表里**没有 case**（2026-11-12 复核：drivelinks 1072 条里 104 条 mode 0x00；早期小样本口径已作废）。needsKey:false 生产路径不可达，此分支仅在测试/历史数据里出现。
   //       ECU 若仍回非零 seed，说明我们对模块的判断不对，**拒写**，但报错要指向「模块/会话/寻址」，
   //       而不是让人去查算法。
   //    B) 算法真返回空 —— 算法实现有问题，拒写并指向算法。
@@ -1903,6 +1936,15 @@ export const SESSION_FOR_SERVICE = {
 
 /** 按服务类型进对会话 */
 Coder.prototype.enterSessionFor = async function (kind, opts = {}) {
+  // ★ 2026-11-12 全量审计修 bug：68 个老代 KWP sysId 原厂不建 UDS 会话。
+  //   app.js 有 5 处 enterSessionFor('coding', {strictSession:true}) 与
+  //   多处 ('ident')，若不在这里拦住，会绕过 _applyChangeInner 的跳过分支，
+  //   给老 KWP ECU 发 10 89 吃 NRC 0x12。例程/IO/测量仍是 UDS 服务，不跳过。
+  if (this.oemSessionless && (kind === 'coding' || kind === 'ident') && opts.session == null) {
+    await this.address();
+    this._say('  ⓘ 原厂老代 KWP 不建 UDS 会话 —— enterSessionFor 跳过会话建立');
+    return true;
+  }
   // ★ 2026-11-12 逐 ECU 原厂会话：读写类服务按当前 ECU 证据取值；
   //   例程/IO/复位/测量仍按服务专属会话（原厂按服务切会话，不被 ECU 会话覆盖）。
   const oemDriven = (kind === 'coding' || kind === 'ident') && this.oemSession != null;

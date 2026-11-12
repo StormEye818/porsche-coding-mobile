@@ -30,10 +30,14 @@ import { SAFETY } from '../src/schema.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'src', 'write-alignment.js');
 
-async function capture(family) {
+async function capture(family, sysId = null, tx = 0x7e0, rx = 0x7e8) {
   const m = new MockAdapter({ latencyMs: 0 });
   const e = new Elm327(m, { timeoutMs: 2000 });
-  const c = new Coder(e, { tx: 0x7e0, rx: 0x7e8, family });
+  const c = new Coder(e, { tx, rx, family });
+  // ★ 2026-11-12 全量审计修证据失真：app 运行时必 setOemContext（706 个 sysId 会话是 10 03、
+  //   另有 10 86/10 85），旧 capture() 不设上下文，实测帧序只在 sess=0x89 时成立。
+  //   这里补「有证据上下文」场景，把两类帧序都固化进对齐矩阵，不再冒充所有 ECU 都发 1089。
+  if (sysId) c.setOemContext(sysId, tx);
   c.diagProfile = { verified: true, reason: 'build-write-alignment 实测' };
   c.seedKeyProvider = {
     name: 'build-mock', verified: true, seedWidths: [2, 4],
@@ -76,10 +80,28 @@ function matchFrames(frames, template) {
   return { ok: true, reason: '' };
 }
 
+// 有证据上下文的实测模板：会话帧由该 ECU 的 SYS_DATA comm 证据决定，
+// 帧构造/序列结构/回读仍与主写模板同形；UDS 目标会话=0x03 时会去重（7 帧而非 8 帧）。
+const T_OEM_KWP = [
+  /^10[0-9A-F]{2}$/i, /^3E00$/i, /^21[0-9A-F]{2}$/i, /^170000$/i, /^3B[0-9A-F]+$/i, /^21[0-9A-F]{2}$/i,
+];
+const T_OEM_UDS = [
+  /^3E00$/i, /^10[0-9A-F]{2}$/i, /^22[0-9A-F]{4}$/i,
+  /^2709[0-9A-F]*$/i, /^270A[0-9A-F]+$/i, /^2E[0-9A-F]+$/i, /^22[0-9A-F]{4}$/i,
+];
+
 const kwp = await capture('kwp');
 const uds = await capture('uds');
 const kwpMatch = matchFrames(kwp.frames, T_431_KWP);
 const udsMatch = matchFrames(uds.frames, T_431_UDS);
+// 取两个有代表性的证据会话：0x0108 → 10 86（KWP）、0x0e13 → 10 03（UDS flag=0）
+const kwpOem = await capture('kwp', '0x0108');
+const udsOem = await capture('uds', '0x0e13', 0x755, 0x7bf);
+const kwpOemMatch = matchFrames(kwpOem.frames, T_OEM_KWP);
+const udsOemMatch = matchFrames(udsOem.frames, T_OEM_UDS);
+const sessByte = (hexFrame) => Number.parseInt(hexFrame.slice(2, 4), 16);
+const oemKwpSessionOk = kwpOemMatch.ok && sessByte(kwpOem.frames[0]) === 0x86;
+const oemUdsSessionOk = udsOemMatch.ok && sessByte(udsOem.frames[1]) === 0x03;
 
 // 静态行为对齐：431 无而项目曾自创的增强必须默认不参与。
 const schema = (await import('node:fs')).readFileSync(path.join(ROOT, 'src', 'schema.js'), 'utf8');
@@ -103,7 +125,16 @@ const checks = [
   { id: 'session-evidence', grade: 'A', ok: /oemSequence|_enterByOemFrames|resolveSession/.test(coderSrc),
     detail: '进模块会话/序列来自 SYS_DATA comm 逐 ECU 证据' },
   { id: 'address-probe', grade: 'A', ok: true,
-    detail: '地址由 bind-plan 候选 + 探针验证（原厂同款 n>0 逐候选一帧探测）' },
+    detail: '地址由 bind-plan 候选 + 探针收敛（原厂同款 n>0 逐候选一帧探测）；'
+      + '闸门只校验 11 位地址合法，原厂无地址态闸——风险由 coder.checkRx 回帧 ID 硬校验与回读校验兜底' },
+  { id: 'oem-context-kwp', grade: 'A', ok: oemKwpSessionOk,
+    detail: kwpOemMatch.ok
+      ? `有证据上下文 KWP：会话帧 ${kwpOem.frames[0]} = 该 ECU 证据会话 0x86，其余 5 帧与主写模板同形`
+      : kwpOemMatch.reason },
+  { id: 'oem-context-uds', grade: 'A', ok: oemUdsSessionOk,
+    detail: udsOemMatch.ok
+      ? `有证据上下文 UDS：会话帧 ${udsOem.frames[1]} = 该 ECU 证据会话 0x03，7 帧按目标会话去重族流`
+      : udsOemMatch.reason },
 ];
 
 const aligned = checks.every((c) => c.ok);
@@ -117,11 +148,17 @@ const body = `/**
  * write-alignment.js — 自动生成，勿手改。
  * 生成器：tools/build-write-alignment.mjs（真实 Coder 路径实测 + 原厂主写模板逐帧比对）
  *
- * 依据：原厂主写序列是实车验证过的流程；我们的写序列在帧形态、帧数、顺序、
- * 读写 SID 来源、回读校验、默认安全行为上与它逐项一致（判定见 WRITE_ALIGNMENT.checks）。
- * 因此写闸门按「对齐矩阵」判定，不再要求逐模块重新做实车测试。
+ * 依据：原厂主写序列是实车验证过的流程；我们的**写帧构造、序列结构、回读校验、
+ * 默认安全行为**与它逐项一致（判定见 WRITE_ALIGNMENT.checks）。因此写闸门按
+ * 「对齐矩阵」判定，不再要求逐模块重新做实车测试。
  *
- * 原厂主写模板（验收矩阵 §5）：
+ * ⚠️ 会话帧不是所有 ECU 都等于 1089：原厂按 ECU 使用不同会话（981 = 32×10 03 + 16×10 89，
+ * 老代还有 10 86 / 10 85），68 个老代 KWP sysId 原厂不建 UDS 会话。运行时会话号由
+ * SYS_DATA comm 表按 sysId 证据驱动（src/oem-session-table.js），这是与原厂一致的做法，
+ * 不是偏离。measuredKwp/measuredUds 是无证据上下文（主会话 0x89）的实测；
+ * measuredWithContext 是绑定了证据会话后的实测，两者都固化在下面。
+ *
+ * 原厂主写模板（验收矩阵 §5，主会话 0x89 场景）：
  *   1089 → 3E00 → 2101(备份) → 170000(安全) → 3B0109000000(写) → 2101(回读)，无识别链
  */
 export const WRITE_ALIGNMENT = Object.freeze(${JSON.stringify({
@@ -131,6 +168,11 @@ export const WRITE_ALIGNMENT = Object.freeze(${JSON.stringify({
   templateKwp: ['1089', '3E00', '21<LID8>', '170000', '3B<LID8><data>', '21<LID8>'],
   measuredKwp: kwp.frames,
   measuredUds: uds.frames,
+  measuredWithContext: {
+    kwp: { sysId: '0x0108', evidenceSession: '0x86', frames: kwpOem.frames },
+    uds: { sysId: '0x0e13', evidenceSession: '0x03', frames: udsOem.frames },
+  },
+  sessionNote: '会话帧按 SYS_DATA comm 逐 ECU 证据驱动；对齐的是写帧构造/序列结构/回读，不是会话号字面值',
   checks,
   rule: '记录驱动的读写帧 + 会话/序列证据 + 地址候选探针 + 回读校验；'
     + '原厂无的自创增强默认全关；seed/key 按 drivelinks mode 表算 key，'

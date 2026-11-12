@@ -4,7 +4,7 @@
  *
  * 用户质询：「431 的做法都是实车验证过的」—— 若我们的写流程逐帧字节级对齐，
  * 就不该再要求逐模块实车测试。本测试钉住：
- *   ① WRITE_ALIGNMENT 11 项判定全 A、实测帧序列与原厂主写模板逐帧一致
+ *   ① WRITE_ALIGNMENT 13 项判定全 A（含「有证据上下文」两类帧序）、写帧构造与主写模板逐帧一致
  *   ② 闸门对「车型 + 模块记录 + 合法地址 + 会话家族」齐全的组合放行
  *   ③ 缺任一运行时证据仍拒绝；记录级只读项/非法 SID 仍由 coder 层拦
  *   ④ 全车型/模块/变体的闸门覆盖率（不再是 981 DME 一条）
@@ -39,8 +39,8 @@ const ok = (name, cond, detail = '') => {
 // ── ① 对齐矩阵 ─────────────────────────────────────────────────
 console.log('\n[1] 写流程对齐矩阵');
 ok('aligned = true', WRITE_ALIGNMENT.aligned === true);
-ok(`11 项判定全部通过且为 A 级`,
-  WRITE_ALIGNMENT.checks.length === 11 && WRITE_ALIGNMENT.checks.every((c) => c.ok && c.grade === 'A'),
+ok(`13 项判定全部通过且为 A 级`,
+  WRITE_ALIGNMENT.checks.length === 13 && WRITE_ALIGNMENT.checks.every((c) => c.ok && c.grade === 'A'),
   `${WRITE_ALIGNMENT.checks.length} 项`);
 ok('原厂主写模板 6 帧齐备（会话/保活/备份/安全/写/回读）',
   WRITE_ALIGNMENT.templateKwp.length === 6);

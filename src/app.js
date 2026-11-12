@@ -428,11 +428,13 @@ function ecuAddrFromTable(label, sys) {
  * 依据（.so 逐指令，RE-DISCOVERY-20261110 §1）：
  *   `0x18f4c/0x18f52 movw sl,#0x1409; movt sl,#0xff00` → 发现帧 `0xFF001409`(22 14 09)；
  *   `0x18f8c blx r3` 对**每个候选只发 1 帧**（mode=1）；`0x18fa2..0x18fbc` 才是
- *   `send(0x10000359,A,2)` 绑定；`0x18fe2 movw r0,#0x1102` = 绑定失败补帧 `22 11 02`。
+ *   `send(0x10000359,A,2)` 绑定；`0x18fe2 movw r0,#0x1102` = 绑定失败补帧 `22 11 02`
+ *   （包内有此帧，当前实现未发送；第十阶段审计如实标注为 B 级差异）。
  *
  * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：删除 2026-11-10 的自创扩展
  *   （每族 2–3 帧：`221409`+`221102`、`1A9F`+`3E`、族未证三帧）。原厂每候选只 1 帧；
- *   补帧 `22 11 02` 只发生在 **n=0 链路绑定失败**（见 probeAddressFor 的 bindDirect 分支）。
+ *   ⚠️ 第十阶段审计如实标注：包内虽有补帧 `22 11 02`，当前实现**没有发帧路径**；
+ *   绑定失败直接跳过该候选走枚举兜底。这是与原厂的 B 级差异，不是「已对齐」。
  *   KWP 族的 1A 9F 有实车证据（DME 回 `5A 9F …`，且拒绝 `22 F1 A2`/`3E 00` 子功能）。
  *
  * @param {'kwp'|'uds'|null} family
@@ -625,7 +627,8 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       //   原厂`DriveLinksMode_1001 @LINK:0x18f00` 的 `cbz r1,#0x18f9e` 分支：候选数 0 →
       //   整个探针循环跳过，直接 `send(0x10000359,A,2)` 做**链路层绑定**。
       //   ELM 的等价物 = ATSH/ATCRA 且回执 OK（上面 611-616 已断言）→ 绑定完成，直接返回。
-      //   只有 ATSH/ATCRA 回 `?`（适配器拒绝）时才按 原厂的「绑定失败补帧」发一帧 22 11 02。
+      //   ⚠️ 第十阶段审计：包内有「绑定失败补帧 22 11 02」，但当前实现未发送；
+      //   上面 ATSH/ATCRA 回执失败时直接 return null 跳过候选（B 级差异，见 AUDIT-20261112.md）。
       const fam = opts.family || familyFor(label, p.tx, { modules: opts.modules });
       if (bindDirect) {
         note(`ATSH/ATCRA OK → n=0 链路绑定（0 探针帧，原厂cbz 分支）`);
@@ -714,7 +717,8 @@ function addrFor(label, model = currentModel, sys = null) {
  *
  * 依据：原厂主写序列（验收矩阵 §5）本身是实车验证过的流程；
  * 本项目写流程在帧形态/帧数/顺序、记录驱动 SID、回读校验、默认安全行为上逐项对齐
- * （实测证据与 11 项判定见 src/write-alignment.js，生成器 tools/build-write-alignment.mjs）。
+ * （实测证据与 13 项判定见 src/write-alignment.js，生成器 tools/build-write-alignment.mjs；
+ *  含「无证据上下文」与「按证据会话」两类帧序，会话号由 SYS_DATA 逐 ECU 数据驱动）。
  * 因此只要本次链路的运行时证据齐（车型 / 模块记录 / 合法 11 位地址 / 会话家族），
  * 就继承原厂流程的实车验证，不再要求逐模块重新实车测试。
  *
@@ -3775,6 +3779,7 @@ async function backupAllCoding(allItems, sysLabel) {
         coder.backups.push({
           id: 'backup', lid, readSid: actualReadSid, blockReadSid: actualReadSid,
           writeSid: p.writeSid, session: coder.resolveSession(),
+          sessionless: coder.oemSessionless === true,
           model: currentModel || null, module: p.module || null, sysLabel: coder.ecuName || sysLabel || null,
           tx: coder.tx, rx: coder.rx,
           time: new Date().toISOString(),
@@ -3887,7 +3892,8 @@ $('btnBackup').onclick = async () => {;
     const block = await coder.readBlock(lid, actualReadSid);
     coder.backups.push({
       id: 'backup', lid, readSid: actualReadSid, blockReadSid: actualReadSid,
-      writeSid: p.writeSid, session: 0x89,
+      writeSid: p.writeSid, session: coder.resolveSession(),
+      sessionless: coder.oemSessionless === true,
       model: currentModel || null, module: p.module || null, sysLabel: coder.ecuName || null,
       tx: coder.tx, rx: coder.rx,
       time: new Date().toISOString(),
