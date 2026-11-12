@@ -177,7 +177,13 @@ console.log('\n[H] 2026-11-11 原厂对齐改造回归');
   ok('SAFETY 默认全关', /range: false/.test(schema) && /autoRestore: false/.test(schema) && /addrState: false/.test(schema));
   ok('值域闸默认 opt-in', /SAFETY\.range && !fieldInRange/.test(app) && /SAFETY\.range && !fieldInRange/.test(coder));
   ok('回读不一致默认不回滚（记录失败）', /!SAFETY\.autoRestore[\s\S]{0,200}记录失败/.test(coder));
-  ok('写路径 skipIdent（不重跑识别链）', /enterSession\(session, \{ skipIdent: true, strictSession: true \}\)/.test(coder));
+  ok('写路径 skipIdent（不重跑识别链）', /enterSession\(sess, \{ skipIdent: true, strictSession: true \}\)/.test(coder));
+  // ★ 2026-11-12 逐 ECU 原厂会话：写路径会话号必须由 resolveSession() 取证据，
+  //   不得再出现 `session = 0x89` 这种硬编码默认值。
+  ok('会话号由证据驱动（不再硬编码 0x89 默认值）',
+    /const sess = this\.resolveSession\(session\)/.test(coder)
+    && !/session = 0x89/.test(coder)
+    && /oemSessionFor/.test(coder));
   ok('恢复页无读服务拒写（不再猜 readSid）', /备份无读服务（读不到=不写）/.test(app));
   // ⑤ 匿名化：源码不得出现第三方工具字样
   ok('源码无第三方工具字样', !app.includes('4' + '31') && !coder.includes('4' + '31')

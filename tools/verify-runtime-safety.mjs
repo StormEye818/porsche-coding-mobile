@@ -6,6 +6,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Coder } from '../src/coder.js';
+import { makeResolverProvider } from '../src/seedkey-resolver.js';
+import { makeProvider } from '../src/seedkey.js';
 
 let pass = 0;
 const ok = (name, condition, detail = '') => {
@@ -179,6 +181,22 @@ const coderFor = (responses, opts = {}) => new Coder(fakeElm(responses, opts), {
   c.seedKeyProvider = { calc: () => [0, 0], needsKey: true };
   await assert.rejects(c.securityAccessEx({ level: 0x09, kwp: false }), /原厂 seed 族已知宽度/);
   ok('未知 seed 宽度 → 拒发 key', !c.elm.calls.some((x) => /^270A/i.test(x)));
+}
+
+// ★ 2026-11-12：生产 provider 的宽度契约必须显式声明（把 calc 里写死的宽度交给闸门），
+//   不能再靠「未声明 → 降级警告」这种模糊路径。
+{
+  const rp = makeResolverProvider(0x01, { ecuId: null, name: 'test' });
+  ok('mode provider 声明 seedWidths=[2,4]', JSON.stringify(rp.seedWidths) === '[2,4]');
+  ok('变体 provider 声明 seedWidths=[seedBytes]',
+    JSON.stringify(makeProvider({ variant: '9x7GW', algo: 'A' }).seedWidths) === '[2]'
+    && JSON.stringify(makeProvider({ seedBytes: 4 }).seedWidths) === '[4]');
+  // 声明后，3 字节 seed 在闸门处即被拒（不会进 calc 抛错、更不会发 key）。
+  const c = coderFor({ '27090100': '7E8 05 67 09 01 02 03' });
+  c.seedKeyProvider = rp;
+  await assert.rejects(c.securityAccessEx({ level: 0x09, kwp: false }), /已声明支持的宽度/);
+  ok('声明 provider 遇 3 字节 seed → 闸门提前拒发 key',
+    !c.elm.calls.some((x) => /^270A/i.test(x)));
 }
 
 console.log(`\n===== 运行时安全回归：${pass} 通过 / 0 失败 =====`);

@@ -68,4 +68,41 @@ const pasmSub = (pasm.blocks[0].subs || [{}])[0];
 ok('PASM 家族默认 0x755 ≠ 981 实测 0x7D0（地址表须按车型，不能拿 comm 默认值）',
   pasmSub.tx === 0x755, `tx=0x${(pasmSub.tx || 0).toString(16)}`);
 
+// ⑥ 2026-11-12：新代 0x14-0x16 的 comm cat=0x10 地址对接入 bind-plan
+//   推翻「0x14-0x16 路由 owner 0 行 = 无地址证据」：证据在 comm 子表内嵌地址对里。
+const bind = JSON.parse(readFileSync(new URL('../data/bind-plan.json', import.meta.url), 'utf8'));
+const commPairs = new Map();
+for (const [sid, e] of Object.entries(ecu)) {
+  if (!['0x14', '0x15', '0x16'].includes(sid.slice(0, 4))) continue;
+  for (const blk of e.blocks) {
+    if (blk.cat !== 0x10) continue;
+    for (const s of blk.subs || []) {
+      if (s.tx <= 0x7f7 && s.rx <= 0x7ff && s.tx > 0 && s.rx > 0) {
+        commPairs.set(sid, { tx: s.tx, rx: s.rx });
+      }
+    }
+  }
+}
+ok('新代 comm 地址对 = 112 个 sysId', commPairs.size === 112, String(commPairs.size));
+let wired = 0, badFirst = [], badRx = [];
+for (const [sid, want] of commPairs) {
+  const rec = bind.ecu?.[sid];
+  const first = rec?.pairs?.[0];
+  if (!first) { badFirst.push(sid); continue; }
+  if (Number.parseInt(first.tx, 16) !== want.tx) { badFirst.push(sid); continue; }
+  if (Number.parseInt(first.rx, 16) !== want.rx) badRx.push(sid);
+  const prov = (rec.provenance || []).some((p) => (p.sources || []).includes('commCat10'));
+  if (prov) wired++;
+}
+ok('112 个新代 sysId 首选候选 = comm 本代地址对', badFirst.length === 0,
+  badFirst.slice(0, 5).join(','));
+ok('112 个新代 sysId 的 rx 取记录自带值（非 tx+8 猜）', badRx.length === 0,
+  badRx.slice(0, 5).join(','));
+ok('112 个新代 sysId 的 provenance 标 commCat10', wired === 112, String(wired));
+ok('新代地址接入不设免探针直绑', [...commPairs.keys()].every((sid) => !bind.ecu?.[sid]?.bindDirect));
+ok('981 不受影响：0x0E01 首选仍是 0x7E0/0x7E8',
+  bind.ecu?.['0x0e01']?.pairs?.[0]?.tx === '0x07E0'
+  && bind.ecu?.['0x0e01']?.pairs?.[0]?.rx === '0x07E8',
+  JSON.stringify(bind.ecu?.['0x0e01']?.pairs?.[0]));
+
 console.log(`\n===== sysdata-comm 门禁：${pass} 通过 / 0 失败 =====`);

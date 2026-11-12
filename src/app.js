@@ -18,6 +18,7 @@ import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, MODULE_TO_ECUID_LEGACY, SYSTEM_TO_ECUID } from './module-ecu-map.js';
 import { sysIdForModule, modulesForSysId, planSysIdFor, platformInfoFor } from './model-sysid-map.js';
+import { OEM_SESSION_BY_SYSID } from './oem-session-table.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -51,41 +52,17 @@ function bindPlanFor(sysId) {
 }
 
 /**
- * SYS_DATA comm 表（data/sysdata-comm.json，2026-11-11 逆取收口）：
- * 每个 sysId 的**原厂进模块命令序列**（经 COMMAND.GAG 解析成帧）。
- * 由此可查「该 ECU 的原厂会话号」——981 实测：16 个模块 10 89、32 个模块 10 03，
- * 即原厂**并非一律 10 89**。当前 enterSession 仍按族流程发帧，与原厂逐 ECU 序列
- * 的差异用日志显式暴露（对齐缺口可见化），不静默冒充已对齐。
+ * SYS_DATA comm 表 → 逐 ECU 原厂会话（2026-11-12 已落地，不再是「只提示未对齐」）。
+ *
+ * 上一阶段把 874 条 comm 记录全量解出（805 sysId、命令经 COMMAND.GAG 解帧 0 缺失），
+ * 981 的 48 个模块 = 16×`10 89` + 32×`10 03`，证明原厂并非一律 10 89；
+ * 但当时运行时仍硬编码 10 89，只在日志里打「未对齐」。
+ *
+ * 现在由 `tools/build-oem-session-table.mjs` 编译成 `src/oem-session-table.js` 静态证据表，
+ * 协议层 `coder.setOemContext(sysId)` 绑定后，enterSession / enterSessionFor /
+ * applyChange 未显式给 session 时都取证据值。改为静态表还顺带去掉了进模块时
+ * fetch 570KB JSON 的延迟与离线失败风险。
  */
-let sysComm = undefined;
-async function ensureSysComm() {
-  if (sysComm !== undefined) return sysComm;
-  try {
-    const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-    const timer = ctl ? setTimeout(() => ctl.abort(), 1500) : null;
-    const r = await fetch('data/sysdata-comm.json', ctl ? { signal: ctl.signal } : {});
-    if (timer) clearTimeout(timer);
-    sysComm = r.ok ? await r.json() : null;
-  } catch { sysComm = null; }
-  return sysComm;
-}
-/** sysId → 原厂进模块会话号（序列里第一个 10 xx）；查不到返回 null。 */
-function oemSessionForSysId(sysId) {
-  const e = sysComm?.ecu?.[String(sysId).toLowerCase()];
-  if (!e) return null;
-  for (const blk of e.blocks || []) {
-    for (const f of blk.frames || []) {
-      if (Array.isArray(f) && f.length >= 4 && f[2] === 0x10) return f[3];
-    }
-  }
-  return null;
-}
-/** sysId → 原厂进模块命令帧（仅第一条 comm 记录的子记录 0）；查不到返回 null。 */
-function oemEnterFramesForSysId(sysId) {
-  const e = sysComm?.ecu?.[String(sysId).toLowerCase()];
-  const frames = e?.blocks?.[0]?.frames;
-  return Array.isArray(frames) && frames.length ? frames : null;
-}
 
 /**
  * 模块记录家族统计（data/module-family.json）。
@@ -2371,7 +2348,7 @@ function showRuleBatchEdit(title, items) {
     const failWhy = [];
     for (const { p, newVal } of changes) {
       try {
-        const result = await coder.applyChange(p, newVal, { dryRun: false, session: 0x89, secLevel: 0x09 });
+        const result = await coder.applyChange(p, newVal, { dryRun: false, secLevel: 0x09 });
         p.currentValue = extractField(result.readback, p);
         if (p.lid != null) invalidateBlock(p.lid);   // 块缓存失效
         ok++;
@@ -2791,13 +2768,14 @@ async function enterSystem(sys) {
   }
   // ★ 2026-11-05 会话定案（有据）。★ 2026-11-11 注释收口：
   //   原厂序列 = 10 03 → 3E/识别 → 10 89 → 读写（GAG 真机序列取证）。
-  //   **会话号实现为固定 `0x89`（SESSION_FOR_SERVICE.coding）** —— 抓包 10 89×6 是绝对
-  //   主模板，KWP 流直接建、UDS 流在 10 03/识别后建。
+  //   **2026-11-12 起会话号不再固定 0x89**：按 sysId 取 comm 表原厂值（981 有 32 个模块
+  //   是 10 03），无证据才回退主会话 0x89。KWP 流直接建、UDS 流在 10 03/识别后建。
   //   ★ 2026-11-11 逆取收口（推翻旧「ODX SESSIONS 不在包内」结论）：原厂**逐 ECU 会话**
   //     就在 SYS_DATA comm 记录里（data/sysdata-comm.json，命令经 COMMAND.GAG 解帧）。
   //     981 实测分布：16 个模块 `10 89`、32 个模块 `10 03` —— **并非一律 10 89**。
-  //     当前实现仍按族流程发帧（KWP 直建 0x89 / UDS 10 03→…→0x89），与原厂逐 ECU
-  //     序列的差异用日志显式暴露（对齐缺口可见化），不静默冒充已对齐。
+  //   ★ 2026-11-12 缺口已收口：会话号改由 coder.setOemContext(sysId) 按证据取值，
+  //     不再硬编码 10 89；GAG 帧 flag=0 的会话按原厂「尽力而为」处理（不硬等 50 xx），
+  //     避免把 10 03 当成硬要求而在无应答 ECU 上卡死。帧序差异仍在审计文档中如实记录。
   //   构帧/发送方逐指令零「失败换会话」分支（PorscheSetEnterFrameInit 模板单发）——
   //   原「10 89 失败回退 10 03」是自创恢复，已删。
   //   两步是**序列步**（非重试）：各自尽力而为（NRC 容忍=序列取证行为）；写路径
@@ -2807,18 +2785,20 @@ async function enterSystem(sys) {
   //   UDS 流 = `10 03`→保活→识别→`10 89`（序列步，非重试）；家族未证=抓包序容错。
   {
     const oemSid = sysIdForLabel(sys.label) || sysIdForMod(sys.label) || sysIdForModules(sys.modules);
-    await ensureSysComm();
-    const oemSess = oemSessionForSysId(oemSid);
-    if (oemSess != null && oemSess !== 0x89) {
-      const frames = (oemEnterFramesForSysId(oemSid) || [])
-        .map((f) => (Array.isArray(f) ? f.slice(2).map((x) => x.toString(16).padStart(2, '0')).join(' ') : '?'));
-      log(`  ⚠️ 原厂会话=10 ${oemSess.toString(16).padStart(2, '0')}（${sys.label}，comm 表），`
-        + `当前实现按族流程发 10 89 —— 未对齐；原厂序列: ${frames.join(' → ')}`, 'warn');
+    const oem = coder.setOemContext(oemSid);
+    if (oem) {
+      log(`  ✅ 原厂会话=10 ${oem.session.toString(16).toUpperCase().padStart(2, '0')}`
+        + `（${sys.label} · sysId ${oemSid} · 代际 ${oem.gen} · ${oem.requireResponse ? '要求正响应' : '尽力而为'}）`, 'ok');
+      if (oem.seq) log(`     原厂进模块序列(flag:HEX): ${oem.seq}`, 'info');
+    } else {
+      log(`  ⚠️ ${sys.label}（sysId=${oemSid ?? '—'}）在 comm 表无会话证据`
+        + ` → 回退主会话 10 89（证据表 ${Object.keys(OEM_SESSION_BY_SYSID).length} 条），不猜`, 'warn');
     }
   }
   let sessDead = 0;
   try {
-    await coder.enterSession(0x89, { family: enterFamily });
+    // 不显式传 session → Coder.resolveSession() 取当前 ECU 的原厂会话证据。
+    await coder.enterSession(undefined, { family: enterFamily });
   } catch (e) {
     if (/无应答|NO DATA/i.test(String(e.message))) sessDead++;
     log(`  (会话未建成：${e.message} —— ${sessDead ? '通讯失败' : '序列继续'})`, 'warn');
@@ -3593,7 +3573,7 @@ async function doWrite(p, v) {
   }
   toast('info', `写入 ${p.name} = ${decodeValue(p, v)}`, '进会话 → 安全访问 → 写 → 回读校验 …');
   try {
-    const result = await coder.applyChange(p, v, { dryRun: false, session: 0x89, secLevel: 0x09 });
+    const result = await coder.applyChange(p, v, { dryRun: false, secLevel: 0x09 });
     // UI 只能显示 ECU 实际回读值，不能显示可能被 mask 截断的用户目标值。
     p.currentValue = extractField(result.readback, p);
     // ⚠️ 块缓存必须失效（2026-10-18 审计）：写入后 currentBlocks[p.lid] 还是旧字节，
@@ -3757,7 +3737,7 @@ $('vmOk').onclick = async () => {
   }
   log(`—— 写入 ${p.name} = ${decodeValue(p, v)} ——`, 'info');
   try {
-    const result = await coder.applyChange(p, v, { dryRun: false, session: 0x89, secLevel: 0x09 });
+    const result = await coder.applyChange(p, v, { dryRun: false, secLevel: 0x09 });
     p.currentValue = extractField(result.readback, p);
     if (p.lid != null) invalidateBlock(p.lid);   // 同上：块缓存失效
     log('✅ 写入成功，回读一致', 'ok');
@@ -3779,7 +3759,7 @@ async function backupAllCoding(allItems, sysLabel) {
   if (!lids.length) { toast('warn', '无编码块', '该模块没有可备份的 LID'); return; }
   try {
     showLoading(`备份 ${sysLabel || ''}`, `0 / ${lids.length}`);
-    await coder.enterSession(0x89);
+    await coder.enterSession();
     let done = 0;
     for (const lid of lids) {
       const p = allItems.find((q) => q.lid === lid) || {};
@@ -3788,7 +3768,7 @@ async function backupAllCoding(allItems, sysLabel) {
         const block = await coder.readBlock(lid, actualReadSid);
         coder.backups.push({
           id: 'backup', lid, readSid: actualReadSid, blockReadSid: actualReadSid,
-          writeSid: p.writeSid, session: 0x89,
+          writeSid: p.writeSid, session: coder.resolveSession(),
           model: currentModel || null, module: p.module || null, sysLabel: coder.ecuName || sysLabel || null,
           tx: coder.tx, rx: coder.rx,
           time: new Date().toISOString(),
@@ -3896,7 +3876,7 @@ $('btnBackup').onclick = async () => {;
   }
   toast('info', `备份 ${p.name}`, `LID 0x${lid.toString(16).toUpperCase()} …`);
   try {
-    await coder.enterSession(0x89);
+    await coder.enterSession();
     const actualReadSid = blockReadSidOf(null, p);
     const block = await coder.readBlock(lid, actualReadSid);
     coder.backups.push({

@@ -3,15 +3,26 @@
 > **新 agent 从这里开始读。** 读完这一份就能接着干，不用翻别的。
 > 细节在 `HANDOFF.md`（按时间追加的完整记录，78KB+），**别从头读它**，查具体踩坑时再 grep。
 >
-> 最后更新：2026-11-11 · 第六阶段把五项未收口全部逆到边界（见 `RE-CLOSURE-20261111.md`）
+> 最后更新：**2026-11-12** · 第七阶段把 SYS_DATA comm 表接进运行时，收口进模块会话与新代地址
+> （完整审计见 `FULLCHAIN-ALIGN-20261112.md`；历史收口见 `RE-CLOSURE-20261111.md`）
 >
 > ⚠️ 本页及续篇中的旧覆盖率/「已全对齐」表述均为历史资料，不再作为实车写入验收。
-> 当前真实行为门禁：`test-align431` 37、`smoke-fixes` 359、`verify-all-models` 66、
-> `e2e-flow` 105、`walkthrough` 84、`verify-runtime-safety` 21，均 0 失败；真车默认只读，
+> 当前真实行为门禁（`npm test` 全绿）：`test-align431` 37、`smoke-fixes` 359、
+> `verify-all-models` 67、`e2e-flow` 105、`walkthrough` 84、`verify-runtime-safety` 24、
+> `verify-sysdata-comm` 16、`verify-oem-session` 28，均 0 失败；真车默认只读，
 > 只有 981 Cayman DME 示例 profile 可写，其余未证 ECU 不得因测试通过而放行。
-> 第六阶段新增：24 条车型名白名单（`src/model-name-table.js`）、OBD 0x7DF 严格读 VIN、
-> seed 宽度闸门、bind-plan 拒绝应答段/12 位地址。仍未证：OBD 目的 CAN ID、逐 ECU 会话号、
-> 9X6/9X7/CS1/E1 代际、0x14-0x16 路由 owner、seed 族逐 mode 算法。
+>
+> **第七阶段（本轮）新增**：
+> - `src/oem-session-table.js`（生成器 `tools/build-oem-session-table.mjs`）：逐 ECU 原厂会话表，
+>   805 sysId / 737 会话证据；运行时用到的 468 个零缺口；981 = 32×`10 03` + 16×`10 89`。
+> - `Coder.setOemContext(sysId)` / `resolveSession()`：进模块会话不再一律 `10 89`；
+>   GAG 帧 flag=0 的会话按原厂「尽力而为」处理；`setAddress` 换模块清空上下文。
+> - `data/bind-plan.json` schemaVersion 4：新代 0x14-0x16 的 112 个 comm cat=0x10 本代地址对
+>   接入为首选候选（保留原候选回退、不直绑），推翻「新代无地址证据」。981 不受影响。
+> - 两个生产 provider 显式声明 `seedWidths`，宽度闸门从降级变硬约束。
+>
+> **仍未证**：进模块完整帧序位置差异、老平台 9X6/9X7/CS1/E1 的车型→type 唯一链接、
+> 写序言按 ECU 分派（包内是固定模板+类别键）、OBD `21 09 05` 目的 CAN ID（盒固件层）。
 > `npm run sync` 的 `www/data` 删除仍受 safe-delete 护栏限制，不能绕过。
 >
 > ⚠️ **已有续篇：`TAKEOVER-20261018.md`。** 第二轮把待逆收编 + 功能审查 + REA/431 对照都推完了，

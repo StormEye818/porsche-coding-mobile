@@ -30,6 +30,7 @@
  */
 
 import { extractField, injectField, decodeValue, encodeValue, canWrite, fieldInRange, READ_SIDS, WRITE_SIDS, SAFETY } from './schema.js';
+import { oemSessionFor } from './oem-session-table.js';
 
 // ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
 //   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
@@ -416,12 +417,58 @@ export class Coder {
       : { verified: false, reason: '当前 ECU 写流未验证' };
     this._addressReady = false;   // 当前 ATSP/ATSH/ATCRA 是否已下发到适配器
     this._writeBusy = false;   // 写事务排他（审计 #20）
+    // ★ 2026-11-12 逐 ECU 原厂会话上下文（data/sysdata-comm.json → src/oem-session-table.js）：
+    //   原厂并非一律 10 89（981 实测 32 个模块是 10 03）。未设置上下文时 oemSession=null，
+    //   enterSession 回退主会话 0x89 —— 不改变既有帧序门禁，也不猜。
+    this.oemSysId = null;
+    this.oemSession = null;
+    this.oemSessionStrict = null;   // GAG 帧 flag：true=原厂要求正响应，false=尽力而为
+    this.oemEnterSeq = '';          // 原厂进模块命令序列（证据展示/审计用）
     this.log = [];
   }
 
   _say(m) {
     this.log.push(m);
     if (this.onProgress) this.onProgress(m);
+  }
+
+  /**
+   * 绑定当前 ECU 的原厂会话上下文（sysId → SYS_DATA comm 子表证据）。
+   *
+   * ★ 2026-11-12：上一阶段把「逐 ECU 会话」逆出来了（874 条 comm 记录 / 805 sysId /
+   *   981 的 48 模块全可查），但运行时仍一律发 10 89，只在日志里提示「未对齐」。
+   *   这里把它真正接进协议层：enterSession / enterSessionFor('coding'|'ident') /
+   *   applyChange 未显式给 session 时都取证据值。
+   *
+   * requireResponse 来自 GAG 帧 flag：10 89 是 flag=1（要正响应），
+   * 10 03 / 3E 00 是 flag=0（尽力而为）。会话号换掉之后仍按原厂容错分级，
+   * 否则把尽力而为的 10 03 当成硬要求会在无应答 ECU 上卡死写流程。
+   *
+   * 查不到证据（sysId 不在表 / 无会话帧）→ 全部置 null，回退主会话 0x89。
+   */
+  setOemContext(sysId) {
+    const key = sysId == null ? null : String(sysId).toLowerCase();
+    let hit = oemSessionFor(sysId);
+    // 防错代护栏：comm 表的 type 必须等于 sysId 高字节（全表 805 条只有 2 条跨代别名，
+    // 运行时实际用到的 468 个 sysId 零错配）。不一致就当无证据，绝不拿别代会话来发帧。
+    if (hit && key && hit.gen) {
+      const hi = Number.parseInt(key.slice(2, 4), 16);
+      const gen = Number.parseInt(hit.gen, 16);
+      if (Number.isFinite(hi) && Number.isFinite(gen) && hi !== gen) {
+        this._say(`  (sysId ${key} 与 comm type ${hit.gen} 错代，会话证据不采用)`);
+        hit = null;
+      }
+    }
+    this.oemSysId = key;
+    this.oemSession = hit ? hit.session : null;
+    this.oemSessionStrict = hit ? hit.requireResponse : null;
+    this.oemEnterSeq = hit ? hit.seq : '';
+    return hit;
+  }
+
+  /** 当前 ECU 的会话号：证据优先，调用方显式值优先于它，最后才回退主会话 0x89。 */
+  resolveSession(explicit = undefined) {
+    return explicit ?? this.oemSession ?? 0x89;
   }
 
   /** 设定物理寻址 */
@@ -491,10 +538,19 @@ export class Coder {
     return r;
   }
 
-  async enterSession(session = 0x89, opts = {}) {
+  async enterSession(session, opts = {}) {
+    // ★ 2026-11-12 逐 ECU 原厂会话：未显式给 session 时取 setOemContext 绑定的证据值。
+    //   无上下文（单测/自动搜索/未定案车型）→ 0x89，既有帧序门禁不受影响。
+    const sess = this.resolveSession(session);
     const family = opts.family ?? this.family ?? null;
+    // GAG 帧 flag=0 的会话（10 03 / 3E 00）原厂是尽力而为；写路径 strictSession 仍硬要求。
+    // 只在「本次目标会话确实来自该 ECU 的 flag=0 证据」时才放宽，
+    // 服务专属会话（10 40/10 85…）与调用方显式给的会话一律保持硬要求。
+    const oemSoft = this.oemSession != null && sess === this.oemSession
+      && this.oemSessionStrict === false;
+    const requirePositive = opts.strictSession === true || !oemSoft;
     await this.address();
-    const sessHex = `10${session.toString(16).toUpperCase().padStart(2, '0')}`;
+    const sessHex = `10${sess.toString(16).toUpperCase().padStart(2, '0')}`;
     // ★ 会话流（任务清单⑤ / RE-FLOWSPEC §1.3·§7，零特判）：
     //   KWP 流 = **10 89 直接建会话**（GAG rec#42，不发 10 03 —— KWP ECU 拒 10 03 即实车断点）；
     //   UDS 流 = 10 03（标准扩展会话，§1.3「UDS ECU 流另含」）后进目标会话；
@@ -502,17 +558,28 @@ export class Coder {
     //   （10 89 = 保时捷编码主会话，全库×4 模板，两族通用零错）。
     if (family !== 'uds') {
       // KWP 流 / 未证家族：目标会话直接建；正响应 SID 与会话号必须同时匹配。
-      const sr = await this.uds(sessHex);
-      this._expectSession(sr, session);
-      this._say(`  ✅ 会话 ${sessHex} 就绪（${family === 'kwp' ? 'KWP 流直接建会话' : '家族未证·按规格未覆盖，走主会话 10 89 同形'}）`);
+      // 仅当原厂帧 flag=0 时容忍无正响应（与 10 03 同级的尽力而为）。
+      try {
+        const sr = await this.uds(sessHex);
+        this._expectSession(sr, sess);
+        this._say(`  ✅ 会话 ${sessHex} 就绪（${family === 'kwp' ? 'KWP 流直接建会话' : '家族未证·按规格未覆盖，走主会话同形'}）`);
+      } catch (e) {
+        if (requirePositive) throw e;
+        this._say(`  (会话 ${sessHex} 无正响应：${e.message} —— 原厂 flag=0 尽力而为，继续)`);
+      }
     } else {
       // UDS 扩展会话：普通读取可容忍不支持；写路径 strictSession 必须拿正响应。
-      try {
-        const sr = await this.uds('1003');
-        this._expectSession(sr, 0x03);
-      } catch (e) {
-        if (opts.strictSession) throw e;
-        this._say(`  (10 03 未支持：${e.message} —— 继续)`);
+      // ★ 2026-11-12 逐 ECU 会话去重：目标会话本身就是 0x03 时（981 有 32 个模块），
+      //   不再单独发「扩展会话」步 —— 否则同一帧 `10 03` 在首尾各发一次。
+      //   由末尾的目标会话帧一次完成，也与原厂 comm 序列（10 03 在序列末）更接近。
+      if (sess !== 0x03) {
+        try {
+          const sr = await this.uds('1003');
+          this._expectSession(sr, 0x03);
+        } catch (e) {
+          if (opts.strictSession) throw e;
+          this._say(`  (10 03 未支持：${e.message} —— 继续)`);
+        }
       }
     }
     // ② TesterPresent 保活 —— 一律 `3E 00`（GAG rec#35；全包无 3E 80 模板）。
@@ -606,9 +673,14 @@ export class Coder {
     // ④ 目标会话（UDS 流）—— **硬要求**，失败才报错。
     //   KWP 流/未证家族已在开头直接建会话，此处不再重复发。
     if (family === 'uds') {
-      const sr = await this.uds(sessHex);
-      this._expectSession(sr, session);
-      this._say(`  ✅ 会话 ${sessHex} 就绪`);
+      try {
+        const sr = await this.uds(sessHex);
+        this._expectSession(sr, sess);
+        this._say(`  ✅ 会话 ${sessHex} 就绪`);
+      } catch (e) {
+        if (requirePositive) throw e;
+        this._say(`  (会话 ${sessHex} 无正响应：${e.message} —— 原厂 flag=0 尽力而为，继续)`);
+      }
     }
     return true;
   }
@@ -845,6 +917,11 @@ export class Coder {
       this.lastHwPart = '';
       this.lastSwNo = '';
       this.diagProfile = { verified: false, reason: '地址或模块已变化，需重新验证写流' };
+      // 换模块后旧 ECU 的原厂会话不得沿用（981 里 10 03 / 10 89 混用）。
+      this.oemSysId = null;
+      this.oemSession = null;
+      this.oemSessionStrict = null;
+      this.oemEnterSeq = '';
     }
     if (opts.family !== undefined) this.family = opts.family;   // 会话流家族（kwp/uds/null）
     if (name) this.ecuName = name;
@@ -1082,7 +1159,7 @@ export class Coder {
    *
    * @param {object} p        参数条目（schema，须含 lid / readSid / writeSid）
    * @param {number} value    目标字段值
-   * @param {object} opts     { session=0x89, dryRun=true, secLevel=0x09 }
+   * @param {object} opts     { session=逐ECU原厂会话/0x89, dryRun=true, secLevel=0x09 }
    */
   async applyChange(p, value, opts = {}) {
     // ⚠️ 写事务整体排他（审计 #20）：双击写入/批量与单项交叉会在 await 点交错。
@@ -1097,10 +1174,11 @@ export class Coder {
 
   async _applyChangeInner(p, value, opts = {}) {
     const {
-      session = 0x89,        // 保时捷专用会话（参考诊断仪实测 10 89）
+      session,              // 未给 → resolveSession()：逐 ECU 原厂会话，无证据回退 0x89
       dryRun = true,
       secLevel = 0x09,       // 参考诊断仪实测 SecurityAccess level
     } = opts;
+    const sess = this.resolveSession(session);
 
     if (!dryRun && !this.diagProfile?.verified) {
       throw new CodingError(`当前 ECU 写流未验证，保持只读：${this.diagProfile?.reason || '缺少诊断 profile 证据'}`);
@@ -1172,10 +1250,10 @@ export class Coder {
     //   没有 1A 9F/87/84/91/92/93/94/95/97/9A 十帧识别。旧实现每次写都经 enterSession
     //   重跑整套识别链（最多 +9s，还会清空 lastIdent/lastPartNo 等变体证据）。
     this._say('  进会话 …');
-    await this.enterSession(session, { skipIdent: true, strictSession: true });
+    await this.enterSession(sess, { skipIdent: true, strictSession: true });
     const before = await this.readBlock(lid, readSid);
     this.backups.push({
-      id: p.id, lid, readSid, writeSid, session, time: new Date().toISOString(),
+      id: p.id, lid, readSid, writeSid, session: sess, time: new Date().toISOString(),
       model: this.modelLabel || p.model || null,
       module: p.module || null,
       sysLabel: this.ecuName || null,
@@ -1672,9 +1750,12 @@ export const SESSION_FOR_SERVICE = {
 
 /** 按服务类型进对会话 */
 Coder.prototype.enterSessionFor = async function (kind, opts = {}) {
-  const sess = SESSION_FOR_SERVICE[kind] ?? 0x89;
-  // ★ 2026-11-11 原厂对齐：opts 透传（写/恢复路径传 {skipIdent:true}，不重跑识别链）
-  return this.enterSession(sess, opts);
+  // ★ 2026-11-12 逐 ECU 原厂会话：读写类服务按当前 ECU 证据取值；
+  //   例程/IO/复位/测量仍按服务专属会话（原厂按服务切会话，不被 ECU 会话覆盖）。
+  const oemDriven = (kind === 'coding' || kind === 'ident') && this.oemSession != null;
+  const sess = oemDriven ? this.oemSession : (SESSION_FOR_SERVICE[kind] ?? 0x89);
+  // 写/恢复路径传 {skipIdent:true}，不重跑识别链；opts 原样透传。
+  return this.enterSession(opts.session ?? sess, opts);
 };
 
 // ═══════════════════════════════════════════════════════════════

@@ -234,6 +234,10 @@ export function makeResolverProvider(mode, ctx = {}) {
           (ctx.name ? `(${ctx.name})` : ''),
     verified: true,          // 算法本身是照抄 原厂 的；变体覆盖见 coverageSummary
     mode,
+    // ★ 2026-11-12：把 calc() 里写死的宽度契约显式声明给 coder 的 seed 宽度闸门，
+    //   让「该算法支持哪些 seed 宽度」成为可断言的硬约束，而不是靠降级分支猜。
+    //   本 provider 的 calc 只接受 2/4 字节（其余长度直接抛错，绝不静默截断）。
+    seedWidths: [2, 4],
     // ⚠️ false = 原厂 stdSeedKey 里这个 mode 没有 case，不需要发 key。
     //    securityAccessEx 用它区分「无需解锁」与「算法算不出」，两者都拒发但报错要不同。
     needsKey,

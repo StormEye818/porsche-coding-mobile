@@ -233,6 +233,9 @@ export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2, ver
   return {
     name: `Porsche-${algo}(${variant})`,
     verified,
+    // ★ 2026-11-12：声明本 provider 实际接受的 seed 宽度（= calc 里的 seedBytes 契约），
+    //   供 coder 的 seed 宽度闸门做硬校验，避免错宽度算 key 触发 NRC 0x35→0x36。
+    seedWidths: [seedBytes],
     calc(a, _level) {
       if (a.length !== seedBytes) {
         // ⚠️ 长度不符**绝不静默截断/补零**（2026-10-16 审计）——算错 key = NRC 0x35

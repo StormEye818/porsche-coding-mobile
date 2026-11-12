@@ -30,6 +30,12 @@
                 → 0x7D0（owner 0x0C05/0x0C02 跨代行）。
   tierA = S1∪S2∪S3∪S0 非空 → 只用 tierA；否则 S4；否则空（app.js 枚举兜底）。
   候选序 = 多源收敛数降序、再按地址升序（DME 0x7E0 四源收敛排第一）。
+  ★ 2026-11-12 新增 S5 commCat10（仅 gen≥0x14）：SYS_DATA comm cat=0x10 子表
+    内嵌本代地址对 (A,C)→tx/rx，112 个新代 sysId 全有、全部合法 11 位，
+    DME 0x1401→0x7E0/0x7E8、网关 0x1409→0x710/0x77A 与实车锚点一致。
+    此前这些 sysId 只有跨代平移的同一串 16 项候选（命中率 0）→「新代无地址证据」
+    结论被推翻。作为**首选候选**插入并保留原候选回退，rx 用记录自带值，
+    **不设免探针直绑**（地址仍由探针验证）；981 等 gen<0x14 完全不动。
 
 输出 data/bind-plan.json（键=sysId 小写；0x0B 旧代条目逻辑保持不变，test-align431 对账）：
   { "ecu": { "0x0e01": { mode, n, bindDirect, cands, pairs, firstRead,
@@ -49,6 +55,7 @@ ADDR = ROOT / 'data' / 'ecu-addresses.json'
 CODING = ROOT / 'data' / 'coding-v2.json'
 ROUTING = ROOT / 'data' / 'sysdata-routing.json'
 ROOT_TABLE = ROOT / 'data' / 'sysdata-root-table.json'
+COMM = ROOT / 'data' / 'sysdata-comm.json'
 SYSIDS = ROOT / 'data' / '981-sysids.json'
 ALL_SYSIDS = ROOT / 'data' / 'all-model-sysids.json'
 OUT = ROOT / 'data' / 'bind-plan.json'
@@ -98,8 +105,25 @@ def main():
     coding = json.loads(CODING.read_text())
     routing = json.loads(ROUTING.read_text())
     root_table = json.loads(ROOT_TABLE.read_text())
+    comm_doc = json.loads(COMM.read_text())
     sysids_doc = json.loads(SYSIDS.read_text())
     all_sysids = json.loads(ALL_SYSIDS.read_text())
+
+    # ---- 新代 0x14-0x16 的本代地址证据（2026-11-12 复核推翻「路由 owner 0 行=无地址」） ----
+    # SYS_DATA comm cat=0x10 子表内嵌 (A,C) 地址对，解出 tx/rx 全部是合法 11 位，
+    # 且与实车锚点一致（0x1401 DME → 0x7E0/0x7E8、0x1409 网关 → 0x710/0x77A）。
+    # 此前这些 sysId 的候选全部来自「旧代表A ∩ 路由表」跨代平移（同 16 项、命中率 0）。
+    # 只作**首选候选**插入，保留既有候选回退，不设免探针直绑（地址仍由探针验证）。
+    # 981 等 gen<0x14 的条目完全不动。
+    comm_pairs = {}
+    for sid, e in (comm_doc.get('ecu') or {}).items():
+        for blk in e.get('blocks') or []:
+            if blk.get('cat') != 0x10:
+                continue
+            for s in blk.get('subs') or []:
+                tx, rx = s.get('tx'), s.get('rx')
+                if isinstance(tx, int) and isinstance(rx, int) and 0 < tx <= REQ_HI and 0 < rx <= 0x7FF:
+                    comm_pairs.setdefault(sid.lower(), {})[tx] = rx
 
     # ---- 公共：模块名 → 首参数 lid / 族（readSid 众数） ----
     by_mod = {}
@@ -390,6 +414,18 @@ def main():
             stats['legacy'] += 1
             prov = [{'source': 'tableA', 'note': '表A 精确 join 候选（旧代路径保留）'}]
 
+        # ★ 2026-11-12 本代 comm 地址对接入：只作用于 0x14/0x15/0x16 新代，
+        #   且作为首选候选（不删既有候选、不设免探针直绑）。
+        gen_here = int(sid, 16) >> 8
+        cp = comm_pairs.get(sid) if gen_here >= 0x14 else None
+        if cp:
+            ordered = [c for c in sorted(cp) if c not in ordered] + ordered
+            prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{cp[c]:04X}',
+                      'sources': ['commCat10'],
+                      'note': 'SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）'}
+                     for c in sorted(cp)] + prov)
+            stats['commCat10'] += 1
+
         pairs, rejected_pairs = [], []
         for c in ordered:
             tx_s = f'0x{c:04X}'
@@ -403,7 +439,12 @@ def main():
                 })
                 stats['rxRejected'] += 1
                 continue
-            rx, rx_source = rx_for(sid, c)
+            # 本代 comm 记录自带 rx（A/C 编码），优先于「tx+8」默认推导。
+            cp_rx = (cp or {}).get(c)
+            if cp_rx is not None:
+                rx, rx_source = f'0x{cp_rx:04X}', 'commCat10'
+            else:
+                rx, rx_source = rx_for(sid, c)
             if rx is None:
                 rejected_pairs.append({'tx': tx_s, 'rx': None, 'reason': rx_source})
                 stats['rxDropped'] += 1
@@ -464,12 +505,13 @@ def main():
                        'confidence': e.get('confidence')}
 
     doc = {
-        'schemaVersion': 3,
-        'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + all-model-sysids(全车型换表) '
-                   '+ ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
+        'schemaVersion': 4,
+        'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(newgen cat=0x10 地址对) '
+                   '+ all-model-sysids(全车型换表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
         'rule': ('全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) '
                  '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
                  'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
+                 'gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。'
                  'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
                  'rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；'
                  'tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）'

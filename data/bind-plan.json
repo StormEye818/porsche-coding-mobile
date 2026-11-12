@@ -1,16 +1,17 @@
 {
- "schemaVersion": 3,
- "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + all-model-sysids(全车型换表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
- "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
+ "schemaVersion": 4,
+ "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(newgen cat=0x10 地址对) + all-model-sysids(全车型换表) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
+ "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 只有一条规则：11 位请求 tx≤0x7F7 → rx=tx+8；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
  "stats": {
   "legacy": 152,
-  "rxPreserved": 2091,
-  "noCand": 264,
+  "rxPreserved": 2088,
+  "noCand": 204,
   "rxRejected": 2,
   "crossgen": 151,
   "tierA": 63,
-  "rxDefaultPlus8": 122,
-  "enumeration": 200
+  "rxDefaultPlus8": 234,
+  "enumeration": 200,
+  "commCat10": 112
  },
  "coverage": {
   "918S": {
@@ -21,7 +22,7 @@
   },
   "992": {
    "modules": 58,
-   "static": 25,
+   "static": 43,
    "gen": "0x14",
    "confidence": "high"
   },
@@ -87,13 +88,13 @@
   },
   "G3": {
    "modules": 64,
-   "static": 28,
+   "static": 49,
    "gen": "0x16",
    "confidence": "medium"
   },
   "J1": {
    "modules": 69,
-   "static": 27,
+   "static": 46,
    "gen": "0x15",
    "confidence": "high"
   }
@@ -18740,6 +18741,14 @@
    "provenance": [
     {
      "can": "0x07E0",
+     "rx": "0x07E8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
+    {
+     "can": "0x07E0",
      "sources": [
       "crossgen"
      ]
@@ -18842,6 +18851,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x07E1",
     "0x06E7",
     "0x073C",
     "0x073D",
@@ -18851,6 +18861,10 @@
     "0x07B6"
    ],
    "pairs": [
+    {
+     "tx": "0x07E1",
+     "rx": "0x07E9"
+    },
     {
      "tx": "0x06E7",
      "rx": "0x06EF"
@@ -18882,6 +18896,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x07E1",
+     "rx": "0x07E9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06E7",
      "sources": [
@@ -18932,6 +18954,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0715",
     "0x06E7",
     "0x073C",
     "0x073D",
@@ -18941,6 +18964,10 @@
     "0x07B6"
    ],
    "pairs": [
+    {
+     "tx": "0x0715",
+     "rx": "0x077F"
+    },
     {
      "tx": "0x06E7",
      "rx": "0x06EF"
@@ -18972,6 +18999,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0715",
+     "rx": "0x077F",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06E7",
      "sources": [
@@ -19021,10 +19056,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0713"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0713",
+     "rx": "0x077D"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0713",
+     "rx": "0x077D",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -19035,10 +19085,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0714"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0714",
+     "rx": "0x077E"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0714",
+     "rx": "0x077E",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -19050,6 +19115,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0710",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -19057,6 +19123,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x0710",
+     "rx": "0x077A"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -19080,6 +19150,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0710",
+     "rx": "0x077A",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -19132,6 +19210,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070E",
     "0x06DE",
     "0x06EB",
     "0x06ED",
@@ -19146,6 +19225,10 @@
     "0x07B0"
    ],
    "pairs": [
+    {
+     "tx": "0x070E",
+     "rx": "0x0778"
+    },
     {
      "tx": "0x06DE",
      "rx": "0x06E6"
@@ -19197,6 +19280,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070E",
+     "rx": "0x0778",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DE",
      "sources": [
@@ -19436,6 +19527,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070F",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -19443,6 +19535,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x070F",
+     "rx": "0x0779"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -19466,6 +19562,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070F",
+     "rx": "0x0779",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -19503,10 +19607,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x070C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x070C",
+     "rx": "0x0776"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070C",
+     "rx": "0x0776",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -19518,6 +19637,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070B",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -19525,6 +19645,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x070B",
+     "rx": "0x0775"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -19548,6 +19672,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070B",
+     "rx": "0x0775",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -19586,12 +19718,17 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0757",
     "0x06ED",
     "0x0758",
     "0x075C",
     "0x07BB"
    ],
    "pairs": [
+    {
+     "tx": "0x0757",
+     "rx": "0x07C1"
+    },
     {
      "tx": "0x06ED",
      "rx": "0x06F5"
@@ -19611,6 +19748,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0757",
+     "rx": "0x07C1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06ED",
      "sources": [
@@ -19643,9 +19788,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x076F",
     "0x07CF"
    ],
    "pairs": [
+    {
+     "tx": "0x076F",
+     "rx": "0x07D9"
+    },
     {
      "tx": "0x07CF",
      "rx": "0x07D7"
@@ -19653,6 +19803,14 @@
    ],
    "firstRead": "220000",
    "provenance": [
+    {
+     "can": "0x076F",
+     "rx": "0x07D9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07CF",
      "sources": [
@@ -19901,10 +20059,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0753"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0753",
+     "rx": "0x07BD"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0753",
+     "rx": "0x07BD",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -19915,10 +20088,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0712"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0712",
+     "rx": "0x077C"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0712",
+     "rx": "0x077C",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -19930,6 +20118,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0773",
     "0x06DD",
     "0x06DE",
     "0x06E2",
@@ -19945,6 +20134,10 @@
     "0x07BF"
    ],
    "pairs": [
+    {
+     "tx": "0x0773",
+     "rx": "0x07DD"
+    },
     {
      "tx": "0x06DD",
      "rx": "0x06E5"
@@ -20000,6 +20193,14 @@
    ],
    "firstRead": "220002",
    "provenance": [
+    {
+     "can": "0x0773",
+     "rx": "0x07DD",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DD",
      "sources": [
@@ -20153,10 +20354,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0769"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0769",
+     "rx": "0x07D3"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0769",
+     "rx": "0x07D3",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -20326,10 +20542,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x074E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x074E",
+     "rx": "0x07B8"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074E",
+     "rx": "0x07B8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -20821,6 +21052,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074C",
     "0x06FB",
     "0x06FC",
     "0x06FD",
@@ -20830,6 +21062,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074C",
+     "rx": "0x07B6"
+    },
     {
      "tx": "0x06FB",
      "rx": "0x0703"
@@ -20861,6 +21097,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074C",
+     "rx": "0x07B6",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FB",
      "sources": [
@@ -20911,6 +21155,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074D",
     "0x06FB",
     "0x06FC",
     "0x06FD",
@@ -20920,6 +21165,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074D",
+     "rx": "0x07B7"
+    },
     {
      "tx": "0x06FB",
      "rx": "0x0703"
@@ -20951,6 +21200,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074D",
+     "rx": "0x07B7",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FB",
      "sources": [
@@ -21001,6 +21258,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074A",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -21014,6 +21272,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074A",
+     "rx": "0x07B4"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -21061,6 +21323,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074A",
+     "rx": "0x07B4",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -21135,6 +21405,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074B",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -21148,6 +21419,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074B",
+     "rx": "0x07B5"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -21195,6 +21470,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074B",
+     "rx": "0x07B5",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -21268,10 +21551,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071C",
+     "rx": "0x0786"
+    }
+   ],
    "firstRead": "220000",
    "provenance": [
+    {
+     "can": "0x071C",
+     "rx": "0x0786",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21296,10 +21594,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x073B"
+   ],
+   "pairs": [
+    {
+     "tx": "0x073B",
+     "rx": "0x07A5"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073B",
+     "rx": "0x07A5",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21310,10 +21623,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0742"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0742",
+     "rx": "0x07AC"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0742",
+     "rx": "0x07AC",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21338,10 +21666,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0731"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0731",
+     "rx": "0x079B"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0731",
+     "rx": "0x079B",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21464,10 +21807,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0727"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0727",
+     "rx": "0x0791"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0727",
+     "rx": "0x0791",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21479,6 +21837,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074F",
     "0x06FA",
     "0x06FB",
     "0x06FC",
@@ -21486,6 +21845,10 @@
     "0x07E2"
    ],
    "pairs": [
+    {
+     "tx": "0x074F",
+     "rx": "0x07B9"
+    },
     {
      "tx": "0x06FA",
      "rx": "0x0702"
@@ -21509,6 +21872,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074F",
+     "rx": "0x07B9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FA",
      "sources": [
@@ -21574,10 +21945,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0724"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0724",
+     "rx": "0x078E"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0724",
+     "rx": "0x078E",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21588,10 +21974,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x072B"
+   ],
+   "pairs": [
+    {
+     "tx": "0x072B",
+     "rx": "0x0795"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x072B",
+     "rx": "0x0795",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21747,10 +22148,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0767"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0767",
+     "rx": "0x07D1"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0767",
+     "rx": "0x07D1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21761,10 +22177,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x072D"
+   ],
+   "pairs": [
+    {
+     "tx": "0x072D",
+     "rx": "0x0797"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x072D",
+     "rx": "0x0797",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21775,10 +22206,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0759"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0759",
+     "rx": "0x07C3"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0759",
+     "rx": "0x07C3",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21803,10 +22249,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0760"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0760",
+     "rx": "0x07CA"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0760",
+     "rx": "0x07CA",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21817,10 +22278,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0761"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0761",
+     "rx": "0x07CB"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0761",
+     "rx": "0x07CB",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -21975,6 +22451,14 @@
    "provenance": [
     {
      "can": "0x07E0",
+     "rx": "0x07E8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
+    {
+     "can": "0x07E0",
      "sources": [
       "crossgen"
      ]
@@ -22077,6 +22561,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0715",
     "0x06E7",
     "0x073C",
     "0x073D",
@@ -22086,6 +22571,10 @@
     "0x07B6"
    ],
    "pairs": [
+    {
+     "tx": "0x0715",
+     "rx": "0x077F"
+    },
     {
      "tx": "0x06E7",
      "rx": "0x06EF"
@@ -22117,6 +22606,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0715",
+     "rx": "0x077F",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06E7",
      "sources": [
@@ -22166,10 +22663,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0713"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0713",
+     "rx": "0x077D"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0713",
+     "rx": "0x077D",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -22181,9 +22693,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0746",
     "0x07F1"
    ],
    "pairs": [
+    {
+     "tx": "0x0746",
+     "rx": "0x07B0"
+    },
     {
      "tx": "0x07F1",
      "rx": "0x07F9"
@@ -22191,6 +22708,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0746",
+     "rx": "0x07B0",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07F1",
      "sources": [
@@ -22204,10 +22729,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0714"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0714",
+     "rx": "0x077E"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0714",
+     "rx": "0x077E",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -22219,6 +22759,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0710",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -22226,6 +22767,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x0710",
+     "rx": "0x077A"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -22249,6 +22794,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0710",
+     "rx": "0x077A",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -22301,6 +22854,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070E",
     "0x06DE",
     "0x06EB",
     "0x06ED",
@@ -22315,6 +22869,10 @@
     "0x07B0"
    ],
    "pairs": [
+    {
+     "tx": "0x070E",
+     "rx": "0x0778"
+    },
     {
      "tx": "0x06DE",
      "rx": "0x06E6"
@@ -22366,6 +22924,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070E",
+     "rx": "0x0778",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DE",
      "sources": [
@@ -22605,9 +23171,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0723",
     "0x07F1"
    ],
    "pairs": [
+    {
+     "tx": "0x0723",
+     "rx": "0x078D"
+    },
     {
      "tx": "0x07F1",
      "rx": "0x07F9"
@@ -22615,6 +23186,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0723",
+     "rx": "0x078D",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07F1",
      "sources": [
@@ -22628,10 +23207,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x070C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x070C",
+     "rx": "0x0776"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070C",
+     "rx": "0x0776",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -22643,6 +23237,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070B",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -22650,6 +23245,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x070B",
+     "rx": "0x0775"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -22673,6 +23272,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070B",
+     "rx": "0x0775",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -22711,12 +23318,17 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0757",
     "0x06ED",
     "0x0758",
     "0x075C",
     "0x07BB"
    ],
    "pairs": [
+    {
+     "tx": "0x0757",
+     "rx": "0x07C1"
+    },
     {
      "tx": "0x06ED",
      "rx": "0x06F5"
@@ -22736,6 +23348,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0757",
+     "rx": "0x07C1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06ED",
      "sources": [
@@ -22768,9 +23388,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x076F",
     "0x07CF"
    ],
    "pairs": [
+    {
+     "tx": "0x076F",
+     "rx": "0x07D9"
+    },
     {
      "tx": "0x07CF",
      "rx": "0x07D7"
@@ -22778,6 +23403,14 @@
    ],
    "firstRead": "220000",
    "provenance": [
+    {
+     "can": "0x076F",
+     "rx": "0x07D9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07CF",
      "sources": [
@@ -23026,10 +23659,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0753"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0753",
+     "rx": "0x07BD"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0753",
+     "rx": "0x07BD",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -23040,10 +23688,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0712"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0712",
+     "rx": "0x077C"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0712",
+     "rx": "0x077C",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -23055,6 +23718,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0773",
     "0x06DD",
     "0x06DE",
     "0x06E2",
@@ -23070,6 +23734,10 @@
     "0x07BF"
    ],
    "pairs": [
+    {
+     "tx": "0x0773",
+     "rx": "0x07DD"
+    },
     {
      "tx": "0x06DD",
      "rx": "0x06E5"
@@ -23125,6 +23793,14 @@
    ],
    "firstRead": "220002",
    "provenance": [
+    {
+     "can": "0x0773",
+     "rx": "0x07DD",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DD",
      "sources": [
@@ -23292,10 +23968,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0769"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0769",
+     "rx": "0x07D3"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0769",
+     "rx": "0x07D3",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -23306,10 +23997,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071E",
+     "rx": "0x0788"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x071E",
+     "rx": "0x0788",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -23320,10 +24026,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0747"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0747",
+     "rx": "0x07B1"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0747",
+     "rx": "0x07B1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -23493,10 +24214,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x074E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x074E",
+     "rx": "0x07B8"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074E",
+     "rx": "0x07B8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -23988,6 +24724,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074C",
     "0x06FB",
     "0x06FC",
     "0x06FD",
@@ -23997,6 +24734,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074C",
+     "rx": "0x07B6"
+    },
     {
      "tx": "0x06FB",
      "rx": "0x0703"
@@ -24028,6 +24769,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074C",
+     "rx": "0x07B6",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FB",
      "sources": [
@@ -24078,6 +24827,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074D",
     "0x06FB",
     "0x06FC",
     "0x06FD",
@@ -24087,6 +24837,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074D",
+     "rx": "0x07B7"
+    },
     {
      "tx": "0x06FB",
      "rx": "0x0703"
@@ -24118,6 +24872,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074D",
+     "rx": "0x07B7",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FB",
      "sources": [
@@ -24195,10 +24957,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0744"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0744",
+     "rx": "0x07AE"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0744",
+     "rx": "0x07AE",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -24238,6 +25015,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074A",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -24251,6 +25029,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074A",
+     "rx": "0x07B4"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -24298,6 +25080,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074A",
+     "rx": "0x07B4",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -24372,6 +25162,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074B",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -24385,6 +25176,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074B",
+     "rx": "0x07B5"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -24432,6 +25227,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074B",
+     "rx": "0x07B5",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -24506,6 +25309,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x073E",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -24519,6 +25323,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x073E",
+     "rx": "0x07A8"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -24566,6 +25374,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073E",
+     "rx": "0x07A8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -24640,6 +25456,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x073F",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -24653,6 +25470,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x073F",
+     "rx": "0x07A9"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -24700,6 +25521,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073F",
+     "rx": "0x07A9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -24801,10 +25630,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071C",
+     "rx": "0x0786"
+    }
+   ],
    "firstRead": "220000",
    "provenance": [
+    {
+     "can": "0x071C",
+     "rx": "0x0786",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -24815,10 +25659,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0764"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0764",
+     "rx": "0x07CE"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0764",
+     "rx": "0x07CE",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -24843,10 +25702,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x073B"
+   ],
+   "pairs": [
+    {
+     "tx": "0x073B",
+     "rx": "0x07A5"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073B",
+     "rx": "0x07A5",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -24857,10 +25731,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0742"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0742",
+     "rx": "0x07AC"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0742",
+     "rx": "0x07AC",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -24871,10 +25760,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0731"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0731",
+     "rx": "0x079B"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0731",
+     "rx": "0x079B",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -24997,10 +25901,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0727"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0727",
+     "rx": "0x0791"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0727",
+     "rx": "0x0791",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25012,6 +25931,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074F",
     "0x06FA",
     "0x06FB",
     "0x06FC",
@@ -25019,6 +25939,10 @@
     "0x07E2"
    ],
    "pairs": [
+    {
+     "tx": "0x074F",
+     "rx": "0x07B9"
+    },
     {
      "tx": "0x06FA",
      "rx": "0x0702"
@@ -25042,6 +25966,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074F",
+     "rx": "0x07B9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FA",
      "sources": [
@@ -25079,10 +26011,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0760"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0760",
+     "rx": "0x07CA"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0760",
+     "rx": "0x07CA",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25121,10 +26068,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0724"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0724",
+     "rx": "0x078E"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0724",
+     "rx": "0x078E",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25135,10 +26097,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071B"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071B",
+     "rx": "0x0785"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x071B",
+     "rx": "0x0785",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25149,10 +26126,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0767"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0767",
+     "rx": "0x07D1"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0767",
+     "rx": "0x07D1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25178,6 +26170,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0749",
     "0x06DD",
     "0x06DE",
     "0x06E2",
@@ -25193,6 +26186,10 @@
     "0x07BF"
    ],
    "pairs": [
+    {
+     "tx": "0x0749",
+     "rx": "0x07B3"
+    },
     {
      "tx": "0x06DD",
      "rx": "0x06E5"
@@ -25248,6 +26245,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0749",
+     "rx": "0x07B3",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DD",
      "sources": [
@@ -25505,6 +26510,14 @@
    "provenance": [
     {
      "can": "0x07E0",
+     "rx": "0x07E8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
+    {
+     "can": "0x07E0",
      "sources": [
       "crossgen"
      ]
@@ -25607,6 +26620,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x07E1",
     "0x06E7",
     "0x073C",
     "0x073D",
@@ -25616,6 +26630,10 @@
     "0x07B6"
    ],
    "pairs": [
+    {
+     "tx": "0x07E1",
+     "rx": "0x07E9"
+    },
     {
      "tx": "0x06E7",
      "rx": "0x06EF"
@@ -25647,6 +26665,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x07E1",
+     "rx": "0x07E9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06E7",
      "sources": [
@@ -25697,6 +26723,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0715",
     "0x06E7",
     "0x073C",
     "0x073D",
@@ -25706,6 +26733,10 @@
     "0x07B6"
    ],
    "pairs": [
+    {
+     "tx": "0x0715",
+     "rx": "0x077F"
+    },
     {
      "tx": "0x06E7",
      "rx": "0x06EF"
@@ -25737,6 +26768,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0715",
+     "rx": "0x077F",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06E7",
      "sources": [
@@ -25786,10 +26825,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0713"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0713",
+     "rx": "0x077D"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0713",
+     "rx": "0x077D",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25801,9 +26855,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0746",
     "0x07F1"
    ],
    "pairs": [
+    {
+     "tx": "0x0746",
+     "rx": "0x07B0"
+    },
     {
      "tx": "0x07F1",
      "rx": "0x07F9"
@@ -25811,6 +26870,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0746",
+     "rx": "0x07B0",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07F1",
      "sources": [
@@ -25824,10 +26891,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0714"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0714",
+     "rx": "0x077E"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0714",
+     "rx": "0x077E",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -25839,6 +26921,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0710",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -25846,6 +26929,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x0710",
+     "rx": "0x077A"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -25869,6 +26956,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0710",
+     "rx": "0x077A",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -25921,6 +27016,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070E",
     "0x06DE",
     "0x06EB",
     "0x06ED",
@@ -25935,6 +27031,10 @@
     "0x07B0"
    ],
    "pairs": [
+    {
+     "tx": "0x070E",
+     "rx": "0x0778"
+    },
     {
      "tx": "0x06DE",
      "rx": "0x06E6"
@@ -25986,6 +27086,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070E",
+     "rx": "0x0778",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DE",
      "sources": [
@@ -26225,9 +27333,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0723",
     "0x07F1"
    ],
    "pairs": [
+    {
+     "tx": "0x0723",
+     "rx": "0x078D"
+    },
     {
      "tx": "0x07F1",
      "rx": "0x07F9"
@@ -26235,6 +27348,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0723",
+     "rx": "0x078D",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07F1",
      "sources": [
@@ -26248,10 +27369,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x070C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x070C",
+     "rx": "0x0776"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070C",
+     "rx": "0x0776",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26263,6 +27399,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x070B",
     "0x074F",
     "0x06DD",
     "0x06E3",
@@ -26270,6 +27407,10 @@
     "0x07C0"
    ],
    "pairs": [
+    {
+     "tx": "0x070B",
+     "rx": "0x0775"
+    },
     {
      "tx": "0x074F",
      "rx": "0x0757"
@@ -26293,6 +27434,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x070B",
+     "rx": "0x0775",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x074F",
      "sources": [
@@ -26331,12 +27480,17 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0757",
     "0x06ED",
     "0x0758",
     "0x075C",
     "0x07BB"
    ],
    "pairs": [
+    {
+     "tx": "0x0757",
+     "rx": "0x07C1"
+    },
     {
      "tx": "0x06ED",
      "rx": "0x06F5"
@@ -26356,6 +27510,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0757",
+     "rx": "0x07C1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06ED",
      "sources": [
@@ -26388,9 +27550,14 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x076F",
     "0x07CF"
    ],
    "pairs": [
+    {
+     "tx": "0x076F",
+     "rx": "0x07D9"
+    },
     {
      "tx": "0x07CF",
      "rx": "0x07D7"
@@ -26398,6 +27565,14 @@
    ],
    "firstRead": "220000",
    "provenance": [
+    {
+     "can": "0x076F",
+     "rx": "0x07D9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x07CF",
      "sources": [
@@ -26646,10 +27821,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0753"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0753",
+     "rx": "0x07BD"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0753",
+     "rx": "0x07BD",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26660,10 +27850,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0712"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0712",
+     "rx": "0x077C"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0712",
+     "rx": "0x077C",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26675,6 +27880,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0773",
     "0x06DD",
     "0x06DE",
     "0x06E2",
@@ -26690,6 +27896,10 @@
     "0x07BF"
    ],
    "pairs": [
+    {
+     "tx": "0x0773",
+     "rx": "0x07DD"
+    },
     {
      "tx": "0x06DD",
      "rx": "0x06E5"
@@ -26745,6 +27955,14 @@
    ],
    "firstRead": "220002",
    "provenance": [
+    {
+     "can": "0x0773",
+     "rx": "0x07DD",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DD",
      "sources": [
@@ -26830,10 +28048,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0769"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0769",
+     "rx": "0x07D3"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0769",
+     "rx": "0x07D3",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26844,10 +28077,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071E",
+     "rx": "0x0788"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x071E",
+     "rx": "0x0788",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26858,10 +28106,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0747"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0747",
+     "rx": "0x07B1"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0747",
+     "rx": "0x07B1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26872,10 +28135,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x076A"
+   ],
+   "pairs": [
+    {
+     "tx": "0x076A",
+     "rx": "0x07D4"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x076A",
+     "rx": "0x07D4",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -26900,10 +28178,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x074E"
+   ],
+   "pairs": [
+    {
+     "tx": "0x074E",
+     "rx": "0x07B8"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074E",
+     "rx": "0x07B8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -27507,6 +28800,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074C",
     "0x06FB",
     "0x06FC",
     "0x06FD",
@@ -27516,6 +28810,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074C",
+     "rx": "0x07B6"
+    },
     {
      "tx": "0x06FB",
      "rx": "0x0703"
@@ -27547,6 +28845,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074C",
+     "rx": "0x07B6",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FB",
      "sources": [
@@ -27597,6 +28903,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074D",
     "0x06FB",
     "0x06FC",
     "0x06FD",
@@ -27606,6 +28913,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074D",
+     "rx": "0x07B7"
+    },
     {
      "tx": "0x06FB",
      "rx": "0x0703"
@@ -27637,6 +28948,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074D",
+     "rx": "0x07B7",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FB",
      "sources": [
@@ -27686,10 +29005,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0744"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0744",
+     "rx": "0x07AE"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0744",
+     "rx": "0x07AE",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -27701,6 +29035,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074A",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -27714,6 +29049,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074A",
+     "rx": "0x07B4"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -27761,6 +29100,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074A",
+     "rx": "0x07B4",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -27835,6 +29182,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074B",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -27848,6 +29196,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x074B",
+     "rx": "0x07B5"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -27895,6 +29247,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074B",
+     "rx": "0x07B5",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -27969,6 +29329,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x073E",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -27982,6 +29343,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x073E",
+     "rx": "0x07A8"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -28029,6 +29394,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073E",
+     "rx": "0x07A8",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -28103,6 +29476,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x073F",
     "0x06EB",
     "0x06ED",
     "0x0724",
@@ -28116,6 +29490,10 @@
     "0x07E7"
    ],
    "pairs": [
+    {
+     "tx": "0x073F",
+     "rx": "0x07A9"
+    },
     {
      "tx": "0x06EB",
      "rx": "0x06F3"
@@ -28163,6 +29541,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073F",
+     "rx": "0x07A9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06EB",
      "sources": [
@@ -28264,10 +29650,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071C"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071C",
+     "rx": "0x0786"
+    }
+   ],
    "firstRead": "220000",
    "provenance": [
+    {
+     "can": "0x071C",
+     "rx": "0x0786",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28278,10 +29679,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0764"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0764",
+     "rx": "0x07CE"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0764",
+     "rx": "0x07CE",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28292,10 +29708,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x073B"
+   ],
+   "pairs": [
+    {
+     "tx": "0x073B",
+     "rx": "0x07A5"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x073B",
+     "rx": "0x07A5",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28306,10 +29737,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0742"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0742",
+     "rx": "0x07AC"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0742",
+     "rx": "0x07AC",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28320,10 +29766,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0731"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0731",
+     "rx": "0x079B"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0731",
+     "rx": "0x079B",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28334,10 +29795,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0727"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0727",
+     "rx": "0x0791"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0727",
+     "rx": "0x0791",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28349,6 +29825,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x074F",
     "0x06FA",
     "0x06FB",
     "0x06FC",
@@ -28356,6 +29833,10 @@
     "0x07E2"
    ],
    "pairs": [
+    {
+     "tx": "0x074F",
+     "rx": "0x07B9"
+    },
     {
      "tx": "0x06FA",
      "rx": "0x0702"
@@ -28379,6 +29860,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x074F",
+     "rx": "0x07B9",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06FA",
      "sources": [
@@ -28416,10 +29905,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0760"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0760",
+     "rx": "0x07CA"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0760",
+     "rx": "0x07CA",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28430,10 +29934,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0724"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0724",
+     "rx": "0x078E"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0724",
+     "rx": "0x078E",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28444,10 +29963,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x071B"
+   ],
+   "pairs": [
+    {
+     "tx": "0x071B",
+     "rx": "0x0785"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x071B",
+     "rx": "0x0785",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28638,10 +30172,25 @@
    "n": null,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
+   "cands": [
+    "0x0767"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0767",
+     "rx": "0x07D1"
+    }
+   ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0767",
+     "rx": "0x07D1",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
     }
@@ -28681,6 +30230,7 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
+    "0x0749",
     "0x06DD",
     "0x06DE",
     "0x06E2",
@@ -28696,6 +30246,10 @@
     "0x07BF"
    ],
    "pairs": [
+    {
+     "tx": "0x0749",
+     "rx": "0x07B3"
+    },
     {
      "tx": "0x06DD",
      "rx": "0x06E5"
@@ -28751,6 +30305,14 @@
    ],
    "firstRead": null,
    "provenance": [
+    {
+     "can": "0x0749",
+     "rx": "0x07B3",
+     "sources": [
+      "commCat10"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）"
+    },
     {
      "can": "0x06DD",
      "sources": [
