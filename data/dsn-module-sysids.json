@@ -1,0 +1,2831 @@
+{
+ "schemaVersion": 1,
+ "source": "DSN.BIN 头 22 项索引 + 各平台 payloadOff 模块索引表 + PORSCHE_SYS_DATA.BIN 根表(sysdata-root-table.json)",
+ "method": "模块表记录 [u8 sysIdLow][u16 nlen][name\\0][u32 recPtr][u16 flag]；sysIdLow 与权威 sysIds 低字节做精确集合比对；单 type 平台得唯一 sysId，多 type 平台只记候选集（高字节需运行时 VIN/识别应答，不猜）",
+ "evidence": "id ≡ SYS_DATA root type ≡ sysId 高字节（platform-type-map.json 与 9 个已定案平台交叉验证）；模块名与 *_ALLDATA.BIN 顶级目录逐条吻合（9X6 29/29、9X7 41/41、CS1 15/17、E1 47/48）",
+ "boundary": "9X6/9X7 是多 type 平台，包内静态表不存在「模块记录 → 所属 type/高字节」字段；模块 flag 是位标志、ALLDATA dataOff 是纯偏移、变体数据块是编码键串、sysDataOff u32 与 ALLDATA/DSN 偏移精确交集 0，均已逐一排除",
+ "index": [
+  {
+   "id": 1,
+   "name": "9x6",
+   "payloadOff": 239087
+  },
+  {
+   "id": 2,
+   "name": "9x6",
+   "payloadOff": 239087
+  },
+  {
+   "id": 3,
+   "name": "E1",
+   "payloadOff": 207084
+  },
+  {
+   "id": 4,
+   "name": "9x7",
+   "payloadOff": 254751
+  },
+  {
+   "id": 5,
+   "name": "9x7",
+   "payloadOff": 253886
+  },
+  {
+   "id": 6,
+   "name": "9x7",
+   "payloadOff": 254751
+  },
+  {
+   "id": 7,
+   "name": "0",
+   "payloadOff": 0
+  },
+  {
+   "id": 8,
+   "name": "0",
+   "payloadOff": 0
+  },
+  {
+   "id": 9,
+   "name": "0",
+   "payloadOff": 0
+  },
+  {
+   "id": 10,
+   "name": "0",
+   "payloadOff": 0
+  },
+  {
+   "id": 11,
+   "name": "E2",
+   "payloadOff": 231
+  },
+  {
+   "id": 12,
+   "name": "G1",
+   "payloadOff": 57516
+  },
+  {
+   "id": 13,
+   "name": "9x1",
+   "payloadOff": 105356
+  },
+  {
+   "id": 14,
+   "name": "9x1",
+   "payloadOff": 105356
+  },
+  {
+   "id": 15,
+   "name": "cajun",
+   "payloadOff": 163687
+  },
+  {
+   "id": 16,
+   "name": "918s",
+   "payloadOff": 281640
+  },
+  {
+   "id": 17,
+   "name": "E3",
+   "payloadOff": 303493
+  },
+  {
+   "id": 18,
+   "name": "G2",
+   "payloadOff": 378099
+  },
+  {
+   "id": 19,
+   "name": "CS1",
+   "payloadOff": 443296
+  },
+  {
+   "id": 20,
+   "name": "992",
+   "payloadOff": 472522
+  },
+  {
+   "id": 21,
+   "name": "J1",
+   "payloadOff": 565111
+  },
+  {
+   "id": 22,
+   "name": "G3",
+   "payloadOff": 610274
+  }
+ ],
+ "platforms": {
+  "992": {
+   "dsnIndexId": 20,
+   "payloadOff": 472522,
+   "payloadOffHex": "0x735CA",
+   "types": [
+    "0x14"
+   ],
+   "rowCount": 74,
+   "uniqueCount": 56,
+   "multiTypeCount": 0,
+   "unresolvedCount": 14,
+   "ambiguousCount": 2,
+   "runtimeModules": {
+    "BV_EnginContrModul1UDS": "0x1401",
+    "BV_TransContrModulUDS": "0x1402",
+    "BV_AirbaUDS": "0x1404",
+    "BV_Brake1UDS": "0x1405",
+    "BV_DashBoardUDS": "0x1408",
+    "BV_GatewUDS": "0x1409",
+    "BV_ChassContrUDS": "0x1413",
+    "BV_CentrElectUDS": "0x1420",
+    "BV_CentrModulComfoSysteUDS": "0x1423",
+    "BV_ContrModulForSunroUDS": "0x142d",
+    "BV_AllWheelContrUDS": "0x1435",
+    "BV_SteerColumElectUDS": "0x1436",
+    "BV_TirePressMonit1UDS": "0x1437",
+    "BV_AdaptCruisContrUDS": "0x1440",
+    "BV_SoundSysteUDS": "0x1441",
+    "BV_GearShiftContrModulUDS": "0x1444",
+    "BV_SteerAssisUDS": "0x1445",
+    "BV_InforContrUnit1UDS": "0x1446",
+    "BV_AnaloClockUDS": "0x1449",
+    "BV_CamerSysteRearViewUDS": "0x1451",
+    "BV_BatteMonitContrModulUDS": "0x145e",
+    "BV_LaneChangAssisUDS": "0x145f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1460",
+    "BV_BedienSG_vo_MSB": "0x1466",
+    "BV_LightContrLeft2UDS": "0x146a",
+    "BV_LightContrRight2UDS": "0x146b",
+    "BV_SeatAdjusDriveSideUDS": "0x146c",
+    "BV_SeatAdjusPasseSideUDS": "0x146d",
+    "BV_DoorElectDriveSideUDS": "0x1479",
+    "BV_DoorElectPasseSideUDS": "0x147a",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1481",
+    "BV_CeiliLightModulUDS": "0x1483",
+    "BV_BrakeBoostUDS": "0x1486",
+    "BV_FreshAirBloweFrontUDS": "0x1489",
+    "BV_SteerColumLockiUDS": "0x148b",
+    "BV_ElectAdjusSteerColumUDS": "0x148c",
+    "BV_NightVisioUDS": "0x148d",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x148f",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1491",
+    "BV_ContrUnitForWiperMotorUDS": "0x1492",
+    "BV_AerodContrUnitUDS": "0x1493",
+    "BV_VehicTrackSysteUDS": "0x1494",
+    "BV_TelemCommuUnitUDS": "0x14a2",
+    "BV_ElectRoofContrUDS": "0x14ab",
+    "BV_FrontAxleLiftSysteUDS": "0x14ac",
+    "BV_DynamAssemMountUDS": "0x14ad",
+    "BV_AntenContrModulUDS": "0x1463",
+    "BV_Charg1MobilDevicUDS": "0x14b1",
+    "BV_BatteEnergContrModulUDS": "0x1442",
+    "BV_BatteJunctBoxUDS": "0x149e",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x14b9",
+    "BV_BeameModulMatriHeadlRightUDS": "0x14b8",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1458",
+    "BV_DCDCConveContrModulHVUDS": "0x14b4",
+    "BV_DriveMotorContrModulUDS": "0x1443",
+    "BV_ThermManagUDS": "0x1488"
+   },
+   "modules": {
+    "BV_EnginContrModul1UDS": "0x1401",
+    "BV_TransContrModulUDS": "0x1402",
+    "BV_AirbaUDS": "0x1404",
+    "BV_Brake1UDS": "0x1405",
+    "BV_DashBoardUDS": "0x1408",
+    "BV_GatewUDS": "0x1409",
+    "BV_ChassContrUDS": "0x1413",
+    "BV_CentrElectUDS": "0x1420",
+    "BV_CentrModulComfoSysteUDS": "0x1423",
+    "BV_ContrModulForSunroUDS": "0x142d",
+    "BV_AllWheelContrUDS": "0x1435",
+    "BV_SteerColumElectUDS": "0x1436",
+    "BV_TirePressMonit1UDS": "0x1437",
+    "BV_AdaptCruisContrUDS": "0x1440",
+    "BV_SoundSysteUDS": "0x1441",
+    "BV_GearShiftContrModulUDS": "0x1444",
+    "BV_SteerAssisUDS": "0x1445",
+    "BV_InforContrUnit1UDS": "0x1446",
+    "BV_AnaloClockUDS": "0x1449",
+    "BV_CamerSysteRearViewUDS": "0x1451",
+    "BV_BatteMonitContrModulUDS": "0x145e",
+    "BV_LaneChangAssisUDS": "0x145f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1460",
+    "BV_BedienSG_vo_MSB": "0x1466",
+    "BV_LightContrLeft2UDS": "0x146a",
+    "BV_LightContrRight2UDS": "0x146b",
+    "BV_SeatAdjusDriveSideUDS": "0x146c",
+    "BV_SeatAdjusPasseSideUDS": "0x146d",
+    "BV_DoorElectDriveSideUDS": "0x1479",
+    "BV_DoorElectPasseSideUDS": "0x147a",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1481",
+    "BV_CeiliLightModulUDS": "0x1483",
+    "BV_BrakeBoostUDS": "0x1486",
+    "BV_FreshAirBloweFrontUDS": "0x1489",
+    "BV_SteerColumLockiUDS": "0x148b",
+    "BV_ElectAdjusSteerColumUDS": "0x148c",
+    "BV_NightVisioUDS": "0x148d",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x148f",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1491",
+    "BV_ContrUnitForWiperMotorUDS": "0x1492",
+    "BV_AerodContrUnitUDS": "0x1493",
+    "BV_VehicTrackSysteUDS": "0x1494",
+    "BV_TelemCommuUnitUDS": "0x14a2",
+    "BV_ElectRoofContrUDS": "0x14ab",
+    "BV_FrontAxleLiftSysteUDS": "0x14ac",
+    "BV_DynamAssemMountUDS": "0x14ad",
+    "BV_AntenContrModulUDS": "0x1463",
+    "BV_Charg1MobilDevicUDS": "0x14b1",
+    "BV_BatteEnergContrModulUDS": "0x1442",
+    "BV_BatteJunctBoxUDS": "0x149e",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x14b9",
+    "BV_BeameModulMatriHeadlRightUDS": "0x14b8",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1458",
+    "BV_DCDCConveContrModulHVUDS": "0x14b4",
+    "BV_DriveMotorContrModulUDS": "0x1443",
+    "BV_ThermManagUDS": "0x1488"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "BV_RearAxleSteerUDS": [
+     "0x14ae",
+     "0x14af"
+    ],
+    "BV_RollContrSysteUDS": [
+     "0x1464",
+     "0x1465"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "BV_MultiFunctSteerWheelContrModulUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_Senso1WetDetecUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_Senso2WetDetecUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ValveBlock1InPasseSideFrontSeatUDS",
+     "low": 111,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ValveBlock1InDriveSideFrontSeatUDS",
+     "low": 110,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ActuaForExterNoiseUDS",
+     "low": 130,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_AirCondiComprSubUDS",
+     "low": 72,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_CatalHeatiUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ContrUnitHandsOnDetecSteerWheelUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ElectCharg2UDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ElectChargUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_InfotInterUDS",
+     "low": 178,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_TelemDiagnContrUnitUDS",
+     "low": 179,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_WaterContrUnitUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "9x6": {
+   "dsnIndexId": 1,
+   "payloadOff": 239087,
+   "payloadOffHex": "0x3A5EF",
+   "types": [
+    "0x01",
+    "0x02"
+   ],
+   "rowCount": 29,
+   "uniqueCount": 3,
+   "multiTypeCount": 17,
+   "unresolvedCount": 9,
+   "ambiguousCount": 0,
+   "runtimeModules": {},
+   "modules": {
+    "9x6_TargaDach": "0x0127",
+    "9x6_UEB": "0x0124",
+    "9x6_Verdeck": "0x0127"
+   },
+   "multiType": {
+    "9x6_ABS": {
+     "low": 3,
+     "candidates": [
+      "0x0103",
+      "0x0203"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Airbag": {
+     "low": 4,
+     "candidates": [
+      "0x0104",
+      "0x0204"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Alarmanlage": {
+     "low": 22,
+     "candidates": [
+      "0x0116",
+      "0x0216"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_DME_ME7_11_M": {
+     "low": 1,
+     "candidates": [
+      "0x0101",
+      "0x0201"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_DME_ME7_11_S": {
+     "low": 1,
+     "candidates": [
+      "0x0101",
+      "0x0201"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_DME_ME7_2": {
+     "low": 1,
+     "candidates": [
+      "0x0101",
+      "0x0201"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_DME_ME7_8": {
+     "low": 1,
+     "candidates": [
+      "0x0101",
+      "0x0201"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_DME_M_5_2_2": {
+     "low": 1,
+     "candidates": [
+      "0x0101",
+      "0x0201"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Klimaanlage": {
+     "low": 7,
+     "candidates": [
+      "0x0107",
+      "0x0207"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Klima_GT": {
+     "low": 7,
+     "candidates": [
+      "0x0107",
+      "0x0207"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Kombi": {
+     "low": 8,
+     "candidates": [
+      "0x0108",
+      "0x0208"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_PSM": {
+     "low": 3,
+     "candidates": [
+      "0x0103",
+      "0x0203"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_SitzMemo": {
+     "low": 38,
+     "candidates": [
+      "0x0126",
+      "0x0226"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Tiptronic_G40G50": {
+     "low": 2,
+     "candidates": [
+      "0x0102",
+      "0x0202"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_Tiptronic_GTOP": {
+     "low": 2,
+     "candidates": [
+      "0x0102",
+      "0x0202"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_lwr": {
+     "low": 41,
+     "candidates": [
+      "0x0129",
+      "0x0229"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "9x6_pdc": {
+     "low": 18,
+     "candidates": [
+      "0x0112",
+      "0x0212"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    }
+   },
+   "ambiguous": {},
+   "unresolved": [
+    {
+     "name": "9x6_PCM1",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "9x6_RDK",
+     "low": 25,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_bose",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_cd_navi",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_cdc",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_gw",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_mmi",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_sbs",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_telefon",
+     "low": 70,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "E1": {
+   "dsnIndexId": 3,
+   "payloadOff": 207084,
+   "payloadOffHex": "0x328EC",
+   "types": [
+    "0x03"
+   ],
+   "rowCount": 48,
+   "uniqueCount": 35,
+   "multiTypeCount": 0,
+   "unresolvedCount": 12,
+   "ambiguousCount": 0,
+   "runtimeModules": {
+    "E1_EDC17": "0x0301",
+    "E1_ahsg": "0x032c",
+    "E1_airbag": "0x0304",
+    "E1_aws": "0x031b",
+    "E1_bsg": "0x030b",
+    "E1_gateway_can": "0x0309",
+    "E1_gateway_kline": "0x0309",
+    "E1_grda": "0x032d",
+    "E1_heck": "0x0318",
+    "E1_heck_kl": "0x031c",
+    "E1_kessy": "0x0306",
+    "E1_klima": "0x0307",
+    "E1_kombi": "0x0308",
+    "E1_komp": "0x031a",
+    "E1_lenk": "0x030c",
+    "E1_lssg": "0x0317",
+    "E1_lwr_links": "0x032f",
+    "E1_lwr_rechts": "0x0330",
+    "E1_med91_me711": "0x0301",
+    "E1_niveau": "0x0313",
+    "E1_pcm2_gw": "0x0346",
+    "E1_pcm2_mmi": "0x0346",
+    "E1_pdc": "0x0312",
+    "E1_pdcc_ors": "0x032b",
+    "E1_psm": "0x0305",
+    "E1_qssg": "0x032a",
+    "E1_rdk": "0x0319",
+    "E1_sdi41": "0x0301",
+    "E1_sitzb": "0x0315",
+    "E1_sitzf": "0x0314",
+    "E1_swsg_links": "0x030e",
+    "E1_swsg_rechts": "0x030f",
+    "E1_tiptrnc": "0x0302",
+    "E1_wisch": "0x030d",
+    "E1_wzh": "0x032e"
+   },
+   "modules": {
+    "E1_EDC17": "0x0301",
+    "E1_ahsg": "0x032c",
+    "E1_airbag": "0x0304",
+    "E1_aws": "0x031b",
+    "E1_bsg": "0x030b",
+    "E1_gateway_can": "0x0309",
+    "E1_gateway_kline": "0x0309",
+    "E1_grda": "0x032d",
+    "E1_heck": "0x0318",
+    "E1_heck_kl": "0x031c",
+    "E1_kessy": "0x0306",
+    "E1_klima": "0x0307",
+    "E1_kombi": "0x0308",
+    "E1_komp": "0x031a",
+    "E1_lenk": "0x030c",
+    "E1_lssg": "0x0317",
+    "E1_lwr_links": "0x032f",
+    "E1_lwr_rechts": "0x0330",
+    "E1_med91_me711": "0x0301",
+    "E1_niveau": "0x0313",
+    "E1_pcm2_gw": "0x0346",
+    "E1_pcm2_mmi": "0x0346",
+    "E1_pdc": "0x0312",
+    "E1_pdcc_ors": "0x032b",
+    "E1_psm": "0x0305",
+    "E1_qssg": "0x032a",
+    "E1_rdk": "0x0319",
+    "E1_sdi41": "0x0301",
+    "E1_sitzb": "0x0315",
+    "E1_sitzf": "0x0314",
+    "E1_swsg_links": "0x030e",
+    "E1_swsg_rechts": "0x030f",
+    "E1_tiptrnc": "0x0302",
+    "E1_wisch": "0x030d",
+    "E1_wzh": "0x032e"
+   },
+   "multiType": {},
+   "ambiguous": {},
+   "unresolved": [
+    {
+     "name": "E1_lwr_neu",
+     "low": 49,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_bose",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_cd_navi",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_cdc",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_dvd_navi",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_satradio",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_sbs",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_sbs2",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_telefon",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "E1_pcm2_tvtuner",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "Head_Unit",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "TVTuner",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "9x7": {
+   "dsnIndexId": 4,
+   "payloadOff": 254751,
+   "payloadOffHex": "0x3E31F",
+   "types": [
+    "0x04",
+    "0x05",
+    "0x06"
+   ],
+   "rowCount": 41,
+   "uniqueCount": 3,
+   "multiTypeCount": 37,
+   "unresolvedCount": 1,
+   "ambiguousCount": 0,
+   "runtimeModules": {},
+   "modules": {
+    "_9x7_ptm": "0x0525",
+    "_9x7_targa": "0x0528",
+    "_9x7_vdst": "0x0527"
+   },
+   "multiType": {
+    "Dynamische_Aggregatelagerung": {
+     "low": 192,
+     "candidates": [
+      "0x05c0",
+      "0x06c0"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Getriebesteuerung_PDK": {
+     "low": 2,
+     "candidates": [
+      "0x0402",
+      "0x0502",
+      "0x0602"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Head_Unit": {
+     "low": 10,
+     "candidates": [
+      "0x050a",
+      "0x060a"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "TVTuner": {
+     "low": 187,
+     "candidates": [
+      "0x05bb",
+      "0x06bb"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Waehlhebel": {
+     "low": 68,
+     "candidates": [
+      "0x0544",
+      "0x0644"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_CDR24": {
+     "low": 10,
+     "candidates": [
+      "0x050a",
+      "0x060a"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_airbag": {
+     "low": 17,
+     "candidates": [
+      "0x0411",
+      "0x0511",
+      "0x0611"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_aws": {
+     "low": 27,
+     "candidates": [
+      "0x041b",
+      "0x051b",
+      "0x061b"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_bde": {
+     "low": 1,
+     "candidates": [
+      "0x0401",
+      "0x0501",
+      "0x0601"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_bsg": {
+     "low": 11,
+     "candidates": [
+      "0x040b",
+      "0x050b",
+      "0x060b"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_bug": {
+     "low": 32,
+     "candidates": [
+      "0x0420",
+      "0x0520",
+      "0x0620"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_dme_me78": {
+     "low": 1,
+     "candidates": [
+      "0x0401",
+      "0x0501",
+      "0x0601"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_dme_me781": {
+     "low": 1,
+     "candidates": [
+      "0x0401",
+      "0x0501",
+      "0x0601"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_gateway": {
+     "low": 9,
+     "candidates": [
+      "0x0409",
+      "0x0509",
+      "0x0609"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_heck": {
+     "low": 35,
+     "candidates": [
+      "0x0423",
+      "0x0523",
+      "0x0623"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_klima": {
+     "low": 7,
+     "candidates": [
+      "0x0407",
+      "0x0507",
+      "0x0607"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_kombi": {
+     "low": 8,
+     "candidates": [
+      "0x0408",
+      "0x0508",
+      "0x0608"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_kurve": {
+     "low": 41,
+     "candidates": [
+      "0x0529",
+      "0x0629"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_lenk": {
+     "low": 12,
+     "candidates": [
+      "0x040c",
+      "0x050c",
+      "0x060c"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_park": {
+     "low": 18,
+     "candidates": [
+      "0x0412",
+      "0x0512",
+      "0x0612"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pas": {
+     "low": 33,
+     "candidates": [
+      "0x0421",
+      "0x0521",
+      "0x0621"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pasm": {
+     "low": 34,
+     "candidates": [
+      "0x0422",
+      "0x0522",
+      "0x0622"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pcm2_amp": {
+     "low": 65,
+     "candidates": [
+      "0x0541",
+      "0x0641"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pcm2_cdc": {
+     "low": 188,
+     "candidates": [
+      "0x05bc",
+      "0x06bc"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pcm2_mmi": {
+     "low": 189,
+     "candidates": [
+      "0x05bd",
+      "0x06bd"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pcm2_navi": {
+     "low": 190,
+     "candidates": [
+      "0x05be",
+      "0x06be"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pcm2_tel": {
+     "low": 191,
+     "candidates": [
+      "0x05bf",
+      "0x06bf"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_pdc": {
+     "low": 18,
+     "candidates": [
+      "0x0412",
+      "0x0512",
+      "0x0612"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_psm": {
+     "low": 5,
+     "candidates": [
+      "0x0405",
+      "0x0505",
+      "0x0605"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_rdk": {
+     "low": 25,
+     "candidates": [
+      "0x0419",
+      "0x0519",
+      "0x0619"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_sitz": {
+     "low": 38,
+     "candidates": [
+      "0x0426",
+      "0x0526",
+      "0x0626"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_tiptrnc_987": {
+     "low": 2,
+     "candidates": [
+      "0x0402",
+      "0x0502",
+      "0x0602"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_tiptrnc_C7": {
+     "low": 2,
+     "candidates": [
+      "0x0402",
+      "0x0502",
+      "0x0602"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_tiptrnc_997": {
+     "low": 2,
+     "candidates": [
+      "0x0402",
+      "0x0502",
+      "0x0602"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_tuerb": {
+     "low": 31,
+     "candidates": [
+      "0x041f",
+      "0x051f",
+      "0x061f"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_tuerf": {
+     "low": 30,
+     "candidates": [
+      "0x041e",
+      "0x051e",
+      "0x061e"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "_9x7_uhr": {
+     "low": 29,
+     "candidates": [
+      "0x041d",
+      "0x051d",
+      "0x061d"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    }
+   },
+   "ambiguous": {},
+   "unresolved": [
+    {
+     "name": "_9x7_pcm2_gw",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "E2": {
+   "dsnIndexId": 11,
+   "payloadOff": 231,
+   "payloadOffHex": "0xE7",
+   "types": [
+    "0x0B"
+   ],
+   "rowCount": 65,
+   "uniqueCount": 54,
+   "multiTypeCount": 0,
+   "unresolvedCount": 1,
+   "ambiguousCount": 5,
+   "runtimeModules": {
+    "ACC3": "0x0b40",
+    "Airbag": "0x0b04",
+    "Allrad": "0x0b35",
+    "Anhaenger": "0x0b54",
+    "BCM_hinten": "0x0b23",
+    "BCM_vorne": "0x0b20",
+    "BKE": "0x0b07",
+    "BMS2": "0x0b42",
+    "BV_ActuaForExterNoiseUDS": "0x0b82",
+    "BV_ActuaForStrucBorneSoundUDS": "0x0b57",
+    "BV_AirCondiComprUDS": "0x0b48",
+    "BV_BatteChargContrModulUDS": "0x0b70",
+    "BV_BatteEnergContrModulUDS": "0x0b42",
+    "BV_DriveMotorContrModulUDS_A01": "0x0b43",
+    "BV_ECM30TFS": "0x0b01",
+    "BV_ECM30TNF": "0x0b01",
+    "BV_ECM30_GEN2_TNF": "0x0b01",
+    "BV_ECM36FSI": "0x0b01",
+    "BV_ECM_UDS": "0x0b01",
+    "BV_InforContrUnit1UDS": "0x0b46",
+    "BV_MediaPlayePosit1UDS": "0x0b80",
+    "BV_RealTopView2": "0x0b51",
+    "BV_SoundSysteUDS": "0x0b41",
+    "BV_TVTunerUDS": "0x0b4b",
+    "BV_TrailFunctUDS": "0x0b54",
+    "BV_TransContrModulUDS": "0x0b02",
+    "CAN_CAN_Gateway": "0x0b09",
+    "DME_BDE_Continental": "0x0b01",
+    "DME_SIMOS_30_TFSI": "0x0b01",
+    "EPB": "0x0b32",
+    "ERA_GLONASS": "0x0ba5",
+    "ESP_Colorado": "0x0b05",
+    "Frontkamera": "0x0b4a",
+    "Head_Unit": "0x0b46",
+    "Heckklappe": "0x0b34",
+    "Kombiinstrument": "0x0b08",
+    "Kompass": "0x0b49",
+    "Lenkhilfe": "0x0b45",
+    "Lenkstockschalter": "0x0b36",
+    "PASM": "0x0b13",
+    "PDC": "0x0b12",
+    "PDCC": "0x0b2b",
+    "Quersperre": "0x0b53",
+    "RDK": "0x0b37",
+    "RDK3": "0x0b37",
+    "Rueckfahrkamera": "0x0b51",
+    "Rueckfahrkamera_II": "0x0b51",
+    "SCHEINWERFER": "0x0b58",
+    "SWA": "0x0b4d",
+    "SWA2": "0x0b4d",
+    "TVTuner": "0x0b4b",
+    "Verstaerker": "0x0b41",
+    "Zusatzheizung": "0x0b55",
+    "Zusatzinstrument": "0x0b1d"
+   },
+   "modules": {
+    "ACC3": "0x0b40",
+    "Airbag": "0x0b04",
+    "Allrad": "0x0b35",
+    "Anhaenger": "0x0b54",
+    "BCM_hinten": "0x0b23",
+    "BCM_vorne": "0x0b20",
+    "BKE": "0x0b07",
+    "BMS2": "0x0b42",
+    "BV_ActuaForExterNoiseUDS": "0x0b82",
+    "BV_ActuaForStrucBorneSoundUDS": "0x0b57",
+    "BV_AirCondiComprUDS": "0x0b48",
+    "BV_BatteChargContrModulUDS": "0x0b70",
+    "BV_BatteEnergContrModulUDS": "0x0b42",
+    "BV_DriveMotorContrModulUDS_A01": "0x0b43",
+    "BV_ECM30TFS": "0x0b01",
+    "BV_ECM30TNF": "0x0b01",
+    "BV_ECM30_GEN2_TNF": "0x0b01",
+    "BV_ECM36FSI": "0x0b01",
+    "BV_ECM_UDS": "0x0b01",
+    "BV_InforContrUnit1UDS": "0x0b46",
+    "BV_MediaPlayePosit1UDS": "0x0b80",
+    "BV_RealTopView2": "0x0b51",
+    "BV_SoundSysteUDS": "0x0b41",
+    "BV_TVTunerUDS": "0x0b4b",
+    "BV_TrailFunctUDS": "0x0b54",
+    "BV_TransContrModulUDS": "0x0b02",
+    "CAN_CAN_Gateway": "0x0b09",
+    "DME_BDE_Continental": "0x0b01",
+    "DME_SIMOS_30_TFSI": "0x0b01",
+    "EPB": "0x0b32",
+    "ERA_GLONASS": "0x0ba5",
+    "ESP_Colorado": "0x0b05",
+    "Frontkamera": "0x0b4a",
+    "Head_Unit": "0x0b46",
+    "Heckklappe": "0x0b34",
+    "Kombiinstrument": "0x0b08",
+    "Kompass": "0x0b49",
+    "Lenkhilfe": "0x0b45",
+    "Lenkstockschalter": "0x0b36",
+    "PASM": "0x0b13",
+    "PDC": "0x0b12",
+    "PDCC": "0x0b2b",
+    "Quersperre": "0x0b53",
+    "RDK": "0x0b37",
+    "RDK3": "0x0b37",
+    "Rueckfahrkamera": "0x0b51",
+    "Rueckfahrkamera_II": "0x0b51",
+    "SCHEINWERFER": "0x0b58",
+    "SWA": "0x0b4d",
+    "SWA2": "0x0b4d",
+    "TVTuner": "0x0b4b",
+    "Verstaerker": "0x0b41",
+    "Zusatzheizung": "0x0b55",
+    "Zusatzinstrument": "0x0b1d"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "SWSG_mit_AFS_ALWR": [
+     "0x0b30",
+     "0x0b2f"
+    ],
+    "Sitzsteuergeraet": [
+     "0x0b4e",
+     "0x0b4c"
+    ],
+    "TUER_HINTEN": [
+     "0x0b50",
+     "0x0b4f"
+    ],
+    "TUER_VORNE": [
+     "0x0b1f",
+     "0x0b1e"
+    ],
+    "BV_ECM42TDI": [
+     "0x0b01",
+     "0x0bb0"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "SCHEINWERFER_LED",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "G1": {
+   "dsnIndexId": 12,
+   "payloadOff": 57516,
+   "payloadOffHex": "0xE0AC",
+   "types": [
+    "0x0C"
+   ],
+   "rowCount": 51,
+   "uniqueCount": 42,
+   "multiTypeCount": 0,
+   "unresolvedCount": 1,
+   "ambiguousCount": 4,
+   "runtimeModules": {
+    "ACC3": "0x0c40",
+    "Airbag": "0x0c04",
+    "Anhaenger": "0x0c54",
+    "BCM_hinten": "0x0c23",
+    "BCM_vorne": "0x0c20",
+    "BKE": "0x0c07",
+    "BMS2": "0x0c42",
+    "BV_AirCondiComprUDS": "0x0c48",
+    "BV_BatteChargContrModulUDS": "0x0c70",
+    "BV_BatteEnergContrModulUDS": "0x0c42",
+    "BV_DriveMotorContrModulUDS_A01": "0x0c43",
+    "BV_ECM30TFS": "0x0c01",
+    "BV_ECM30_GEN2_TNF": "0x0c01",
+    "BV_TransContrModulUDS": "0x0c02",
+    "CAN_CAN_Gateway": "0x0c09",
+    "DME_BDE_Continental": "0x0c01",
+    "EPB": "0x0c32",
+    "Frontkamera": "0x0c4a",
+    "Getriebesteuerung_PDK": "0x0c02",
+    "Head_Unit": "0x0c46",
+    "Heckklappe": "0x0c34",
+    "Kombiinstrument": "0x0c08",
+    "Lenkhilfe": "0x0c45",
+    "Lenkstockschalter": "0x0c36",
+    "PASM": "0x0c13",
+    "PDC": "0x0c12",
+    "PDCC": "0x0c2b",
+    "PSM": "0x0c05",
+    "Quersperre": "0x0c53",
+    "RDK": "0x0c37",
+    "RDK3": "0x0c37",
+    "RealTopview": "0x0c51",
+    "Rueckfahrkamera": "0x0c51",
+    "Rueckfahrkamera_II": "0x0c51",
+    "SCHEINWERFER": "0x0c58",
+    "SWA2": "0x0c4d",
+    "SWA": "0x0c4d",
+    "TVTuner": "0x0c4b",
+    "Verstaerker": "0x0c41",
+    "Waehlhebel": "0x0c44",
+    "Zusatzheizung": "0x0c55",
+    "Zusatzinstrument": "0x0c1d"
+   },
+   "modules": {
+    "ACC3": "0x0c40",
+    "Airbag": "0x0c04",
+    "Anhaenger": "0x0c54",
+    "BCM_hinten": "0x0c23",
+    "BCM_vorne": "0x0c20",
+    "BKE": "0x0c07",
+    "BMS2": "0x0c42",
+    "BV_AirCondiComprUDS": "0x0c48",
+    "BV_BatteChargContrModulUDS": "0x0c70",
+    "BV_BatteEnergContrModulUDS": "0x0c42",
+    "BV_DriveMotorContrModulUDS_A01": "0x0c43",
+    "BV_ECM30TFS": "0x0c01",
+    "BV_ECM30_GEN2_TNF": "0x0c01",
+    "BV_TransContrModulUDS": "0x0c02",
+    "CAN_CAN_Gateway": "0x0c09",
+    "DME_BDE_Continental": "0x0c01",
+    "EPB": "0x0c32",
+    "Frontkamera": "0x0c4a",
+    "Getriebesteuerung_PDK": "0x0c02",
+    "Head_Unit": "0x0c46",
+    "Heckklappe": "0x0c34",
+    "Kombiinstrument": "0x0c08",
+    "Lenkhilfe": "0x0c45",
+    "Lenkstockschalter": "0x0c36",
+    "PASM": "0x0c13",
+    "PDC": "0x0c12",
+    "PDCC": "0x0c2b",
+    "PSM": "0x0c05",
+    "Quersperre": "0x0c53",
+    "RDK": "0x0c37",
+    "RDK3": "0x0c37",
+    "RealTopview": "0x0c51",
+    "Rueckfahrkamera": "0x0c51",
+    "Rueckfahrkamera_II": "0x0c51",
+    "SCHEINWERFER": "0x0c58",
+    "SWA2": "0x0c4d",
+    "SWA": "0x0c4d",
+    "TVTuner": "0x0c4b",
+    "Verstaerker": "0x0c41",
+    "Waehlhebel": "0x0c44",
+    "Zusatzheizung": "0x0c55",
+    "Zusatzinstrument": "0x0c1d"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "SWSG_mit_AFS_ALWR": [
+     "0x0c30",
+     "0x0c2f"
+    ],
+    "Sitzsteuergeraet": [
+     "0x0c4e",
+     "0x0c4c"
+    ],
+    "TUER_HINTEN": [
+     "0x0c50",
+     "0x0c4f"
+    ],
+    "TUER_VORNE": [
+     "0x0c1f",
+     "0x0c1e"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "SCHEINWERFER_LED",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "9x1": {
+   "dsnIndexId": 13,
+   "payloadOff": 105356,
+   "payloadOffHex": "0x19B8C",
+   "types": [
+    "0x0D",
+    "0x0E"
+   ],
+   "rowCount": 63,
+   "uniqueCount": 4,
+   "multiTypeCount": 42,
+   "unresolvedCount": 8,
+   "ambiguousCount": 2,
+   "runtimeModules": {},
+   "modules": {
+    "Allrad": "0x0e52",
+    "Lift_VA": "0x0e5b",
+    "Lift_VA_Gen2": "0x0e5b",
+    "PDCC_2": "0x0e2b"
+   },
+   "multiType": {
+    "ACC3": {
+     "low": 64,
+     "candidates": [
+      "0x0d40",
+      "0x0e40"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Airbag": {
+     "low": 4,
+     "candidates": [
+      "0x0d04",
+      "0x0e04"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BCM_hinten": {
+     "low": 35,
+     "candidates": [
+      "0x0d23",
+      "0x0e23"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BCM_vorne": {
+     "low": 32,
+     "candidates": [
+      "0x0d20",
+      "0x0e20"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BKE": {
+     "low": 7,
+     "candidates": [
+      "0x0d07",
+      "0x0e07"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_ActuaForStrucBorneSoundUDS": {
+     "low": 87,
+     "candidates": [
+      "0x0d57",
+      "0x0e57"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_ContrUnitLaneChangAssis2UDS": {
+     "low": 96,
+     "candidates": [
+      "0x0d60",
+      "0x0e60"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_ECM_UDS": {
+     "low": 1,
+     "candidates": [
+      "0x0d01",
+      "0x0e01"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_InforContrUnit1UDS": {
+     "low": 70,
+     "candidates": [
+      "0x0d46",
+      "0x0e46"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_SoundSysteUDS": {
+     "low": 65,
+     "candidates": [
+      "0x0d41",
+      "0x0e41"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_TVTunerUDS": {
+     "low": 75,
+     "candidates": [
+      "0x0d4b",
+      "0x0e4b"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "CAN_CAN_Gateway": {
+     "low": 9,
+     "candidates": [
+      "0x0d09",
+      "0x0e09"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "DME_BDE_Continental": {
+     "low": 1,
+     "candidates": [
+      "0x0d01",
+      "0x0e01"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "EPB": {
+     "low": 50,
+     "candidates": [
+      "0x0d32",
+      "0x0e32"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "ERA_GLONASS": {
+     "low": 165,
+     "candidates": [
+      "0x0da5",
+      "0x0ea5"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Frontkamera": {
+     "low": 74,
+     "candidates": [
+      "0x0d4a",
+      "0x0e4a"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Getriebesteuerung_PDK": {
+     "low": 2,
+     "candidates": [
+      "0x0d02",
+      "0x0e02"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Head_Unit": {
+     "low": 70,
+     "candidates": [
+      "0x0d46",
+      "0x0e46"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Kombiinstrument_MM": {
+     "low": 8,
+     "candidates": [
+      "0x0d08",
+      "0x0e08"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Lenkstockschalter": {
+     "low": 54,
+     "candidates": [
+      "0x0d36",
+      "0x0e36"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "MED17_1_11": {
+     "low": 1,
+     "candidates": [
+      "0x0d01",
+      "0x0e01"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "PASM_PADM": {
+     "low": 19,
+     "candidates": [
+      "0x0d13",
+      "0x0e13"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "PDC": {
+     "low": 18,
+     "candidates": [
+      "0x0d12",
+      "0x0e12"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "PSM": {
+     "low": 5,
+     "candidates": [
+      "0x0d05",
+      "0x0e05"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "RDK": {
+     "low": 55,
+     "candidates": [
+      "0x0d37",
+      "0x0e37"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "RDK3": {
+     "low": 55,
+     "candidates": [
+      "0x0d37",
+      "0x0e37"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Rueckfahrkamera_II": {
+     "low": 81,
+     "candidates": [
+      "0x0d51",
+      "0x0e51"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "SCHEINWERFER": {
+     "low": 88,
+     "candidates": [
+      "0x0d58",
+      "0x0e58"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "SCHEINWERFER_LED": {
+     "low": 47,
+     "candidates": [
+      "0x0d2f",
+      "0x0e2f"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "SWSG": {
+     "low": 47,
+     "candidates": [
+      "0x0d2f",
+      "0x0e2f"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Sitzsteuergeraet": {
+     "low": 78,
+     "candidates": [
+      "0x0d4e",
+      "0x0e4e"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Steering_Control_Unit": {
+     "low": 69,
+     "candidates": [
+      "0x0d45",
+      "0x0e45"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "TUER_VORNE": {
+     "low": 31,
+     "candidates": [
+      "0x0d1f",
+      "0x0e1f"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "TVTuner": {
+     "low": 75,
+     "candidates": [
+      "0x0d4b",
+      "0x0e4b"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Verdeck_Synchronisation": {
+     "low": 39,
+     "candidates": [
+      "0x0d27",
+      "0x0e27"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Verdeck_Targa": {
+     "low": 39,
+     "candidates": [
+      "0x0d27",
+      "0x0e27"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Verstaerker": {
+     "low": 65,
+     "candidates": [
+      "0x0d41",
+      "0x0e41"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Waehlhebel": {
+     "low": 68,
+     "candidates": [
+      "0x0d44",
+      "0x0e44"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "Zusatzinstrument": {
+     "low": 29,
+     "candidates": [
+      "0x0d1d",
+      "0x0e1d"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_EnginContrModul1UDS": {
+     "low": 1,
+     "candidates": [
+      "0x0d01",
+      "0x0e01"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "ERA_GLONASS_VFA": {
+     "low": 165,
+     "candidates": [
+      "0x0da5",
+      "0x0ea5"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    },
+    "BV_InforContrUnit1UDSDesay": {
+     "low": 70,
+     "candidates": [
+      "0x0d46",
+      "0x0e46"
+     ],
+     "reason": "多 type 平台，高字节需运行时 VIN/识别应答决定，不猜"
+    }
+   },
+   "ambiguous": {
+    "Hinterachslenkung": [
+     "0x0e59",
+     "0x0e5a"
+    ],
+    "TUER_HINTEN": [
+     "0x0e4f",
+     "0x0e50"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "RaceApp",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_BatteEnergContrModulOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_BrakeBoostOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_BrakeOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_DriveMotorContrModulOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_EnginContrModulOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ThermManagOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_TransContrModulOBD",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "cajun": {
+   "dsnIndexId": 15,
+   "payloadOff": 163687,
+   "payloadOffHex": "0x27F67",
+   "types": [
+    "0x0F"
+   ],
+   "rowCount": 61,
+   "uniqueCount": 52,
+   "multiTypeCount": 0,
+   "unresolvedCount": 1,
+   "ambiguousCount": 4,
+   "runtimeModules": {
+    "ACC3": "0x0f40",
+    "Airbag": "0x0f04",
+    "Allrad": "0x0f35",
+    "BCM_hinten": "0x0f23",
+    "BCM_vorne": "0x0f20",
+    "BKE": "0x0f07",
+    "BV_BKE": "0x0f07",
+    "BV_ActuaForStrucBorneSoundUDS": "0x0f57",
+    "BV_ECM20_FSI": "0x0f01",
+    "BV_ECM30_GEN2_TNF": "0x0f01",
+    "BV_ECM_UDS": "0x0f01",
+    "BV_InforContrUnit1UDS": "0x0f46",
+    "BV_MediaPlayePosit1UDS": "0x0f80",
+    "BV_RealTopView2": "0x0f51",
+    "BV_ReducContrModulUDS": "0x0f56",
+    "BV_SoundSysteUDS": "0x0f41",
+    "BV_TVTunerUDS": "0x0f4b",
+    "BV_TrailFunctUDS": "0x0f54",
+    "BV_TransContrModulUDS": "0x0f02",
+    "CAN_CAN_Gateway": "0x0f09",
+    "DME_BDE_Continental": "0x0f01",
+    "EPB": "0x0f32",
+    "EPS": "0x0f45",
+    "ERA_GLONASS": "0x0fa5",
+    "ESP_Colorado": "0x0f05",
+    "Frontkamera": "0x0f4a",
+    "Head_Unit": "0x0f46",
+    "Heckklappe": "0x0f34",
+    "Kombiinstrument_MM": "0x0f08",
+    "Kompass": "0x0f49",
+    "Lenkstockschalter": "0x0f36",
+    "PASM": "0x0f13",
+    "PDC": "0x0f12",
+    "Quersperre": "0x0f53",
+    "RDK3": "0x0f37",
+    "Rueckfahrkamera_II": "0x0f51",
+    "SCHEINWERFER": "0x0f58",
+    "SWA2": "0x0f4d",
+    "TVTuner": "0x0f4b",
+    "Verstaerker": "0x0f41",
+    "Zusatzheizung": "0x0f55",
+    "Zusatzinstrument": "0x0f1d",
+    "BV_EnginContrModul1UDS": "0x0f01",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x0f4a",
+    "BV_InforContrUnit1PAGUDS": "0x0f46",
+    "BV_ReducContrModulPAGUDS": "0x0f56",
+    "BV_Charg1MobilDevicUDS": "0x0fb1",
+    "BV_ParkiAssisUDS": "0x0f12",
+    "BV_EnginContrModulMacanIII": "0x0f01",
+    "BV_R4Evo4": "0x0f01",
+    "ERA_GLONASS_VFA": "0x0fa5",
+    "BV_InforContrUnit1UDSDesay": "0x0f46"
+   },
+   "modules": {
+    "ACC3": "0x0f40",
+    "Airbag": "0x0f04",
+    "Allrad": "0x0f35",
+    "BCM_hinten": "0x0f23",
+    "BCM_vorne": "0x0f20",
+    "BKE": "0x0f07",
+    "BV_BKE": "0x0f07",
+    "BV_ActuaForStrucBorneSoundUDS": "0x0f57",
+    "BV_ECM20_FSI": "0x0f01",
+    "BV_ECM30_GEN2_TNF": "0x0f01",
+    "BV_ECM_UDS": "0x0f01",
+    "BV_InforContrUnit1UDS": "0x0f46",
+    "BV_MediaPlayePosit1UDS": "0x0f80",
+    "BV_RealTopView2": "0x0f51",
+    "BV_ReducContrModulUDS": "0x0f56",
+    "BV_SoundSysteUDS": "0x0f41",
+    "BV_TVTunerUDS": "0x0f4b",
+    "BV_TrailFunctUDS": "0x0f54",
+    "BV_TransContrModulUDS": "0x0f02",
+    "CAN_CAN_Gateway": "0x0f09",
+    "DME_BDE_Continental": "0x0f01",
+    "EPB": "0x0f32",
+    "EPS": "0x0f45",
+    "ERA_GLONASS": "0x0fa5",
+    "ESP_Colorado": "0x0f05",
+    "Frontkamera": "0x0f4a",
+    "Head_Unit": "0x0f46",
+    "Heckklappe": "0x0f34",
+    "Kombiinstrument_MM": "0x0f08",
+    "Kompass": "0x0f49",
+    "Lenkstockschalter": "0x0f36",
+    "PASM": "0x0f13",
+    "PDC": "0x0f12",
+    "Quersperre": "0x0f53",
+    "RDK3": "0x0f37",
+    "Rueckfahrkamera_II": "0x0f51",
+    "SCHEINWERFER": "0x0f58",
+    "SWA2": "0x0f4d",
+    "TVTuner": "0x0f4b",
+    "Verstaerker": "0x0f41",
+    "Zusatzheizung": "0x0f55",
+    "Zusatzinstrument": "0x0f1d",
+    "BV_EnginContrModul1UDS": "0x0f01",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x0f4a",
+    "BV_InforContrUnit1PAGUDS": "0x0f46",
+    "BV_ReducContrModulPAGUDS": "0x0f56",
+    "BV_Charg1MobilDevicUDS": "0x0fb1",
+    "BV_ParkiAssisUDS": "0x0f12",
+    "BV_EnginContrModulMacanIII": "0x0f01",
+    "BV_R4Evo4": "0x0f01",
+    "ERA_GLONASS_VFA": "0x0fa5",
+    "BV_InforContrUnit1UDSDesay": "0x0f46"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "Sitzsteuergeraet": [
+     "0x0f4e",
+     "0x0f4c"
+    ],
+    "TUER_HINTEN": [
+     "0x0f50",
+     "0x0f4f"
+    ],
+    "TUER_VORNE": [
+     "0x0f1f",
+     "0x0f1e"
+    ],
+    "BV_ContrUnitLaneChangAssis2UDS": [
+     "0x0f4d",
+     "0x0f60"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "SCHEINWERFER_LED",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "918s": {
+   "dsnIndexId": 16,
+   "payloadOff": 281640,
+   "payloadOffHex": "0x44C28",
+   "types": [
+    "0x10"
+   ],
+   "rowCount": 32,
+   "uniqueCount": 25,
+   "multiTypeCount": 0,
+   "unresolvedCount": 1,
+   "ambiguousCount": 3,
+   "runtimeModules": {
+    "Aero": "0x1075",
+    "Airbag": "0x1004",
+    "AnzeigenDomaenenRechner": "0x1073",
+    "BCM_hinten": "0x1023",
+    "BCM_vorne": "0x1020",
+    "BKE": "0x1007",
+    "BKV": "0x1072",
+    "BMS2": "0x1042",
+    "BV_AirCondiComprUDS": "0x1048",
+    "BV_BatteChargContrModulUDS": "0x1070",
+    "CAN_CAN_Gateway": "0x1009",
+    "EPB": "0x1032",
+    "Getriebesteuerung_PDK": "0x1002",
+    "Kombiinstrument": "0x1008",
+    "Lenkstockschalter": "0x1076",
+    "Lenkstockschalter2": "0x1076",
+    "Lift_VA": "0x105b",
+    "MED17_1_11": "0x1001",
+    "PASM_PADM": "0x1013",
+    "PSM": "0x1005",
+    "RDK": "0x1037",
+    "SCHEINWERFER": "0x1058",
+    "Steering_Control_Unit": "0x1045",
+    "Touchbedienfeld": "0x1074",
+    "Waehlhebel": "0x1044"
+   },
+   "modules": {
+    "Aero": "0x1075",
+    "Airbag": "0x1004",
+    "AnzeigenDomaenenRechner": "0x1073",
+    "BCM_hinten": "0x1023",
+    "BCM_vorne": "0x1020",
+    "BKE": "0x1007",
+    "BKV": "0x1072",
+    "BMS2": "0x1042",
+    "BV_AirCondiComprUDS": "0x1048",
+    "BV_BatteChargContrModulUDS": "0x1070",
+    "CAN_CAN_Gateway": "0x1009",
+    "EPB": "0x1032",
+    "Getriebesteuerung_PDK": "0x1002",
+    "Kombiinstrument": "0x1008",
+    "Lenkstockschalter": "0x1076",
+    "Lenkstockschalter2": "0x1076",
+    "Lift_VA": "0x105b",
+    "MED17_1_11": "0x1001",
+    "PASM_PADM": "0x1013",
+    "PSM": "0x1005",
+    "RDK": "0x1037",
+    "SCHEINWERFER": "0x1058",
+    "Steering_Control_Unit": "0x1045",
+    "Touchbedienfeld": "0x1074",
+    "Waehlhebel": "0x1044"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "BV_DriveMotorContrModulUDS_A01": [
+     "0x1043",
+     "0x1071"
+    ],
+    "Hinterachslenkung": [
+     "0x1059",
+     "0x105a"
+    ],
+    "TUER_VORNE": [
+     "0x101e",
+     "0x101f"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "SCHEINWERFER_LED",
+     "low": 47,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "E3": {
+   "dsnIndexId": 17,
+   "payloadOff": 303493,
+   "payloadOffHex": "0x4A185",
+   "types": [
+    "0x11"
+   ],
+   "rowCount": 106,
+   "uniqueCount": 101,
+   "multiTypeCount": 0,
+   "unresolvedCount": 3,
+   "ambiguousCount": 1,
+   "runtimeModules": {
+    "BV_AirbaUDS": "0x1104",
+    "BV_GatewUDS": "0x1109",
+    "BV_EnginContrModul1UDS": "0x1101",
+    "BV_TransContrModulUDS": "0x1102",
+    "BV_AutomTransFluidPumpUDS": "0x115c",
+    "BV_BatteEnergContrModulUDS": "0x1142",
+    "BV_BatteEnergContrModul2UDS": "0x115d",
+    "BV_BatteMonitContrModulUDS": "0x115e",
+    "BV_DriveMotorContrModulUDS": "0x1143",
+    "BV_BatteChargContrModulUDS": "0x1170",
+    "BV_DashBoardUDS": "0x1108",
+    "BV_SteerColumElectUDS": "0x1136",
+    "BV_LaneChangAssisUDS": "0x115f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1160",
+    "BV_AnaloClockUDS": "0x1149",
+    "BV_InforContrUnit1UDS": "0x1146",
+    "BV_ContrHeadRearLeftUDS": "0x1161",
+    "BV_ContrHeadRearRightUDS": "0x1162",
+    "BV_SoundSysteUDS": "0x1141",
+    "BV_AirCondiUDS": "0x1107",
+    "BV_AirCondiComprSubUDS": "0x1148",
+    "BV_CamerSysteRearViewUDS": "0x1151",
+    "BV_AntenContrModulUDS": "0x1163",
+    "BV_TirePressMonit1UDS": "0x1137",
+    "BV_ChassContrUDS": "0x1113",
+    "BV_SteerAssisUDS": "0x1145",
+    "BV_Brake1UDS": "0x1105",
+    "BV_CentrElectUDS": "0x1120",
+    "BV_CentrModulComfoSysteUDS": "0x1123",
+    "BV_BedienSG_vo_MSB": "0x1166",
+    "BV_BedienSG_hi_MSB": "0x1167",
+    "BV_LightContrLeftUDS": "0x1168",
+    "BV_LightContrRightUDS": "0x1169",
+    "BV_LightContrLeft2UDS": "0x116a",
+    "BV_LightContrRight2UDS": "0x116b",
+    "BV_SeatAdjusDriveSideUDS": "0x116c",
+    "BV_SeatAdjusPasseSideUDS": "0x116d",
+    "BV_ValveBlock1InDriveSideFrontSeatUDS": "0x116e",
+    "BV_ValveBlock1InPasseSideFrontSeatUDS": "0x116f",
+    "BV_ValveBlock2InDriveSideFrontSeatUDS": "0x1177",
+    "BV_ValveBlock2InPasseSideFrontSeatUDS": "0x1178",
+    "BV_DoorElectDriveSideUDS": "0x1179",
+    "BV_DoorElectPasseSideUDS": "0x117a",
+    "BV_DoorElectRearDriveSideUDS": "0x117b",
+    "BV_DoorElectRearPasseSideUDS": "0x117c",
+    "BV_AdaptCruisContrUDS": "0x1140",
+    "BV_AllWheelContrUDS": "0x1135",
+    "BV_LockElectUDS": "0x1153",
+    "BV_DeckLidContrUnitUDS": "0x1134",
+    "BV_TrailFunctUDS": "0x1154",
+    "BV_AuxilParkiHeateUDS": "0x1155",
+    "BV_FrontCorneRadar2UDS": "0x117d",
+    "BV_FrontCorneRadar1UDS": "0x117e",
+    "BV_DCDCConveContrModulUDS": "0x117f",
+    "BV_MediaPlayePosit1UDS": "0x1180",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1181",
+    "BV_ActuaForExterNoiseUDS": "0x1182",
+    "BV_ContrModulForSunroUDS": "0x112d",
+    "BV_CeiliLightModulUDS": "0x1183",
+    "BV_DisplUnit4ForMultiSysteUDS": "0x1184",
+    "BV_DisplUnit3ForMultiSysteUDS": "0x1185",
+    "BV_GearShiftContrModulUDS": "0x1144",
+    "BV_BrakeBoostUDS": "0x1186",
+    "BV_AssemMountUDS": "0x1187",
+    "BV_ThermManagUDS": "0x1188",
+    "BV_FreshAirBloweFrontUDS": "0x1189",
+    "BV_ActivAccelPedalUDS": "0x118a",
+    "BV_SteerColumLockiUDS": "0x118b",
+    "BV_ElectAdjusSteerColumUDS": "0x118c",
+    "BV_NightVisioUDS": "0x118d",
+    "BV_AdaptCruisContrInnoDriveUDS": "0x118e",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x118f",
+    "BV_RearAxleSteerUDS": "0x1190",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1191",
+    "BV_ContrUnitForWiperMotorUDS": "0x1192",
+    "BV_AerodContrUnitUDS": "0x1193",
+    "BV_VehicTrackSysteUDS": "0x1194",
+    "BV_CellModulContr1UDS": "0x1195",
+    "BV_CellModulContr2UDS": "0x1196",
+    "BV_CellModulContr3UDS": "0x1197",
+    "BV_CellModulContr4UDS": "0x1198",
+    "BV_CellModulContr5UDS": "0x1199",
+    "BV_CellModulContr6UDS": "0x119a",
+    "BV_CellModulContr7UDS": "0x119b",
+    "BV_CellModulContr8UDS": "0x119c",
+    "BV_HeadUpDisplUDS": "0x119d",
+    "BV_BatteJunctBoxUDS": "0x119e",
+    "BV_ClutcContrUnitSubUDS": "0x119f",
+    "BV_SeatAdjusRearDriveSideUDS": "0x11a0",
+    "BV_SeatAdjusRearPasseSideUDS": "0x11a1",
+    "BV_TelemCommuUnitUDS": "0x11a2",
+    "BV_ReducContrModulUDS": "0x11a3",
+    "BV_IncabContrProteDevicUDS": "0x11a4",
+    "BV_Charg1MobilDevicUDS": "0x11b1",
+    "BV_InfotInterUDS": "0x11b2",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x11b9",
+    "BV_BeameModulMatriHeadlRightUDS": "0x11b8",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1158",
+    "BV_DCDCConveContrModulHVUDS": "0x11b4",
+    "BV_TelemDiagnContrUnitUDS": "0x11b3",
+    "DiagnServi_ReadDataByIdentASAMODXFileIdent": "0x1102"
+   },
+   "modules": {
+    "BV_AirbaUDS": "0x1104",
+    "BV_GatewUDS": "0x1109",
+    "BV_EnginContrModul1UDS": "0x1101",
+    "BV_TransContrModulUDS": "0x1102",
+    "BV_AutomTransFluidPumpUDS": "0x115c",
+    "BV_BatteEnergContrModulUDS": "0x1142",
+    "BV_BatteEnergContrModul2UDS": "0x115d",
+    "BV_BatteMonitContrModulUDS": "0x115e",
+    "BV_DriveMotorContrModulUDS": "0x1143",
+    "BV_BatteChargContrModulUDS": "0x1170",
+    "BV_DashBoardUDS": "0x1108",
+    "BV_SteerColumElectUDS": "0x1136",
+    "BV_LaneChangAssisUDS": "0x115f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1160",
+    "BV_AnaloClockUDS": "0x1149",
+    "BV_InforContrUnit1UDS": "0x1146",
+    "BV_ContrHeadRearLeftUDS": "0x1161",
+    "BV_ContrHeadRearRightUDS": "0x1162",
+    "BV_SoundSysteUDS": "0x1141",
+    "BV_AirCondiUDS": "0x1107",
+    "BV_AirCondiComprSubUDS": "0x1148",
+    "BV_CamerSysteRearViewUDS": "0x1151",
+    "BV_AntenContrModulUDS": "0x1163",
+    "BV_TirePressMonit1UDS": "0x1137",
+    "BV_ChassContrUDS": "0x1113",
+    "BV_SteerAssisUDS": "0x1145",
+    "BV_Brake1UDS": "0x1105",
+    "BV_CentrElectUDS": "0x1120",
+    "BV_CentrModulComfoSysteUDS": "0x1123",
+    "BV_BedienSG_vo_MSB": "0x1166",
+    "BV_BedienSG_hi_MSB": "0x1167",
+    "BV_LightContrLeftUDS": "0x1168",
+    "BV_LightContrRightUDS": "0x1169",
+    "BV_LightContrLeft2UDS": "0x116a",
+    "BV_LightContrRight2UDS": "0x116b",
+    "BV_SeatAdjusDriveSideUDS": "0x116c",
+    "BV_SeatAdjusPasseSideUDS": "0x116d",
+    "BV_ValveBlock1InDriveSideFrontSeatUDS": "0x116e",
+    "BV_ValveBlock1InPasseSideFrontSeatUDS": "0x116f",
+    "BV_ValveBlock2InDriveSideFrontSeatUDS": "0x1177",
+    "BV_ValveBlock2InPasseSideFrontSeatUDS": "0x1178",
+    "BV_DoorElectDriveSideUDS": "0x1179",
+    "BV_DoorElectPasseSideUDS": "0x117a",
+    "BV_DoorElectRearDriveSideUDS": "0x117b",
+    "BV_DoorElectRearPasseSideUDS": "0x117c",
+    "BV_AdaptCruisContrUDS": "0x1140",
+    "BV_AllWheelContrUDS": "0x1135",
+    "BV_LockElectUDS": "0x1153",
+    "BV_DeckLidContrUnitUDS": "0x1134",
+    "BV_TrailFunctUDS": "0x1154",
+    "BV_AuxilParkiHeateUDS": "0x1155",
+    "BV_FrontCorneRadar2UDS": "0x117d",
+    "BV_FrontCorneRadar1UDS": "0x117e",
+    "BV_DCDCConveContrModulUDS": "0x117f",
+    "BV_MediaPlayePosit1UDS": "0x1180",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1181",
+    "BV_ActuaForExterNoiseUDS": "0x1182",
+    "BV_ContrModulForSunroUDS": "0x112d",
+    "BV_CeiliLightModulUDS": "0x1183",
+    "BV_DisplUnit4ForMultiSysteUDS": "0x1184",
+    "BV_DisplUnit3ForMultiSysteUDS": "0x1185",
+    "BV_GearShiftContrModulUDS": "0x1144",
+    "BV_BrakeBoostUDS": "0x1186",
+    "BV_AssemMountUDS": "0x1187",
+    "BV_ThermManagUDS": "0x1188",
+    "BV_FreshAirBloweFrontUDS": "0x1189",
+    "BV_ActivAccelPedalUDS": "0x118a",
+    "BV_SteerColumLockiUDS": "0x118b",
+    "BV_ElectAdjusSteerColumUDS": "0x118c",
+    "BV_NightVisioUDS": "0x118d",
+    "BV_AdaptCruisContrInnoDriveUDS": "0x118e",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x118f",
+    "BV_RearAxleSteerUDS": "0x1190",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1191",
+    "BV_ContrUnitForWiperMotorUDS": "0x1192",
+    "BV_AerodContrUnitUDS": "0x1193",
+    "BV_VehicTrackSysteUDS": "0x1194",
+    "BV_CellModulContr1UDS": "0x1195",
+    "BV_CellModulContr2UDS": "0x1196",
+    "BV_CellModulContr3UDS": "0x1197",
+    "BV_CellModulContr4UDS": "0x1198",
+    "BV_CellModulContr5UDS": "0x1199",
+    "BV_CellModulContr6UDS": "0x119a",
+    "BV_CellModulContr7UDS": "0x119b",
+    "BV_CellModulContr8UDS": "0x119c",
+    "BV_HeadUpDisplUDS": "0x119d",
+    "BV_BatteJunctBoxUDS": "0x119e",
+    "BV_ClutcContrUnitSubUDS": "0x119f",
+    "BV_SeatAdjusRearDriveSideUDS": "0x11a0",
+    "BV_SeatAdjusRearPasseSideUDS": "0x11a1",
+    "BV_TelemCommuUnitUDS": "0x11a2",
+    "BV_ReducContrModulUDS": "0x11a3",
+    "BV_IncabContrProteDevicUDS": "0x11a4",
+    "BV_Charg1MobilDevicUDS": "0x11b1",
+    "BV_InfotInterUDS": "0x11b2",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x11b9",
+    "BV_BeameModulMatriHeadlRightUDS": "0x11b8",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1158",
+    "BV_DCDCConveContrModulHVUDS": "0x11b4",
+    "BV_TelemDiagnContrUnitUDS": "0x11b3",
+    "DiagnServi_ReadDataByIdentASAMODXFileIdent": "0x1102"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "BV_RollContrSysteUDS": [
+     "0x1164",
+     "0x1165"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "BV_ContrUnitHandsOnDetecSteerWheelUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_WaterContrUnitUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_RainLightRecogSensoUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "G2": {
+   "dsnIndexId": 18,
+   "payloadOff": 378099,
+   "payloadOffHex": "0x5C4F3",
+   "types": [
+    "0x12"
+   ],
+   "rowCount": 91,
+   "uniqueCount": 89,
+   "multiTypeCount": 0,
+   "unresolvedCount": 0,
+   "ambiguousCount": 1,
+   "runtimeModules": {
+    "BV_AirbaUDS": "0x1204",
+    "BV_GatewUDS": "0x1209",
+    "BV_EnginContrModul1UDS": "0x1201",
+    "BV_TransContrModulUDS": "0x1202",
+    "BV_BatteEnergContrModulUDS": "0x1242",
+    "BV_BatteEnergContrModul2UDS": "0x125d",
+    "BV_BatteMonitContrModulUDS": "0x125e",
+    "BV_DriveMotorContrModulUDS": "0x1243",
+    "BV_BatteChargContrModulUDS": "0x1270",
+    "BV_DashBoardUDS": "0x1208",
+    "BV_SteerColumElectUDS": "0x1236",
+    "BV_LaneChangAssisUDS": "0x125f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1260",
+    "BV_AnaloClockUDS": "0x1249",
+    "BV_InforContrUnit1UDS": "0x1246",
+    "BV_ContrHeadRearLeftUDS": "0x1261",
+    "BV_ContrHeadRearRightUDS": "0x1262",
+    "BV_TVTunerUDS": "0x124b",
+    "BV_SoundSysteUDS": "0x1241",
+    "BV_AirCondiUDS": "0x1207",
+    "BV_AirCondiComprSubUDS": "0x1248",
+    "BV_CamerSysteRearViewUDS": "0x1251",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x124a",
+    "BV_TirePressMonit1UDS": "0x1237",
+    "BV_ChassContrUDS": "0x1213",
+    "BV_SteerAssisUDS": "0x1245",
+    "BV_Brake1UDS": "0x1205",
+    "BV_CentrElectUDS": "0x1220",
+    "BV_CentrModulComfoSysteUDS": "0x1223",
+    "BV_BedienSG_vo_MSB": "0x1266",
+    "BV_BedienSG_hi_MSB": "0x1267",
+    "BV_LightContrLeftUDS": "0x1268",
+    "BV_LightContrRightUDS": "0x1269",
+    "BV_LightContrLeft2UDS": "0x126a",
+    "BV_LightContrRight2UDS": "0x126b",
+    "BV_SeatAdjusDriveSideUDS": "0x126c",
+    "BV_SeatAdjusPasseSideUDS": "0x126d",
+    "BV_DoorElectDriveSideUDS": "0x1279",
+    "BV_DoorElectPasseSideUDS": "0x127a",
+    "BV_DoorElectRearDriveSideUDS": "0x127b",
+    "BV_DoorElectRearPasseSideUDS": "0x127c",
+    "BV_AdaptCruisContr2UDS": "0x12a9",
+    "BV_AdaptCruisContrUDS": "0x12aa",
+    "BV_LockElectUDS": "0x1253",
+    "BV_DeckLidContrUnitUDS": "0x1234",
+    "BV_TrailFunctUDS": "0x1254",
+    "BV_AuxilParkiHeateUDS": "0x1255",
+    "BV_DCDCConveContrModulUDS": "0x127f",
+    "BV_MediaPlayePosit1UDS": "0x1280",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1281",
+    "BV_ActuaForExterNoiseUDS": "0x1282",
+    "BV_ContrModulForSunroUDS": "0x122d",
+    "BV_ContrModul2ForSunroUDS": "0x12a8",
+    "BV_CeiliLightModulUDS": "0x1283",
+    "BV_DisplUnit4ForMultiSysteUDS": "0x1284",
+    "BV_DisplUnit3ForMultiSysteUDS": "0x1285",
+    "BV_GearShiftContrModulUDS": "0x1244",
+    "BV_BrakeBoostUDS": "0x1286",
+    "BV_ThermManagUDS": "0x1288",
+    "BV_FreshAirBloweFrontUDS": "0x1289",
+    "BV_ActivAccelPedalUDS": "0x128a",
+    "BV_SteerColumLockiUDS": "0x128b",
+    "BV_ElectAdjusSteerColumUDS": "0x128c",
+    "BV_NightVisioUDS": "0x128d",
+    "BV_AdaptCruisContrInnoDriveUDS": "0x128e",
+    "BV_RearAxleSteerUDS": "0x1290",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1291",
+    "BV_ContrUnitForWiperMotorUDS": "0x1292",
+    "BV_AerodContrUnitUDS": "0x1293",
+    "BV_VehicTrackSysteUDS": "0x1294",
+    "BV_CellModulContr1UDS": "0x1295",
+    "BV_CellModulContr2UDS": "0x1296",
+    "BV_CellModulContr3UDS": "0x1297",
+    "BV_CellModulContr4UDS": "0x1298",
+    "BV_CellModulContr5UDS": "0x1299",
+    "BV_CellModulContr6UDS": "0x129a",
+    "BV_CellModulContr7UDS": "0x129b",
+    "BV_CellModulContr8UDS": "0x129c",
+    "BV_HeadUpDisplUDS": "0x129d",
+    "BV_BatteJunctBoxUDS": "0x129e",
+    "BV_ClutcContrUnitSubUDS": "0x129f",
+    "BV_SeatAdjusRearDriveSideUDS": "0x12a0",
+    "BV_SeatAdjusRearPasseSideUDS": "0x12a1",
+    "BV_ReducContrModulUDS": "0x12a3",
+    "BV_ERA_GLONASS": "0x12a5",
+    "BV_Charg1MobilDevicUDS": "0x12b1",
+    "BV_InfotInterUDS": "0x12b2",
+    "BV_TelemCommuUnitUDS": "0x12a2",
+    "BV_TelemDiagnContrUnitUDS": "0x12b3"
+   },
+   "modules": {
+    "BV_AirbaUDS": "0x1204",
+    "BV_GatewUDS": "0x1209",
+    "BV_EnginContrModul1UDS": "0x1201",
+    "BV_TransContrModulUDS": "0x1202",
+    "BV_BatteEnergContrModulUDS": "0x1242",
+    "BV_BatteEnergContrModul2UDS": "0x125d",
+    "BV_BatteMonitContrModulUDS": "0x125e",
+    "BV_DriveMotorContrModulUDS": "0x1243",
+    "BV_BatteChargContrModulUDS": "0x1270",
+    "BV_DashBoardUDS": "0x1208",
+    "BV_SteerColumElectUDS": "0x1236",
+    "BV_LaneChangAssisUDS": "0x125f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1260",
+    "BV_AnaloClockUDS": "0x1249",
+    "BV_InforContrUnit1UDS": "0x1246",
+    "BV_ContrHeadRearLeftUDS": "0x1261",
+    "BV_ContrHeadRearRightUDS": "0x1262",
+    "BV_TVTunerUDS": "0x124b",
+    "BV_SoundSysteUDS": "0x1241",
+    "BV_AirCondiUDS": "0x1207",
+    "BV_AirCondiComprSubUDS": "0x1248",
+    "BV_CamerSysteRearViewUDS": "0x1251",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x124a",
+    "BV_TirePressMonit1UDS": "0x1237",
+    "BV_ChassContrUDS": "0x1213",
+    "BV_SteerAssisUDS": "0x1245",
+    "BV_Brake1UDS": "0x1205",
+    "BV_CentrElectUDS": "0x1220",
+    "BV_CentrModulComfoSysteUDS": "0x1223",
+    "BV_BedienSG_vo_MSB": "0x1266",
+    "BV_BedienSG_hi_MSB": "0x1267",
+    "BV_LightContrLeftUDS": "0x1268",
+    "BV_LightContrRightUDS": "0x1269",
+    "BV_LightContrLeft2UDS": "0x126a",
+    "BV_LightContrRight2UDS": "0x126b",
+    "BV_SeatAdjusDriveSideUDS": "0x126c",
+    "BV_SeatAdjusPasseSideUDS": "0x126d",
+    "BV_DoorElectDriveSideUDS": "0x1279",
+    "BV_DoorElectPasseSideUDS": "0x127a",
+    "BV_DoorElectRearDriveSideUDS": "0x127b",
+    "BV_DoorElectRearPasseSideUDS": "0x127c",
+    "BV_AdaptCruisContr2UDS": "0x12a9",
+    "BV_AdaptCruisContrUDS": "0x12aa",
+    "BV_LockElectUDS": "0x1253",
+    "BV_DeckLidContrUnitUDS": "0x1234",
+    "BV_TrailFunctUDS": "0x1254",
+    "BV_AuxilParkiHeateUDS": "0x1255",
+    "BV_DCDCConveContrModulUDS": "0x127f",
+    "BV_MediaPlayePosit1UDS": "0x1280",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1281",
+    "BV_ActuaForExterNoiseUDS": "0x1282",
+    "BV_ContrModulForSunroUDS": "0x122d",
+    "BV_ContrModul2ForSunroUDS": "0x12a8",
+    "BV_CeiliLightModulUDS": "0x1283",
+    "BV_DisplUnit4ForMultiSysteUDS": "0x1284",
+    "BV_DisplUnit3ForMultiSysteUDS": "0x1285",
+    "BV_GearShiftContrModulUDS": "0x1244",
+    "BV_BrakeBoostUDS": "0x1286",
+    "BV_ThermManagUDS": "0x1288",
+    "BV_FreshAirBloweFrontUDS": "0x1289",
+    "BV_ActivAccelPedalUDS": "0x128a",
+    "BV_SteerColumLockiUDS": "0x128b",
+    "BV_ElectAdjusSteerColumUDS": "0x128c",
+    "BV_NightVisioUDS": "0x128d",
+    "BV_AdaptCruisContrInnoDriveUDS": "0x128e",
+    "BV_RearAxleSteerUDS": "0x1290",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1291",
+    "BV_ContrUnitForWiperMotorUDS": "0x1292",
+    "BV_AerodContrUnitUDS": "0x1293",
+    "BV_VehicTrackSysteUDS": "0x1294",
+    "BV_CellModulContr1UDS": "0x1295",
+    "BV_CellModulContr2UDS": "0x1296",
+    "BV_CellModulContr3UDS": "0x1297",
+    "BV_CellModulContr4UDS": "0x1298",
+    "BV_CellModulContr5UDS": "0x1299",
+    "BV_CellModulContr6UDS": "0x129a",
+    "BV_CellModulContr7UDS": "0x129b",
+    "BV_CellModulContr8UDS": "0x129c",
+    "BV_HeadUpDisplUDS": "0x129d",
+    "BV_BatteJunctBoxUDS": "0x129e",
+    "BV_ClutcContrUnitSubUDS": "0x129f",
+    "BV_SeatAdjusRearDriveSideUDS": "0x12a0",
+    "BV_SeatAdjusRearPasseSideUDS": "0x12a1",
+    "BV_ReducContrModulUDS": "0x12a3",
+    "BV_ERA_GLONASS": "0x12a5",
+    "BV_Charg1MobilDevicUDS": "0x12b1",
+    "BV_InfotInterUDS": "0x12b2",
+    "BV_TelemCommuUnitUDS": "0x12a2",
+    "BV_TelemDiagnContrUnitUDS": "0x12b3"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "BV_RollContrSysteUDS": [
+     "0x1264",
+     "0x1265"
+    ]
+   },
+   "unresolved": []
+  },
+  "CS1": {
+   "dsnIndexId": 19,
+   "payloadOff": 443296,
+   "payloadOffHex": "0x6C3A0",
+   "types": [
+    "0x13"
+   ],
+   "rowCount": 16,
+   "uniqueCount": 14,
+   "multiTypeCount": 0,
+   "unresolvedCount": 0,
+   "ambiguousCount": 1,
+   "runtimeModules": {
+    "Airbag": "0x1304",
+    "BCM_hinten": "0x1323",
+    "BCM_vorne": "0x1320",
+    "BKE": "0x1307",
+    "CAN_CAN_Gateway": "0x1309",
+    "DME_BDE_Continental": "0x1301",
+    "Getriebesteuerung_PDK": "0x1302",
+    "Kombiinstrument_MM": "0x1308",
+    "Lenkstockschalter": "0x1336",
+    "PSM": "0x1305",
+    "RDK": "0x1337",
+    "Steering_Control_Unit": "0x1345",
+    "Waehlhebel": "0x1344",
+    "BV_EnginContrModul1UDS": "0x1301"
+   },
+   "modules": {
+    "Airbag": "0x1304",
+    "BCM_hinten": "0x1323",
+    "BCM_vorne": "0x1320",
+    "BKE": "0x1307",
+    "CAN_CAN_Gateway": "0x1309",
+    "DME_BDE_Continental": "0x1301",
+    "Getriebesteuerung_PDK": "0x1302",
+    "Kombiinstrument_MM": "0x1308",
+    "Lenkstockschalter": "0x1336",
+    "PSM": "0x1305",
+    "RDK": "0x1337",
+    "Steering_Control_Unit": "0x1345",
+    "Waehlhebel": "0x1344",
+    "BV_EnginContrModul1UDS": "0x1301"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "TUER_VORNE": [
+     "0x131e",
+     "0x131f"
+    ]
+   },
+   "unresolved": []
+  },
+  "J1": {
+   "dsnIndexId": 21,
+   "payloadOff": 565111,
+   "payloadOffHex": "0x89F77",
+   "types": [
+    "0x15"
+   ],
+   "rowCount": 79,
+   "uniqueCount": 69,
+   "multiTypeCount": 0,
+   "unresolvedCount": 8,
+   "ambiguousCount": 1,
+   "runtimeModules": {
+    "BV_EnginContrModul1UDS": "0x1501",
+    "BV_AirbaUDS": "0x1504",
+    "BV_Brake1UDS": "0x1505",
+    "BV_AirCondiUDS": "0x1507",
+    "BV_DashBoardUDS": "0x1508",
+    "BV_GatewUDS": "0x1509",
+    "BV_ChassContrUDS": "0x1513",
+    "BV_CentrElectUDS": "0x1520",
+    "BV_CentrModulComfoSysteUDS": "0x1523",
+    "BV_DeckLidContrUnitUDS": "0x1534",
+    "BV_SteerColumElectUDS": "0x1536",
+    "BV_TirePressMonit1UDS": "0x1537",
+    "BV_AdaptCruisContrUDS": "0x1540",
+    "BV_SoundSysteUDS": "0x1541",
+    "BV_BatteEnergContrModulUDS": "0x1542",
+    "BV_DriveMotorContrModulUDS": "0x1543",
+    "BV_GearShiftContrModulUDS": "0x1544",
+    "BV_SteerAssisUDS": "0x1545",
+    "BV_InforContrUnit1UDS": "0x1546",
+    "BV_AirCondiComprSubUDS": "0x1548",
+    "BV_AnaloClockUDS": "0x1549",
+    "BV_CamerSysteRearViewUDS": "0x1551",
+    "BV_LockElectUDS": "0x1553",
+    "BV_TrailFunctUDS": "0x1554",
+    "BV_BatteMonitContrModulUDS": "0x155e",
+    "BV_LaneChangAssisUDS": "0x155f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1560",
+    "BV_AntenContrModulUDS": "0x1563",
+    "BV_BedienSG_hi_MSB": "0x1567",
+    "BV_LightContrLeft2UDS": "0x156a",
+    "BV_LightContrRight2UDS": "0x156b",
+    "BV_SeatAdjusDriveSideUDS": "0x156c",
+    "BV_SeatAdjusPasseSideUDS": "0x156d",
+    "BV_ValveBlock1InDriveSideFrontSeatUDS": "0x156e",
+    "BV_ValveBlock1InPasseSideFrontSeatUDS": "0x156f",
+    "BV_BatteChargContrModulUDS": "0x1570",
+    "BV_ValveBlock2InDriveSideFrontSeatUDS": "0x1577",
+    "BV_ValveBlock2InPasseSideFrontSeatUDS": "0x1578",
+    "BV_DoorElectDriveSideUDS": "0x1579",
+    "BV_DoorElectPasseSideUDS": "0x157a",
+    "BV_DoorElectRearDriveSideUDS": "0x157b",
+    "BV_DoorElectRearPasseSideUDS": "0x157c",
+    "BV_FrontCorneRadar2UDS": "0x157d",
+    "BV_FrontCorneRadar1UDS": "0x157e",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1581",
+    "BV_ActuaForExterNoiseUDS": "0x1582",
+    "BV_CeiliLightModulUDS": "0x1583",
+    "BV_BrakeBoostUDS": "0x1586",
+    "BV_ThermManagUDS": "0x1588",
+    "BV_SteerColumLockiUDS": "0x158b",
+    "BV_ElectAdjusSteerColumUDS": "0x158c",
+    "BV_NightVisioUDS": "0x158d",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x158f",
+    "BV_RearAxleSteerUDS": "0x1590",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1591",
+    "BV_ContrUnitForWiperMotorUDS": "0x1592",
+    "BV_AerodContrUnitUDS": "0x1593",
+    "BV_HeadUpDisplUDS": "0x159d",
+    "BV_TelemCommuUnitUDS": "0x15a2",
+    "BV_Charg1MobilDevicUDS": "0x15b1",
+    "BV_DCDCConveContrModulHV2UDS": "0x15b5",
+    "BV_DCDCConveContrModulHVUDS": "0x15b7",
+    "BV_InfotInterUDS": "0x15b2",
+    "BV_OverTheAirFunctContrUnitUDS": "0x15b6",
+    "BV_ContrModulForSunroUDS": "0x152d",
+    "BV_TelemDiagnContrUnitUDS": "0x15b3",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x15b9",
+    "BV_BeameModulMatriHeadlRightUDS": "0x15b8",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1558"
+   },
+   "modules": {
+    "BV_EnginContrModul1UDS": "0x1501",
+    "BV_AirbaUDS": "0x1504",
+    "BV_Brake1UDS": "0x1505",
+    "BV_AirCondiUDS": "0x1507",
+    "BV_DashBoardUDS": "0x1508",
+    "BV_GatewUDS": "0x1509",
+    "BV_ChassContrUDS": "0x1513",
+    "BV_CentrElectUDS": "0x1520",
+    "BV_CentrModulComfoSysteUDS": "0x1523",
+    "BV_DeckLidContrUnitUDS": "0x1534",
+    "BV_SteerColumElectUDS": "0x1536",
+    "BV_TirePressMonit1UDS": "0x1537",
+    "BV_AdaptCruisContrUDS": "0x1540",
+    "BV_SoundSysteUDS": "0x1541",
+    "BV_BatteEnergContrModulUDS": "0x1542",
+    "BV_DriveMotorContrModulUDS": "0x1543",
+    "BV_GearShiftContrModulUDS": "0x1544",
+    "BV_SteerAssisUDS": "0x1545",
+    "BV_InforContrUnit1UDS": "0x1546",
+    "BV_AirCondiComprSubUDS": "0x1548",
+    "BV_AnaloClockUDS": "0x1549",
+    "BV_CamerSysteRearViewUDS": "0x1551",
+    "BV_LockElectUDS": "0x1553",
+    "BV_TrailFunctUDS": "0x1554",
+    "BV_BatteMonitContrModulUDS": "0x155e",
+    "BV_LaneChangAssisUDS": "0x155f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1560",
+    "BV_AntenContrModulUDS": "0x1563",
+    "BV_BedienSG_hi_MSB": "0x1567",
+    "BV_LightContrLeft2UDS": "0x156a",
+    "BV_LightContrRight2UDS": "0x156b",
+    "BV_SeatAdjusDriveSideUDS": "0x156c",
+    "BV_SeatAdjusPasseSideUDS": "0x156d",
+    "BV_ValveBlock1InDriveSideFrontSeatUDS": "0x156e",
+    "BV_ValveBlock1InPasseSideFrontSeatUDS": "0x156f",
+    "BV_BatteChargContrModulUDS": "0x1570",
+    "BV_ValveBlock2InDriveSideFrontSeatUDS": "0x1577",
+    "BV_ValveBlock2InPasseSideFrontSeatUDS": "0x1578",
+    "BV_DoorElectDriveSideUDS": "0x1579",
+    "BV_DoorElectPasseSideUDS": "0x157a",
+    "BV_DoorElectRearDriveSideUDS": "0x157b",
+    "BV_DoorElectRearPasseSideUDS": "0x157c",
+    "BV_FrontCorneRadar2UDS": "0x157d",
+    "BV_FrontCorneRadar1UDS": "0x157e",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1581",
+    "BV_ActuaForExterNoiseUDS": "0x1582",
+    "BV_CeiliLightModulUDS": "0x1583",
+    "BV_BrakeBoostUDS": "0x1586",
+    "BV_ThermManagUDS": "0x1588",
+    "BV_SteerColumLockiUDS": "0x158b",
+    "BV_ElectAdjusSteerColumUDS": "0x158c",
+    "BV_NightVisioUDS": "0x158d",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x158f",
+    "BV_RearAxleSteerUDS": "0x1590",
+    "BV_GaragDoorOpeneContrModulUDS": "0x1591",
+    "BV_ContrUnitForWiperMotorUDS": "0x1592",
+    "BV_AerodContrUnitUDS": "0x1593",
+    "BV_HeadUpDisplUDS": "0x159d",
+    "BV_TelemCommuUnitUDS": "0x15a2",
+    "BV_Charg1MobilDevicUDS": "0x15b1",
+    "BV_DCDCConveContrModulHV2UDS": "0x15b5",
+    "BV_DCDCConveContrModulHVUDS": "0x15b7",
+    "BV_InfotInterUDS": "0x15b2",
+    "BV_OverTheAirFunctContrUnitUDS": "0x15b6",
+    "BV_ContrModulForSunroUDS": "0x152d",
+    "BV_TelemDiagnContrUnitUDS": "0x15b3",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x15b9",
+    "BV_BeameModulMatriHeadlRightUDS": "0x15b8",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1558"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "BV_RollContrSysteUDS": [
+     "0x1564",
+     "0x1565"
+    ]
+   },
+   "unresolved": [
+    {
+     "name": "BV_DriveMotorContrModulUDS",
+     "low": 113,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ContrModulForAuxilAirHeateUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ContrUnitHandsOnDetecSteerWheelUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_ContrUnitWirelChargUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_GearSelecContrModulUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_LaserScannUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_MultiFunctSteerWheelContrModulUDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    },
+    {
+     "name": "BV_OTASoftwParti1UDS",
+     "low": 0,
+     "reason": "sysIdLow 不在该平台任何候选 type 的权威 sysIds 集合"
+    }
+   ]
+  },
+  "G3": {
+   "dsnIndexId": 22,
+   "payloadOff": 610274,
+   "payloadOffHex": "0x94FE2",
+   "types": [
+    "0x16"
+   ],
+   "rowCount": 65,
+   "uniqueCount": 63,
+   "multiTypeCount": 0,
+   "unresolvedCount": 0,
+   "ambiguousCount": 1,
+   "runtimeModules": {
+    "BV_EnginContrModul1UDS": "0x1601",
+    "BV_TransContrModulUDS": "0x1602",
+    "BV_AirbaUDS": "0x1604",
+    "BV_Brake1UDS": "0x1605",
+    "BV_AirCondiUDS": "0x1607",
+    "BV_DashBoardUDS": "0x1608",
+    "BV_GatewUDS": "0x1609",
+    "BV_ChassContrUDS": "0x1613",
+    "BV_CentrElectUDS": "0x1620",
+    "BV_CentrModulComfoSysteUDS": "0x1623",
+    "BV_ContrModulForSunroUDS": "0x162d",
+    "BV_DeckLidContrUnitUDS": "0x1634",
+    "BV_SteerColumElectUDS": "0x1636",
+    "BV_TirePressMonit1UDS": "0x1637",
+    "BV_AdaptCruisContrUDS": "0x1640",
+    "BV_SoundSysteUDS": "0x1641",
+    "BV_BatteEnergContrModulUDS": "0x1642",
+    "BV_DriveMotorContrModulUDS": "0x1643",
+    "BV_GearShiftContrModulUDS": "0x1644",
+    "BV_SteerAssisUDS": "0x1645",
+    "BV_InforContrUnit1UDS": "0x1646",
+    "BV_CamerSysteRearViewUDS": "0x1651",
+    "BV_LockElectUDS": "0x1653",
+    "BV_TrailFunctUDS": "0x1654",
+    "BV_AuxilParkiHeateUDS": "0x1655",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1658",
+    "BV_LaneChangAssisUDS": "0x165f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1660",
+    "BV_AntenContrModulUDS": "0x1663",
+    "BV_BedienSG_vo_MSB": "0x1666",
+    "BV_BedienSG_hi_MSB": "0x1667",
+    "BV_LightContrLeft2UDS": "0x166a",
+    "BV_LightContrRight2UDS": "0x166b",
+    "BV_SeatAdjusDriveSideUDS": "0x166c",
+    "BV_SeatAdjusPasseSideUDS": "0x166d",
+    "BV_BatteChargContrModulUDS": "0x1670",
+    "BV_DoorElectDriveSideUDS": "0x1679",
+    "BV_DoorElectPasseSideUDS": "0x167a",
+    "BV_DoorElectRearDriveSideUDS": "0x167b",
+    "BV_DoorElectRearPasseSideUDS": "0x167c",
+    "BV_FrontCorneRadar2UDS": "0x167d",
+    "BV_FrontCorneRadar1UDS": "0x167e",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1681",
+    "BV_ActuaForExterNoiseUDS": "0x1682",
+    "BV_BrakeBoostUDS": "0x1686",
+    "BV_ThermManagUDS": "0x1688",
+    "BV_SteerColumLockiUDS": "0x168b",
+    "BV_NightVisioUDS": "0x168d",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x168f",
+    "BV_RearAxleSteerUDS": "0x1690",
+    "BV_AerodContrUnitUDS": "0x1693",
+    "BV_HeadUpDisplUDS": "0x169d",
+    "BV_SeatAdjusRearDriveSideUDS": "0x16a0",
+    "BV_SeatAdjusRearPasseSideUDS": "0x16a1",
+    "BV_TelemCommuUnitUDS": "0x16a2",
+    "BV_ContrModul2ForSunroUDS": "0x16a8",
+    "BV_Charg1MobilDevicUDS": "0x16b1",
+    "BV_InfotInterUDS": "0x16b2",
+    "BV_TelemDiagnContrUnitUDS": "0x16b3",
+    "BV_DCDCConveContrModulHVUDS": "0x16b4",
+    "BV_BeameModulMatriHeadlRightUDS": "0x16b8",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x16b9",
+    "BV_Charg2MobilDevicUDS": "0x16ba"
+   },
+   "modules": {
+    "BV_EnginContrModul1UDS": "0x1601",
+    "BV_TransContrModulUDS": "0x1602",
+    "BV_AirbaUDS": "0x1604",
+    "BV_Brake1UDS": "0x1605",
+    "BV_AirCondiUDS": "0x1607",
+    "BV_DashBoardUDS": "0x1608",
+    "BV_GatewUDS": "0x1609",
+    "BV_ChassContrUDS": "0x1613",
+    "BV_CentrElectUDS": "0x1620",
+    "BV_CentrModulComfoSysteUDS": "0x1623",
+    "BV_ContrModulForSunroUDS": "0x162d",
+    "BV_DeckLidContrUnitUDS": "0x1634",
+    "BV_SteerColumElectUDS": "0x1636",
+    "BV_TirePressMonit1UDS": "0x1637",
+    "BV_AdaptCruisContrUDS": "0x1640",
+    "BV_SoundSysteUDS": "0x1641",
+    "BV_BatteEnergContrModulUDS": "0x1642",
+    "BV_DriveMotorContrModulUDS": "0x1643",
+    "BV_GearShiftContrModulUDS": "0x1644",
+    "BV_SteerAssisUDS": "0x1645",
+    "BV_InforContrUnit1UDS": "0x1646",
+    "BV_CamerSysteRearViewUDS": "0x1651",
+    "BV_LockElectUDS": "0x1653",
+    "BV_TrailFunctUDS": "0x1654",
+    "BV_AuxilParkiHeateUDS": "0x1655",
+    "BV_ContrUnitDigitMatriLightUDS": "0x1658",
+    "BV_LaneChangAssisUDS": "0x165f",
+    "BV_ContrUnitLaneChangAssis2UDS": "0x1660",
+    "BV_AntenContrModulUDS": "0x1663",
+    "BV_BedienSG_vo_MSB": "0x1666",
+    "BV_BedienSG_hi_MSB": "0x1667",
+    "BV_LightContrLeft2UDS": "0x166a",
+    "BV_LightContrRight2UDS": "0x166b",
+    "BV_SeatAdjusDriveSideUDS": "0x166c",
+    "BV_SeatAdjusPasseSideUDS": "0x166d",
+    "BV_BatteChargContrModulUDS": "0x1670",
+    "BV_DoorElectDriveSideUDS": "0x1679",
+    "BV_DoorElectPasseSideUDS": "0x167a",
+    "BV_DoorElectRearDriveSideUDS": "0x167b",
+    "BV_DoorElectRearPasseSideUDS": "0x167c",
+    "BV_FrontCorneRadar2UDS": "0x167d",
+    "BV_FrontCorneRadar1UDS": "0x167e",
+    "BV_ActuaForStrucBorneSoundUDS": "0x1681",
+    "BV_ActuaForExterNoiseUDS": "0x1682",
+    "BV_BrakeBoostUDS": "0x1686",
+    "BV_ThermManagUDS": "0x1688",
+    "BV_SteerColumLockiUDS": "0x168b",
+    "BV_NightVisioUDS": "0x168d",
+    "BV_FrontSensoDriveAssisSysteUDS": "0x168f",
+    "BV_RearAxleSteerUDS": "0x1690",
+    "BV_AerodContrUnitUDS": "0x1693",
+    "BV_HeadUpDisplUDS": "0x169d",
+    "BV_SeatAdjusRearDriveSideUDS": "0x16a0",
+    "BV_SeatAdjusRearPasseSideUDS": "0x16a1",
+    "BV_TelemCommuUnitUDS": "0x16a2",
+    "BV_ContrModul2ForSunroUDS": "0x16a8",
+    "BV_Charg1MobilDevicUDS": "0x16b1",
+    "BV_InfotInterUDS": "0x16b2",
+    "BV_TelemDiagnContrUnitUDS": "0x16b3",
+    "BV_DCDCConveContrModulHVUDS": "0x16b4",
+    "BV_BeameModulMatriHeadlRightUDS": "0x16b8",
+    "BV_BeameModulMatriHeadlLeftUDS": "0x16b9",
+    "BV_Charg2MobilDevicUDS": "0x16ba"
+   },
+   "multiType": {},
+   "ambiguous": {
+    "BV_RollContrSysteUDS": [
+     "0x1664",
+     "0x1665"
+    ]
+   },
+   "unresolved": []
+  }
+ },
+ "stats": {
+  "platformCount": 14,
+  "rowCount": 821,
+  "runtimeUniqueCount": 600
+ }
+}

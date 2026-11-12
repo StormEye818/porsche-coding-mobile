@@ -429,12 +429,12 @@ function ecuAddrFromTable(label, sys) {
  *   `0x18f4c/0x18f52 movw sl,#0x1409; movt sl,#0xff00` → 发现帧 `0xFF001409`(22 14 09)；
  *   `0x18f8c blx r3` 对**每个候选只发 1 帧**（mode=1）；`0x18fa2..0x18fbc` 才是
  *   `send(0x10000359,A,2)` 绑定；`0x18fe2 movw r0,#0x1102` = 绑定失败补帧 `22 11 02`
- *   （包内有此帧，当前实现未发送；第十阶段审计如实标注为 B 级差异）。
+ *   （第十阶段已按原厂实现发送：绑定返回值≠1 时补一帧，响应不作为绑定成功依据）。
  *
  * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：删除 2026-11-10 的自创扩展
  *   （每族 2–3 帧：`221409`+`221102`、`1A9F`+`3E`、族未证三帧）。原厂每候选只 1 帧；
- *   ⚠️ 第十阶段审计如实标注：包内虽有补帧 `22 11 02`，当前实现**没有发帧路径**；
- *   绑定失败直接跳过该候选走枚举兜底。这是与原厂的 B 级差异，不是「已对齐」。
+ *   ★ 第十阶段收口：绑定失败时按原厂 `0x18FE2` 补发一帧 `221102`（见 tryAddr），
+ *   但补帧响应不作为绑定成功依据，仍跳过候选走枚举兜底。
  *   KWP 族的 1A 9F 有实车证据（DME 回 `5A 9F …`，且拒绝 `22 F1 A2`/`3E 00` 子功能）。
  *
  * @param {'kwp'|'uds'|null} family
@@ -620,15 +620,26 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
         await atCmdOk(coder.elm, `ATSH${hex(p.tx)}`, 1200);
         await atCmdOk(coder.elm, `ATCRA${hex(p.rx)}`, 1200);
       } catch (e) {
-        note(`绑定失败，跳过：${e.message}`);
+        // ★ 2026-11-12 第十阶段收口：按原厂 DriveLinksMode_1001 @LINK:0x18FC0 补发一帧。
+        //   逐指令证据：`cmp r0,#1 / beq 0x194B8`（绑定返回值=1 → 成功分支）；
+        //   ≠1 时 `0x18FE2 movw r0,#0x1102` + `movt r0,#0xFF00` → 命令 ID 0xFF001102，
+        //   经 `blx r3` 发出。COMMAND.GAG index 470 = `01 03 22 11 02` 正是该帧。
+        //   ⚠️ 只补帧留痕，**不改变绑定结果**：补帧响应不作为成功依据，仍跳过该候选
+        //   （回执失败时继续发帧会打到上一个地址，R4 审计的安全约束保持）。
+        try {
+          const retryResp = await coder.elm.cmd('221102', 800);
+          note(`绑定失败 → 补帧 221102${retryResp ? `（${String(retryResp).trim().slice(0, 24)}）` : ''}，跳过：${e.message}`);
+        } catch {
+          note(`绑定失败 → 补帧 221102 无应答，跳过：${e.message}`);
+        }
         return null;
       }
       // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离①）：n=0（bindDirect）**不发任何探针帧**。
       //   原厂`DriveLinksMode_1001 @LINK:0x18f00` 的 `cbz r1,#0x18f9e` 分支：候选数 0 →
       //   整个探针循环跳过，直接 `send(0x10000359,A,2)` 做**链路层绑定**。
       //   ELM 的等价物 = ATSH/ATCRA 且回执 OK（上面 611-616 已断言）→ 绑定完成，直接返回。
-      //   ⚠️ 第十阶段审计：包内有「绑定失败补帧 22 11 02」，但当前实现未发送；
-      //   上面 ATSH/ATCRA 回执失败时直接 return null 跳过候选（B 级差异，见 AUDIT-20261112.md）。
+      //   ★ 第十阶段：ATSH/ATCRA 回执失败时按原厂补发一帧 221102 后跳过候选
+      //   （补帧响应不作成功依据；逐指令证据 原厂链路库 @0x18FC0/0x18FE2）。
       const fam = opts.family || familyFor(label, p.tx, { modules: opts.modules });
       if (bindDirect) {
         note(`ATSH/ATCRA OK → n=0 链路绑定（0 探针帧，原厂cbz 分支）`);
@@ -3819,6 +3830,8 @@ async function restoreCoding(sysLabel) {
   showLoading(`恢复备份`, `0 / ${list.length}`);
   let done = 0, fail = 0;
   try {
+    // ★ 第十阶段：恢复页纳入统一写事务（此前裸 uds 不受 _writeBusy 保护）。
+    await coder.withWriteLock(async () => {
     // 一次会话覆盖全部块（参考诊断仪 的写序列是「进会话 → N 块写 → 各自回读」，不是每块重进一次；
     // 此前每块都 enterSessionFor + 完整识别链，10 个块就是 10 遍识别）。
     await coder.enterSessionFor('coding', { skipIdent: true, strictSession: true });
@@ -3874,6 +3887,7 @@ async function restoreCoding(sysLabel) {
     hideLoading();
     if (fail) toast('warn', '恢复完成（部分失败）', `成功 ${done} · 失败 ${fail}（见日志）`);
     else toast('ok', '恢复完成', `${done}/${list.length} 块回读一致`);
+    });
   } catch (e) { hideLoading(); toast('err', '恢复失败', e.message); }
 }
 
@@ -4296,6 +4310,8 @@ async function showSysExtra(f) {
     showLoading(`执行「${label}」`, `0 / ${cmds.length}`);
     let done = 0;
     try {
+      // ★ 第十阶段：含写命令的功能序列纳入统一写事务（纯读序列不加锁）。
+      const seqBody = async () => {
       await coder.enterSessionFor('routine');
       // ★ 2026-11-06 代码级对齐：**不再序列外无条件预解锁**——参考诊断仪 的脚本自带
       //   安全访问步（27 03×356 出现在 31 前），不带 27 的例程流（SpecFunctionByID 等
@@ -4341,6 +4357,9 @@ async function showSysExtra(f) {
       }
       hideLoading();
       toast('ok', `「${label}」序列完成`, `${cmds.length} 条命令全部执行`);
+      };
+      // 纯读序列不加锁；含写命令的序列与 applyChange/恢复/编程页共用写锁。
+      await (nWrite ? coder.withWriteLock(seqBody) : seqBody());
     } catch (e) {
       hideLoading();
       const nrc = e instanceof CodingError ? e.nrc : null;
@@ -4604,7 +4623,9 @@ async function showSysExtra(f) {
       }
       toast('info', `${verb} …`, `LID 0x${lid.toString(16).toUpperCase()}`);
       try {
-        const r = await fn(lid);
+        // ★ 第十阶段：写类操作纳入统一写事务；读/回读不加锁。
+        const isWriteVerb = /写|恢复/.test(verb);
+        const r = await (isWriteVerb ? coder.withWriteLock(() => fn(lid)) : fn(lid));
         toast('ok', `${verb}成功`, r || '');
       } catch (e) {
         const nrc = e instanceof CodingError ? e.nrc : null;

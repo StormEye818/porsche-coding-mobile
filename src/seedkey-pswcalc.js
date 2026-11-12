@@ -150,7 +150,8 @@ export const PENDING_MODES = {
   // 0x13/0x15/0x16/0x19/0x1B/0x1F/0x29/0x35/0x42/0x47/0x5B/0x5C/0x5D/0x68
   //   → 已由 RAW_MODE_FNS 收编（2026-10-18，32 点 真值对拍）
   0x18: 'algo-18',
-  0x1D: 'mode 0x1D 是 2 字节空壳（bx lr），语义在调用方/运行时状态里 —— 拒写',
+  // ★ 2026-11-12 第十阶段收口：0x1D 已由 PORSCHESecurityModel 反汇编逆出，不再是待逆项。
+  //   见本文件 pswCalc 的 case 0x1D 与 tools/sa2-coverage-audit.mjs 的取证。
   // 0x28/0x2D/0x30/0x4F/0x65 → 已由 RAW_MODE_FNS 收编（哈希/线性反馈移位 族）
   0x33: 'algo-33',
   0x37: 'algo-37',
@@ -616,8 +617,25 @@ export const RAW_MODE_FNS = {
  * @param {number} seed  32 位无符号
  * @returns {{key: number, algo: string}}
  */
-export function pswCalc(mode, seed) {
+export function pswCalc(mode, seed, ctx = {}) {
   const s = u32(seed);
+  // ★ 2026-11-12 第十阶段收口：mode 0x1D = key = seed + *(TOKEN+0x408838)。
+  //   指令级证据（已独立复现）：
+  //     原厂 securityModel @0x209DE  ldr r0,[r0,#0x408838]
+  //                    @0x209E0  add.w r9, r0, r5   （r5=seed）
+  //     原厂地址解析   @0x18A74  cmp r0,#0x1d → 命中则 move_lib_data(rec+4 → TOKEN+0x408838)
+  //   即加数 = DRIVELINKS 地址记录 rec+4 的 u32（已导出为 drivelinks.json 的 state 字段）。
+  //   ⚠️ 红线：state 未显式装载时**必须拒写**。离线 仿真 跑出的 32 点真值表里
+  //   `want == seed` 只是 TOKEN+0x408838 == 0（空壳未改 seed）的假象，把 identity
+  //   当正解发到真车会吃 NRC 0x35 → 0x36 锁死。因此不提供 state 一律抛错。
+  if (mode === 0x1D) {
+    const st = ctx.state;
+    if (st == null || !Number.isFinite(Number(st))) {
+      throw new Error('mode 0x1D 需要装载地址记录的 state（TOKEN+0x408838）；'
+        + '未装载时拒绝计算，绝不按恒等 key 放行');
+    }
+    return { key: u32(s + u32(Number(st))), algo: 'ADD_TOKEN_STATE/0x1d' };
+  }
   if (RAW_MODE_FNS[mode]) {
     return { key: u32(RAW_MODE_FNS[mode](s)), algo: `PRIM/0x${mode.toString(16)}` };
   }

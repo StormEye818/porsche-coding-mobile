@@ -261,6 +261,44 @@ def main():
             if e:
                 e['indexGenDivergence'] = d
 
+    # ★ 2026-11-12 第十阶段收口：DSN.BIN 各平台模块索引表给出「模块名 → sysId 低字节」
+    #   （生成器 tools/build-dsn-module-sysids.mjs）。此前判「老代模块 sysId 结构性不可证」
+    #   是找错载体：老代 sysDataOff 确实是纯 u32 数值表，但模块名索引在 DSN.BIN。
+    #   只补「原本 0 模块」且单 type 的平台（CS1=0x13 / E1=0x03）：
+    #     - 同名多 id / 多 type 候选一律不猜（生成器已排除，runtimeModules 为空）
+    #     - 9X6/9X7 是多 type 平台，runtimeModules 故意为空 → 保持全局表回退
+    #     - 已有 name-9 投票结果的平台一律不覆盖，避免 981 等既有链路回归
+    dsn_path = ROOT / 'data' / 'dsn-module-sysids.json'
+    if dsn_path.exists():
+        dsn = json.loads(dsn_path.read_text())
+        for dsn_name, r in (dsn.get('platforms') or {}).items():
+            mods = r.get('runtimeModules') or {}
+            if not mods:
+                continue
+            # DSN 平台名大小写与 all-model-sysids 的键对齐（9x6→9X6、cajun→CAJUN 等）
+            plat_key = next((k for k in platforms if k.lower() == dsn_name.lower()), None)
+            if not plat_key:
+                continue
+            e = platforms[plat_key]
+            if e['modulesResolved'] > 0:
+                continue                      # 已有证据，绝不覆盖
+            e['modules'] = {
+                n: {'sysId': sid, 'method': 'dsn-module-index',
+                    'evidence': (f"DSN.BIN 模块索引表 @0x{r['payloadOff']:X}："
+                                 f"sysIdLow={int(sid, 16) & 0xff} + type {r['types'][0]} "
+                                 f"→ {sid}（权威 sysIds 集合校验通过）")}
+                for n, sid in mods.items()
+            }
+            e['modulesResolved'] = len(e['modules'])
+            e['confidence'] = 'high'
+            e['confidenceFrom'] = 'DSN.BIN 模块索引表（显式字节证据，非负启发式投票）'
+            e['genEvidence'] = (f"平台→type 与模块→sysId 均由 DSN.BIN 显式索引定案；{e['genEvidence']}")
+            e['dsnModuleIndex'] = {
+                'payloadOff': r['payloadOffHex'],
+                'rows': r['rowCount'], 'unique': r['uniqueCount'],
+                'ambiguous': r['ambiguousCount'], 'unresolved': r['unresolvedCount'],
+            }
+
     # D. 车型展开（只引用 high/medium 平台；其余保持全局表，不猜）
     models = {}
     for model, hits in mm['modelMap'].items():
@@ -275,14 +313,23 @@ def main():
             'moduleCount': e.get('modulesResolved', 0),
         }
 
+    # 置信度分布与模块总数按最终状态重算（DSN 模块索引补源会改变 confidence）
+    stats = Counter({'platforms': len(platforms), 'models': len(models)})
+    for e in platforms.values():
+        stats[e['confidence']] += 1
+        stats['modules'] += e['modulesResolved']
+
     doc = {
-        'schemaVersion': 1,
+        'schemaVersion': 2,
         'source': 'PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + DSN.BIN 头 22 项索引(显式平台→type) '
+                  '+ DSN.BIN 各平台模块索引表(显式模块→sysIdLow) '
                   '+ 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json',
         'method': '平台→代际优先取 DSN.BIN 显式索引（id≡root type≡sysId 高字节）；'
                   '未定案平台再用变体名∩type 名字集交集(top1 gap≥15% high/≥5% medium)；'
-                  '模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48。'
-                  '显式定案只写 gen，不动 confidence/modules（模块无证据仍走全局表）',
+                  '模块→sysId：原本 0 模块且单 type 的平台(CS1/E1)取 DSN 模块索引表的唯一映射，'
+                  '其余用限定该代 name-9 投票（已有结果不覆盖）；981 沿用已验收 48/48。'
+                  '多 type 平台(9X6/9X7)的 DSN 记录低字节可解但高字节需运行时 VIN/识别应答，'
+                  '故意不接入，保持全局表回退',
         'rule': '只有 high/medium 平台在运行时启用平台专属 sysId；low/unresolved 保持全局 MODULE_TO_ECUID（宁可不覆盖也不猜）',
         'stats': {'platforms': len(platforms), 'models': len(models), **dict(stats)},
         'platforms': platforms,

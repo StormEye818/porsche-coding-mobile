@@ -1,6 +1,6 @@
 // ⚠️ 自动生成，勿手改。源：data/all-model-sysids.json（tools/export-all-model-sysids.py）
 // 编译：node tools/build-model-sysid-map.mjs
-// RE-CODINGADDR-20261110 §6 步骤1-3 在全量车型的落地：25 车型 / 10 平台定案。
+// RE-CODINGADDR-20261110 §6 步骤1-3 在全量车型的落地：25 车型 / 12 平台定案。
 export const MODEL_SYSID_INDEX = {
  "Boxster（981）": {
   "platform": "9X1",
@@ -119,8 +119,8 @@ export const MODEL_SYSID_INDEX = {
  "Panamera-970（至2016年款止）": {
   "platform": "E1",
   "gen": "0x03",
-  "confidence": "low",
-  "apply": false
+  "confidence": "high",
+  "apply": true
  },
  "Panamera-971（2017-2024）": {
   "platform": "E2",
@@ -143,8 +143,8 @@ export const MODEL_SYSID_INDEX = {
  "Carrera GT": {
   "platform": "CS1",
   "gen": "0x13",
-  "confidence": "low",
-  "apply": false
+  "confidence": "high",
+  "apply": true
  },
  "Taycan": {
   "platform": "J1",
@@ -365,6 +365,67 @@ export const PLATFORM_MODULES = {
    "Verstaerker": "0x0f41",
    "Zusatzheizung": "0x0f55",
    "Zusatzinstrument": "0x0f1d"
+  }
+ },
+ "CS1": {
+  "gen": "0x13",
+  "confidence": "high",
+  "modules": {
+   "Airbag": "0x1304",
+   "BCM_hinten": "0x1323",
+   "BCM_vorne": "0x1320",
+   "BKE": "0x1307",
+   "CAN_CAN_Gateway": "0x1309",
+   "DME_BDE_Continental": "0x1301",
+   "Getriebesteuerung_PDK": "0x1302",
+   "Kombiinstrument_MM": "0x1308",
+   "Lenkstockschalter": "0x1336",
+   "PSM": "0x1305",
+   "RDK": "0x1337",
+   "Steering_Control_Unit": "0x1345",
+   "Waehlhebel": "0x1344",
+   "BV_EnginContrModul1UDS": "0x1301"
+  }
+ },
+ "E1": {
+  "gen": "0x03",
+  "confidence": "high",
+  "modules": {
+   "E1_EDC17": "0x0301",
+   "E1_ahsg": "0x032c",
+   "E1_airbag": "0x0304",
+   "E1_aws": "0x031b",
+   "E1_bsg": "0x030b",
+   "E1_gateway_can": "0x0309",
+   "E1_gateway_kline": "0x0309",
+   "E1_grda": "0x032d",
+   "E1_heck": "0x0318",
+   "E1_heck_kl": "0x031c",
+   "E1_kessy": "0x0306",
+   "E1_klima": "0x0307",
+   "E1_kombi": "0x0308",
+   "E1_komp": "0x031a",
+   "E1_lenk": "0x030c",
+   "E1_lssg": "0x0317",
+   "E1_lwr_links": "0x032f",
+   "E1_lwr_rechts": "0x0330",
+   "E1_med91_me711": "0x0301",
+   "E1_niveau": "0x0313",
+   "E1_pcm2_gw": "0x0346",
+   "E1_pcm2_mmi": "0x0346",
+   "E1_pdc": "0x0312",
+   "E1_pdcc_ors": "0x032b",
+   "E1_psm": "0x0305",
+   "E1_qssg": "0x032a",
+   "E1_rdk": "0x0319",
+   "E1_sdi41": "0x0301",
+   "E1_sitzb": "0x0315",
+   "E1_sitzf": "0x0314",
+   "E1_swsg_links": "0x030e",
+   "E1_swsg_rechts": "0x030f",
+   "E1_tiptrnc": "0x0302",
+   "E1_wisch": "0x030d",
+   "E1_wzh": "0x032e"
   }
  },
  "E2": {

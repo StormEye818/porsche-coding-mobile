@@ -71,13 +71,27 @@ export function familyOfReadSid(readSid) {
   return readSid === 0x22 ? 'uds' : (readSid === 0x21 || readSid === 0x1A) ? 'kwp' : null;
 }
 
-/** 记录集 → 家族（多数 readSid；混族时 KWP 优先 —— 10 89 主会话两族通用零错，§1.3） */
+/**
+ * 记录集 → 家族（多数 readSid；混族时 KWP 优先 —— 10 89 主会话两族通用零错，§1.3）
+ *
+ * ★ 2026-11-12 第十阶段收口：readSid=0（老代 KWP 只读/占位记录）时，用 writeSid
+ *   兜底 —— `0x3B` 是 8 位 LID 的 KWP 写、`0x2E` 是 16 位 DID 的 UDS 写，二者
+ *   互斥（全库 0 条 `0x22+0x3B`），是比 readSid 更硬的协议族证据。
+ *   实测 data/models 里 52 个「无有效 readSid」变体：33 个 writeSid=0x3B 可定 kwp，
+ *   19 个 writeSid 全 0 是只读项（无写服务，闸门本就不该放行）。
+ */
 export function familyOfItems(items) {
   let kwp = 0, uds = 0;
   for (const it of items || []) {
     const f = familyOfReadSid(it && it.readSid);
     if (f === 'kwp') kwp++;
     else if (f === 'uds') uds++;
+  }
+  if (!kwp && !uds) {
+    for (const it of items || []) {
+      if (it && it.writeSid === 0x3B) kwp++;
+      else if (it && it.writeSid === 0x2E) uds++;
+    }
   }
   if (!kwp && !uds) return null;
   return kwp >= uds ? 'kwp' : 'uds';
@@ -1329,15 +1343,23 @@ export class Coder {
    * @param {number} value    目标字段值
    * @param {object} opts     { session=逐ECU原厂会话/0x89, dryRun=true, secLevel=0x09 }
    */
-  async applyChange(p, value, opts = {}) {
-    // ⚠️ 写事务整体排他（审计 #20）：双击写入/批量与单项交叉会在 await 点交错。
+  /**
+   * ★ 2026-11-12 第十阶段收口：统一写事务排他。
+   *   此前只有 applyChange 设 `_writeBusy`，恢复页/编程页/功能序列的 4 处裸 `uds`
+   *   写入不受保护，理论可并发交错（CODE-AUDIT P1-17 早已记录）。现在所有写入口
+   *   （含 app 层的恢复/编程/批量序列）都必须经此包装，共用同一把锁。
+   * @param {() => Promise<any>} fn
+   */
+  async withWriteLock(fn) {
     if (this._writeBusy) throw new CodingError('已有写入在进行中，请等待完成');
     this._writeBusy = true;
-    try {
-      return await this._applyChangeInner(p, value, opts);
-    } finally {
-      this._writeBusy = false;
-    }
+    try { return await fn(); }
+    finally { this._writeBusy = false; }
+  }
+
+  async applyChange(p, value, opts = {}) {
+    // ⚠️ 写事务整体排他（审计 #20）：双击写入/批量与单项交叉会在 await 点交错。
+    return this.withWriteLock(() => this._applyChangeInner(p, value, opts));
   }
 
   async _applyChangeInner(p, value, opts = {}) {

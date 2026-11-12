@@ -1,15 +1,15 @@
 {
- "schemaVersion": 1,
- "source": "PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + DSN.BIN 头 22 项索引(显式平台→type) + 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json",
- "method": "平台→代际优先取 DSN.BIN 显式索引（id≡root type≡sysId 高字节）；未定案平台再用变体名∩type 名字集交集(top1 gap≥15% high/≥5% medium)；模块→sysId=限定该代 name-9 投票；981 沿用已验收 48/48。显式定案只写 gen，不动 confidence/modules（模块无证据仍走全局表）",
+ "schemaVersion": 2,
+ "source": "PORSCHE_SYS_DATA.BIN 根表/comm 子表/name-9 + DSN.BIN 头 22 项索引(显式平台→type) + DSN.BIN 各平台模块索引表(显式模块→sysIdLow) + 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json",
+ "method": "平台→代际优先取 DSN.BIN 显式索引（id≡root type≡sysId 高字节）；未定案平台再用变体名∩type 名字集交集(top1 gap≥15% high/≥5% medium)；模块→sysId：原本 0 模块且单 type 的平台(CS1/E1)取 DSN 模块索引表的唯一映射，其余用限定该代 name-9 投票（已有结果不覆盖）；981 沿用已验收 48/48。多 type 平台(9X6/9X7)的 DSN 记录低字节可解但高字节需运行时 VIN/识别应答，故意不接入，保持全局表回退",
  "rule": "只有 high/medium 平台在运行时启用平台专属 sysId；low/unresolved 保持全局 MODULE_TO_ECUID（宁可不覆盖也不猜）",
  "stats": {
   "platforms": 14,
   "models": 25,
-  "high": 8,
-  "modules": 601,
+  "high": 10,
+  "modules": 650,
   "unresolved": 1,
-  "low": 3,
+  "low": 1,
   "medium": 2
  },
  "platforms": {
@@ -1297,29 +1297,292 @@
   },
   "CS1": {
    "gen": "0x13",
-   "confidence": "low",
-   "genEvidence": "显式定案：DSN 索引 \"CS1\" → type 0x13；精确交集 top1=type 0x0E×218 次高=218 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "confidence": "high",
+   "genEvidence": "平台→type 与模块→sysId 均由 DSN.BIN 显式索引定案；显式定案：DSN 索引 \"CS1\" → type 0x13；精确交集 top1=type 0x0E×218 次高=218 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
    "systems": 17,
-   "modulesResolved": 0,
+   "modulesResolved": 14,
    "routeOwnerCount": 0,
-   "modules": {},
+   "modules": {
+    "Airbag": {
+     "sysId": "0x1304",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=4 + type 0x13 → 0x1304（权威 sysIds 集合校验通过）"
+    },
+    "BCM_hinten": {
+     "sysId": "0x1323",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=35 + type 0x13 → 0x1323（权威 sysIds 集合校验通过）"
+    },
+    "BCM_vorne": {
+     "sysId": "0x1320",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=32 + type 0x13 → 0x1320（权威 sysIds 集合校验通过）"
+    },
+    "BKE": {
+     "sysId": "0x1307",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=7 + type 0x13 → 0x1307（权威 sysIds 集合校验通过）"
+    },
+    "CAN_CAN_Gateway": {
+     "sysId": "0x1309",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=9 + type 0x13 → 0x1309（权威 sysIds 集合校验通过）"
+    },
+    "DME_BDE_Continental": {
+     "sysId": "0x1301",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=1 + type 0x13 → 0x1301（权威 sysIds 集合校验通过）"
+    },
+    "Getriebesteuerung_PDK": {
+     "sysId": "0x1302",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=2 + type 0x13 → 0x1302（权威 sysIds 集合校验通过）"
+    },
+    "Kombiinstrument_MM": {
+     "sysId": "0x1308",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=8 + type 0x13 → 0x1308（权威 sysIds 集合校验通过）"
+    },
+    "Lenkstockschalter": {
+     "sysId": "0x1336",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=54 + type 0x13 → 0x1336（权威 sysIds 集合校验通过）"
+    },
+    "PSM": {
+     "sysId": "0x1305",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=5 + type 0x13 → 0x1305（权威 sysIds 集合校验通过）"
+    },
+    "RDK": {
+     "sysId": "0x1337",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=55 + type 0x13 → 0x1337（权威 sysIds 集合校验通过）"
+    },
+    "Steering_Control_Unit": {
+     "sysId": "0x1345",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=69 + type 0x13 → 0x1345（权威 sysIds 集合校验通过）"
+    },
+    "Waehlhebel": {
+     "sysId": "0x1344",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=68 + type 0x13 → 0x1344（权威 sysIds 集合校验通过）"
+    },
+    "BV_EnginContrModul1UDS": {
+     "sysId": "0x1301",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x6C3A0：sysIdLow=1 + type 0x13 → 0x1301（权威 sysIds 集合校验通过）"
+    }
+   },
    "typeCandidates": [
     "0x13"
    ],
-   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）"
+   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）",
+   "confidenceFrom": "DSN.BIN 模块索引表（显式字节证据，非负启发式投票）",
+   "dsnModuleIndex": {
+    "payloadOff": "0x6C3A0",
+    "rows": 16,
+    "unique": 14,
+    "ambiguous": 1,
+    "unresolved": 0
+   }
   },
   "E1": {
    "gen": "0x03",
-   "confidence": "low",
-   "genEvidence": "显式定案：DSN 索引 \"E1\" → type 0x03；精确交集 top1=type 0x0F×7 次高=7 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
+   "confidence": "high",
+   "genEvidence": "平台→type 与模块→sysId 均由 DSN.BIN 显式索引定案；显式定案：DSN 索引 \"E1\" → type 0x03；精确交集 top1=type 0x0F×7 次高=7 gap=0.0%；type 子表 42 个 sysId（高字节=type 自证）",
    "systems": 48,
-   "modulesResolved": 0,
+   "modulesResolved": 35,
    "routeOwnerCount": 0,
-   "modules": {},
+   "modules": {
+    "E1_EDC17": {
+     "sysId": "0x0301",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=1 + type 0x03 → 0x0301（权威 sysIds 集合校验通过）"
+    },
+    "E1_ahsg": {
+     "sysId": "0x032c",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=44 + type 0x03 → 0x032c（权威 sysIds 集合校验通过）"
+    },
+    "E1_airbag": {
+     "sysId": "0x0304",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=4 + type 0x03 → 0x0304（权威 sysIds 集合校验通过）"
+    },
+    "E1_aws": {
+     "sysId": "0x031b",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=27 + type 0x03 → 0x031b（权威 sysIds 集合校验通过）"
+    },
+    "E1_bsg": {
+     "sysId": "0x030b",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=11 + type 0x03 → 0x030b（权威 sysIds 集合校验通过）"
+    },
+    "E1_gateway_can": {
+     "sysId": "0x0309",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=9 + type 0x03 → 0x0309（权威 sysIds 集合校验通过）"
+    },
+    "E1_gateway_kline": {
+     "sysId": "0x0309",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=9 + type 0x03 → 0x0309（权威 sysIds 集合校验通过）"
+    },
+    "E1_grda": {
+     "sysId": "0x032d",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=45 + type 0x03 → 0x032d（权威 sysIds 集合校验通过）"
+    },
+    "E1_heck": {
+     "sysId": "0x0318",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=24 + type 0x03 → 0x0318（权威 sysIds 集合校验通过）"
+    },
+    "E1_heck_kl": {
+     "sysId": "0x031c",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=28 + type 0x03 → 0x031c（权威 sysIds 集合校验通过）"
+    },
+    "E1_kessy": {
+     "sysId": "0x0306",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=6 + type 0x03 → 0x0306（权威 sysIds 集合校验通过）"
+    },
+    "E1_klima": {
+     "sysId": "0x0307",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=7 + type 0x03 → 0x0307（权威 sysIds 集合校验通过）"
+    },
+    "E1_kombi": {
+     "sysId": "0x0308",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=8 + type 0x03 → 0x0308（权威 sysIds 集合校验通过）"
+    },
+    "E1_komp": {
+     "sysId": "0x031a",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=26 + type 0x03 → 0x031a（权威 sysIds 集合校验通过）"
+    },
+    "E1_lenk": {
+     "sysId": "0x030c",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=12 + type 0x03 → 0x030c（权威 sysIds 集合校验通过）"
+    },
+    "E1_lssg": {
+     "sysId": "0x0317",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=23 + type 0x03 → 0x0317（权威 sysIds 集合校验通过）"
+    },
+    "E1_lwr_links": {
+     "sysId": "0x032f",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=47 + type 0x03 → 0x032f（权威 sysIds 集合校验通过）"
+    },
+    "E1_lwr_rechts": {
+     "sysId": "0x0330",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=48 + type 0x03 → 0x0330（权威 sysIds 集合校验通过）"
+    },
+    "E1_med91_me711": {
+     "sysId": "0x0301",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=1 + type 0x03 → 0x0301（权威 sysIds 集合校验通过）"
+    },
+    "E1_niveau": {
+     "sysId": "0x0313",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=19 + type 0x03 → 0x0313（权威 sysIds 集合校验通过）"
+    },
+    "E1_pcm2_gw": {
+     "sysId": "0x0346",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=70 + type 0x03 → 0x0346（权威 sysIds 集合校验通过）"
+    },
+    "E1_pcm2_mmi": {
+     "sysId": "0x0346",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=70 + type 0x03 → 0x0346（权威 sysIds 集合校验通过）"
+    },
+    "E1_pdc": {
+     "sysId": "0x0312",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=18 + type 0x03 → 0x0312（权威 sysIds 集合校验通过）"
+    },
+    "E1_pdcc_ors": {
+     "sysId": "0x032b",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=43 + type 0x03 → 0x032b（权威 sysIds 集合校验通过）"
+    },
+    "E1_psm": {
+     "sysId": "0x0305",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=5 + type 0x03 → 0x0305（权威 sysIds 集合校验通过）"
+    },
+    "E1_qssg": {
+     "sysId": "0x032a",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=42 + type 0x03 → 0x032a（权威 sysIds 集合校验通过）"
+    },
+    "E1_rdk": {
+     "sysId": "0x0319",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=25 + type 0x03 → 0x0319（权威 sysIds 集合校验通过）"
+    },
+    "E1_sdi41": {
+     "sysId": "0x0301",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=1 + type 0x03 → 0x0301（权威 sysIds 集合校验通过）"
+    },
+    "E1_sitzb": {
+     "sysId": "0x0315",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=21 + type 0x03 → 0x0315（权威 sysIds 集合校验通过）"
+    },
+    "E1_sitzf": {
+     "sysId": "0x0314",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=20 + type 0x03 → 0x0314（权威 sysIds 集合校验通过）"
+    },
+    "E1_swsg_links": {
+     "sysId": "0x030e",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=14 + type 0x03 → 0x030e（权威 sysIds 集合校验通过）"
+    },
+    "E1_swsg_rechts": {
+     "sysId": "0x030f",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=15 + type 0x03 → 0x030f（权威 sysIds 集合校验通过）"
+    },
+    "E1_tiptrnc": {
+     "sysId": "0x0302",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=2 + type 0x03 → 0x0302（权威 sysIds 集合校验通过）"
+    },
+    "E1_wisch": {
+     "sysId": "0x030d",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=13 + type 0x03 → 0x030d（权威 sysIds 集合校验通过）"
+    },
+    "E1_wzh": {
+     "sysId": "0x032e",
+     "method": "dsn-module-index",
+     "evidence": "DSN.BIN 模块索引表 @0x328EC：sysIdLow=46 + type 0x03 → 0x032e（权威 sysIds 集合校验通过）"
+    }
+   },
    "typeCandidates": [
     "0x03"
    ],
-   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）"
+   "genResolvedFrom": "DSN.BIN 头 22 项索引（id ≡ root type ≡ sysId 高字节）",
+   "confidenceFrom": "DSN.BIN 模块索引表（显式字节证据，非负启发式投票）",
+   "dsnModuleIndex": {
+    "payloadOff": "0x328EC",
+    "rows": 48,
+    "unique": 35,
+    "ambiguous": 0,
+    "unresolved": 12
+   }
   },
   "E2": {
    "gen": "0x0b",
@@ -3904,9 +4167,9 @@
   "Panamera-970（至2016年款止）": {
    "platform": "E1",
    "gen": "0x03",
-   "confidence": "low",
-   "applyPlatformSysIds": false,
-   "moduleCount": 0
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 35
   },
   "Panamera-971（2017-2024）": {
    "platform": "E2",
@@ -3932,9 +4195,9 @@
   "Carrera GT": {
    "platform": "CS1",
    "gen": "0x13",
-   "confidence": "low",
-   "applyPlatformSysIds": false,
-   "moduleCount": 0
+   "confidence": "high",
+   "applyPlatformSysIds": true,
+   "moduleCount": 14
   },
   "Taycan": {
    "platform": "J1",

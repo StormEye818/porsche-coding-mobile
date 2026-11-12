@@ -31,7 +31,10 @@ for (const [ecu, arr] of Object.entries(dl.ecu)) {
     const m = r.mode;
     if (m == null) { buckets.threw++; ecuOk = false; threwModes.set(-1, (threwModes.get(-1) || 0) + 1); continue; }
     try {
-      const x = resolveKey(m, 0x12345678);
+      // ★ 2026-11-12：mode 0x1D 需要装载地址记录的 state（TOKEN+0x408838）；
+      //   离线对拍用记录里已导出的 state，未装载则 resolveKey 主动拒写。
+      const ctx = (m === 0x1D && r.state != null) ? { state: r.state, ecuId: ecu } : { ecuId: ecu };
+      const x = resolveKey(m, 0x12345678, ctx);
       if (x.needsKey === false) { buckets.noAlgo++; noAlgoModes.add(m); }
       else buckets.real++;
     } catch (e) {

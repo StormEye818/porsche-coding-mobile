@@ -494,8 +494,19 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
       if (got === (parseInt(r.key, 16) >>> 0)) okN++; else badN++;
     }
     ok(`mode 0x48 = ~seed 对拍 真值对拍（${okN} 点）`, badN === 0);
-    // ⚠️ 0x1d 的 mode 0x1D 只有 2 字节空壳，「identity」是假解 —— 必须仍 PENDING
-    ok('mode 0x1d 仍 PENDING（mode 0x1D 是 2 字节空壳，非真算法）', 0x1d in PENDING_MODES);
+    // ★ 2026-11-12 第十阶段：mode 0x1D 已由反汇编逆出（key = seed + state），不再是待逆项。
+    //   红线：state 未装载时必须拒写，绝不把离线 identity 当正解发到真车。
+    ok('mode 0x1d 已收编（不再 PENDING）', !(0x1d in PENDING_MODES));
+    {
+      const { pswCalc: pc } = await import('./src/seedkey-pswcalc.js');
+      let rejected = false;
+      try { pc(0x1d, 0x12345678); } catch { rejected = true; }
+      ok('mode 0x1d 未装载 state 时主动拒写（防 NRC 0x35）', rejected);
+      ok('mode 0x1d 装载 state 后 key = seed + state',
+        pc(0x1d, 0x12345678, { state: 0x18bd }).key === (0x12345678 + 0x18bd) >>> 0);
+      ok('mode 0x1d state=0 时与离线真值表 identity 一致',
+        pc(0x1d, 0x12345678, { state: 0 }).key === 0x12345678);
+    }
     // mode 0x02：rotate+combine **符号扩展**语义（n==0 保留完整 seed），32/32
     ok('mode 0x02 已收编', !(0x02 in PENDING_MODES));
     {

@@ -122,9 +122,15 @@ export function resolveKey(mode, seed, ctx = {}) {
   }
 
   // ① 内联公式 / rotate+combine / 原语直译（securityModel 的 mode ≤0x77 分支）
+  //    ★ 2026-11-12：0x1D = key = seed + state（TOKEN+0x408838）。state 来自调用方
+  //    装载的 DRIVELINKS 地址记录 rec+4；未装载时 pswCalc 抛错 → 保持拒写，不猜恒等 key。
+  if (mode === 0x1D) {
+    const r = pswCalc(mode, s, ctx);
+    return { ...r, mode, outlen: 4, needsKey: true };
+  }
   if (mode in INLINE_MODES || mode in ROTATE_COMBINE_MODES || mode in ROTATE_COMBINE32_MODES
       || mode in FEISTEL_MODES || mode in WORDVM_PROGRAMS || mode in RAW_MODE_FNS) {
-    return { ...pswCalc(mode, s), mode, outlen: 4, needsKey: true };
+    return { ...pswCalc(mode, s, ctx), mode, outlen: 4, needsKey: true };
   }
 
   // ② stdSeedKey → ASAP1A 变体（mode 0xB0..0xED 有 case）

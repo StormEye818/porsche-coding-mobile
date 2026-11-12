@@ -45,8 +45,30 @@ console.log('\n[A] 步骤1 换表（全车型 sysIds）');
     }
   }
   ok('所有模块 sysId 代际与平台一致（LCA 0x0f4d 已验收特例除外）', badGen.length === 0, badGen.slice(0, 3).join(','));
+  // ★ 2026-11-12 第十阶段：CS1/E1 由 DSN.BIN 模块索引表显式定案（confidence 升 high）。
+  //   旧断言写死「弱平台 ≥4 个」，在证据变齐后反而会误报。改为真正要守的语义：
+  //   剩余弱平台（9X6/9X7/9X7 系）必须 **0 模块映射 + 车型不启用**，
+  //   且 9X6/9X7 是多 type 平台、高字节需运行时 VIN，绝不能被静态接入。
   const weak = Object.entries(allm.platforms).filter(([, e]) => !['high', 'medium'].includes(e.confidence));
-  ok('low/unresolved 平台不启用覆盖（不猜）', weak.length >= 4 && weak.every(([, e]) => e.gen === null || e.confidence !== 'high'));
+  const weakUnapplied = ([p, e]) => e.modulesResolved === 0
+    && Object.keys(e.modules || {}).length === 0
+    && !Object.values(allm.models).some((m) => m.platform === p && m.applyPlatformSysIds);
+  ok('剩余 low/unresolved 平台确实未启用覆盖（不猜）',
+    weak.length >= 2 && weak.every(weakUnapplied),
+    `弱平台 ${weak.map(([p]) => p).join('/')}`);
+  for (const p of ['CS1', 'E1']) {
+    const e = allm.platforms[p];
+    ok(`${p} 由 DSN 模块索引表显式定案并接入运行时`,
+      !!e && e.confidence === 'high' && e.modulesResolved > 0 && !!e.dsnModuleIndex
+      && Object.values(e.modules).every((m) => m.method === 'dsn-module-index'),
+      e ? `${e.modulesResolved} 模块 @${e.dsnModuleIndex?.payloadOff}` : '缺失');
+  }
+  for (const p of ['9X6', '9X7']) {
+    const e = allm.platforms[p];
+    ok(`${p} 多 type 平台保持全局表回退（不猜高字节）`,
+      !!e && e.gen === null && e.modulesResolved === 0 && weakUnapplied([p, e]),
+      e ? `typeCandidates=${(e.typeCandidates || []).join(',')}` : '缺失');
+  }
   const applied = Object.values(allm.models).filter((m) => m.applyPlatformSysIds).length;
   ok(`车型启用平台专属映射 ≥17（实际 ${applied}）`, applied >= 17);
 }

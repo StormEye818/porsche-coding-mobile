@@ -3,15 +3,15 @@
  "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(cat=0x10 本代地址对) + all-model-sysids(全车型换表) + variant-sysids(4588 变体实解析 sysId) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
  "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；仅 cat=0x60 模板无地址对 → 同代家族默认候选（标 family-default、必须探针验证）。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；无记录 rx 时才按 11 位请求 tx≤0x7F7 → rx=tx+8 派生；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
  "stats": {
-  "legacy": 152,
-  "rxPreserved": 2088,
-  "commCat10Exact": 112,
-  "rxDefaultPlus8": 1816,
+  "legacy": 183,
+  "rxPreserved": 2143,
+  "commCat10Exact": 103,
+  "rxDefaultPlus8": 1892,
   "rxRejected": 1,
-  "crossgen": 151,
-  "tierA": 63,
-  "enumeration": 200,
-  "commFamilyDefault": 92,
+  "crossgen": 158,
+  "tierA": 68,
+  "enumeration": 188,
+  "commFamilyDefault": 120,
   "commCat10": 112,
   "duplicateDirectUnbound": 6
  },
@@ -53,16 +53,16 @@
    "confidence": "high"
   },
   "CS1": {
-   "modules": 0,
-   "static": 0,
+   "modules": 14,
+   "static": 14,
    "gen": "0x13",
-   "confidence": "low"
+   "confidence": "high"
   },
   "E1": {
-   "modules": 0,
-   "static": 0,
+   "modules": 35,
+   "static": 35,
    "gen": "0x03",
-   "confidence": "low"
+   "confidence": "high"
   },
   "E2": {
    "modules": 59,
@@ -102,6 +102,1695 @@
   }
  },
  "ecu": {
+  "0x0301": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10Exact"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0302": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0304": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0305": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0306": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0307": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0308": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0309": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x030b": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x030c": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x030d": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x030e": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x04E0"
+   ],
+   "pairs": [
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10Exact"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x030f": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10Exact"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0312": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0313": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0314": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0315": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0317": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0318": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0319": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x031a": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x031b": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x031c": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x032a": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x032b": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x032c": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x032d": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x032e": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x032f": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0330": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
+  "0x0346": {
+   "mode": null,
+   "n": null,
+   "nMixed": false,
+   "bindDirect": false,
+   "cands": [
+    "0x0040",
+    "0x04E0",
+    "0x04EE"
+   ],
+   "pairs": [
+    {
+     "tx": "0x0040",
+     "rx": "0x0060"
+    },
+    {
+     "tx": "0x04E0",
+     "rx": "0x04F0"
+    },
+    {
+     "tx": "0x04EE",
+     "rx": "0x04FE"
+    }
+   ],
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "provenance": [
+    {
+     "can": "0x0040",
+     "rx": "0x0060",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04E0",
+     "rx": "0x04F0",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "can": "0x04EE",
+     "rx": "0x04FE",
+     "sources": [
+      "commCat10-family-default"
+     ],
+     "note": "本 ECU comm 仅 cat=0x60 固定模板无地址对；候选=同代家族默认地址（非按车型唯一，必须探针验证）"
+    },
+    {
+     "source": "tableA",
+     "note": "表A 精确 join 候选（旧代路径保留）"
+    }
+   ]
+  },
   "0x0501": {
    "mode": "0x1005",
    "n": null,
@@ -27239,19 +28928,13 @@
      "rx": "0x07E8"
     }
    ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "firstRead": "21A4",
    "provenance": [
     {
      "can": "0x07E0",
-     "rx": "0x07E8",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
-    },
-    {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+      "crossgenProven"
+     ]
     }
    ]
   },
@@ -27261,27 +28944,87 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x071E"
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
    ],
    "pairs": [
     {
-     "tx": "0x071E",
-     "rx": "0x0788"
-    }
-   ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
-   "provenance": [
-    {
-     "can": "0x071E",
-     "rx": "0x0788",
-     "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+     "tx": "0x06E7",
+     "rx": "0x06EF"
     },
     {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": "2101",
+   "provenance": [
+    {
+     "can": "0x06E7",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073C",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073D",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0743",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0744",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0758",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B6",
+     "sources": [
+      "crossgen"
+     ]
     }
    ]
   },
@@ -27291,27 +29034,87 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x0715"
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
    ],
    "pairs": [
     {
-     "tx": "0x0715",
-     "rx": "0x077F"
-    }
-   ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
-   "provenance": [
-    {
-     "can": "0x0715",
-     "rx": "0x077F",
-     "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+     "tx": "0x06E7",
+     "rx": "0x06EF"
     },
     {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
+    }
+   ],
+   "firstRead": "220000",
+   "provenance": [
+    {
+     "can": "0x06E7",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073C",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073D",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0743",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0744",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0758",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B6",
+     "sources": [
+      "crossgen"
+     ]
     }
    ]
   },
@@ -27329,7 +29132,7 @@
      "rx": "0x077D"
     }
    ],
-   "firstRead": null,
+   "firstRead": "2200F0",
    "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
    "provenance": [
     {
@@ -27351,27 +29154,87 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x0746"
+    "0x0702",
+    "0x076D",
+    "0x07B8",
+    "0x07BC",
+    "0x07DD",
+    "0x07E8",
+    "0x07F1"
    ],
    "pairs": [
     {
-     "tx": "0x0746",
-     "rx": "0x07B0"
-    }
-   ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
-   "provenance": [
-    {
-     "can": "0x0746",
-     "rx": "0x07B0",
-     "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+     "tx": "0x0702",
+     "rx": "0x070A"
     },
     {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+     "tx": "0x076D",
+     "rx": "0x0775"
+    },
+    {
+     "tx": "0x07B8",
+     "rx": "0x07C0"
+    },
+    {
+     "tx": "0x07BC",
+     "rx": "0x07C4"
+    },
+    {
+     "tx": "0x07DD",
+     "rx": "0x07E5"
+    },
+    {
+     "tx": "0x07E8",
+     "rx": "0x07F0"
+    },
+    {
+     "tx": "0x07F1",
+     "rx": "0x07F9"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x0702",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x076D",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B8",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BC",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07DD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07E8",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07F1",
+     "sources": [
+      "crossgen"
+     ]
     }
    ]
   },
@@ -27381,27 +29244,21 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x0714"
+    "0x07F1"
    ],
    "pairs": [
     {
-     "tx": "0x0714",
-     "rx": "0x077E"
+     "tx": "0x07F1",
+     "rx": "0x07F9"
     }
    ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "firstRead": "2200F0",
    "provenance": [
     {
-     "can": "0x0714",
-     "rx": "0x077E",
+     "can": "0x07F1",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
-    },
-    {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+      "crossgen"
+     ]
     }
    ]
   },
@@ -27416,22 +29273,16 @@
    "pairs": [
     {
      "tx": "0x0710",
-     "rx": "0x077A"
+     "rx": "0x0718"
     }
    ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "firstRead": "2200F0",
    "provenance": [
     {
      "can": "0x0710",
-     "rx": "0x077A",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
-    },
-    {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+      "crossgenProven"
+     ]
     }
    ]
   },
@@ -27813,27 +29664,21 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x070E"
+    "0x07D1"
    ],
    "pairs": [
     {
-     "tx": "0x070E",
-     "rx": "0x0778"
+     "tx": "0x07D1",
+     "rx": "0x07D9"
     }
    ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "firstRead": "2200F0",
    "provenance": [
     {
-     "can": "0x070E",
-     "rx": "0x0778",
+     "can": "0x07D1",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
-    },
-    {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+      "crossgenProven"
+     ]
     }
    ]
   },
@@ -27843,27 +29688,21 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x070D"
+    "0x074F"
    ],
    "pairs": [
     {
-     "tx": "0x070D",
-     "rx": "0x0777"
+     "tx": "0x074F",
+     "rx": "0x0757"
     }
    ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "firstRead": "2200F0",
    "provenance": [
     {
-     "can": "0x070D",
-     "rx": "0x0777",
+     "can": "0x074F",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
-    },
-    {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+      "crossgenProven"
+     ]
     }
    ]
   },
@@ -27873,27 +29712,109 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x070C"
+    "0x06DE",
+    "0x06DF",
+    "0x07B1",
+    "0x07B9",
+    "0x07BE",
+    "0x07C1",
+    "0x07C2",
+    "0x07EA",
+    "0x07EB"
    ],
    "pairs": [
     {
-     "tx": "0x070C",
-     "rx": "0x0776"
-    }
-   ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
-   "provenance": [
-    {
-     "can": "0x070C",
-     "rx": "0x0776",
-     "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+     "tx": "0x06DE",
+     "rx": "0x06E6"
     },
     {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+     "tx": "0x06DF",
+     "rx": "0x06E7"
+    },
+    {
+     "tx": "0x07B1",
+     "rx": "0x07B9"
+    },
+    {
+     "tx": "0x07B9",
+     "rx": "0x07C1"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07C1",
+     "rx": "0x07C9"
+    },
+    {
+     "tx": "0x07C2",
+     "rx": "0x07CA"
+    },
+    {
+     "tx": "0x07EA",
+     "rx": "0x07F2"
+    },
+    {
+     "tx": "0x07EB",
+     "rx": "0x07F3"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x06DE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06DF",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B1",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B9",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07C1",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07C2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07EA",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07EB",
+     "sources": [
+      "crossgen"
+     ]
     }
    ]
   },
@@ -27903,27 +29824,21 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x070B"
+    "0x074F"
    ],
    "pairs": [
     {
-     "tx": "0x070B",
-     "rx": "0x0775"
+     "tx": "0x074F",
+     "rx": "0x0757"
     }
    ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
+   "firstRead": "2200F0",
    "provenance": [
     {
-     "can": "0x070B",
-     "rx": "0x0775",
+     "can": "0x074F",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
-    },
-    {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+      "crossgenProven"
+     ]
     }
    ]
   },
@@ -27933,27 +29848,87 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x0753"
+    "0x06E7",
+    "0x073C",
+    "0x073D",
+    "0x0743",
+    "0x0744",
+    "0x0758",
+    "0x07B6"
    ],
    "pairs": [
     {
-     "tx": "0x0753",
-     "rx": "0x07BD"
+     "tx": "0x06E7",
+     "rx": "0x06EF"
+    },
+    {
+     "tx": "0x073C",
+     "rx": "0x0744"
+    },
+    {
+     "tx": "0x073D",
+     "rx": "0x0745"
+    },
+    {
+     "tx": "0x0743",
+     "rx": "0x074B"
+    },
+    {
+     "tx": "0x0744",
+     "rx": "0x074C"
+    },
+    {
+     "tx": "0x0758",
+     "rx": "0x0760"
+    },
+    {
+     "tx": "0x07B6",
+     "rx": "0x07BE"
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
    "provenance": [
     {
-     "can": "0x0753",
-     "rx": "0x07BD",
+     "can": "0x06E7",
      "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+      "crossgen"
+     ]
     },
     {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+     "can": "0x073C",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x073D",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0743",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0744",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0758",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B6",
+     "sources": [
+      "crossgen"
+     ]
     }
    ]
   },
@@ -27963,27 +29938,153 @@
    "nMixed": false,
    "bindDirect": false,
    "cands": [
-    "0x0712"
+    "0x06DD",
+    "0x06DE",
+    "0x06E2",
+    "0x06F6",
+    "0x06F7",
+    "0x0700",
+    "0x074D",
+    "0x076B",
+    "0x076C",
+    "0x07B2",
+    "0x07BB",
+    "0x07BE",
+    "0x07BF"
    ],
    "pairs": [
     {
-     "tx": "0x0712",
-     "rx": "0x077C"
-    }
-   ],
-   "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
-   "provenance": [
-    {
-     "can": "0x0712",
-     "rx": "0x077C",
-     "sources": [
-      "commCat10Exact"
-     ],
-     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+     "tx": "0x06DD",
+     "rx": "0x06E5"
     },
     {
-     "note": "无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）"
+     "tx": "0x06DE",
+     "rx": "0x06E6"
+    },
+    {
+     "tx": "0x06E2",
+     "rx": "0x06EA"
+    },
+    {
+     "tx": "0x06F6",
+     "rx": "0x06FE"
+    },
+    {
+     "tx": "0x06F7",
+     "rx": "0x06FF"
+    },
+    {
+     "tx": "0x0700",
+     "rx": "0x0708"
+    },
+    {
+     "tx": "0x074D",
+     "rx": "0x0755"
+    },
+    {
+     "tx": "0x076B",
+     "rx": "0x0773"
+    },
+    {
+     "tx": "0x076C",
+     "rx": "0x0774"
+    },
+    {
+     "tx": "0x07B2",
+     "rx": "0x07BA"
+    },
+    {
+     "tx": "0x07BB",
+     "rx": "0x07C3"
+    },
+    {
+     "tx": "0x07BE",
+     "rx": "0x07C6"
+    },
+    {
+     "tx": "0x07BF",
+     "rx": "0x07C7"
+    }
+   ],
+   "firstRead": "2200F0",
+   "provenance": [
+    {
+     "can": "0x06DD",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06DE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06E2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06F6",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x06F7",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x0700",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x074D",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x076B",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x076C",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07B2",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BB",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BE",
+     "sources": [
+      "crossgen"
+     ]
+    },
+    {
+     "can": "0x07BF",
+     "sources": [
+      "crossgen"
+     ]
     }
    ]
   },

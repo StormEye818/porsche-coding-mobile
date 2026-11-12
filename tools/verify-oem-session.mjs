@@ -21,6 +21,7 @@ import { Coder } from '../src/coder.js';
 import {
   OEM_SESSION_BY_SYSID, OEM_ENTER_SEQ_BY_SYSID, OEM_GEN_BY_SYSID, oemSessionFor,
 } from '../src/oem-session-table.js';
+import { oemIsSessionless, oemEnterSequences } from '../src/oem-enter-frames.js';
 
 const readJson = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 let pass = 0;
@@ -71,14 +72,23 @@ for (const v of Object.values(j981)) {
 for (const p of Object.values(allModels.platforms)) {
   for (const m of Object.values(p.modules || {})) used.add(String(m.sysId).toLowerCase());
 }
+// ★ 2026-11-12 第十阶段收口：E1（type 0x03）接入 DSN 模块表后，运行时多出 24 个
+//   老代 KWP sysId。它们原厂序列是 `81` 快初始化 + `1A` 识别、**根本不建 UDS 会话**
+//   （第十阶段已坐实 68 个 sessionless sysId），不得算作「会话证据缺口」；
+//   但必须逐一确认它们确实在 sessionless 集合里、且有原厂进模块序列。
 const noEvidence = [...used].filter((k) => !oemSessionFor(k));
+const sessionlessNoSession = noEvidence.filter((k) => oemIsSessionless(k));
+const realGap = noEvidence.filter((k) => !oemIsSessionless(k));
+ok('运行时 sysId 零会话证据缺口（sessionless 老代 KWP 除外）', realGap.length === 0,
+  `${used.size} 个 sysId；真缺口 ${realGap.length}，原厂不建会话 ${sessionlessNoSession.length}`);
+ok('所有无会话 sysId 都是原厂 sessionless 且有进模块序列',
+  sessionlessNoSession.every((k) => oemEnterSequences(k).length > 0),
+  `${sessionlessNoSession.length} 个`);
 const genMismatch = [...used].filter((k) => {
   const g = OEM_GEN_BY_SYSID[k];
   if (!g) return false;
   return Number.parseInt(k.slice(2, 4), 16) !== Number.parseInt(g, 16);
 });
-ok('运行时 sysId 全部有会话证据（零缺口）', noEvidence.length === 0,
-  `${used.size} 个 sysId，缺 ${noEvidence.length}`);
 ok('运行时 sysId 与 comm type 代际零错配', genMismatch.length === 0,
   `错配 ${genMismatch.length}`);
 ok('防错代护栏生效：错代别名不返回会话', !oemSessionFor('0x0105')?.session

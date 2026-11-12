@@ -220,8 +220,23 @@ console.log('\n[4] 审计其余修复回归');
   ok('两个安全访问入口对 needsKey:false 同口径（均拒写）',
     !/原厂无 case 不发 key —— 继续写入/.test(coderSrc)
     && /两个安全访问入口同口径/.test(coderSrc));
-  ok('22 11 02 补帧如实标注为未实现（不冒充已对齐）',
-    /当前实现\*\*没有发帧路径\*\*/.test(app));
+  // ★ 第十阶段收口：补帧已按 libPORSCHE_LINK.so:0x18FC0/0x18FE2 实现，
+  //   断言改为「绑定失败时确实发 221102，且响应不作为绑定成功依据」。
+  ok('22 11 02 绑定失败补帧已实现（按原厂 0x18FE2）',
+    /cmd\('221102', 800\)/.test(app)
+    && /补帧响应不作为成功依据/.test(app)
+    && /return null;/.test(app));
+  ok('mode 0x1D 已按 seed+state 逆出且未装载 state 时拒写',
+    /ADD_TOKEN_STATE\/0x1d/.test(R('../src/seedkey-pswcalc.js'))
+    && /未装载时拒绝计算/.test(R('../src/seedkey-pswcalc.js')));
+  ok('统一写事务覆盖 applyChange/恢复页/功能序列/编程页',
+    /withWriteLock/.test(coderSrc)
+    && (app.match(/withWriteLock/g) || []).length >= 3);
+  ok('familyOfItems 有 writeSid 兜底（0x3B→kwp / 0x2E→uds）',
+    /writeSid === 0x3B/.test(coderSrc) && /writeSid === 0x2E/.test(coderSrc));
+  ok('CS1/E1 由 DSN 模块索引表接入运行时',
+    /dsn-module-index/.test(R('../data/all-model-sysids.json'))
+    && !/0x1D 是 2 字节空壳/.test(R('../tools/verify-pending.mjs')));
   ok('bind-plan rule 如实写明 comm 自带 rx 优先',
     /comm cat=0x10 记录自带 rx 优先/.test(R('../tools/export-bind-plan.py')));
 }

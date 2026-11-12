@@ -23,12 +23,17 @@ const varSamples = JSON.parse(readFileSync(join(here, 'vectors/pend-samples.json
 /**
  * **刻意保持拒写**的 mode —— 它们不算回归失败，但会在汇总里单独列出。
  *
- * `0x1d`：`mode 0x1D` 在库里是 **size=2 的空壳**，真算法依赖运行时状态
- *   (`(token+0x408838) + seed`)，**不是纯函数**，离线实现不了。
- *   真值表里 want == seed（identity）只是「空壳跑完没改 seed」的假象，
- *   **不是**正解 —— 把这条当已收编会直接吃 NRC 0x35。见 TAKEOVER.md §5.1。
+ * ★ 2026-11-12 第十阶段收口：`0x1d` 已从本清单移除。反汇编逐指令证实
+ *   `PORSCHESecurityModel case 0x1d: key = seed + *(TOKEN+0x408838)`，
+ *   而该 TOKEN 态由 `Xml_GetDriveLinksAddress` 在解析地址记录 firstByte==0x1d
+ *   时从 `rec+4` 的 u32 装载 —— 即 `drivelinks.json` 已导出的 `state` 字段。
+ *   离线真值表 want==seed 是仿真里 TOKEN 态为 0 的情形（state=0 → key=seed），
+ *   所以下面对 0x1d 传 `{state: 0}` 做 32 点对拍；**未装载 state 时实现仍主动拒写**，
+ *   绝不把 identity 当正解放到真车。
  */
-const EXPECT_REJECT = new Map([[0x1d, 'mode 0x1D 是 2 字节空壳，非纯函数，刻意拒写']]);
+const EXPECT_REJECT = new Map();
+/** mode 0x1D 的离线真值表对应 TOKEN 态 = 0（仿真环境未装载地址记录）。 */
+const MODE_STATE_ZERO = new Map([[0x1d, { state: 0 }]]);
 
 let pass = 0, skip = 0;
 const failedModes = new Set();
@@ -43,7 +48,8 @@ for (const [hex, rows] of Object.entries(modeSamples)) {
     const want = parseInt(r.key, 16);
     n++;
     let got;
-    try { got = pswCalc(mode, seed).key >>> 0; } catch (e) { got = null; }
+    // mode 0x1D：离线真值表是 TOKEN 态=0 的采样，显式传 state=0；未装载时实现会抛错拒写。
+    try { got = pswCalc(mode, seed, MODE_STATE_ZERO.get(mode) || {}).key >>> 0; } catch (e) { got = null; }
     if (got === want) ok++;
     else if (failures.length < 40) failures.push(`mode ${hex} seed=${r.seed} want=${r.key} got=${got == null ? 'REJECT' : got.toString(16)}`);
   }
