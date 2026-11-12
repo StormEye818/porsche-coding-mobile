@@ -10,7 +10,7 @@
  *   ③ 序列选择规则（绑定地址 > 会话号匹配 > 含会话帧 > 记录顺序）
  *   ④ Coder 行为：按序发帧、flag 容错、非 UDS/复合脚本帧跳过、
  *      显式会话与无上下文仍走既有族流、换模块清证据
- *   ⑤ 全车型运行时 sysId 序列覆盖、写白名单不扩大
+ *   ⑤ 全车型运行时 sysId 序列覆盖、写闸门按对齐矩阵判定
  *
  * 跑法：node tools/verify-oem-frames.mjs
  */
@@ -245,7 +245,7 @@ console.log('\n[5] 全车型覆盖与写流程');
     byte: 0, bit: 0, bitsize: 1, risk: 'low' };
   let msg = '';
   try { await c.applyChange(p, 1, { dryRun: false }); } catch (e) { msg = String(e.message); }
-  ok('新代地址/序列证据齐了也不扩大写白名单', /写流未验证|只读/.test(msg), msg);
+  ok('显式只读闸仍生效（对齐闸门由 app 层单独判定）', /写流未验证|只读/.test(msg), msg);
   ok('拒写原因与原厂序列无关（不是帧序卡点）', !/原厂进模块序列|会话响应异常/.test(msg), msg);
 }
 

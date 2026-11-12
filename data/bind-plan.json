@@ -5,14 +5,13 @@
  "stats": {
   "legacy": 152,
   "rxPreserved": 2088,
-  "commCat10Exact": 111,
-  "rxDefaultPlus8": 1815,
-  "rxRejected": 2,
+  "commCat10Exact": 112,
+  "rxDefaultPlus8": 1816,
+  "rxRejected": 1,
   "crossgen": 151,
   "tierA": 63,
   "enumeration": 200,
   "commFamilyDefault": 92,
-  "noCand": 1,
   "commCat10": 112
  },
  "coverage": {
@@ -55,13 +54,13 @@
   "CS1": {
    "modules": 0,
    "static": 0,
-   "gen": null,
+   "gen": "0x13",
    "confidence": "low"
   },
   "E1": {
    "modules": 0,
    "static": 0,
-   "gen": null,
+   "gen": "0x03",
    "confidence": "low"
   },
   "E2": {
@@ -360,19 +359,26 @@
    "n": 0,
    "nMixed": false,
    "bindDirect": false,
-   "cands": [],
-   "pairs": [],
-   "firstRead": null,
-   "rejectedPairs": [
+   "cands": [
+    "0x05CA"
+   ],
+   "pairs": [
     {
-     "tx": "0x07FD",
-     "rx": null,
-     "reason": "tx-in-response-range",
-     "source": "address-table"
+     "tx": "0x05CA",
+     "rx": "0x06CA"
     }
    ],
-   "bindUnresolved": "n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举",
+   "firstRead": null,
+   "bindUnresolved": "候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），未经实车探针确认 → 一律禁止免探针直绑",
    "provenance": [
+    {
+     "can": "0x05CA",
+     "rx": "0x06CA",
+     "sources": [
+      "commCat10Exact"
+     ],
+     "note": "SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）"
+    },
     {
      "source": "tableA",
      "note": "表A 精确 join 候选（旧代路径保留）"

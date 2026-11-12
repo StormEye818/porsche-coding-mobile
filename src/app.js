@@ -19,6 +19,7 @@ import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEviden
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, MODULE_TO_ECUID_LEGACY, SYSTEM_TO_ECUID } from './module-ecu-map.js';
 import { sysIdForModule, modulesForSysId, planSysIdFor, platformInfoFor } from './model-sysid-map.js';
 import { OEM_SESSION_BY_SYSID } from './oem-session-table.js';
+import { WRITE_ALIGNMENT, writeProfileFromAlignment, setWriteGateMode } from './write-alignment.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -709,28 +710,25 @@ function addrFor(label, model = currentModel, sys = null) {
 }
 
 /**
- * 写 profile 白名单。只有车型、模块、物理地址、协议族均有完整证据时才返回 verified。
- * 其它模块默认只读；不能用固定 10 89 或一次 NRC 去推断可写。
+ * 写闸门 —— ★ 2026-11-12 按「与原厂写流程逐帧对齐」判定，不再用单一白名单。
+ *
+ * 依据：原厂主写序列（验收矩阵 §5）本身是实车验证过的流程；
+ * 本项目写流程在帧形态/帧数/顺序、记录驱动 SID、回读校验、默认安全行为上逐项对齐
+ * （实测证据与 11 项判定见 src/write-alignment.js，生成器 tools/build-write-alignment.mjs）。
+ * 因此只要本次链路的运行时证据齐（车型 / 模块记录 / 合法 11 位地址 / 会话家族），
+ * 就继承原厂流程的实车验证，不再要求逐模块重新实车测试。
+ *
+ * 仍保留两道真实闸门：
+ *   ① 记录级 —— 只读项、非法 SID、LID 位宽越界由 canWrite/validateParam/applyChange 拦；
+ *   ② 结果级 —— 写入后回读校验，不一致记录失败、不自动回滚（原厂语义，由 ECU 裁决）。
+ * 需要退回保守模式时调用 setWriteGateMode('whitelist-only')（仅 981 DME 可写）。
  */
 function writeProfileFor(sys, model, addr, family) {
-  const modules = sys?.modules || [];
-  const is981CaymanDme = model === 'Cayman（981）'
-    && sys?.label === 'ECM/DME(发动机控制模块)'
-    && modules.includes('DME_BDE_Continental')
-    && addr?.tx === 0x7e0 && addr?.rx === 0x7e8 && family === 'kwp';
-  if (is981CaymanDme) {
-    return {
-      verified: true,
-      reason: '981 Cayman DME_BDE_Continental · 0x7E0/0x7E8 · KWP 21/3B · 10 89 正响应实证',
-      profile: '981-cayman-dme-kwp-21-3b',
-    };
-  }
-  return {
-    verified: false,
-    reason: '缺少当前车型/模块/地址的完整会话→序言→安全→写→回读证据，默认只读',
-    profile: null,
-  };
+  const p = writeProfileFromAlignment(sys, model, addr, family);
+  if (p.verified) p.alignmentChecks = WRITE_ALIGNMENT.checks.length;
+  return p;
 }
+if (typeof globalThis !== 'undefined') globalThis.setWriteGateMode = setWriteGateMode;
 
 import { registerPlugin } from '@capacitor/core';
 

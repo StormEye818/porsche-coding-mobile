@@ -455,9 +455,12 @@ def main():
         #   ② 63 个 ECU 只有 cat=0x60 固定 4 帧模板（subs 是 0x020-0x02D 索引，非 CAN 地址）
         #      → 用同代 cat=0x10 家族默认地址，provenance 明确标「非按车型唯一，必须探针验证」。
         #   两者都只作候选；bindDirect 仍由 n=0 + 唯一合法地址决定，绝不免探针直绑。
+        # ordered 非空但**全落在应答段/超 11 位**时，最终 pairs 仍是空
+        # （例 0x050c 表A 只给 0x7FD），同样要补，否则留一个 0 候选断点。
         newly_sourced = False
-        if not ordered:
+        if not ordered or all(c > REQ_HI for c in ordered):
             newly_sourced = True
+            ordered = [c for c in ordered if c <= REQ_HI]
             exact = comm_pairs.get(sid)
             if exact:
                 cp = exact

@@ -10,8 +10,10 @@
  *   [2] 协议层端到端：跨代际抽代表 ECU，用模拟适配器真跑
  *       地址绑定 → 原厂序列进模块 → 读块 → 写 → 回读，断言 0 抛错、
  *       帧序与证据表逐字节一致、写回读一致。
- *   [3] 写流程卡点：逐闸门确认「未证只读」是策略而非流程断点；
- *       mock 已验证 profile 可完整写通；真车白名单不因证据变多而扩大。
+ *   [3] 写流程卡点：逐闸门确认「显式只读」是开关而非流程断点；
+ *       写闸门已按「逐帧对齐原厂写流程」打开（见 tools/verify-write-gate.mjs）。
+ *   [4] 写序言分派：包内阴性证据（不冒充存在）；主写模板不含写前编排。
+ *   [5] 老代 KWP 写路径：原厂不建 UDS 会话。
  *
  * 跑法：node tools/verify-fullchain.mjs
  */
@@ -149,7 +151,7 @@ for (const rep of REPS) {
     await c.enterSession(undefined, { oemSequence: true, skipIdent: true });
     const frames = m.txLog.filter((x) => !x.startsWith('AT'));
     assert.deepEqual(frames, expected, `${rep.label} 进模块帧序不一致`);
-    // 写路径：seed/key provider + mock 已验证 profile（真车白名单另有门禁）。
+    // 写路径：seed/key provider + mock 已验证 profile（真车由对齐矩阵闸门判定）。
     c.seedKeyProvider = {
       name: 'fullchain-mock', verified: true, seedWidths: [2, 4],
       calc: () => new Uint8Array([0x12, 0x34]),
@@ -174,8 +176,8 @@ for (const rep of REPS) {
 }
 ok(`跨 ${REPS.length} 个代际代表全部跑通（0 卡点）`, e2eOk === REPS.length, `${e2eOk}/${REPS.length}`);
 
-// ── [3] 写流程卡点 / 白名单边界 ────────────────────────────────
-console.log('\n[3] 写流程卡点与白名单边界');
+// ── [3] 写流程卡点 / 对齐闸门 ──────────────────────────────────
+console.log('\n[3] 写流程卡点与对齐闸门');
 {
   const m = new MockAdapter({ latencyMs: 0 });
   const e = new Elm327(m, { timeoutMs: 2000 });
@@ -190,14 +192,14 @@ console.log('\n[3] 写流程卡点与白名单边界');
     /写流未验证|只读/.test(msg), msg);
   ok('拒写不涉及会话 / 帧序 / 地址（0 卡点）',
     !/会话响应异常|原厂进模块序列|绑定.*失败/.test(msg), msg);
-  ok('运行时真车白名单仍由 writeProfileFor 控制，未因证据变多而放开',
-    /function writeProfileFor|writeProfileFor\(/.test(app)
-    && /981|mock/.test(app));
+  ok('写闸门按「逐帧对齐原厂写流程」判定（不再只有 981 DME 一条白名单）',
+    /writeProfileFromAlignment\(sys, model, addr, family\)/.test(app)
+    && /from '\.\/write-alignment\.js'/.test(app));
   ok('进模块启用原厂序列模式（全链路入口）',
     /enterSession\(undefined, \{ family: enterFamily, oemSequence: true \}\)/.test(app));
 }
 
-// 准入条件量化：证据齐 ≠ 实车写流验证过。逐项统计运行时 sysId 的证据完备度。
+// 证据完备度量化：闸门放行继承原厂流程的实车验证，但每环仍要有包内证据。
 {
   const used = new Set();
   for (const v of Object.values(s981.modules || {})) {
@@ -217,7 +219,7 @@ console.log('\n[3] 写流程卡点与白名单边界');
   ok(`运行时 ${used.size} 个 sysId：序列 ${withSeq} / 会话 ${withSess} / 地址 ${withAddr} 证据齐`,
     withSeq === used.size && withAddr === used.size,
     `seq=${withSeq} sess=${withSess} addr=${withAddr} sessionless=${sessionless}`);
-  ok('证据完备度可被量化（写白名单仍需逐模块实车验证，不自动放行）', withSess <= used.size);
+  ok('证据完备度可量化（闸门按对齐矩阵放行，缺运行时证据仍拒绝）', withSess <= used.size);
 }
 
 // ── [4] 写序言分派：包内阴性证据（不冒充存在，也不含糊说「不可证」） ──
@@ -246,8 +248,8 @@ console.log('\n[4] 写序言逐 ECU 分派：包内证据边界');
     `A: ${framesA} 帧/${ecuA.size} ECU，C: ${framesC} 帧/${ecuC.size} ECU`);
   ok('运行时不把 runWritePrologue 挂进写路径（证据不足不猜序言）',
     /runWritePrologue/.test(coderSrc) && !/await this\.runWritePrologue\(/.test(coderSrc));
-  ok('真车写白名单因此保持 981 Cayman DME 一条（有完整实车写序列）',
-    /function writeProfileFor|writeProfileFor\(/.test(app));
+  ok('无分派表时按原厂主写模板放行，不把写前编排硬挂进写路径',
+    /writeProfileFromAlignment/.test(app) && !/await this\.runWritePrologue\(/.test(coderSrc));
 }
 
 // ── [5] 老代 KWP 写路径不误发 UDS 会话 ─────────────────────────

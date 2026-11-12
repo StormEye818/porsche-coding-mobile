@@ -9,7 +9,7 @@
  *   ③ GAG 帧 flag 语义（逐帧属性，与协议层容错分级一致）
  *   ④ Coder 行为：有/无上下文、flag=0 尽力而为、服务专属会话不被覆盖、
  *      UDS 目标会话=0x03 时不重复发帧、换模块清上下文
- *   ⑤ 写流程不卡：会话号数据驱动不扩大写白名单，未证 ECU 仍拒写
+ *   ⑤ 写流程不卡：显式只读闸仍生效（写闸门已按对齐矩阵打开）
  *
  * 跑法：node tools/verify-oem-session.mjs
  */
@@ -188,8 +188,8 @@ console.log('\n[4] Coder 逐 ECU 会话行为');
     c.oemSession === null && c.resolveSession() === 0x89);
 }
 
-// ── ⑤ 写流程不卡 / 白名单不扩大 ───────────────────────────────
-console.log('\n[5] 写流程卡点与白名单');
+// ── ⑤ 写流程不卡 / 显式只读闸 ─────────────────────────────────
+console.log('\n[5] 写流程卡点与显式只读闸');
 {
   const { c } = mk();
   c.setOemContext('0x0e13');
@@ -198,13 +198,13 @@ console.log('\n[5] 写流程卡点与白名单');
     byte: 0, bit: 0, bitsize: 1, risk: 'low' };
   let msg = '';
   try { await c.applyChange(p, 1, { dryRun: false }); } catch (e) { msg = String(e.message); }
-  ok('未证 ECU 仍拒写（会话证据不扩大写白名单）', /写流未验证|只读/.test(msg), msg);
+  ok('显式 diagProfile.verified=false 仍拒写（保守模式可随时切回）', /写流未验证|只读/.test(msg), msg);
   ok('拒写原因与会话号无关（不是会话卡点）', !/会话响应异常/.test(msg), msg);
 }
 {
   const { c } = mk();
   c.setOemContext('0x0e01');
-  ok('981 DME（唯一可写 profile）会话仍是 10 89，写序列前提不变',
+  ok('981 DME 会话仍是 10 89（完整实车写序列标注保留）',
     c.resolveSession() === 0x89 && c.oemSessionStrict === true);
 }
 

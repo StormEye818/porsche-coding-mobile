@@ -3,14 +3,17 @@
 > **新 agent 从这里开始读。** 读完这一份就能接着干，不用翻别的。
 > 细节在 `HANDOFF.md`（按时间追加的完整记录，78KB+），**别从头读它**，查具体踩坑时再 grep。
 >
-> 最后更新：**2026-11-12（全量收口）** · 全链路打通，**以 `FULLCHAIN-CLOSURE-20261112.md` 为准**；
-> 上一阶段审计 `FULLCHAIN-ALIGN-20261112.md` 的 §3 #10 / §5 / §7 已被推翻或收窄，仅作取证记录。
+> 最后更新：**2026-11-12（写闸门打开）** · **以 `WRITE-GATE-OPEN-20261112.md` 为准**；
+> `FULLCHAIN-CLOSURE-20261112.md` / `FULLCHAIN-ALIGN-20261112.md` 中「白名单仍只 981 DME」
+> 的表述已被推翻，仅作取证记录。
 >
 > ⚠️ 本页及续篇中的旧覆盖率/「已全对齐」表述均为历史资料，不再作为实车写入验收。
-> 当前真实行为门禁（`npm test` 全绿，14 项）：`test-align431` **38**、`smoke-fixes` 359、
+> 当前真实行为门禁（`npm test` 全绿，15 项）：`test-align431` **38**、`smoke-fixes` 359、
 > `verify-all-models` **68**、`e2e-flow` 105、`walkthrough` 84、`verify-runtime-safety` 24、
 > `verify-sysdata-comm` 16、`verify-oem-session` 28、`verify-oem-frames` **34**、
-> `verify-fullchain` **30**，均 0 失败；真车默认只读，只有 981 Cayman DME 可写。
+> `verify-fullchain` **30**、`verify-write-gate` **36**，均 0 失败。
+> **写闸门已按「逐帧对齐 431 主写模板」打开**：3817/3817 有静态地址证据的变体放行，
+> 另 771 个由全局表/枚举探针给出地址后同样放行；`setWriteGateMode('whitelist-only')` 可切回保守只读。
 >
 > **全量收口（本轮）新增**：
 > - `src/oem-enter-frames.js`（生成器 `tools/build-oem-enter-frames.mjs`）：803 sysId /
@@ -25,11 +28,14 @@
 >   22 项索引给出**平台→type 显式链接**（id ≡ root type ≡ sysId 高字节），与 9 个已定案平台吻合；
 >   CS1→0x13、E1→0x03 唯一定案，9X6→{0x01,0x02}、9X7→{0x04,0x05,0x06} 为多 type 候选集。
 >   只写 gen，不改 confidence / modules，运行时仍走全局表回退（不猜模块地址）。
-> - 写序言：逐帧统计证明 comm 表 3350 帧里核心写服务 17/27/2E/3B/31/32 **0 命中**，
->   模板帧只出现在 2–3 个 ECU —— 包内**没有** ECU→写序言模式分派表，白名单因此不扩。
+> - 写序言：所谓 A/B/C/D 四模式是 COMMAND.GAG 连续命令 ID 的**滑动窗口伪影**
+>   （B 后紧跟 `0x0E=3B`、C 后紧跟 `0x170B..0F` 共 5 条 3B 写帧）；真正分派键是逐条记录的
+>   `(readSid, writeSid)` —— 60.3% 模块混多 SID 对，按 ECU 选模式在概念上不成立。
+>   `runWritePrologue` 保持无调用方（见 `WRITE-GATE-OPEN-20261112.md`）。
 >
-> **仍保留的边界**：9X6/9X7 无唯一 gen、4 个平台的模块 sysId 仍无法由老代 u32 数值表解析；
-> 写白名单仍只 981 Cayman DME 一条；E3 索引层 0x11 与运行时 0x12 双记录并存；
+> **仍保留的边界**：9X6/9X7 无唯一 gen、4 个平台的模块 sysId 仍无法由老代 u32 数值表解析
+> （已坐实为纯数值位表、无 ASCII 名字，两套偏移空间交集 0）；写前编排为 ID 窗口伪影；
+> 安全 level 由运行时 TBB 选、我们不试错，6 条 mode 缺口由协议层显式拒写；E3 索引层 0x11 与运行时 0x12 双记录并存；
 > `0x050c` 无候选（不在任何变体文件，属枚举兜底项）。
 > `npm run sync` 的 `www/data` 删除仍受 safe-delete 护栏限制，不能绕过。
 >
