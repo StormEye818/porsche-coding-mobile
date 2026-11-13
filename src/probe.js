@@ -215,6 +215,14 @@ export function identityVerdict(texts, expect) {
  * 绑定后身份读（wire 注入：cmdFn(hex, ms) → 原始应答串）。
  * 逐帧：回帧 ID 必须来自该候选 rx（R4）；文本提取与 app 探测同口径。
  * 返回 identityVerdict 结果 + 各帧原始文本。
+ *
+ * ★ 2026-11-13 修复（真车同链）：身份文本必须**剥掉正响应头**再取，不能对整条 body
+ *   做可打印字符过滤。5A='Z' / 62='b'（正响应 SID 回显）+ DID/LID 回显混进文本后，
+ *   · 占位应答「--」会被读成「Z--」→ 有身份文本但不匹配 → 误杀候选（模拟车 IC 三候选全灭）；
+ *   · 短键（'IC'/'DME'，仅 strcmp 全等）永远命中不了带前缀的身份串；
+ *   · NRC（7F 22 31）会被读成 '"1' → 伪身份文本 → 真车上把「不支持该 DID」的 ECU 也误杀。
+ *   现按 coder.readVehicleIdentity 同口径：只认本请求的正响应，按 1A→2B / 22→3B 剥头，
+ *   并核对 DID/LID 回显；NRC / 空 / 截断 / 回显不符一律不产生身份文本 → unknown 不裁决。
  */
 export async function identityAdjudicate(cmdFn, p, fam, expect) {
   const texts = [];
@@ -227,9 +235,19 @@ export async function identityAdjudicate(cmdFn, p, fam, expect) {
       const ids = [...new Set(frameIdsOf(r))];
       if (ids.length && p && !ids.includes(p.rx)) continue;
     } catch { /* 解析不出 ID 时按内容裁决 */ }
-    const sid = parseInt(String(cmd).slice(0, 2), 16) & 0xff;
-    const pr = parseRespAuto(r, String(cmd).replace(/[^0-9A-Fa-f]/g, ''), sid);
-    const text = Array.from(pr.body || [])
+    const req = String(cmd).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+    const sid = parseInt(req.slice(0, 2), 16) & 0xff;
+    const pr = parseRespAuto(r, req, sid);
+    const body = Array.from(pr.body || []);
+    if (!body.length || pr.kind === 'nrc' || pr.kind === 'truncated'
+        || body[0] !== ((sid + 0x40) & 0xff)) continue;
+    const skip = sid === 0x22 ? 3 : 2;             // 62 <DID16> / 5A <LID8>
+    const did = parseInt(req.slice(2), 16);
+    const echo = sid === 0x22
+      ? (((body[1] || 0) << 8) | (body[2] || 0))
+      : (body[1] || 0);
+    if (body.length <= skip || (Number.isFinite(did) && echo !== did)) continue;
+    const text = body.slice(skip)
       .filter((c) => c >= 0x20 && c < 0x7f)
       .map((c) => String.fromCharCode(c)).join('').trim();
     if (text) texts.push(text);

@@ -15,6 +15,20 @@
  */
 import { Emitter } from './emitter.js';
 
+/**
+ * 模拟车身份（VIN / 车名 / 车型 / 模块身份串四者同源，2026-11-13 修复）。
+ *   · VIN WP0ZZZ991GS123456 → 参考诊断仪 分派 id=14 · 车型码 991 → 911（991）；
+ *     1A 9F 的 DSN 前缀、1A 84/92/94 的 991 件号、1A 97 的 ISO 码都与它同代，不改。
+ *   · 车名 = 原厂 24 条车型名表（src/model-name-table.js vid=8）「911（991）」的
+ *     **ASCII 写法**：matchModelNameExact 会把半角括号归一成全角，'911(991)' 与白名单全等。
+ *     旧值 '718 Boxster T' 是 982 的商品名，与 991 VIN 矛盾 → 自动搜索显示「已选 718」
+ *     却按 VIN 落定 911（991）。这里只修车名，不动 VIN / 件号等其余 991 证据。
+ *   · 模块身份串：拓扑内 ECU 用自己的 sysName/dsn；未列地址用 identText（目录变体名）。
+ */
+const SIM_VIN = 'WP0ZZZ991GS123456';
+const SIM_VEHICLE_NAME = '911(991)';
+const asciiHex = (s) => [...s].map((c) => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+
 export class MockAdapter extends Emitter {
   /**
    * @param {{blocks?:Object<number,Uint8Array>, fail?:Object, latencyMs?:number}} opts
@@ -174,12 +188,14 @@ export class MockAdapter extends Emitter {
         const asc = [...ecu.dsn].map((c) => c.charCodeAt(0) & 0xff);
         return this.#frame([0x5A, 0x9F, ...asc]);
       }
-      // ★ 修复② 身份帧：1A9B 回系统名（cat=0x60 模板身份帧，绑定后身份裁决用）
-      if (sid === 0x1A && bytes[1] === 0x9B && (ecu.sysName || ecu.name)) {
-        const t = ecu.sysName || ecu.name;
-        const asc = [...t].map((c) => c.charCodeAt(0) & 0xff);
-        return this.#frame([0x5A, 0x9B, ...asc]);
-      }
+    }
+    // ★ 身份帧 1A9B（cat=0x60 模板，绑定后身份裁决用）：拓扑内 ECU 回自身系统名；
+    //   未列地址（模拟车按真车拓扑「任意探测地址应答」）回当前模块识别串 identText。
+    //   ⚠️ 绝不落到下面 0x1A 的通用 '--' 占位 —— 占位不是身份串，会被身份裁决误读。
+    if (sid === 0x1A && bytes[1] === 0x9B) {
+      const t = (ecu && (ecu.sysName || ecu.name || ecu.dsn)) || this.identText || '';
+      if (!t) return '';
+      return this.#frame([0x5A, 0x9B, ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
     }
 
     // 注入故障
@@ -204,8 +220,8 @@ export class MockAdapter extends Emitter {
           return this.#frame([0x5A, kid, ...blk]);
         }
         const IDENT = {
-          0x9F: '5A9F5750305A5A5A3939314753',   // 5A 9F "WP0ZZZ991GS"
-          0x90: '5A90' + [...'WP0ZZZ991GS123456'].map((c) => c.charCodeAt(0).toString(16)).join(''), // 1A 90=VIN（真车同款）
+          0x9F: '5A9F' + asciiHex(SIM_VIN.slice(0, 11)), // 5A 9F "<VIN 前 11 位>"（DSN，与 VIN 同源）
+          0x90: '5A90' + asciiHex(SIM_VIN),              // 1A 90=VIN（真车同款）
           0x87: '5A873030303030303030303030',   // 5A 87 "000000000000"（序列号）
           0x84: '5A843939313634363030313030',   // 5A 84 "99164600100"（零件号）
           0x91: '5A913030303030303030303030',   // 5A 91 "000000000000"（图号）
@@ -233,7 +249,7 @@ export class MockAdapter extends Emitter {
         // ★ 0x1102=**车级商品名**（GetVehicleNameID strcmp 对 trim 名，强证据）——所有 ECU 同答车名；
         //   0x0705=模块识别文本（探测归属用）。旧建模把模块名塞进 0x1102 是错的。
         if (sid === 0x22 && did === 0x1102) {
-          const t = (this.ecus && this.ecus.vehicleName) || '718 Boxster T';
+          const t = (this.ecus && this.ecus.vehicleName) || SIM_VEHICLE_NAME;
           return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }
         if (sid === 0x22 && did === 0x0705) {
@@ -244,10 +260,11 @@ export class MockAdapter extends Emitter {
           if (!t) return '';
           return this.#frame([0x62, id[0], id[1], ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }
-        // ★ 修复② 身份帧：22F19E 回 ODX 文件标识（cat=0x60 模板身份帧）。
-        //   未知 ECU 不造随机块（旧行为会污染身份裁决）→ NO DATA。
+        // ★ 身份帧 22F19E 回 ODX 文件标识（cat=0x60 模板身份帧）：拓扑内 ECU 回
+        //   odxIdent/dsn；未列地址回当前模块识别串 identText（与 1A9B 同源）。
+        //   无身份串 → NO DATA（不造随机块/占位，避免污染身份裁决）。
         if (sid === 0x22 && did === 0xF19E) {
-          const t = (ecu && (ecu.odxIdent || ecu.dsn)) || '';
+          const t = (ecu && (ecu.odxIdent || ecu.dsn)) || this.identText || '';
           if (!t) return '';
           return this.#frame([0x62, 0xF1, 0x9E, ...[...t].map((c) => c.charCodeAt(0) & 0xff)]);
         }
@@ -327,16 +344,16 @@ export class MockAdapter extends Emitter {
     const key = id.reduce((a, b) => a * 256 + b, 0);
     // VIN（0xF190）造真实值，否则「读 VIN→定车型」链路测不了
     if (key === 0xF190) {
-      const vin = 'WP0ZZZ991GS123456';
-      return Uint8Array.from([...vin].map((c) => c.charCodeAt(0)));
+      return Uint8Array.from([...SIM_VIN].map((c) => c.charCodeAt(0)));
     }
-    // ★ 商品名/trim 名（参考诊断仪 22 11 02 应答=名字文本，GetVehicleNameID strcmp 入参）—— sim 固定样例
+    // ★ 商品名/trim 名（参考诊断仪 22 11 02 应答=名字文本，GetVehicleNameID strcmp 入参）
+    //   —— 与 SIM_VIN 同源：991 VIN 必须回 991 名表条目，不能回 982 的 718 商品名。
     if (key === 0x1102) {
-      return Uint8Array.from([...('718 Boxster T')].map((c) => c.charCodeAt(0)));
+      return Uint8Array.from([...SIM_VEHICLE_NAME].map((c) => c.charCodeAt(0)));
     }
-    // 平台/车辆 ID 附加读（0x140A）—— sim 给文本样例（真车格式留日志观察）
+    // 平台/车辆 ID 附加读（0x140A）—— 同一份车名（真车格式留日志观察）
     if (key === 0x140A) {
-      return Uint8Array.from([...('718 Boxster T')].map((c) => c.charCodeAt(0)));
+      return Uint8Array.from([...SIM_VEHICLE_NAME].map((c) => c.charCodeAt(0)));
     }
     if (this.blocks[key]) return this.blocks[key];
     // 造 32 字节假块，bit 模式按 lid 分布，看起来像真的

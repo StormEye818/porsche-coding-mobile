@@ -13,7 +13,7 @@ import { parseDtcPayload } from './src/dtc.js';
 import { parseAddrPair, overrideFor } from './src/addr.js';
 import { LinkDoctor } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
-import { autoPickVariant } from './src/variant.js';
+import { autoPickVariant, pickModelByName } from './src/variant.js';
 import { familyCandidates, identMatch } from './src/probe.js';
 import { specialFunctionsFor } from './src/special-catalog.js';
 import { MockAdapter } from './src/mock-adapter.js';
@@ -140,6 +140,31 @@ console.log('\n[4] VIN validate / year / model');
   ok('裸 VIN 第 12 字节不吻合车型码位 → null 兜底（不猜）', g7 === null, g7 && g7.how);
   const g5 = guessModelFromVin('WP0ZZZ99999000001', 2016);
   ok('unknown model code does not false-match', g5 === null, g5 && g5.modelId);
+}
+
+// ===== 4b. 模拟车 VIN / 车名 / 车型自洽（2026-11-13 回归：718 名串 × 991 VIN）=====
+console.log('\n[4b] 模拟车身份四元组自洽');
+{
+  // 走真链路：MockAdapter → Elm327 → Coder.readVehicleIdentity（不是手工拼串）
+  const port = new MockAdapter({ latencyMs: 0 });
+  const elm = new Elm327(port, { timeoutMs: 1000 });
+  const c = new Coder(elm, { tx: 0x7E0, rx: 0x7E8, verbose: false });
+  await c.setAddress(0x7E0, 0x7E8);
+  const idn = await c.readVehicleIdentity('kwp');
+  const src = readFileSync('./src/app.js', 'utf8');
+  const m = src.match(/function guessModelFromVin\([\s\S]*?\n\}/);
+  const { guessModelFromVin } = new Function('tree', (m ? m[0] : '')
+    + '\nreturn {guessModelFromVin};')(null);
+  const g = guessModelFromVin(idn.vin);
+  const byName = g && pickModelByName(g.models, idn.name);
+  // 回归抓手：旧 mock 回「718 Boxster T」(982 商品名) 配 991 VIN → byName=null，
+  // autoSearch 落到「应答名未命中候选」分支，显示「已选 718」却按 VIN 进了 911（991）。
+  ok('模拟车 VIN 与 22 11 02 车名同源：应答名命中 VIN 分派候选（不再 718/911 打架）',
+    !!idn.vin && !!idn.name && !!g && !!byName && g.models.includes(byName.name),
+    `vin=${idn.vin} name=${idn.name} models=${g && JSON.stringify(g.models)} pick=${byName && byName.name}`);
+  // 「已选」主标题必须写实际落定车型；yy款+应答名只作副标题（真车同名串未命中时同理）
+  ok('已选 toast 主标题写实际落定车型 label（应答显示名只作副标题）',
+    src.includes('`已选 ${label}`') && !src.includes('`已选 ${desig || label}`'));
 }
 
 // ===== 5. ECU address table =====

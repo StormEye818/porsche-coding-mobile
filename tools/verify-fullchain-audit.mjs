@@ -320,7 +320,7 @@ console.log('\n[6] 修复③：块边界解析错位 1 字节修正（RE-GAPVERI
 // ── ⑦ 修复②：绑定后身份裁决（mock 身份不符→换候选；孪生对进哪个都过）──
 console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch）');
 {
-  const { identityAdjudicate, identityFramesFor, identityVerdict, twinKeysFor, TWIN_GROUPS }
+  const { identityAdjudicate, identityFramesFor, identityVerdict, twinKeysFor, TWIN_GROUPS, normIdent }
     = await import('../src/probe.js');
   ok('身份帧=cat=0x60 模板（UDS 22F19E+1A9B / KWP 仅 1A9B，KWP 绝不发 0x22）',
     JSON.stringify(identityFramesFor('uds')) === JSON.stringify(['22F19E', '1A9B'])
@@ -378,6 +378,79 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
   // 纯函数边界：无身份文本不裁决（参考诊断仪应答即绑口径），非孪生严格比对
   ok('身份帧无可裁决文本 → unknown 不裁决', identityVerdict(['--', ''], { keys: ['X'] }).verdict === 'unknown');
   ok('非孪生不匹配 → mismatch（换下一候选）', identityVerdict(['Airbag'], { keys: ['Kombiinstrument'] }).verdict === 'mismatch');
+
+  // ★ 2026-11-13 回归（模拟车 IC「通讯失败」）：三候选 22 14 09 全有正响应，
+  //   旧 mock 的 1A9B 通用 '--' 占位被读成身份串「Z--」→ 全 mismatch → 候选耗尽。
+  //   现要求：身份帧给出模块真实识别串，且首个候选 identityAdjudicate 判 match。
+  {
+    const SIM_ECUS = {
+      0x7E0: { name: 'DME', dsn: 'ECM_DME_BDE_Continental_BaseSys' },
+      0x7C0: { name: 'IC', noIdent1A: true },
+      0x7D1: { name: 'BCM_vorne', dsn: 'BCM_vorne_9x1_Basis' },
+      0x74F: { name: 'BCM_hinten', dsn: 'BCM_hinten_9x1' },
+    };
+    const sim = new MockAdapter({ latencyMs: 0, strictAddress: false, ecus: SIM_ECUS });
+    sim.identText = 'Kombiinstrument_MM Kombiinstrument_A3_1'; // app.enterSystem 同源喂法
+    const elm = new Elm327(sim, { timeoutMs: 1000 });
+    const expect = twinKeysFor(['Kombiinstrument_MM', 'Kombiinstrument_A3_1', 'IC(仪表)']);
+    const cands = [{ tx: 0x60A, rx: 0x612 }, { tx: 0x646, rx: 0x64E }, { tx: 0x7F1, rx: 0x7F9 }];
+    let bound = null;
+    for (const p of cands) {
+      await elm.cmd('ATSH' + p.tx.toString(16).toUpperCase(), 400);
+      await elm.cmd('ATCRA' + p.rx.toString(16).toUpperCase(), 400);
+      const r = (await elm.cmd('221409', 800) || '').trim();
+      if (!r) continue;
+      const idv = await identityAdjudicate((h, ms) => elm.cmd(h, ms), p, 'uds', expect);
+      if (idv.verdict !== 'mismatch') { bound = { p, idv }; break; }
+    }
+    ok('模拟车 IC 三候选绑定成功（身份帧回真实模块名，不再全 mismatch→通讯失败）',
+      !!bound && bound.p.tx === 0x60A && bound.idv.verdict === 'match',
+      bound ? `0x${bound.p.tx.toString(16)} ${bound.idv.verdict}「${bound.idv.text.slice(0, 24)}」` : '全 mismatch');
+
+    // ★ 扫描路径（app.js:1024 只传 {modules:[label]}）期望键只有 1 个；进模块路径
+    //   （app.js:2561）才传 modules+variantNames+sys。键集合变窄不得把候选误杀。
+    //   本轮修复在 probe.js（通用解析）与 mock 数据，两条路径共用同一裁决，故一并钉住。
+    const scanExpect = twinKeysFor(['Kombiinstrument_MM']);
+    const scanHit = await identityAdjudicate((h, ms) => elm.cmd(h, ms), cands[0], 'uds', scanExpect);
+    ok('扫描路径单键期望集不误杀（1 键仍 match）',
+      scanHit.verdict === 'match', JSON.stringify(scanHit.verdict));
+    const noIdent = new MockAdapter({ latencyMs: 0, strictAddress: false, ecus: SIM_ECUS });
+    const elmNo = new Elm327(noIdent, { timeoutMs: 1000 });
+    await elmNo.cmd('ATSH60A', 400);
+    await elmNo.cmd('ATCRA612', 400);
+    const scanUnknown = await identityAdjudicate((h, ms) => elmNo.cmd(h, ms), cands[0], 'uds', scanExpect);
+    ok('扫描路径无识别串 → unknown 不裁决（应答即绑，不造伪串）',
+      scanUnknown.verdict === 'unknown' && scanUnknown.texts.length === 0,
+      JSON.stringify(scanUnknown.texts));
+  }
+  // ★ 真车同链：身份文本必须剥正响应头（5A='Z' / 62='b' 与 DID/LID 回显不得进文本），
+  //   NRC 不得被读成伪身份串 —— 两者都会让「应答即绑」的 ECU 被误杀。
+  {
+    const p = { tx: 0x7E1, rx: 0x7E9 };
+    const short = twinKeysFor(['IC']);
+    const pos = await identityAdjudicate(
+      async (h) => (h === '1A9B' ? '7E9 5A 9B 49 43' : ''), p, 'uds', short);
+    ok('身份帧剥 5A+LID 回显（短键 IC 全等命中，正响应 SID 不得当身份串）',
+      pos.verdict === 'match' && pos.text === 'IC', JSON.stringify(pos.texts));
+    // 逐请求回各自的真实 NRC：22F19E→7F 22 31 / 1A9B→7F 1A 31。
+    // 旧实现会把 0x22='"'/0x31='1' 这类可打印字节读成身份串 '"1'/'1' → mismatch 误杀候选。
+    const nrc = await identityAdjudicate(
+      async (h) => (h === '22F19E' ? '7E9 7F 22 31' : '7E9 7F 1A 31'), p, 'uds', short);
+    ok('身份帧 NRC 不产生伪身份文本 → unknown（真车不支持该 DID 的 ECU 不被误杀）',
+      nrc.verdict === 'unknown' && nrc.texts.length === 0, JSON.stringify(nrc.texts));
+    // ② 旧 mock 的 1A9B 通用占位 5A 9B 2D 2D：剥头后只剩 '--'（无字母数字），
+    //   不得构成可裁决身份文本（旧实现读成 'Z--' → mismatch 误杀三候选）。
+    const ph = await identityAdjudicate(
+      async (h) => (h === '1A9B' ? '7E9 5A 9B 2D 2D' : ''), p, 'uds', short);
+    ok('通用 "--" 占位不成为身份文本 → unknown（旧码读成 Z-- → mismatch）',
+      ph.verdict === 'unknown' && !ph.texts.some((t) => normIdent(t)), JSON.stringify(ph.texts));
+    // ③ DID/LID 回显不符 = 不是本帧的应答，不参与裁决（不臆造身份串）
+    const badEcho = await identityAdjudicate(
+      async (h) => (h === '22F19E' ? '7E9 62 F1 9F 49 43' : '7E9 5A 9C 49 43'), p, 'uds', short);
+    ok('DID/LID 回显不符 → 无身份文本 unknown（不臆造身份串）',
+      badEcho.verdict === 'unknown' && badEcho.texts.length === 0, JSON.stringify(badEcho.texts));
+  }
+
   // app.js 接线钉死：mismatch → 换下一候选；twin-match → 不承诺左右
   ok('app.js 绑定后身份裁决已接线（mismatch→换下一候选；孪生→不承诺左右）',
     /identityAdjudicate\(/.test(app) && /换下一候选/.test(app) && /不承诺左右/.test(app));

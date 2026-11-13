@@ -1228,7 +1228,10 @@ async function autoSearch(opts = {}) {
       const desig = designationFrom(year, nameFromCar);
       const pick = (label, note) => {
         pushModel({ label });
-        toast('ok', `已选 ${desig || label}`, note || desig || `${year ?? '?'} 年款`);
+        // ★ 主标题必须写实际落定的目录车型 label；「yy款 + 应答名」(desig) 只作副标题。
+        //   旧写法把显示名当「已选 X」：应答名未命中候选时会出现「已选 718 Boxster T」
+        //   而 currentModel 实为 911（991）—— 误导用户以为车型裁决链改了车型。
+        toast('ok', `已选 ${label}`, note || desig || `${year ?? '?'} 年款`);
       };
       if (opts.autoAccept) {
         // 程序化调用（如测试）免确认；**模拟模式同样弹确认**（2026-11-05 用户实测）。
