@@ -22,13 +22,19 @@ import { Coder, CodingError } from '../src/coder.js';
 import { computeVariantKey } from '../src/seedkey-registry.js';
 import { extractField, injectField } from '../src/schema.js';
 
-// ── 按「依赖真值表与否」拆分（2026-11-17）──────────────────────────
+// ── 按「依赖真值表与否」拆分（2026-11-17，两轮改判）──────────────────
 // `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库），干净
-// clone 上必然不存在。本脚本 84 条断言里，**54 条**的存在前提是那张真值表：
-//   · `[3]` 前半 3 条（`:119` `TRUTH.filter(...).slice(0,10)` 逐点校验 key）
+// clone 上必然不存在。本脚本 84 条断言里，真正**依赖那张表**的是 24 条：
+//   · `[3]` 前半 3 条（`TRUTH.filter(...).slice(0,10)` 逐点校验 key）
 //   · `[9]` 完整上车序列 5 条（`TRUTH[5]` 做 seed/key）
-//   · ui-sim 遍历 46 条（15 模块 × 3 + 汇总 1；`:368` `keyVerifier: () => bytesOf(TRUTH[0].key)`）
-// 其余 **30 条**不读真值表，资产缺失时照跑。
+//   · ui-sim「读帧=记录 SID 形态」15 条（要 ECU 真跑 readBlock，ECU 的 keyVerifier 来自 `TRUTH[0]`）
+//   · ui-sim 汇总 1 条（`walked >= 15`，只有走完全链路才谈得上）
+// 其余 **60 条**照跑（本机 84 = 60 + 24；干净 clone 60 通过 / 24 跳过）。
+//
+// ★ 为什么 ui-sim 只跳 16 而不是整块 46：`写帧可按记录成帧` / `LID 位宽合法` 两条
+//   **只读 `data/models/*.json` 的记录字段**，那些文件在仓库里，干净 clone 完全有能力验。
+//   整块跳过等于把验收分成「本机能证 / 仓库不能证」两档 —— 而本项目的整条主线正是
+//   把「本机可证」换成「仓库可证」。（第一版曾按块跳过 46，是错的，已改。）
 //
 // ⚠️ 三条硬约束（别为了多跑几条而破）：
 //   · **不许**把 ui-sim 的 `keyVerifier` 换成 `computeVariantKey(VID, seed)`：
@@ -36,12 +42,12 @@ import { extractField, injectField } from '../src/schema.js';
 //     「不是拿自己的算法自证 —— 算错就吃 NRC 0x35」会被自己破掉。
 //   · `TOTAL_EXPECTED` 必须是**常量**：拆分最容易死人的方式不是拆错，是某条断言
 //     被顺手删掉、总数从 84 掉到 83，而汇总照样绿。末尾自证把这条堵死。
-//   · 那 30 条**不含 key 正确性**（用的是宽容 ECU），汇总下面必须明说，
-//     否则「30 通过」会被读成「解锁验过了」——比 0 通过更危险。
+//   · 那 60 条里**没有一条验 key 正确性**，汇总下面必须明说，
+//     否则「60 通过」会被读成「60 条端到端」——比 0 通过更危险。
 const VECTORS_PEND = new URL('./vectors/pend-samples.json', import.meta.url);
 const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
 const LOCAL_ASSET_WHY = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库（缺 pend-samples.json）';
-/** 本脚本**固定** 84 条断言：30 条不依赖真值表 + 54 条依赖。不许改成运行时推导。 */
+/** 本脚本**固定** 84 条断言：60 条不依赖真值表 + 24 条依赖。不许改成运行时推导。 */
 const TOTAL_EXPECTED = 84;
 
 let pass = 0, fail = 0, skip = 0;
@@ -363,7 +369,7 @@ if (!TRUTH) {
   const { readdirSync, statSync } = await import('node:fs');
   const { join } = await import('node:path');
   const SAMPLE_MODELS = ['Cayman_981_', 'Boxster_982_', '911_992_'];
-  let walked = 0, moduleGaps = [];
+  let walked = 0, enumerated = 0, moduleGaps = [];
   for (const model of SAMPLE_MODELS) {
     const dir = join('data/models', model);
     let files = [];
@@ -383,25 +389,24 @@ if (!TRUTH) {
       const writable = items.filter((it) => WRITE_SIDS.includes(Number(it.writeSid)));
       const badWrite = writable.filter((it) =>
         (Number(it.writeSid) === 0x2E ? it.lid > 0xffff : it.lid > 0xff));
-      if (!TRUTH) {
-        // 本块 46 条（15 模块 × 3 + 汇总）随真值表一起 SKIP。
-        // ⚠️ 其中「写帧可按记录成帧」「LID 位宽合法」两条**本可**不读 TRUTH 独立跑，
-        //    之所以不拆：本块的语义是「在严格 mock 上走完整上车链路」，只跑一半会让
-        //    读的人以为「这个模块验过了」。宁少跑、不误导。
-        skipped(`${model} → ${modName}：写帧可按记录成帧（${writable.length} 条可写 / ${items.length} 条记录）`,
-          LOCAL_ASSET_WHY);
-        skipped(`${model} → ${modName}：LID 位宽合法（读 SID ${items[0].readSid.toString(16)}）`,
-          LOCAL_ASSET_WHY);
-        skipped(`${model} → ${modName}：读帧=记录 SID 形态（未取 ECU 帧）`, LOCAL_ASSET_WHY);
-        walked++;
-        continue;
-      }
+      // ★ 2026-11-17 改判：下面两条**不依赖真值表**（只读 `data/models/*.json` 的记录字段，
+      //   仓库里就有），所以无条件跑 —— 干净 clone 也有能力验 `WRITE_SIDS` 与 LID 位宽，
+      //   整块跳过等于把验收分成「本机能证 / 仓库不能证」两档，正是本提交在消灭的东西。
+      //   真正依赖 TRUTH 的只有「读帧=记录 SID 形态」那条（要 ECU 真跑一次 readBlock）。
       ok(`${model} → ${modName}：写帧可按记录成帧（${writable.length} 条可写 / ${items.length} 条记录）`,
         badWrite.length === 0,
         badWrite.length ? `LID 超位宽 ×${badWrite.length}` : '无配对表（记录 writeSid 直发）');
       // ④ LID 位宽
       const wide = items.filter((it) => (it.readSid === 0x22 ? it.lid > 0xffff : it.lid > 0xff));
       ok(`${model} → ${modName}：LID 位宽合法（读 SID ${items[0].readSid.toString(16)}）`, wide.length === 0);
+      if (!TRUTH) {
+        skipped(`${model} → ${modName}：读帧=记录 SID 形态（未取 ECU 帧）`, LOCAL_ASSET_WHY);
+        // ⚠️ `enumerated` ≠ `walked`：`walked` 的语义是「走完**全链路**的模块数」，
+        //    这里只有枚举到的模块数。两个词义不能借用 —— 借了文案就会说假话
+        //    （「共 15 个模块全链路」而一个链路都没走）。
+        enumerated++;
+        continue;
+      }
       // 严格 mock 走读+写（记录 SID 驱动帧形态；readSid=0 记录走表级回落读服务）
       const sample = items.find((it) => READ_SIDS.includes(Number(it.readSid))) || items[0];
       const rdSid = READ_SIDS.includes(Number(sample.readSid)) ? Number(sample.readSid) : resolveBlockReadSid(items);
@@ -420,7 +425,9 @@ if (!TRUTH) {
     }
   }
   if (!TRUTH) {
-    skipped(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, LOCAL_ASSET_WHY);
+    // ⚠️ 文案必须与事实同源：这里**只有枚举**，没有走链路，所以不许写「全链路」。
+    skipped(`ui-sim 遍历抽样（3 车型 × ≥5 模块，枚举 ${enumerated} 个模块；`
+      + '未取 ECU 帧，故非全链路）', LOCAL_ASSET_WHY);
   } else {
     ok(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, walked >= 15, moduleGaps.join(' | '));
   }
@@ -430,6 +437,11 @@ if (!TRUTH) {
 // `TOTAL_EXPECTED` 是**常量**而不是运行时推导：推导出来的数永远等于实跑的数，
 // 等于没查。这条断言防的是「某条断言被顺手删掉 / 某个分支忘了计 skip」——
 // 那种情况下汇总照样绿、exit 照样 0，只有这里会红。
+//
+// ★ 意外收益（别把它当纯粹的洁癖）：这条算术闭合在干净 clone 上**替掉了** `walked >= 15`
+//   的覆盖保护。理由是：若 ui-sim 一个模块都没枚举到，那 2×15 条静态 ok 就是 0 条，
+//   `accounted` 会掉到 84−30=54 而当场红。所以「常量太硬、改成推导吧」这个念头出现时，
+//   要意识到这条常量同时是一条**覆盖性断言**，改成推导就等于把那条断言删了。
 {
   const accounted = pass + fail + skip;
   if (accounted !== TOTAL_EXPECTED) {
@@ -440,10 +452,13 @@ if (!TRUTH) {
 }
 console.log(`\n===== 全链路演练：${pass} 通过 / ${fail} 失败 / ${skip} 跳过 =====`);
 if (!TRUTH) {
-  // 这一行不是装饰：缺真值表时那 30 条用的是**宽容** ECU（`strictEcu()` 不传 keyVerifier
-  // ⇒ MockAdapter 收任何 key），所以它们通过 ≠ key 算对了。不写明，「30 通过」会被读成
-  // 「解锁验过了」——那比 0 通过更危险，因为 0 通过没人会误解。
-  console.log('  本轮通过的项**不含 key 正确性**（用宽容 ECU 跑会话/读写/轮询语义）；'
+  // 这一行不是装饰：缺真值表时通过的项里**没有一条验过 key 正确性**。
+  // 拆开说清 60 的构成，否则「60 通过」会被读成「60 条端到端」——那比 0 通过更危险，
+  // 因为 0 通过没人会误解。两个数都是现算的（静态条数 = 2 × 枚举模块数），不是手写。
+  const staticCnt = 2 * enumerated;
+  console.log(`  本轮通过 ${pass} 项**不含 key 正确性**：`
+    + `其中 ${staticCnt} 项为纯记录字段静态检查（不涉及 ECU），`
+    + `${pass - staticCnt} 项用宽容 ECU 跑会话/读写/轮询语义。`
     + 'key 逐点对拍见 `npm run test:full`（需 tools/vectors/，.gitignore:118 不入库）。');
 }
 process.exit(fail ? 1 : 0);
