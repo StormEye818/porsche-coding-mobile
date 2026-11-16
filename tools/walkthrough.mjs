@@ -15,14 +15,41 @@
  *
  * 跑法: node tools/walkthrough.mjs
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { MockAdapter } from '../src/mock-adapter.js';
 import { Elm327 } from '../src/elm327.js';
 import { Coder, CodingError } from '../src/coder.js';
 import { computeVariantKey } from '../src/seedkey-registry.js';
 import { extractField, injectField } from '../src/schema.js';
 
-let pass = 0, fail = 0;
+// ── 本地资产缺失的降级（2026-11-17）─────────────────────────────────
+// 本脚本的核心前提是「严格 ECU 用**真机真值表**校验 key」：`TRUTH` 是那 10 + 1 + 1
+// 个 seed/key 的唯一来源。`tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机
+// 对拍表，不入库），干净 clone 上必然不存在。
+//
+// 缺资产时**不能**退化成「ECU 一律接受 key」—— 那会把 [3] 的「key 算错就吃 NRC 0x35」
+// 从真断言变成假绿，正是本项目一直在打的那类病。所以整脚本降级为**可见的 SKIP**：
+//   · 打印 SKIP 行 + 汇总带 skipped 计数（禁止 try/catch 静默吞，
+//     禁令见 verify-comm-timeouts.mjs:26）；
+//   · `ALIGN431_REQUIRE_LOCAL_ASSETS=1` ⇒ 升级为 FAIL / exit 1（验收链用这个）。
+const VECTORS_PEND = new URL('./vectors/pend-samples.json', import.meta.url);
+const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
+if (!existsSync(VECTORS_PEND)) {
+  const why = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库（缺 pend-samples.json）';
+  if (REQUIRE_LOCAL_ASSETS) {
+    console.log(`  FAIL 全链路演练（会话→解锁→读→写→特殊功能 + ui-sim 遍历） -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);
+    console.log('\n===== 全链路演练：0 通过 / 1 失败 / 0 跳过 =====');
+    process.exit(1);
+  }
+  console.log(`  SKIP 全链路演练（会话→解锁→读→写→特殊功能 + ui-sim 遍历） -- ${why}`);
+  console.log('  原因：没有真值表就无法构造「会真正校验 key 的严格 ECU」，'
+    + '而改用宽容 ECU 会让 [3] 的 key 校验断言变成假绿；故整体降级而不是局部假跑。');
+  console.log('\n===== 全链路演练：0 通过 / 0 失败 / 1 跳过 =====');
+  console.log('  这 1 项本轮**一次都没跑**，不要读成「验过且全过」；要连它一起验用 `npm run test:full`。');
+  process.exit(0);
+}
+
+let pass = 0, fail = 0, skip = 0;
 const ok = (n, c, x = '') => {
   if (c) { pass++; console.log(`  ok   ${n}${x ? ' — ' + x : ''}`); }
   else { fail++; console.log(`  FAIL ${n}${x ? ' — ' + x : ''}`); }
@@ -32,7 +59,7 @@ const bytesOf = (h) => Uint8Array.from(h.match(/../g).map((x) => parseInt(x, 16)
 
 // ── 真值表（真机 真值对拍）：ECU 用它校验 key ────────────────────────────────
 const VID = '3D5365460CB39FEFC14651DF5075A1B8';       // 第五轮刚收编的内联 VM 变体
-const TRUTH = JSON.parse(readFileSync(new URL('./vectors/pend-samples.json', import.meta.url), 'utf8'))[VID];
+const TRUTH = JSON.parse(readFileSync(VECTORS_PEND, 'utf8'))[VID];
 
 /** 建一台严格 ECU */
 function strictEcu(opts = {}) {
@@ -355,5 +382,5 @@ console.log('\n[9] 完整上车序列（会话 → 解锁 → 读 → 写 → �
   ok(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, walked >= 15, moduleGaps.join(' | '));
 }
 
-console.log(`\n===== 全链路演练：${pass} 通过 / ${fail} 失败 =====`);
+console.log(`\n===== 全链路演练：${pass} 通过 / ${fail} 失败 / ${skip} 跳过 =====`);
 process.exit(fail ? 1 : 0);

@@ -19,10 +19,51 @@ import { familyCandidates, identMatch } from './src/probe.js';
 import { specialFunctionsFor, FEATURE_DATA_SOURCES } from './src/special-catalog.js';
 import { MockAdapter } from './src/mock-adapter.js';
 
-let pass = 0, fail = 0;
+let pass = 0, fail = 0, skip = 0;
 const ok = (name, cond, extra = '') => {
   if (cond) { pass++; console.log(`  ok  ${name}${extra ? ' -- ' + extra : ''}`); }
   else { fail++; console.log(`  FAIL ${name}${extra ? ' -- ' + extra : ''}`); }
+};
+
+// ── 本地资产缺失的降级（2026-11-17）─────────────────────────────────
+// `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库）：
+// 干净 clone 上**必然不存在**，而这三个文件里有多处硬读它。
+//
+// 规矩（照 `tools/verify-comm-timeouts.mjs` 已建立的惯例，不新发明）：
+//   · 缺资产 ⇒ 打印 `SKIP` 并计入 skipped —— **禁止 try/catch 静默吞**，
+//     吞掉就成了「永远绿」的假断言（禁令见 verify-comm-timeouts.mjs:26）；
+//   · 汇总行必须带 `skipped` 计数，否则 `375 passed / 0 failed` 会被读成
+//     「全都验过了」，而实际有两项一次没跑；
+//   · `ALIGN431_REQUIRE_LOCAL_ASSETS=1` ⇒ 缺资产由 SKIP 升级为 FAIL（验收链用这个）。
+const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
+const VECTORS_PEND = './tools/vectors/pend-samples.json';
+const VECTORS_MODE = './tools/vectors/mode-samples.json';
+const LOCAL_ASSET_WHY = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库';
+/**
+ * 读本地向量表；不存在返回 null（**不抛错、不静默返回空表**）。
+ * 返回空表会让 `for (const r of rows)` 一个点都不比、然后打出「0 点全过」的假绿，
+ * 所以这里必须用 null 把「没有表」和「表是空的」分开，调用点据此走 SKIP。
+ */
+const loadVectors = (name) => {
+  const p = `./tools/vectors/${name}`;
+  if (!existsSync(p)) return null;
+  return JSON.parse(readFileSync(p, 'utf8'));
+};
+/**
+ * @param {string} name 断言名（或断言组名）
+ * @param {string} why  为什么没跑
+ * @param {number} n    这一次跳过覆盖了几条断言（默认 1）——
+ *   一个向量表驱动的循环只打一行 SKIP，但它替代的可能是 3 条断言，
+ *   所以 skipped 计数要按**断言数**记，否则「通过数 + 跳过数」对不上。
+ */
+const skipped = (name, why, n = 1) => {
+  if (REQUIRE_LOCAL_ASSETS) {
+    fail += n;
+    console.log(`  FAIL ${name} -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);
+    return;
+  }
+  skip += n;
+  console.log(`  SKIP ${name} -- ${why}${n > 1 ? `（本组 ${n} 条断言未跑）` : ''}`);
 };
 
 class FakePort {
@@ -485,16 +526,21 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
   {
     const { readFileSync } = await import('node:fs');
     // ★ 2026-11-04：/tmp 路径重启即丢（本机实测 npm test 挂），统一走仓库内向量
-    const samp = JSON.parse(readFileSync('./tools/vectors/pend-samples.json', 'utf8'));
-    let okN = 0, badN = 0, bads = [];
-    for (const id of Object.keys(INLINE_MULADD)) {
-      for (const r of (samp[id] || [])) {
-        const seed = Uint8Array.from(r.seed.match(/../g).map((x) => parseInt(x, 16)));
-        const got = [...computeVariantKey(id, seed).key].map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-        if (got === r.key) okN++; else { badN++; bads.push(`${id.slice(0, 8)}:${r.seed}`); }
+    // ★ 2026-11-17：干净 clone 上该文件不存在 —— 先探测再读，缺则可见 SKIP。
+    if (!existsSync(VECTORS_PEND)) {
+      skipped('MULADD 六变体 × 32 点 真值对拍', LOCAL_ASSET_WHY);
+    } else {
+      const samp = JSON.parse(readFileSync(VECTORS_PEND, 'utf8'));
+      let okN = 0, badN = 0, bads = [];
+      for (const id of Object.keys(INLINE_MULADD)) {
+        for (const r of (samp[id] || [])) {
+          const seed = Uint8Array.from(r.seed.match(/../g).map((x) => parseInt(x, 16)));
+          const got = [...computeVariantKey(id, seed).key].map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+          if (got === r.key) okN++; else { badN++; bads.push(`${id.slice(0, 8)}:${r.seed}`); }
+        }
       }
+      ok(`MULADD 六变体 × 32 点 真值对拍（${okN} 点）`, badN === 0, bads.slice(0, 3).join(' '));
     }
-    ok(`MULADD 六变体 × 32 点 真值对拍（${okN} 点）`, badN === 0, bads.slice(0, 3).join(' '));
   }
   // ⚠️ 高价值：`Allrad` / `KLSM` / `Dummy` 共用 CB4E06 —— 现在必须能算
   ok('Allrad（ASAM_seedkey_Allrad）现在能算 key', (() => {
@@ -512,14 +558,20 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
     const { pswCalc, PENDING_MODES } = await import('./src/seedkey-pswcalc.js');
     ok('mode 0x48 已收编（不再 PENDING）', !(0x48 in PENDING_MODES));
     const { readFileSync } = await import('node:fs');
-    const MS = JSON.parse(readFileSync('./tools/vectors/mode-samples.json', 'utf8'));
-    const rows = (MS['0x48'] || []).filter((r) => r.key != null);
-    let okN = 0, badN = 0;
-    for (const r of rows) {
-      const got = pswCalc(0x48, parseInt(r.seed, 16) >>> 0).key >>> 0;
-      if (got === (parseInt(r.key, 16) >>> 0)) okN++; else badN++;
+    // ★ 2026-11-17：同一份 mode 表下面 0x02 段也要用，所以在这里一次性读成 `MS`（缺失为 null），
+    //   两个消费点各自判 —— 不能把 `MS` 声明在某个分支里，作用域会漏。
+    const MS = existsSync(VECTORS_MODE) ? JSON.parse(readFileSync(VECTORS_MODE, 'utf8')) : null;
+    if (!MS) {
+      skipped('mode 0x48 = ~seed 对拍 真值对拍', LOCAL_ASSET_WHY);
+    } else {
+      const rows = (MS['0x48'] || []).filter((r) => r.key != null);
+      let okN = 0, badN = 0;
+      for (const r of rows) {
+        const got = pswCalc(0x48, parseInt(r.seed, 16) >>> 0).key >>> 0;
+        if (got === (parseInt(r.key, 16) >>> 0)) okN++; else badN++;
+      }
+      ok(`mode 0x48 = ~seed 对拍 真值对拍（${okN} 点）`, badN === 0);
     }
-    ok(`mode 0x48 = ~seed 对拍 真值对拍（${okN} 点）`, badN === 0);
     // ★ 2026-11-12 第十阶段：mode 0x1D 已由反汇编逆出（key = seed + state），不再是待逆项。
     //   红线：state 未装载时必须拒写，绝不把离线 identity 当正解发到真车。
     ok('mode 0x1d 已收编（不再 PENDING）', !(0x1d in PENDING_MODES));
@@ -536,14 +588,18 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
     // mode 0x02：rotate+combine **符号扩展**语义（n==0 保留完整 seed），32/32
     ok('mode 0x02 已收编', !(0x02 in PENDING_MODES));
     {
-      const rows = (MS['0x02'] || []).filter((r) => r.key != null);
-      let okN = 0, badN = 0;
-      for (const r of rows) {
-        const got = pswCalc(0x02, parseInt(r.seed, 16) >>> 0).key >>> 0;
-        if (got === (parseInt(r.key, 16) >>> 0)) okN++; else badN++;
+      if (!MS) {
+        skipped('mode 0x02 对拍 真值对拍', LOCAL_ASSET_WHY);
+      } else {
+        const rows = (MS['0x02'] || []).filter((r) => r.key != null);
+        let okN = 0, badN = 0;
+        for (const r of rows) {
+          const got = pswCalc(0x02, parseInt(r.seed, 16) >>> 0).key >>> 0;
+          if (got === (parseInt(r.key, 16) >>> 0)) okN++; else badN++;
+        }
+        ok(`mode 0x02 对拍 真值对拍（${okN} 点）`, badN === 0);
       }
-      ok(`mode 0x02 对拍 真值对拍（${okN} 点）`, badN === 0);
-      // n==0 时保留完整 seed —— 用 0x80000000 这个点卡住（它 n=0）
+      // n==0 时保留完整 seed —— 用 0x80000000 这个点卡住（它 n=0）；不依赖真值表
       ok('mode 0x02 n==0 时保留完整 seed',
          pswCalc(0x02, 0x80000000).key >>> 0 === 0x80000000);
     }
@@ -581,23 +637,27 @@ console.log('\n[8] 特殊功能安全访问');
 // ===== 9. 2026-10-18 收编 mode + 三处回归 =====
 console.log('\n[9] 原语 mode 收编 / 解析器 / 空 seed');
 {
-  const samples = JSON.parse(readFileSync('./tools/vectors/mode-samples.json', 'utf8'));
+  const samples = loadVectors('mode-samples.json');
   // 新收编的 19 个 mode：直接拿 仿真 采样对拍（不只挑几个点）
   const modes = [0x13, 0x15, 0x16, 0x19, 0x1b, 0x1f, 0x28, 0x29, 0x2d, 0x30,
                  0x35, 0x42, 0x47, 0x4f, 0x5b, 0x5c, 0x5d, 0x65, 0x68];
-  let bad = [];
-  for (const m of modes) {
-    const rows = samples['0x' + m.toString(16)];
-    if (!rows) continue;
-    for (const r of rows) {
-      if (r.key == null) continue;
-      let got;
-      try { got = resolveKey(m, parseInt(r.seed, 16), {}).key >>> 0; } catch (e) { got = null; }
-      if (got !== parseInt(r.key, 16)) { bad.push(`0x${m.toString(16)}/${r.seed}`); }
+  if (!samples) {
+    skipped('19 个原语 mode 全部进 resolveKey 并对拍 真值对拍', LOCAL_ASSET_WHY);
+  } else {
+    let bad = [];
+    for (const m of modes) {
+      const rows = samples['0x' + m.toString(16)];
+      if (!rows) continue;
+      for (const r of rows) {
+        if (r.key == null) continue;
+        let got;
+        try { got = resolveKey(m, parseInt(r.seed, 16), {}).key >>> 0; } catch (e) { got = null; }
+        if (got !== parseInt(r.key, 16)) { bad.push(`0x${m.toString(16)}/${r.seed}`); }
+      }
     }
+    ok('19 个原语 mode 全部进 resolveKey 并对拍 真值对拍', bad.length === 0,
+       bad.slice(0, 4).join(','));
   }
-  ok('19 个原语 mode 全部进 resolveKey 并对拍 真值对拍', bad.length === 0,
-     bad.slice(0, 4).join(','));
   // resolver 早先不认识 RAW_MODE_FNS —— 这条专防「实现了但接不上」
   ok('resolveKey(0x13) 不再抛「待逆」', (() => {
     try { resolveKey(0x13, 0x12345678, {}); return true; } catch (e) { return false; }
@@ -634,28 +694,32 @@ console.log('\n[9] 原语 mode 收编 / 解析器 / 空 seed');
 // ===== 10. 2026-10-18 第二轮：变体家族收编 =====
 console.log('\n[10] 变体家族收编（RC16 / RC16B / BYTELOOP / 移位反馈32 / RORADD26 / CRC24 / RC_VAR）');
 {
-  const S = JSON.parse(readFileSync('./tools/vectors/pend-samples.json', 'utf8'));
+  const S = loadVectors('pend-samples.json');
   const ids = ['E70BF466', 'C1CBA4AF', '2BF9206C', 'D2ACD9A3', '3EF21C75', 'C5A5A0A7',
                'CF204DC3', 'ED8C844E', '42FFC7E0', '76F77EB4', '9316E2B4',
                '1C6D5638', '0A8B1B4C', '11747BDA', '01A56221', '9E46569F',
                'E006B2FF', 'F7297A9C',
                // 2026-10-18 第六轮收编：CRC32（EPB_VR7/VR8）+ NOT_MULADD（9x1 BKE）
                '7F6DED18', '_NEW9x1BKE'];
-  const bad = [];
-  for (const pre of ids) {
-    const full = Object.keys(S).find((k) => k.startsWith(pre));
-    if (!full) { bad.push(pre + ':无采样'); continue; }
-    for (const r of S[full]) {
-      if (r.key == null) continue;
-      const v = parseInt(r.seed, 16) >>> 0;
-      const bytes = Uint8Array.of((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255);
-      let got;
-      try { got = Array.from(computeVariantKey(full, bytes).key).map((x) => x.toString(16).padStart(2, '0')).join(''); }
-      catch (e) { got = 'ERR'; }
-      if (got.toLowerCase() !== r.key.toLowerCase()) { bad.push(`${pre}/${r.seed}`); break; }
+  if (!S) {
+    skipped('20 个变体 × 32 点全部对上 真值对拍', LOCAL_ASSET_WHY);
+  } else {
+    const bad = [];
+    for (const pre of ids) {
+      const full = Object.keys(S).find((k) => k.startsWith(pre));
+      if (!full) { bad.push(pre + ':无采样'); continue; }
+      for (const r of S[full]) {
+        if (r.key == null) continue;
+        const v = parseInt(r.seed, 16) >>> 0;
+        const bytes = Uint8Array.of((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255);
+        let got;
+        try { got = Array.from(computeVariantKey(full, bytes).key).map((x) => x.toString(16).padStart(2, '0')).join(''); }
+        catch (e) { got = 'ERR'; }
+        if (got.toLowerCase() !== r.key.toLowerCase()) { bad.push(`${pre}/${r.seed}`); break; }
+      }
     }
+    ok('20 个变体 × 32 点全部对上 真值对拍', bad.length === 0, bad.slice(0, 5).join(','));
   }
-  ok('20 个变体 × 32 点全部对上 真值对拍', bad.length === 0, bad.slice(0, 5).join(','));
 
   // 位抽取里「数组顺序 ≠ 权重」是这次踩过的坑（E006B2FF 第一次就写反了）
   const e006 = computeVariantKey('E006B2FF19D9E1784A4B1E156444432B',
@@ -693,9 +757,14 @@ console.log('\n[10] 变体家族收编（RC16 / RC16B / BYTELOOP / 移位反馈3
   {
     const k = computeVariantKey('3D5365460CB39FEFC14651DF5075A1B8', Uint8Array.of(0x12, 0x34, 0x56, 0x78));
     const got = Array.from(k.key).map((x) => x.toString(16).padStart(2, '0')).join('');
-    const want = (JSON.parse(readFileSync('./tools/vectors/pend-samples.json', 'utf8'))
-      ['3D5365460CB39FEFC14651DF5075A1B8'].find((r) => r.seed === '12345678') || {}).key || '';
-    ok('3D536546 已收编且对上 真值对拍', got === want.toLowerCase(), `got=${got} want=${want}`);
+    const pend3d = loadVectors('pend-samples.json');
+    if (!pend3d) {
+      skipped('3D536546 已收编且对上 真值对拍', LOCAL_ASSET_WHY);
+    } else {
+      const want = (pend3d['3D5365460CB39FEFC14651DF5075A1B8']
+        .find((r) => r.seed === '12345678') || {}).key || '';
+      ok('3D536546 已收编且对上 真值对拍', got === want.toLowerCase(), `got=${got} want=${want}`);
+    }
   }
 }
 
@@ -875,39 +944,43 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
   console.log('\n[13] 字长 VM（64 位累加器解释器）');
   const { wordVmRun } = await import('./src/seedkey-wordvm.js');
   const { WORDVM_PROGRAMS, pswCalc } = await import('./src/seedkey-pswcalc.js');
-  const v = JSON.parse(readFileSync('./tools/vectors/wordvm-samples.json', 'utf8'));
+  const v = loadVectors('wordvm-samples.json');
   const h2b = (h) => Uint8Array.from(h.match(/../g).map((x) => parseInt(x, 16)));
 
-  ok('向量覆盖 9 个 mode', Object.keys(v).length === 9, Object.keys(v).join(','));
-  let tot = 0, bad = 0; const badModes = [];
-  for (const [name, rows] of Object.entries(v)) {
-    const mode = parseInt(name.slice(-2), 16);
-    const p = h2b(WORDVM_PROGRAMS[mode]);
-    let okN = 0;
-    for (const r of rows) {
-      tot++;
-      const got = (wordVmRun(parseInt(r.seed, 16), p) >>> 0).toString(16).toUpperCase().padStart(8, '0');
-      if (got === r.key.toUpperCase()) okN++; else bad++;
+  if (!v) {
+    // 这一组三条都靠同一张表：9 mode 覆盖、逐点对拍、以及「字节版会错」这个反例。
+    skipped('字长 VM 向量覆盖 / 逐点对拍 / 0x73 字节版对照', LOCAL_ASSET_WHY, 3);
+  } else {
+    ok('向量覆盖 9 个 mode', Object.keys(v).length === 9, Object.keys(v).join(','));
+    let tot = 0, bad = 0; const badModes = [];
+    for (const [name, rows] of Object.entries(v)) {
+      const mode = parseInt(name.slice(-2), 16);
+      const p = h2b(WORDVM_PROGRAMS[mode]);
+      let okN = 0;
+      for (const r of rows) {
+        tot++;
+        const got = (wordVmRun(parseInt(r.seed, 16), p) >>> 0).toString(16).toUpperCase().padStart(8, '0');
+        if (got === r.key.toUpperCase()) okN++; else bad++;
+      }
+      if (okN !== rows.length) badModes.push(`0x${mode.toString(16)}(${okN}/${rows.length})`);
     }
-    if (okN !== rows.length) badModes.push(`0x${mode.toString(16)}(${okN}/${rows.length})`);
-  }
-  ok(`字长 VM 对拍 ${tot} 点全过`, bad === 0, bad ? badModes.join(' ') : `${tot} 点`);
+    ok(`字长 VM 对拍 ${tot} 点全过`, bad === 0, bad ? badModes.join(' ') : `${tot} 点`);
 
-  // 0x73 是字长 VM 的「分水岭」：字节版 sa2Run 只能对 28/32，
-  // 差在 SHR1 的 bit31 还要吃「SUB 借位留下的 hi」。这条断言防止退回字节版。
-  {
+    // 0x73 是字长 VM 的「分水岭」：字节版 sa2Run 只能对 28/32，
+    // 差在 SHR1 的 bit31 还要吃「SUB 借位留下的 hi」。这条断言防止退回字节版。
     const { sa2Run } = await import('./src/seedkey-sa2.js');
-    const rows = v['mode_0x73'];
-    const p = h2b(WORDVM_PROGRAMS[0x73]);
+    const rows73 = v['mode_0x73'];
+    const p73 = h2b(WORDVM_PROGRAMS[0x73]);
     let byteOk = 0;
-    for (const r of rows) {
-      const got = (sa2Run(parseInt(r.seed, 16), p) >>> 0).toString(16).toUpperCase().padStart(8, '0');
+    for (const r of rows73) {
+      const got = (sa2Run(parseInt(r.seed, 16), p73) >>> 0).toString(16).toUpperCase().padStart(8, '0');
       if (got === r.key.toUpperCase()) byteOk++;
     }
-    ok('0x73 字节版会错（证明必须用字长 VM）', byteOk < rows.length, `${byteOk}/${rows.length}`);
-    ok('0x73 字长版全对', pswCalc(0x73, 0x3456789A).key === 0x7f5c8864,
-       (pswCalc(0x73, 0x3456789A).key >>> 0).toString(16));
+    ok('0x73 字节版会错（证明必须用字长 VM）', byteOk < rows73.length, `${byteOk}/${rows73.length}`);
   }
+  // 字长版对拍是常数自证，不依赖向量表 —— 缺资产时这条照样要跑
+  ok('0x73 字长版全对', pswCalc(0x73, 0x3456789A).key === 0x7f5c8864,
+     (pswCalc(0x73, 0x3456789A).key >>> 0).toString(16));
 
   // 分发器必须走 wordVmRun，不是 sa2Run
   ok('pswCalc 对 0x6E 报 WORDVM 算法名', /WORDVM/.test(pswCalc(0x6e, 1).algo), pswCalc(0x6e, 1).algo);
@@ -925,13 +998,16 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
   const { computeVariantKey, INLINE_VM_PROGRAMS, INLINE_OTHER_PENDING } =
     await import('./src/seedkey-registry.js');
   const { sa2Run } = await import('./src/seedkey-sa2.js');
-  const pend = JSON.parse(readFileSync('./tools/vectors/pend-samples.json', 'utf8'));
+  const pend = loadVectors('pend-samples.json');
   const h2b = (h) => Uint8Array.from(h.match(/../g).map((x) => parseInt(x, 16)));
 
   ok('登记 4 个内联 VM 变体', Object.keys(INLINE_VM_PROGRAMS).length === 4,
      String(Object.keys(INLINE_VM_PROGRAMS).length));
 
-  let tot = 0, bad = 0; const badIds = [];
+  if (!pend) {
+    skipped('内联 VM 经 registry 对拍 128 点全过', LOCAL_ASSET_WHY);
+  } else {
+    let tot = 0, bad = 0; const badIds = [];
   for (const [id, hex] of Object.entries(INLINE_VM_PROGRAMS)) {
     const p = h2b(hex);
     const rows = pend[id];
@@ -948,6 +1024,7 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
   }
   ok(`内联 VM 经 registry 对拍 ${tot} 点全过`, bad === 0 && tot === 128,
      bad ? badIds.join(' ') : `${tot} 点`);
+  }   // ← 结束「pend 表存在」分支；块内缩进保持原样，避免整段重排把 diff 放大
 
   // 程序必须以 0x4c 结尾（提取器校验项；防止拷错 rodata 偏移）
   ok('4 段程序都以 0x4C(HALT) 结尾',
@@ -1168,16 +1245,20 @@ console.log('\n[15] 特殊功能 / 例程 0x31');
 console.log('\n[16] 0x79/0x7a/0x7b / DTC / CAN 地址 / LinkDoctor 真机配方');
 {
   // ① 三个新收编 mode 的 32 点 真值对拍
-  const vec = JSON.parse(readFileSync('./tools/vectors/mode-samples.json', 'utf8'));
-  for (const [hex, mode] of [['0x79', 0x79], ['0x7a', 0x7a], ['0x7b', 0x7b]]) {
-    const rows = vec[hex] || [];
-    let good = 0;
-    for (const r of rows) {
-      try {
-        if ((pswCalc(mode, parseInt(r.seed, 16)).key >>> 0) === parseInt(r.key, 16)) good++;
-      } catch { /* count as bad */ }
+  const vec = loadVectors('mode-samples.json');
+  if (!vec) {
+    skipped('0x79/0x7a/0x7b 32 点 真值对拍（新收编）', LOCAL_ASSET_WHY, 3);
+  } else {
+    for (const [hexv, mode] of [['0x79', 0x79], ['0x7a', 0x7a], ['0x7b', 0x7b]]) {
+      const rows = vec[hexv] || [];
+      let good = 0;
+      for (const r of rows) {
+        try {
+          if ((pswCalc(mode, parseInt(r.seed, 16)).key >>> 0) === parseInt(r.key, 16)) good++;
+        } catch { /* count as bad */ }
+      }
+      ok(`${hexv} 32 点 真值对拍（新收编）`, rows.length === 32 && good === 32, `${good}/${rows.length}`);
     }
-    ok(`${hex} 32 点 真值对拍（新收编）`, rows.length === 32 && good === 32, `${good}/${rows.length}`);
   }
   ok('0x79/0x7a/0x7b 不再 PENDING',
      (await import('./src/seedkey-pswcalc.js')).PENDING_MODES[0x79] === undefined
@@ -1765,6 +1846,8 @@ console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
   // ★ 2026-11-17：`gitfacts=1` 是必断条件 —— 缺失项归类（入库文件 vs 本地产物）
   //   只由 git 回答；非 git 环境会降级成 `gitfacts=0` 并把缺失项记为「未判」。
   //   不断这一条，退化环境里的绿等于没验。
+  // CI 上若 git 因 dubious ownership 无法执行 → gitfacts=0 → 本断言红。
+  // 这是**可见降级**，不是静默放过：修 CI 的 git 配置，不要放宽本断言。
   ok('F14 SYNC_DATA_CONSISTENT 真跑 --dry：三桶闭合 + top 独立复算 + 未登记/幽灵/diff 全 0',
     dryParsed
       && dryField('top') === countedTop.synced
@@ -1829,5 +1912,10 @@ console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
     `app.js import schema.js=${/from '\.\/schema\.js'/.test(appImports)} / bundle 含 enumeratePages=${bundle.includes('function enumeratePages(')}`);
 }
 
-console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed =====');
+console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed / ' + skip + ' skipped =====');
+if (skip) {
+  console.log('  跳过 ' + skip + ' 项：缺本地资产（tools/vectors/，.gitignore:118 不入库）。'
+    + '这些断言本轮**一次都没跑**，不要读成「全都验过了」；'
+    + '要连它们一起验：`npm run test:full`（严格模式，缺资产即失败）。');
+}
 process.exit(fail ? 1 : 0);

@@ -10,15 +10,43 @@
  * ⚠️ 期望值全部来自 仿真 实跑原厂 .so（tools/lib-真值对拍.py / tools/vectors/*.json），
  *    不是 JS 自己抄自己。
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pswCalc } from '../src/seedkey-pswcalc.js';
 import { computeVariantKey } from '../src/seedkey-registry.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const modeSamples = JSON.parse(readFileSync(join(here, 'vectors/mode-samples.json'), 'utf8'));
-const varSamples = JSON.parse(readFileSync(join(here, 'vectors/pend-samples.json'), 'utf8'));
+
+// ── 本地资产缺失的降级（2026-11-17）─────────────────────────────────
+// `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库）：
+// 干净 clone 上**必然不存在**，而本脚本的全部输入就是这两份表。
+//
+// 规矩照 `tools/verify-comm-timeouts.mjs` 的既有惯例：
+//   · 缺资产 ⇒ 打印 `SKIP` 并计入 skipped，**禁止 try/catch 静默吞**
+//     （吞掉就成了「永远绿」的假断言，禁令见 verify-comm-timeouts.mjs:26）；
+//   · 汇总行带 `skipped` 计数，别让「0 通过 / 0 失败」被读成「验过且全过」；
+//   · `ALIGN431_REQUIRE_LOCAL_ASSETS=1` ⇒ 缺资产升级为 FAIL / exit 1（验收链用这个）。
+const VECTORS = join(here, 'vectors');
+const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
+const MISSING_VECTORS = ['mode-samples.json', 'pend-samples.json']
+  .filter((f) => !existsSync(join(VECTORS, f)));
+if (MISSING_VECTORS.length) {
+  const why = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库'
+    + `（缺 ${MISSING_VECTORS.join(', ')}）`;
+  if (REQUIRE_LOCAL_ASSETS) {
+    console.log(`  FAIL 待逆清单离线对拍（mode + variant 全部） -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);
+    console.log('\n===== 待逆清单离线对拍：0 通过 / 1 失败 / 0 跳过 =====');
+    process.exit(1);
+  }
+  console.log(`  SKIP 待逆清单离线对拍（mode 表 + variant 表） -- ${why}`);
+  console.log('\n===== 待逆清单离线对拍：0 通过 / 0 失败 / 1 跳过 =====');
+  console.log('  这 1 项本轮**一次都没跑**，不要读成「验过且全过」；鉴权链要连它一起验用 `npm run test:full`。');
+  process.exit(0);
+}
+
+const modeSamples = JSON.parse(readFileSync(join(VECTORS, 'mode-samples.json'), 'utf8'));
+const varSamples = JSON.parse(readFileSync(join(VECTORS, 'pend-samples.json'), 'utf8'));
 
 /**
  * **刻意保持拒写**的 mode —— 它们不算回归失败，但会在汇总里单独列出。
