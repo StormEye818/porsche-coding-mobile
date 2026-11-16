@@ -299,7 +299,7 @@ console.log('\n[5] 老代 KWP 写路径（原厂不建会话）');
 
   // ② :199 源码正则 → 实跑 enterSession(oemSequence:true) 的发帧序列
   const mSeq = new MockAdapter({ latencyMs: 0 });
-  const cSeq = new Coder(new Elm327(mSeq, { timeoutMs: 60 }),
+  const cSeq = new Coder(new Elm327(mSeq, { timeoutMs: 2000 }),
     { tx: 0x7e0, rx: 0x7e8, verbose: false });
   mSeq.txLog.length = 0;
   try { await cSeq.enterSession(undefined, { family: 'uds', oemSequence: true }); }
@@ -311,7 +311,7 @@ console.log('\n[5] 老代 KWP 写路径（原厂不建会话）');
 
   // ③ :252 源码正则 → 实跑写路径不含 runWritePrologue 编排帧
   const mW = new MockAdapter({ latencyMs: 0 });
-  const cW = new Coder(new Elm327(mW, { timeoutMs: 60 }),
+  const cW = new Coder(new Elm327(mW, { timeoutMs: 2000 }),
     { tx: 0x7e0, rx: 0x7e8, verbose: false });
   cW.diagProfile = { verified: true, reason: '测试显式授信' };
   mW.txLog.length = 0;

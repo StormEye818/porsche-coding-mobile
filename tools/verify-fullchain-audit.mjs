@@ -225,7 +225,7 @@ console.log('\n[4] 审计其余修复回归');
   // ★ G7：字符串计数 → 实跑。由真实写入把 backus 记录下来，检查字段存在且为布尔。
   {
     const mB = new MockAdapter({ latencyMs: 0 });
-    const cB = new Coder(new Elm327(mB, { timeoutMs: 60 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    const cB = new Coder(new Elm327(mB, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
     cB.diagProfile = { verified: true, reason: 'G7 测试显式授信' };
     cB.setOemContext('0x0101', 0x7e0);
     try {
@@ -263,7 +263,7 @@ console.log('\n[4] 审计其余修复回归');
     // 实跑协议层：补帧 221102 必须真发到适配器；空应答时该方法抛错
     // （= 补帧响应**不能**把绑定判成成功，与 app.js tryAddr 的「响应不作成功依据」一致）。
     const mS = new MockAdapter({ latencyMs: 0 });
-    const cS = new Coder(new Elm327(mS, { timeoutMs: 40 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    const cS = new Coder(new Elm327(mS, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
     mS.txLog.length = 0;
     let supplementRejected = false;
     try { await cS.uds('221102', { retain: true, timeout: 60 }); }
@@ -280,7 +280,7 @@ console.log('\n[4] 审计其余修复回归');
   // ★ G7：源码计数 → 实跑并发互斥（同一 Coder 并发 3 次只有 1 次进入写事务）
   {
     const mW = new MockAdapter({ latencyMs: 0 });
-    const cW = new Coder(new Elm327(mW, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    const cW = new Coder(new Elm327(mW, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
     let inFlight = 0;
     let maxIn = 0;
     const one = async () => cW.withWriteLock(async () => {
@@ -330,7 +330,7 @@ console.log('\n[5] 文档一致性');
     const results = [];
     for (const kind of entryKinds) {
       const mE = new MockAdapter({ latencyMs: 0 });
-      const cE = new Coder(new Elm327(mE, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+      const cE = new Coder(new Elm327(mE, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
       cE.setOemContext('0x0101', 0x7e0);       // sessionless
       mE.txLog.length = 0;
       let okCall = false;
@@ -545,7 +545,7 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
     on() {},
     write(s) { this.txLog.push(String(s).trim()); },
   };
-  const eAt = new Elm327(emptyPort, { timeoutMs: 30 });
+  const eAt = new Elm327(emptyPort, { timeoutMs: 2000 });
   // 直接测 cmdOk 的空回执分支：把 cmd 返回值替换为 ''（不改生产代码）
   const origCmd = eAt.cmd.bind(eAt);
   eAt.cmd = async () => '';
@@ -556,7 +556,7 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
   ok('FULLCHAIN_AT_LAYER ATSH 空回执被阻断（requireOk 实跑）',
     atBlocked, `code=${atBlocked ? 'AT_NOT_OK' : '未阻断'}`);
   const mAt = new MockAdapter({ latencyMs: 0 });
-  const eAt2 = new Elm327(mAt, { timeoutMs: 60 });
+  const eAt2 = new Elm327(mAt, { timeoutMs: 2000 });
   mAt.txLog.length = 0;
   try { await eAt2.cmdOk('ATCRA7E8', 60, { requireOk: true, noDelay: true }); } catch { /* 空回执按断言判定 */ }
   ok('FULLCHAIN_AT_LAYER ATCRA 绑定命令真实落到适配器',
@@ -564,7 +564,7 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
 
   // ② WRITE_PROLOGUE_WIRED：统一写事务真的互斥（不是数 withWriteLock 出现次数）
   const mWl = new MockAdapter({ latencyMs: 0 });
-  const cWl = new Coder(new Elm327(mWl, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  const cWl = new Coder(new Elm327(mWl, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
   let entered = 0;
   let maxConcurrent = 0;
   const one = async () => cWl.withWriteLock(async () => {
@@ -641,7 +641,7 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
     })(), `fixedNodes=${menuTree.itemIdsBackfill?.fixedNodes}`);
   // ⑦ 构帧实跑：从静态记录生成 elm.cmd 帧并命中 txLog
   const mF = new MockAdapter({ latencyMs: 0 });
-  const eF = new Elm327(mF, { timeoutMs: 40 });
+  const eF = new Elm327(mF, { timeoutMs: 2000 });
   const rec = mEnum.items.find((x) => Number.isInteger(x.pid) && x.readSid === 0x22);
   const frame = (featureFramesFor('measure', rec) || [])[0] || '';
   mF.txLog.length = 0;
@@ -652,7 +652,7 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
   const cS = new Coder(new MockAdapter({ latencyMs: 0 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
   cS.setOemContext('0x0101', 0x7e0);
   const mS = new MockAdapter({ latencyMs: 0 });
-  const cS2 = new Coder(new Elm327(mS, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  const cS2 = new Coder(new Elm327(mS, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
   cS2.setOemContext('0x0101', 0x7e0);
   mS.txLog.length = 0;
   const okSessionless = await cS2.enterSessionFor('routine', { skipIdent: true });

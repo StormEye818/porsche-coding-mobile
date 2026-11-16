@@ -106,7 +106,10 @@ tools/resolve-ecu-address.py
 tools/x[0-9][0-9][0-9]-address-port.py
 tools/decode-*
 tools/analyze-data-files.py
-tools/build-routines-verified.py
+# ★ 2026-11-16：build-routines-verified.py 的 --verify 是 D2_RID_79_79 门禁（纯离线、
+#   只读 data/*.json + git show 固定基线），必须入仓才能让提交态复现 238/238；
+#   其「生成器模式」仍需 ref 包（本地才有），但代码本身可入仓（同 build-ident-registry.py 先例）。
+# tools/build-routines-verified.py
 tools/gfs-names.py
 tools/inventory-package.py
 tools/probe-rc.mjs

@@ -15,8 +15,9 @@
  *
  * 用法：本模块只导出函数与常量，不直接执行。
  */
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -299,8 +300,33 @@ export function runGate(gate, runnerOverride) {
   let stdout = '';
   let timedOut = false;
   try {
+    // ★ QA R3 / 问题2：gate 必须**串行 + 环境无关**执行。
+    //   execFileSync 天然串行（阻塞），但要把环境钉死，避免同一 gate 在
+    //   「单独跑 vs audit 内跑」表现不同：
+    //   · TZ/LANG/LC_ALL 固定 → 任何本地化/时区敏感断言不抖；
+    //   · NO_COLOR / FORCE_COLOR=0 → 去掉 ANSI 转义，stdout 断言稳定；
+    //   · ALIGN431_T03B 显式='1' → 显式固定 oem-probe-diff 的硬断言开关，
+    //     不让调用方 shell 里的诊断回退变量把门禁悄悄降级；
+    //   · NODE_OPTIONS 清空 → 不让外部注入的 --experimental-* 等改变行为；
+    //   · TMPDIR 指向每个 gate 独立临时目录 → 杜绝 gate 之间共享临时文件。
+    const gateTmp = join(tmpdir(), 'align431-gate', String(process.pid), gate.replace(/[^\w.-]+/g, '_'));
+    try { mkdirSync(gateTmp, { recursive: true }); } catch { /* 已存在 */ }
+    const deterministicEnv = {
+      ...process.env,
+      TZ: 'UTC',
+      LANG: 'C',
+      LC_ALL: 'C',
+      NO_COLOR: '1',
+      FORCE_COLOR: '0',
+      ALIGN431_T03B: '1',
+      NODE_OPTIONS: '',
+      TMPDIR: gateTmp,
+      TEMP: gateTmp,
+      TMP: gateTmp,
+    };
     stdout = execFileSync(runner.cmd, runner.args, {
       cwd: ROOT,
+      env: deterministicEnv,
       encoding: 'utf8',
       maxBuffer: 256 * 1024 * 1024,
       timeout: GATE_TIMEOUT_MS,
@@ -320,6 +346,9 @@ export function runGate(gate, runnerOverride) {
 /** 清空门禁执行缓存（生成器每次重算前调用，保证跨运行不复用陈旧结果）。 */
 export function clearGateCache() {
   GATE_CACHE.clear();
+  // 清理本次进程创建的 gate 临时目录（每个 gate 一个，杜绝跨 gate 共享临时状态）
+  try { rmSync(join(tmpdir(), 'align431-gate', String(process.pid)), { recursive: true, force: true }); }
+  catch { /* 不存在或不可删则忽略 */ }
 }
 
 /**

@@ -18,6 +18,7 @@
  */
 import {
   readJson, scanForbiddenWords, evaluateRow, carrierStatusOf, sha256, sortedKeys, fileExists,
+  clearGateCache,
 } from './align431-eval.mjs';
 
 const ROWS_FILE = 'tools/align431-rows.json';
@@ -142,4 +143,6 @@ emit(`退出码=${allA ? 0 : 1}（${allA
 const normalized = out.join('\n');
 emit(`sha256=${sha256(normalized)}`);
 process.stdout.write(out.join('\n') + '\n');
+// ★ QA R3 / 问题2：退出前清理每个 gate 的独立临时目录，避免残留影响后续运行。
+clearGateCache();
 process.exit(allA ? 0 : 1);
