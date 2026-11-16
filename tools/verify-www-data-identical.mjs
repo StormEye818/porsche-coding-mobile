@@ -265,6 +265,31 @@ function printList(label, items, n = 5) {
 // ───────────────────────────────────────────────────────────────────
 console.log(`\n=== ${ASSERTION} ===`);
 
+// ───────────────────────────────────────────────────────────────────
+// 前置检查：`www/` 是**构建产物**（.gitignore 政策，干净 clone 里根本不存在）。
+//
+// ⚠️ 旧行为把「还没构建」和「构建了但内容不一致」判成同一个 EXIT=1 + 一句
+//    「缺失 4631 个」，读的人无法区分是**前置未满足**还是**真回归**——
+//    而这两件事的处置完全相反（一个去跑 sync，一个去查代码）。
+//    实测（干净 clone，2026-11-17）：9 passed / 8 failed，失败全是 www 侧不存在，
+//    但审计层面看起来就是「这一行内容缺陷」。
+//
+// 所以这里单独用 **退出码 2** 表示「前置未满足，未判内容」：
+//   0 = 通过；1 = 构建了但内容不一致（真回归）；2 = 前置未满足（请先 npm run sync）。
+// ───────────────────────────────────────────────────────────────────
+const wwwBuilt = fs.existsSync(WWW_DATA_DIR) && fs.existsSync(WWW_CATALOG);
+if (!wwwBuilt) {
+  const missing = [
+    fs.existsSync(WWW_DATA_DIR) ? '' : 'www/data/',
+    fs.existsSync(WWW_CATALOG) ? '' : 'www/feature-catalog.js',
+  ].filter(Boolean).join(' 与 ');
+  console.log(`PRECONDITION_MISSING www/ 未构建：缺 ${missing}`);
+  console.log('  www/ 是构建产物（.gitignore 政策），干净 clone 上不存在属正常，不是内容缺陷。');
+  console.log('  请先 `node scripts/sync.mjs`（或 `npm run sync`）再跑本门禁。');
+  console.log('  退出码约定：0=通过 / 1=构建了但内容不一致（真回归） / 2=前置未满足（未判内容）');
+  process.exit(2);
+}
+
 let manifest = null;
 let manifestError = '';
 try {

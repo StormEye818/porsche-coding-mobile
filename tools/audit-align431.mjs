@@ -52,6 +52,8 @@ const evaluated = allRows.map((row) => {
     u1CarrierStatus: live.u1CarrierStatus,
     carrierReasons: live.carrierReasons,
     u1Missing: u1TripleMissing(row),
+    // ★ 前置未满足（gate 退出码 2）与「内容不一致」是两件事，必须各自可数。
+    preconditionMissing: live.gatePreconditionMissing === true,
   };
 });
 
@@ -102,7 +104,13 @@ emit('');
 
 // ④ 禁用结案词命中数（Node includes，全库 .md）
 const fw = scanForbiddenWords();
-emit('--- ④ 禁用结案词（PRD §0 十类，Node fs.readFileSync().includes() 扫全库 .md） ---');
+emit('--- ④ 禁用结案词（PRD §0 十类，Node fs.readFileSync().includes() 扫**入库** .md） ---');
+// ⚠️ 这一行**进 sha256**，所以只许写**与机器无关**的事实。
+//    「本机未入库几份」是本机事实（本地 42 / clone 0），写进来会把 sha256 变回机器相关 ——
+//    那正是本轮要修的东西。它在输出末尾以「不进指纹」标注单列。
+emit(`扫描集=${fw.scanDegraded
+  ? '全部本地 .md（非 git 环境，机器相关，指纹不可跨机对照）'
+  : '入库 .md（.gitignore 排除的文档不参与，扫描面因此与机器无关）'}`);
 emit(`扫描 .md 文件数=${fw.files} 原始命中=${fw.raw} 作为结案理由命中=${fw.asClosingReason}`);
 for (const k of sortedKeys(fw.byClass)) emit(`  CLASS ${k} = ${fw.byClass[k]}`);
 for (const k of sortedKeys(fw.buckets)) emit(`  BUCKET ${k} = ${fw.buckets[k]}`);
@@ -122,10 +130,15 @@ emit('');
 // 汇总 + 退出码
 const aCount = evaluated.filter((e) => e.verdict === 'A').length;
 const nonACount = nonA.length;
+// ★ 前置未满足（gate 退出码 2，例：`www/` 未构建）单独计数。
+//   它不是内容缺陷，处置方向是「先跑 npm run sync」；混进「非 A」会把人引去查代码。
+const precondRows = nonA.filter((e) => e.preconditionMissing);
+const precondCount = precondRows.length;
 const allA = nonACount === 0 && fw.asClosingReason === 0 && u1MissingRows.length === 0
   && rows.baseline.deleteZero && rows.baseline.mergeZero && rows.baseline.originalNumberingPreserved;
 emit('--- 汇总 ---');
 emit(`基线=${rows.baseline.count} 新增=${rows.addedRowCount} 总行数=${allRows.length} A=${aCount} 非A=${nonACount}`);
+emit(`前置未满足行数=${precondCount}（gate 退出码 2 = 前置未构建、未判内容；请先 npm run sync）`);
 emit(`禁用结案词命中(作为结案理由)=${fw.asClosingReason} 三件套缺失=${u1MissingRows.length} 删行=${rows.baseline.deleteZero ? 0 : 1} 合并行=${rows.baseline.mergeZero ? 0 : 1}`);
 // ★ 退出码说明按 live 求值动态生成：不写死任何阶段结论、不留自宣式文字。
 //   全 A →「全 A，退出码 0」；否则逐项列出实际未归零的原因与「仍有 N 行非 A」。
@@ -135,14 +148,30 @@ if (fw.asClosingReason > 0) blockers.push(`禁用结案词命中 ${fw.asClosingR
 if (u1MissingRows.length > 0) blockers.push(`三件套缺失 ${u1MissingRows.length}`);
 if (!rows.baseline.deleteZero) blockers.push('删行≠0');
 if (!rows.baseline.mergeZero) blockers.push('合并行≠0');
-emit(`退出码=${allA ? 0 : 1}（${allA
-  ? `全 A ${aCount}/${allRows.length}，禁用结案词/三件套/删行/合并行均归零`
-  : `${blockers.join('；')}，退出码非 0`}）`);
+// 退出码三态：0=全 A；2=非 A **全部**由前置未满足造成（内容未判）；1=其余（含真内容缺陷）。
+const onlyPrecondition = nonACount > 0 && precondCount === nonACount;
+const otherBlockers = fw.asClosingReason > 0 || u1MissingRows.length > 0
+  || !rows.baseline.deleteZero || !rows.baseline.mergeZero || !rows.baseline.originalNumberingPreserved;
+const exitCode = allA ? 0 : ((onlyPrecondition && !otherBlockers) ? 2 : 1);
+if (exitCode === 2) {
+  emit(`退出码=2（${precondCount} 行因前置未构建未判，非内容缺陷 —— 请先 npm run sync；`
+    + '仍非全 A、仍非 0，不因「只是没构建」放绿）');
+} else {
+  emit(`退出码=${exitCode}（${allA
+    ? `全 A ${aCount}/${allRows.length}，禁用结案词/三件套/删行/合并行均归零`
+    : `${blockers.join('；')}，退出码非 0`}）`);
+}
 
 // 确定性：末尾输出规范化文本 sha256（不含本行）
 const normalized = out.join('\n');
 emit(`sha256=${sha256(normalized)}`);
+// ★ 以下两行**不进指纹**（在 normalized 之后才 append）：它们承载**本机事实**，
+//   若进指纹就会让「换机可对照」失效 —— 与本轮修的东西自相矛盾。
+emit(`（不进指纹）本机未入库 .md ${fw.scanIgnoredCount} 份 —— `
+  + `${fw.scanDegraded
+    ? '⚠ 非 git 环境：已降级为扫描全部本地 .md，扫描面随机器变，本次指纹不可跨机对照'
+    : '.gitignore 政策排除，属本机调研文档，不参与扫描'}`);
 process.stdout.write(out.join('\n') + '\n');
 // ★ QA R3 / 问题2：退出前清理每个 gate 的独立临时目录，避免残留影响后续运行。
 clearGateCache();
-process.exit(allA ? 0 : 1);
+process.exit(exitCode);

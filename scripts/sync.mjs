@@ -26,6 +26,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import { build } from 'esbuild';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -266,12 +267,15 @@ if (!process.argv.includes('--refill')) {
   // 现在：三个**显式清单**（每条带归属理由）+ 五条可证伪断言
   //   ① 桶内无重复、桶间两两交集为空；
   //   ② 三桶并集**恰好等于** data/ 下未被 skip 的顶层 *.json 实存集
-  //      （新增数据文件忘登记 → 红；清单里写了不存在的文件 → 红）；
+  //      （新增数据文件忘登记 → 红）；反方向「登记了但不存在」是否红，
+  //      **由 git 回答**（见 ⑤），不靠名单声明；
   //   ③ 桶1 与 src/app.js 里实际 `fetch('data/<name>')` 的集合**逐个相等**
   //      （加了引用没登记 → 红；登记了却没 fetch → 红；注释里提到不算 fetch）；
   //   ④ 桶2 恰好等于 RUNTIME_REACHABLE − 桶1，且 RUNTIME_REACHABLE 与
   //      src/special-catalog.js 的 FEATURE_DATA_SOURCES 是同一集合（只改一处 → 红）；
-  //   ⑤ 所有计数从数据现算后打印，写死的 19/8/20 不再出现。
+  //   ⑤ 缺失项归类只由 git 事实回答：`git ls-files --error-unmatch` 命中 = 入库
+  //      文件（缺了红）；`git check-ignore -q` 命中 = 本地产物（缺席只打印）；
+  //      两个都不命中 = 归属未定（红）。非 git 环境显式降级为「未判」+ gitfacts=0。
   //
   // 桶定义
   //   桶1 APP_FETCHED        运行时由 app 自己 fetch('data/<name>')，必须原样进安装包
@@ -320,12 +324,10 @@ if (!process.argv.includes('--refill')) {
     ['coding-address-sources.json', '编码地址取证表（tools/export-coding-address-sources.py 产物，门禁消费）'],
     ['comm-addr-table.json', '通讯地址取证表（src 里仅注释引用；门禁 verify-oem-probe-diff 消费）'],
     ['comm-shared-keys.json', '通讯共享键取证表（tools/export-comm-shared-keys.py 产物，门禁消费）'],
-    ['coverage-audit.json', '覆盖率审计产物（tools/audit-coverage.py 输出）'],
     ['drivelinks-v3.json', '驾驶链接 v3 取证表（运行时用 drivelinks.json）'],
     ['dsn-module-sysids.json', 'DSN 模块 sysId 中间表（build-dsn-module-sysids.mjs 产物，喂 export-all-model-sysids.py）'],
     ['menu-index.json', '菜单索引中间表（仅离线 rebuild/fix 脚本引用）'],
     ['model-map.json', '车型映射中间表（喂 tools/export-all-model-sysids.py）'],
-    ['module-disposition-252.json', '252 条目处置表（tools/build-module-disposition.py 产物）'],
     ['module-map.json', '模块映射中间表（仅离线 build-module-map.py 等引用）'],
     ['params-981.json', '981 参数中间表（全仓无运行时/src 引用）'],
     ['platform-type-map.json', '平台→type 映射表（build-platform-type-map.mjs 产物，喂导出链）'],
@@ -335,10 +337,41 @@ if (!process.argv.includes('--refill')) {
     ['variant-sysids.json', '变体 sysId 表（export-variant-sysids.mjs 产物，喂 export-bind-plan.py）'],
     ['vehicle-id-type-map.json', 'vehicleID→type 映射（build-platform-type-map.mjs 产物，喂导出链）'],
     ['vin-type-table.json', 'VIN→type 表（build-vin-type-table.mjs 产物，门禁 verify-hb1 消费）'],
+    // ★ 2026-11-17：下面两项是**本机生成、不入库**的离线产物（.gitignore 排除）。
+    //   它们仍登记在本桶（语义就是「离线中间产物，运行时从不 fetch」），但
+    //   「干净 clone 上可以不存在」这件事**不由这张表声明** —— 判据只有一个，
+    //   见下方 ⑤：git 是否跟踪它。所以这里不要加 local-only 标记位。
+    ['coverage-audit.json', '覆盖率审计产物（tools/audit-coverage.py 输出）；本机生成·不入库'],
+    ['module-disposition-252.json', '252 条目处置表（tools/build-module-disposition.py 产物）；本机生成·不入库'],
     // ⚠️ sysdata-comm.json / vin-vehicle-map.json / comm-timeouts-oem.json 已进 SKIP（2026-11-16），
     //    **不要**再在这里登记：实存集已按 !skip(f) 排除它们，登记了就是幽灵项（会立刻红）。
     //    它们的归属理由见上方 SKIP 注释。
   ]);
+
+  // ─────────────────────────────────────────────────────────────────
+  // ★ 2026-11-17 修订：**取消第四张名单**，改用一个判据 —— 「这个文件被 git 跟踪吗」。
+  //
+  // 前一版把 data/coverage-audit.json 与 data/module-disposition-252.json 单列进
+  // LOCAL_ONLY_ARTIFACTS，用「人写第二张表」表达「它是本机产物」。那是错的：
+  // 等于在仓库里维护第二处真相 —— 文件哪天入库了、或 .gitignore 改了，红绿不会
+  // 自动跟着变，得有人记得回来改名单。名单一旦腐烂，结论就与事实脱钩。
+  // （为什么不能直接入库：module-disposition-252.json 里写着另一个项目的绝对路径，
+  //  见其 :4-5；为什么不能靠生成器补齐：audit-coverage.py 的输入**包含**
+  //  module-disposition-252.json，clone 里是死循环。两条路都堵死，只剩「按 git 事实判别」。）
+  //
+  // 现在只有一条判据，且它由 git 回答，不来自我的记忆：
+  //   登记 ∧ 实存                        → OK（计入等式）
+  //   登记 ∧ 缺失 ∧ git 跟踪             → 红（真删了；clone 上同样红）
+  //   登记 ∧ 缺失 ∧ 未跟踪 ∧ 已 ignore   → 打印「本地产物 N 项」，不判红
+  //   登记 ∧ 缺失 ∧ 未跟踪 ∧ 未 ignore   → 红（既没入库也没排除 ⇒ clone 上凭空消失）
+  //   未登记 ∧ 实存                      → 红（原样保留）
+  //   未登记 ∧ 缺失                      → 无关
+  // 外加一条反向校验：**实存但「既未入库、也未 ignore」** 也红 —— 那是「我本机加了
+  // 文件、既没提交也没排除」，本机全绿 / clone 上凭空少一个，正是本检查要抓的形态。
+  //
+  // 非 git 环境（tarball 导出）下两种缺失不可判别：**显式降级**并计数打印，
+  // 绝不静默按「本地产物」放过 —— 机器行里 `gitfacts=0` 就是那个标记。
+  // ─────────────────────────────────────────────────────────────────
 
   const topJson = fs.readdirSync(DATA_SRC).filter((f) => f.endsWith('.json') && !skip(f));
   const actual = new Set(topJson);
@@ -364,12 +397,64 @@ if (!process.argv.includes('--refill')) {
     }
   }
 
-  // ② 并集恰好等于实存集（不多不少）
+  // ② 三桶并集恰好等于实存集（不多不少）
   const union = new Set(bucketSets.flatMap(([, s]) => [...s]));
   const undeclared = [...actual].filter((f) => !union.has(f)).sort();
-  const phantom = [...union].filter((f) => !actual.has(f)).sort();
+  const missing = [...union].filter((f) => !actual.has(f)).sort();
   if (undeclared.length) problems.push(`data/ 实存但三桶都没登记：${undeclared.join(', ')}`);
-  if (phantom.length) problems.push(`三桶登记了但 data/ 里不存在：${phantom.join(', ')}`);
+
+  // ⑤ 缺失项与「归属未定」项的归类，全部来自 **git 事实**（不是名单、不是记性）。
+  //    · `git ls-files --error-unmatch data/<n>` 命中 ⇒ 入库文件，缺了必须红；
+  //    · `git check-ignore -q data/<n>` 命中     ⇒ 才是「可以缺席的本地产物」；
+  //    · 两个都不命中 ⇒ 归属未定，红（本机绿、clone 缺，正是本项要抓的形态）。
+  //    非 git 环境不能判别 ⇒ 显式降级：计数打印 + 机器行 gitfacts=0，不静默放过。
+  const gitOk = (args) => {
+    try {
+      execFileSync('git', args, { cwd: MOBILE, stdio: ['ignore', 'ignore', 'ignore'] });
+      return true;
+    } catch { return false; }
+  };
+  const isGitRepo = gitOk(['rev-parse', '--is-inside-work-tree']);
+  const trackedCache = new Map();
+  const ignoredCache = new Map();
+  const isTracked = (n) => {
+    if (!trackedCache.has(n)) trackedCache.set(n, gitOk(['ls-files', '--error-unmatch', `data/${n}`]));
+    return trackedCache.get(n);
+  };
+  const isIgnored = (n) => {
+    if (!ignoredCache.has(n)) ignoredCache.set(n, gitOk(['check-ignore', '-q', `data/${n}`]));
+    return ignoredCache.get(n);
+  };
+  const missingTracked = [];     // 入库文件缺失 → 红
+  const missingLocalOnly = [];   // 本地产物缺失（未跟踪 + 已 ignore）→ 只打印
+  const missingUnexplained = []; // 未跟踪 + 未 ignore + 缺失 → 红
+  const missingUnjudged = [];    // 非 git 环境，无法判别 → 只打印 + gitfacts=0
+  if (!isGitRepo) {
+    missingUnjudged.push(...missing);
+    console.log('[sync]   ⚠ 非 git 环境：入库文件与本地产物无法判别，'
+      + `${missing.length} 项缺失**未判**（不按本地产物放过；机器行 gitfacts=0，结果随机器变）`);
+  } else {
+    for (const n of missing) {
+      if (isTracked(n)) missingTracked.push(n);
+      else if (isIgnored(n)) missingLocalOnly.push(n);
+      else missingUnexplained.push(n);
+    }
+    // 反向校验：实存、已登记，但「既未入库、也未 .gitignore 排除」⇒ 归属未定
+    const unowned = [...actual]
+      .filter((n) => union.has(n) && !isTracked(n) && !isIgnored(n))
+      .sort();
+    if (unowned.length) {
+      problems.push('实存但既未被 git 跟踪、也未被 .gitignore 排除'
+        + `（本机在、clone 上会凭空消失）：${unowned.join(', ')}`);
+    }
+    if (missingTracked.length) {
+      problems.push(`登记了但 data/ 里不存在，且 git 仍在跟踪它（是真删了）：${missingTracked.join(', ')}`);
+    }
+    if (missingUnexplained.length) {
+      problems.push('登记了但不存在，且既未被 git 跟踪、也未被 .gitignore 排除'
+        + `（归属未定）：${missingUnexplained.join(', ')}`);
+    }
+  }
 
   // ③ 桶1 === src/app.js 里真实的 `fetch('data/<name>')` 集合（注释提及不算）
   const appSrc = fs.readFileSync(path.join(MOBILE, 'src', 'app.js'), 'utf8');
@@ -432,26 +517,50 @@ if (!process.argv.includes('--refill')) {
     for (const p of problems) console.error(`[sync] SYNC_DATA_CONSISTENT 失败：${p}`);
     throw new Error(`[sync] SYNC_DATA_CONSISTENT 有 ${problems.length} 项不一致（见上），拒绝继续`);
   }
-  const nApp = setAppFetched.size;
-  const nVia = setViaCatalog.size;
-  const nCompiled = setCompiled.size;
+  // ★ 等式口径 = 「登记 ∧ 实存」的成员数。
+  //   缺失项不进等式：入库的缺失已经在 ⑤ 判红；本地产物的缺失是政策，不该进分母。
+  const presentIn = (set) => new Set([...set].filter((n) => actual.has(n)));
+  const nApp = presentIn(setAppFetched).size;
+  const nVia = presentIn(setViaCatalog).size;
+  const nCompiled = presentIn(setCompiled).size;
+  const nLocalOnlyAbsent = missingLocalOnly.length;
   const nUnregistered = undeclared.length;
-  const nGhost = phantom.length;
+  const nGhost = missingTracked.length + missingUnexplained.length;
   const diff = topJson.length - (nApp + nVia + nCompiled);
   if (diff !== 0) {
-    problems.push(`三桶计数 ${nApp}+${nVia}+${nCompiled} ≠ 实存 ${topJson.length}（diff=${diff}，应为 0）`);
+    problems.push(`三桶实存计数 ${nApp}+${nVia}+${nCompiled}`
+      + ` ≠ 实存 ${topJson.length}（diff=${diff}，应为 0）`);
   }
 
-  // ★ 逐桶打印**成员名**（不只计数）：计数错了看不出是哪个文件算错桶。
-  const dump = (label, set) => console.log(`[sync]   ${label} ${set.size}：${[...set].sort().join(', ')}`);
+  // ★ 逐桶打印**成员名**（不只计数）：计数错了看不出是哪个文件算错桶；
+  //   本桶内「登记了但缺席」的成员也打印出来，别让人以为清单少写了一行。
+  const dump = (label, set) => {
+    const present = [...set].filter((n) => actual.has(n)).sort();
+    const absent = [...set].filter((n) => !actual.has(n)).sort();
+    console.log(`[sync]   ${label} ${present.length}/${set.size}：${present.join(', ')}`
+      + (absent.length ? `  ｜登记但缺席 ${absent.length}：${absent.join(', ')}` : ''));
+  };
   dump('APP_FETCHED', setAppFetched);
   dump('VIA_CATALOG', setViaCatalog);
   dump('COMPILED_INTO_SRC', setCompiled);
+  // 本地产物缺席必须**打印**：不判红不等于不让人知道（否则「少了两个文件」永远无声）。
+  // 判它是「本地产物」的依据是 git（未跟踪 + check-ignore 命中），不是名单。
+  console.log(`[sync]   本地产物缺席 ${nLocalOnlyAbsent} 项（git 未跟踪 + .gitignore 命中；`
+    + '干净 clone 上就是它们不存在，不参与记账）'
+    + `${nLocalOnlyAbsent ? `：${missingLocalOnly.join(', ')}` : ''}`);
+  if (missingUnjudged.length) {
+    console.log(`[sync]   ⚠ 缺失未判 ${missingUnjudged.length} 项（非 git 环境，无法判别入库/本地产物）：`
+      + missingUnjudged.join(', '));
+  }
   console.log(`[sync]   SKIP ${SKIP.size}：${[...SKIP].sort().join(', ')}`);
 
   // 机器可解析末行（门禁按字段断言，不 grep 源码字符串）
+  //   gitfacts=0 表示「非 git 环境，缺失项未判」—— 这是显式降级标记，不是通过标记。
   const machineLine = `SYNC_DATA_CONSISTENT top=${topJson.length} app=${nApp} catalog=${nVia}`
-    + ` compiled=${nCompiled} unregistered=${nUnregistered} ghost=${nGhost} diff=${diff}`;
+    + ` compiled=${nCompiled} localonly_absent=${nLocalOnlyAbsent}`
+    + ` missing_tracked=${missingTracked.length} missing_unjudged=${missingUnjudged.length}`
+    + ` unregistered=${nUnregistered} ghost=${nGhost} diff=${diff}`
+    + ` gitfacts=${isGitRepo ? 1 : 0}`;
 
   if (problems.length) {
     for (const p of problems) console.error(`[sync] SYNC_DATA_CONSISTENT 失败：${p}`);
@@ -459,12 +568,16 @@ if (!process.argv.includes('--refill')) {
     if (DRY) process.exit(1);  // 门禁据退出码判红；正常同步沿用 throw 中止
     throw new Error(`[sync] SYNC_DATA_CONSISTENT 有 ${problems.length} 项不一致（见上），拒绝继续`);
   }
-  console.log(`[sync] SYNC_DATA_CONSISTENT 顶层 ${topJson.length} 个 json（三桶互斥，并集 = 实存集）：`
+  console.log(`[sync] SYNC_DATA_CONSISTENT 顶层 ${topJson.length} 个 json（各类互斥，并集 = 实存集）：`
     + `app 直接 fetch ${nApp} / feature-catalog 运行时消费 ${nVia} / `
-    + `编译进 src 或离线中间产物 ${nCompiled} / 未登记 ${nUnregistered} / 幽灵 ${nGhost}`);
+    + `编译进 src 或离线中间产物 ${nCompiled}`
+    + `（另有 ${nLocalOnlyAbsent} 项本地产物未生成，不入库不算缺口）/ `
+    + `未登记 ${nUnregistered} / 幽灵 ${nGhost} / 判据 gitfacts=${isGitRepo ? 1 : 0}`);
   console.log('[sync] 口径：桶1 与 src/app.js 真实 fetch 逐个相等；'
     + `桶2 = RUNTIME_REACHABLE(${setReachable.size}) − 桶1 = ${nVia}，`
     + `RUNTIME_REACHABLE 与 src/special-catalog.js 的 FEATURE_DATA_SOURCES 同集合`);
+  console.log('[sync] 口径：缺失项归类只由 git 回答（ls-files / check-ignore），'
+    + '没有任何「本地产物名单」需要人维护');
   console.log(`[sync] 运行时可达清单 ${RUNTIME_REACHABLE.length}/${RUNTIME_REACHABLE.length}`
     + ` 已在 ${DRY ? 'data/' : 'www/data/'} 且已在 src/special-catalog.js 声明`);
   console.log(machineLine);

@@ -105,6 +105,35 @@ export function markdownFiles() {
 }
 
 /**
+ * **入库** .md 清单（`git ls-files '*.md'` 与仓库根实存取交集）。
+ *
+ * 为什么需要它（2026-11-17 实测）：`markdownFiles()` 扫的是**本机**根目录全部 .md。
+ * 本地 60 份、干净 clone 18 份 —— 差的 42 份是被 `.gitignore` 排除的调研文档。
+ * 而这份扫描的计数会**进审计的 sha256**，sha256 的用途是「换机器/换人可对照」；
+ * 输入集随机器变，指纹就没有对照价值（实测同一 commit：本地 `7dc49fe0…`、clone `231c0a49…`，
+ * diff 只差 20 行、全部来自这里）。
+ *
+ * 非 git 环境降级为「全部本地 .md」，并**显式返回 degraded** —— 绝不静默降级，
+ * 否则「机器相关」这件事又变成没人看得见。
+ *
+ * @returns {{files: string[], tracked: boolean, ignoredCount: number, degraded: boolean}}
+ */
+export function markdownFilesTracked() {
+  const all = markdownFiles();
+  try {
+    const out = execFileSync('git', ['ls-files', '--', '*.md'], {
+      cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const tracked = new Set(out.split('\n').map((s) => s.trim()).filter(Boolean));
+    // git ls-files 会给出子目录路径；扫描口径只认仓库根（与 markdownFiles 一致）
+    const files = all.filter((f) => tracked.has(f));
+    return { files, tracked: true, ignoredCount: all.length - files.length, degraded: false };
+  } catch {
+    return { files: all, tracked: false, ignoredCount: 0, degraded: true };
+  }
+}
+
+/**
  * 按 PRD §0 / U-3 / U-7 / Q4 分类扫描全库 .md 中 10 类禁用结案词。
  * 返回 { files, raw, byClass, buckets, asClosingReason, closingHits, topPointerMissing }。
  *
@@ -132,7 +161,9 @@ export function scanForbiddenWords() {
   };
   const closingHits = [];
   let raw = 0;
-  const files = markdownFiles();
+  // ★ 扫描集 = **入库** .md（换机器可对照）；非 git 环境降级并标记，不静默降级。
+  const scanSet = markdownFilesTracked();
+  const files = scanSet.files;
 
   for (const f of files) {
     const lines = readText(f).split('\n');
@@ -179,6 +210,11 @@ export function scanForbiddenWords() {
 
   return {
     files: files.length,
+    // ★ 扫描集来源必须随结果一起返回：调用方要把它打印出来，
+    //   否则「本机 60 份 / clone 18 份」这种机器相关性没人看得见。
+    scanTracked: scanSet.tracked,
+    scanIgnoredCount: scanSet.ignoredCount,
+    scanDegraded: scanSet.degraded,
     raw,
     byClass,
     buckets,
@@ -292,7 +328,7 @@ export function runGate(gate, runnerOverride) {
   if (GATE_CACHE.has(key)) return GATE_CACHE.get(key);
   const runner = runnerOverride || runnerFor(gate);
   if (!runner) {
-    const r = { executable: false, exitCode: null, stdout: '', timedOut: false };
+    const r = { executable: false, exitCode: null, stdout: '', timedOut: false, preconditionMissing: false };
     GATE_CACHE.set(key, r);
     return r;
   }
@@ -338,7 +374,19 @@ export function runGate(gate, runnerOverride) {
     stdout = String(e.stdout || '');
     if (e.signal === 'SIGTERM' || /ETIMEDOUT|timed? ?out/i.test(String(e.message))) timedOut = true;
   }
-  const r = { executable: true, exitCode, stdout, timedOut };
+  // ★ 退出码 2 是**前置未满足**（例：`www/` 未构建 → verify-www-data-identical 退出 2），
+  //   必须与「跑完了但内容不一致」分开：
+  //     · 前置未满足 → 先跑构建（npm run sync），不是代码缺陷；
+  //     · 内容不一致（exit 1） → 真回归，去查代码。
+  //   混进同一个「非 A」会让审计把「没构建」读成「有缺陷」，而处置方向完全相反。
+  //   ⚠️ 仍然 ok:false、仍然非 A、仍然非 0 —— 不因为「只是没构建」就放绿。
+  const r = {
+    executable: true,
+    exitCode,
+    stdout,
+    timedOut,
+    preconditionMissing: exitCode === 2,
+  };
   GATE_CACHE.set(key, r);
   return r;
 }
@@ -362,16 +410,26 @@ export function gateVerdict(row) {
   const spec = row.gateRunner || null;
   const run = runGate(gate, spec);
   if (!run.executable) {
-    return { ok: false, exitCode: null, detail: `门禁无执行器（未登记 ${gate}）` };
+    return { ok: false, exitCode: null, preconditionMissing: false, detail: `门禁无执行器（未登记 ${gate}）` };
   }
   if (run.timedOut) {
-    return { ok: false, exitCode: run.exitCode, detail: `gate timeout（exit=${run.exitCode}）` };
+    return { ok: false, exitCode: run.exitCode, preconditionMissing: false, detail: `gate timeout（exit=${run.exitCode}）` };
+  }
+  // ★ 前置未满足（exit 2）：独立状态，措辞必须让读者去做构建，而不是去查代码。
+  if (run.preconditionMissing) {
+    return {
+      ok: false,
+      exitCode: 2,
+      preconditionMissing: true,
+      detail: 'gate 退出码=2（前置未满足，未判内容 —— 需先 npm run sync，非内容缺陷）',
+    };
   }
   const hit = typeof assertion === 'string' && assertion.trim() !== '' && run.stdout.includes(assertion);
   const ok = run.exitCode === 0 && hit;
   return {
     ok,
     exitCode: run.exitCode,
+    preconditionMissing: false,
     detail: `gate 退出码=${run.exitCode} 断言名命中=${hit}`,
   };
 }
@@ -489,6 +547,8 @@ export function evaluateRow(row) {
     carrierReasons: carrier.reasons,
     gateExitCode: gate.exitCode,
     gateOk: gate.ok,
+    // ★ 前置未满足（exit 2）必须一路带到汇总，否则「没构建」会被读成「有缺陷」。
+    gatePreconditionMissing: gate.preconditionMissing === true,
   };
 }
 

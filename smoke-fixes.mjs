@@ -1762,10 +1762,14 @@ console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
     return mm ? Number(mm[1]) : NaN;
   };
   const dryParsed = dry.ran && /^SYNC_DATA_CONSISTENT top=/.test(dry.line);
+  // ★ 2026-11-17：`gitfacts=1` 是必断条件 —— 缺失项归类（入库文件 vs 本地产物）
+  //   只由 git 回答；非 git 环境会降级成 `gitfacts=0` 并把缺失项记为「未判」。
+  //   不断这一条，退化环境里的绿等于没验。
   ok('F14 SYNC_DATA_CONSISTENT 真跑 --dry：三桶闭合 + top 独立复算 + 未登记/幽灵/diff 全 0',
     dryParsed
       && dryField('top') === countedTop.synced
       && dryField('unregistered') === 0 && dryField('ghost') === 0 && dryField('diff') === 0
+      && dryField('gitfacts') === 1
       && dryField('app') + dryField('catalog') + dryField('compiled') === dryField('top'),
     dryParsed
       ? `${dry.line} ｜ 独立复算 top=${countedTop.synced}`
