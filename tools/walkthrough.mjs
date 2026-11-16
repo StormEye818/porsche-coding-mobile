@@ -51,6 +51,9 @@ const LOCAL_ASSET_WHY = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表
 const TOTAL_EXPECTED = 84;
 
 let pass = 0, fail = 0, skip = 0;
+/** ui-sim 里**枚举到**的模块数（≠ `walked`：后者只在走完全链路后自增）。
+ *  必须声明在模块作用域：汇总那行要用它现算 60 的构成。 */
+let enumerated = 0;
 const ok = (n, c, x = '') => {
   if (c) { pass++; console.log(`  ok   ${n}${x ? ' — ' + x : ''}`); }
   else { fail++; console.log(`  FAIL ${n}${x ? ' — ' + x : ''}`); }
@@ -369,7 +372,7 @@ if (!TRUTH) {
   const { readdirSync, statSync } = await import('node:fs');
   const { join } = await import('node:path');
   const SAMPLE_MODELS = ['Cayman_981_', 'Boxster_982_', '911_992_'];
-  let walked = 0, enumerated = 0, moduleGaps = [];
+  let walked = 0, moduleGaps = [];
   for (const model of SAMPLE_MODELS) {
     const dir = join('data/models', model);
     let files = [];
@@ -425,9 +428,10 @@ if (!TRUTH) {
     }
   }
   if (!TRUTH) {
-    // ⚠️ 文案必须与事实同源：这里**只有枚举**，没有走链路，所以不许写「全链路」。
+    // ⚠️ 文案必须与事实同源：这里**只有枚举**，没有走链路，所以连「全链路」三个字都不能出现
+    //    （写「故非全链路」也不行 —— 那样 grep 一次就以为描述过链路，等于给误读留了抓手）。
     skipped(`ui-sim 遍历抽样（3 车型 × ≥5 模块，枚举 ${enumerated} 个模块；`
-      + '未取 ECU 帧，故非全链路）', LOCAL_ASSET_WHY);
+      + '未取 ECU 帧，故未走到链路后半段）', LOCAL_ASSET_WHY);
   } else {
     ok(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, walked >= 15, moduleGaps.join(' | '));
   }
