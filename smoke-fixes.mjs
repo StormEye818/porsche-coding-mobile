@@ -54,19 +54,26 @@ const loadVectors = (name) => {
  * @param {string} why  为什么没跑
  * @param {number} n    这一次跳过覆盖了几条断言（默认 1）——
  *   一个向量表驱动的循环只打一行 SKIP，但它替代的可能是 3 条断言，
- *   所以 skipped 计数要按**断言数**记，否则「通过数 + 跳过数」对不上。
+ *   所以计数要按**断言数**记，否则「通过数 + 跳过数」对不上总数。
  */
+let skippedGroupsFailed = 0;   // 严格模式下被升级为 FAIL 的**断言组**数
+let skippedAssertsFailed = 0;  // 严格模式下被升级为 FAIL 的**断言条数**
 const skipped = (name, why, n = 1) => {
-  // 汇总按**断言数**计（n），但一行 SKIP/FAIL 只对应一个断言组；
-  // 所以 n>1 时把条数写到行尾，否则「汇总 13 failed / 日志 9 行 FAIL」会被当成 bug。
-  const suffix = n > 1 ? `（本组 ${n} 条断言）` : '';
+  // 一行 SKIP/FAIL 只对应一个**断言组**，而汇总按**断言条数**计 ——
+  // 两个口径必须各自讲清，但用词不能共用：
+  //   FAIL：`（本组 N 条断言）`      —— 补条数，否则「汇总 13 / 日志 9 行」像 bug
+  //   SKIP：`（本组 N 条断言未跑）`  —— 「未跑」是这三个字里唯一防误读的字，
+  //                                    不能因为要统一格式就删掉（删掉就成了「验过」的口吻）
   if (REQUIRE_LOCAL_ASSETS) {
     fail += n;
-    console.log(`  FAIL ${name} -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}${suffix}`);
+    skippedGroupsFailed += 1;
+    skippedAssertsFailed += n;
+    console.log(`  FAIL ${name} -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`
+      + (n > 1 ? `（本组 ${n} 条断言）` : ''));
     return;
   }
   skip += n;
-  console.log(`  SKIP ${name} -- ${why}${suffix}`);
+  console.log(`  SKIP ${name} -- ${why}` + (n > 1 ? `（本组 ${n} 条断言未跑）` : ''));
 };
 
 class FakePort {
@@ -1915,6 +1922,12 @@ console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
     `app.js import schema.js=${/from '\.\/schema\.js'/.test(appImports)} / bundle 含 enumeratePages=${bundle.includes('function enumeratePages(')}`);
 }
 
+// ★ 严格模式下「9 行 FAIL / 13 failed」当场对上：不必让读者自己去数行。
+//   只统计**因缺本地资产被升级**的失败，真实失败不在这一行的口径里（也不该混进来）。
+if (skippedAssertsFailed) {
+  console.log(`  ↑ ${skippedAssertsFailed} 条断言失败，分布在 ${skippedGroupsFailed} 个断言组`
+    + '（缺 tools/vectors/，见 .gitignore:118）—— 组内条数见各 FAIL 行末的「本组 N 条断言」');
+}
 console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed / ' + skip + ' skipped =====');
 if (skip) {
   console.log('  跳过 ' + skip + ' 项：缺本地资产（tools/vectors/，.gitignore:118 不入库）。'
