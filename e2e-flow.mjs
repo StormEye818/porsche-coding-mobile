@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { MockAdapter } from './src/mock-adapter.js';
 import { Elm327 } from './src/elm327.js';
 import { Coder, parseResp } from './src/coder.js';
-import { extractField, injectField, validateParam, canWrite } from './src/schema.js';
+import { extractField, injectField, validateParam, canWrite, describeActuatorCard } from './src/schema.js';
 import { pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './src/variant.js';
 import { familyOfItems, familyOfReadSid } from './src/coder.js';
 import { resolveKey } from './src/seedkey-resolver.js';
@@ -142,7 +142,40 @@ console.log('\n[5b] 1a/2e 记录写入帧断言（出帧=2E 按记录格式，�
   const r = await c.applyChange(p, 0x11, { dryRun: false, session: 0x89, secLevel: 0x09 });
   ok('1a/2e 写入成功（备份→写→回读）', !!r && r.dryRun === false && !!r.readback);
   const frames = m.txLog.filter((x) => !x.startsWith('AT'));
-  ok('出帧=2E 按记录格式（2E + DID16be + data）', frames.some((f) => f.startsWith('2E0084')), frames.join(','));
+  // ⚠️ txLog 的语义是「**线上**帧」：载荷 > 7 字节时它只有 ISO-TP 分段（`10 0E 2E 00 84 …`
+  //    + `21 …` + `22 …`），不能拿它去 `startsWith('2E0084')` —— 那是业务载荷的形态。
+  //    业务载荷看 txPayloads（mock-adapter 里重组后的应用层字节），线上形态另有一条断言。
+  const payloads = (m.txPayloads || []).map((x) => String(x).toUpperCase());
+  const wPayload = payloads.find((p) => p.startsWith('2E0084')) || '';
+  const wCount = payloads.filter((p) => p.startsWith('2E0084')).length;
+  ok('出帧=2E 按记录格式（2E + DID16be + data，看业务载荷而不是线上分段）',
+    wPayload.length > 0, `payloads=${payloads.join(',')} · txLog=${frames.join(',')}`);
+  // 只发一次：txPayloads 是重组后的业务载荷，重发会让计数变 2（比数原文帧数更能抓"重发"）
+  ok('写载荷只发一次（txPayloads 里 2E0084 恰好 1 条，重发会变 2）',
+    wCount === 1, `2E0084 载荷出现 ${wCount} 次 · payloads=${payloads.join(',')}`);
+  // 线上形态：1 个 FF + ceil((n-6)/7) 个 CF，序号从 1 连续递增（14 字节载荷 → 2 个 CF：21/22）
+  {
+    const wLen = wPayload.length / 2;
+    const wantCf = wLen > 7 ? Math.ceil((wLen - 6) / 7) : 0;
+    // 形态比对前**先归一化**（去空格/转大写）：`txLog` 记的是命令原文，哪天链路开了 `ATS1`
+    // 就会变成 `10 0E 2E …`，拿它跟 `txFrames` 的 `clean` 做全等会"今天绿、以后红"。
+    const normHex = (s) => String(s || '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+    const online = frames.map(normHex);
+    // 按"找到 FF 再往后数"定位，而不是 `txFrames[0]`：本用例前面还有 1089/3E00/1A84 等单帧，
+    // 且 `sendIsoTp` 的 finally 会把 caf 还原，所以"第一帧一定是 FF"这个假设不成立。
+    const ffIdx = online.findIndex((f) => f.length >= 6 && f.slice(0, 2) === '10' && f.slice(4).startsWith('2E0084'));
+    const ffLen = ffIdx >= 0 ? parseInt(online[ffIdx].slice(2, 4), 16) : -1;
+    const cfs = ffIdx >= 0 ? online.slice(ffIdx + 1, ffIdx + 1 + wantCf) : [];
+    const seqOk = cfs.length === wantCf
+      && cfs.every((f, i) => (parseInt(f.slice(0, 2), 16) & 0x0f) === ((i + 1) & 0x0f));
+    // 交叉核对：这 3 帧必须真的走过 ISO-TP 分段路径（mock.txFrames 只收 caf=0 下的原始帧）
+    const txF = (m.txFrames || []).map(normHex);
+    const inTxF = ffIdx >= 0 && [online[ffIdx], ...cfs].every((f) => txF.includes(f));
+    ok('线上形态：FF 的长度字节 = 载荷长度，CF 个数 = ceil((len-6)/7) 且序号 1..N 连续',
+      ffIdx >= 0 && wLen > 0 && ffLen === wLen && wantCf > 0 && seqOk && inTxF,
+      `载荷 ${wLen}B · FF=${online[ffIdx] || '(无)'} · 期望 CF ${wantCf} 个 · 实得 ${cfs.join(',')}`
+      + ` · 在 txFrames 里=${inTxF}（txFrames=${txF.join(',') || '空'}）`);
+  }
   ok('读帧按记录 readSid=1A <LID8>', frames.includes('1A84'), frames.join(','));
   ok('无配对闸拒写痕迹（21↔3B 配对表已拆）', !frames.some((f) => f.startsWith('3B0084')), frames.join(','));
   ok('回读校验走同一记录读帧（再发 1A84）', frames.filter((f) => f === '1A84').length >= 2, frames.join(','));
@@ -398,28 +431,54 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
       `ids=${idsBad.map((x) => x.toString(16)).join('/')}`);
   }
 
-  // ── NRC（任务清单⑤）：7F 78 续等重发原帧；其余 NRC 单发不重试 ──
-  const m7c = new MockAdapter({
-    latencyMs: 0,
-    replay: [
-      { req: '21A1', resp: '7E8 03 7F 21 78' },   // 响应挂起 → 续等
-      { req: '21A1', resp: '7E8 03 61 A1 99' },
-      { req: '21A2', resp: '7E8 03 7F 21 12' },   // 服务级拒 → 单发即败
-    ],
-  });
-  const c7c = new Coder(new Elm327(m7c, { timeoutMs: 2000 }), { tx: 0x7E0, rx: 0x7E8 });
-  const blk78 = await c7c.readBlock(0xA1, 0x21).catch(() => null);
-  ok('7F 78 续等后拿到正响应', !!blk78 && blk78[0] === 0x99, blk78 && blk78.map((b) => b.toString(16)).join(' '));
-  const f78 = m7c.txLog.filter((c) => !c.startsWith('AT'));
-  ok('续等重发帧与原帧逐字节一致', f78.filter((f) => f === '21A1').length === 2, JSON.stringify(f78));
+  // ── NRC 0x78（任务清单⑤）：**只续等（补保活 3E00），绝不重发原帧**；其余 NRC 单发不重试 ──
+  //   真实帧序（delay78 契约，nrcTimes = 78 的总次数，含原请求那一次）：
+  //     ① TX 21A1 ← RX 7F 21 78
+  //     ② TX 3E00 ← RX 7F 21 78        （保活轮，ECU 仍在算）
+  //     ③ TX 3E00 ← RX 7F 3E 00 + 61 A1 <data>（最终正响应只挂在保活轮上带出）
+  //   ⚠️ 旧断言写的是"续等时把原帧再发一遍"—— 那是被推翻的行为（重发 31 01/2E/27
+  //      等于重复提交），改成"原帧全程只发 1 次 + 保活轮数可数"。
+  const m78 = new MockAdapter({ latencyMs: 0, delay78: { nrcTimes: 2 } });
+  const c78 = new Coder(new Elm327(m78, { timeoutMs: 3000 }), { tx: 0x7E0, rx: 0x7E8 });
+  // 期望载荷独立取自**另一台无 delay78 的 mock**：它就是"61 A1 之后的那段字节"。
+  // 这里自己按行剥 `7e8` 前缀拼字节（不借 readBlock，避免"用被测代码做期望"）。
+  const m78ref = new MockAdapter({ latencyMs: 0 });
+  const e78ref = new Elm327(m78ref, { timeoutMs: 1000 });
+  const rawRef = (await e78ref.cmd('21A1', 1000) || '').trim();
+  const refHex = rawRef.split('\n')
+    .map((l) => l.trim().replace(/^[0-9a-fA-F]{3}\s*/, '').replace(/[^0-9a-fA-F]/g, ''))
+    .filter(Boolean).join('').toUpperCase();
+  const refBody = (refHex.match(/../g) || []).map((h) => parseInt(h, 16));
+  const refPayload = (refBody[0] === 0x61 && refBody[1] === 0xA1) ? refBody.slice(2) : [];
+  const blk78 = await c78.readBlock(0xA1, 0x21).catch(() => null);
+  const f78 = m78.txLog.filter((c) => !c.startsWith('AT'));
+  const samePayload = !!blk78 && refPayload.length > 0
+    && blk78.length === refPayload.length && blk78.every((b, i) => (b & 0xff) === refPayload[i]);
+  ok('7F 78 续等后拿到正响应（返回体 = 61A1 之后的载荷，逐字节相等）',
+    samePayload, `返回 ${blk78 && blk78.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`
+    + ` vs 期望载荷 ${refPayload.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`);
+  ok('[78] 原请求帧在 txLog 中恰好出现 1 次（78 ≠ 未收到，绝不重发）',
+    f78.filter((f) => f === '21A1').length === 1, JSON.stringify(f78));
+  ok('[78] 保活帧 3E00 恰好 2 次（78 挂在原请求 + 第 1 轮保活上）',
+    f78.filter((f) => f === '3E00').length === 2, JSON.stringify(f78));
+  ok('[78] 保活帧自身的应答被忽略（未污染返回体：不含 7F/7E 包头）',
+    samePayload && (blk78[0] & 0xff) !== 0x7f && (blk78[0] & 0xff) !== 0x7e
+      && m78.stats.nrc78 === 2,
+    `首字节=0x${blk78 ? (blk78[0] & 0xff).toString(16) : '--'} nrc78=${m78.stats.nrc78}`);
   let nrcErr = null;
-  await c7c.readBlock(0xA2, 0x21).catch((e) => { nrcErr = e; });
-  const f78b = m7c.txLog.filter((c) => !c.startsWith('AT'));
+  // 其余 NRC：用一台只回 7F 21 12 的 mock（21A2 → 单发即败）
+  const mNrc = new MockAdapter({
+    latencyMs: 0,
+    replay: [{ req: '21A2', resp: '7E8 03 7F 21 12' }],
+  });
+  const cNrc = new Coder(new Elm327(mNrc, { timeoutMs: 2000 }), { tx: 0x7E0, rx: 0x7E8 });
+  await cNrc.readBlock(0xA2, 0x21).catch((e) => { nrcErr = e; });
+  const fNrc = mNrc.txLog.filter((c) => !c.startsWith('AT'));
   ok('其余 NRC 单发不重试（0x12 一次即败、错误上浮）',
-    !!nrcErr && nrcErr.nrc === 0x12 && f78b.filter((f) => f === '21A2').length === 1,
+    !!nrcErr && nrcErr.nrc === 0x12 && fNrc.filter((f) => f === '21A2').length === 1,
     nrcErr && nrcErr.message);
   ok('重放模式零未命中（每帧都有脚本应答）', m7.replayMisses.length === 0 && m7b.replayMisses.length === 0
-    && m7c.replayMisses.length === 0, JSON.stringify(m7.replayMisses));
+    && mNrc.replayMisses.length === 0, JSON.stringify(m7.replayMisses));
 }
 
 {
@@ -715,25 +774,129 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
     /^22[0-9A-F]{4}$/.test(frame) && sent.includes(frame),
     `frame=${frame} txLog=${sent.join(',')}`);
 
-  // 真发帧：从静态执行器记录生成 2F <DID><state>
+  // 真发帧：从静态执行器记录生成 2F <DID><controlOption><state>（8 字节）
+  //   ★ 2026-11-13：旧构帧 `2F<DID><state>` = 7 字节，丢了 UDS 0x2F 的**必需字节**
+  //     controlOption（431 实测 0x03 = shortTermAdjustment）；实测帧是 8 字节
+  //     `2F 01 01 03 FF 00 00 00`。这里按记录字段独立拼期望帧，逐字节相等才算过。
   const actItem = actuator.items.find((x) => x.form === '2f' && Number.isInteger(x.did));
   const actFrame = featureFramesFor('actuator', actItem)[0] || '';
+  const actExpect = '2F'
+    + Number(actItem.did).toString(16).toUpperCase().padStart(4, '0')
+    + Number(actItem.drive.controlOption).toString(16).toUpperCase().padStart(2, '0')
+    + String(actItem.drive.state).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  // did=0x0101 的首条记录 = 431 实测帧本身，钉死字面值防止「改数据迁就函数」
+  const actLiteralOk = Number(actItem.did) !== 0x0101 || actFrame === '2F010103FF000000';
   m13.txLog.length = 0;
   try { await e13.cmd(actFrame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
   const sent2 = m13.txLog.filter((c) => !c.startsWith('AT'));
-  ok('F13 执行器记录 → elm.cmd 实发帧 2F<DID><state>（逐帧可达）',
-    /^2F[0-9A-F]{4}[0-9A-F]+$/.test(actFrame) && sent2.includes(actFrame),
-    `frame=${actFrame} txLog=${sent2.join(',')}`);
+  ok('F13 执行器记录 → elm.cmd 实发帧 2F<DID><controlOption><state>（8 字节逐字节相等 + 逐帧可达）',
+    actFrame === actExpect && actFrame.length === 16 && actLiteralOk && sent2.includes(actFrame),
+    `frame=${actFrame} expect=${actExpect} 实测字面值=${actLiteralOk} txLog=${sent2.join(',')}`);
 
-  // 真发帧：从静态例程模板生成 31<sub><RID16>
+  // 真发帧：从静态执行器 31 记录生成 31 <sub><RID><params>（参数不丢）
+  //   ★ 2026-11-13：旧构帧 `3101<RID4>` = 4 字节，写死 sub=01 且丢 params；
+  //     记录/实测是 `31 <sub> <RID2B> <params…>`（例：`31 01 0005 01 00` = 6 字节）。
+  const runItem = actuator.items
+    .find((x) => x.form === '31' && x.rid != null && String(x.params || '').trim().length > 0) || {};
+  const runFrame = featureFramesFor('actuator', runItem)[0] || '';
+  const runParams = String(runItem.params ?? '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  const runExpect = '31'
+    + Number(runItem.sub).toString(16).toUpperCase().padStart(2, '0')
+    + Number(runItem.rid).toString(16).toUpperCase().padStart(4, '0')
+    + runParams;
+  m13.txLog.length = 0;
+  try { await e13.cmd(runFrame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
+  const sent2b = m13.txLog.filter((c) => !c.startsWith('AT'));
+  ok('F13 执行器 31 记录 → elm.cmd 实发帧 31<sub><RID><params>（带参数，逐字节相等 + 逐帧可达）',
+    runFrame === runExpect && runParams.length > 0
+      && runFrame.length === 8 + runParams.length && sent2b.includes(runFrame),
+    `frame=${runFrame} expect=${runExpect} params=${runParams} txLog=${sent2b.join(',')}`);
+
+  // 真发帧：从静态例程模板生成 31<sub><RID16>[<params>]
+  //   ★ 2026-11-13：模板里的 params 是命令表原样参数（data/routine-templates.json
+  //     note「含子功能与参数」），与 coder.js:1725 `31${sf}${rid}${params}` 同口径，
+  //     构帧必须带出来；无参数模板就是 `31<sub><RID2B>`。
   const routineTemplate = catalog.sources['routine-templates.json']?.items?.[0];
   const routineFrame = featureFramesFor('routine', routineTemplate)[0] || '';
+  const rtParams = String(routineTemplate?.params ?? '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  const rtSub = Number.parseInt(String(routineTemplate?.sub ?? '0x01').replace(/^0x/i, ''), 16);
+  const rtRid = Number.parseInt(String(routineTemplate?.routineId ?? '').replace(/^0x/i, ''), 16);
+  const routineExpect = '31'
+    + rtSub.toString(16).toUpperCase().padStart(2, '0')
+    + rtRid.toString(16).toUpperCase().padStart(4, '0')
+    + rtParams;
   m13.txLog.length = 0;
   try { await e13.cmd(routineFrame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
   const sent3 = m13.txLog.filter((c) => !c.startsWith('AT'));
-  ok('F13 例程模板记录 → elm.cmd 实发帧 31<sub><RID16>（逐帧可达）',
-    /^31[0-9A-F]{6}$/.test(routineFrame) && sent3.includes(routineFrame),
-    `frame=${routineFrame} txLog=${sent3.join(',')}`);
+  ok('F13 例程模板记录 → elm.cmd 实发帧 31<sub><RID16>[<params>]（逐字节相等 + 逐帧可达）',
+    routineFrame === routineExpect && /^31[0-9A-F]{6}(?:[0-9A-F]{2})*$/.test(routineFrame)
+      && sent3.includes(routineFrame),
+    `frame=${routineFrame} expect=${routineExpect} txLog=${sent3.join(',')}`);
+
+  // ── T4：卡片渲染模型（行为断言，断言的是 describeActuatorCard() 的返回值）──
+  //   ⛔ 不用「源码正则」断言 UI（诸如 /(p.code||0)===0x78/.test(src) 那种），
+  //      因为那只能证明"代码里写了这行"，不能证明"用户看到的是这个"。
+  //   ① 同名多址条目：这不是两条记录，而是同一功能有多个候选地址 → 候选必须全列出来，
+  //      并注明本卡片用的是哪个。同时钉死「同名条目唯一」，防止后人误以为是重复记录去重掉。
+  {
+    const rwh = actuator.items.filter((x) => x.name === '后窗加热器' && x.form === '2f');
+    const rwhMeta = rwh.map((x) => describeActuatorCard(x));
+    const rwhCands = rwh[0]?.didCandidates || [];
+    const rwhHexes = rwhCands.map((c) => c.didHex);
+    const notes0 = (rwhMeta[0]?.notes || []).join(' | ');
+    ok('[T4] 多址条目卡片 meta 列出全部候选地址并注明本卡片取值（后窗加热器，同名条目唯一）',
+      rwh.length === 1 && rwhCands.length > 1
+        && notes0.includes('候选地址')
+        && rwhHexes.every((h) => notes0.includes(h))
+        && notes0.includes(`本卡片用 ${rwh[0].didHex}`)
+        && rwhMeta[0].line.includes(rwh[0].didHex)
+        && rwhMeta[0].warn === true,
+      `同名条目 ${rwh.length} 条 · 候选 ${rwhHexes.join(' / ')} · 本卡片用 ${rwh[0]?.didHex}`
+      + ` · line=${rwhMeta[0]?.line}`);
+
+    // ② RID 显示必须走十六进制：rid 是**十进制数字**（0xD002 = 53250），
+    //    旧实现 `String(rid).padStart(4,'0')` 把十进制当十六进制印出来。
+    const big = actuator.items.find((x) => x.form === '31' && Number(x.rid) > 0x0fff);
+    const bigMeta = describeActuatorCard(big);
+    const bigHex = Number(big.rid).toString(16).toUpperCase().padStart(4, '0');
+    ok('[T4] 31 条目 RID 按十六进制渲染（ridHex），不出现十进制形态（真 bug 回归）',
+      bigMeta.line.includes(bigHex)
+        && !bigMeta.line.includes(String(big.rid))
+        && String(big.ridHex).replace(/^0x/i, '').toUpperCase() === bigHex,
+      `rid=${big.rid}（十进制）→ ridHex=0x${bigHex} · line=${bigMeta.line}`);
+
+    // ③ 四类"需要用户知道"的条目，全量逐条必须有可见标记（不是只挑一条样例）
+    //    ⚠️ 口径更新：`multi-address` 现在只留给"判不了"的多址（某候选在该 chain 下无模块记录），
+    //    实际实例为 0；18 条多候选分布在 multi-resolved-by-module(11) / ambiguous-in-module(7)，
+    //    所以这里必须按"非单址"取集合，否则 18 条会在测试里无声消失。
+    const MULTI_LABELS = ['multi-resolved-by-module', 'ambiguous-in-module', 'multi-address'];
+    const multi = actuator.items.filter(
+      (x) => MULTI_LABELS.includes(x.didResolve) || MULTI_LABELS.includes(x.ridResolve));
+    const unver = actuator.items.filter(
+      (x) => x.didResolve === 'unverified' || x.ridResolve === 'unverified');
+    const layout = actuator.items.filter((x) => x.rawLayoutConflict === true);
+    const blocked = actuator.items.filter((x) => x.driveDisabled === true);
+    const lackMark = (list, kw) => list.filter((x) => {
+      const m = describeActuatorCard(x);
+      return m.warn !== true || !m.notes.some((n) => n.includes(kw));
+    });
+    const lackBlocked = blocked.filter((x) => {
+      const m = describeActuatorCard(x);
+      return m.warn !== true || !m.notes.some((n) => n.includes('已禁用驱动'))
+        || !String(x.driveDisabledReason || '').trim();
+    });
+    const bad = [...lackMark(multi, '候选地址'), ...lackMark(unver, '待验证'), ...lackMark(layout, '两种布局')];
+    ok('[T4] 多候选 / 地址未验证 / 双布局 三类条目在卡片 meta 里全量带可见标记',
+      multi.length === 18 && unver.length === 0 && layout.length === 8 && bad.length === 0,
+      `多候选 ${multi.length} 条 · 地址未验证 ${unver.length} 条（判据改后已清零）`
+      + ` · 双布局 ${layout.length} 条 · 缺标记 ${bad.length} 条`
+      + (bad.length ? `（${bad.slice(0, 3).map((x) => x.name).join('；')}）` : ''));
+    // ④ 禁驱动条目：卡片必须说出"已禁用驱动 + 理由"（T5：参数多候选 / 无模板 / 地址歧义）
+    ok('[T4] 禁驱动条目卡片必须写明「已禁用驱动」+ 数据给的理由（否则用户只看到点了没反应）',
+      blocked.length > 0 && lackBlocked.length === 0,
+      `禁驱动 ${blocked.length} 条，缺标记 ${lackBlocked.length} 条`
+      + (lackBlocked.length ? `（${lackBlocked.slice(0, 3).map((x) => x.name).join('；')}）` : ''));
+  }
 
   // ★ 裁定 B：逐组抽 1 条静态测量记录 → elm.cmd 实发帧，证明「全量分组」都有
   //   可达的实发帧（不是只测第一组）。每组都 ≤ 30，逐帧断言覆盖所有组。

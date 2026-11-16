@@ -1,0 +1,757 @@
+{
+ "note": "H3 打分标注集：150 条 2F 执行器的 (chain, 记录文件偏移, 逐项地址)。来源=2026-11-16 由 data/actuator.json 当时的 150 条 form==2f 逐条在 ALL_ACTINFO.BIN 定位得到（recOff 是 [u16 名长] 的起点）。用途：tools/export-actinfo-modules.py --verify 断言\"二级解引用 ptr→列表→记录\"的语义正确性。",
+ "source": "ALL_ACTINFO.BIN (decoded)",
+ "count": 150,
+ "labels": [
+  {
+   "chain": "0xF501625E",
+   "recOff": "0x001709D0",
+   "addr": "0x0401"
+  },
+  {
+   "chain": "0x00300731",
+   "recOff": "0x00170ABB",
+   "addr": "0x0401"
+  },
+  {
+   "chain": "0x1000570A",
+   "recOff": "0x00170BA6",
+   "addr": "0x0402"
+  },
+  {
+   "chain": "0x8000003C",
+   "recOff": "0x0041851A",
+   "addr": "0x0302"
+  },
+  {
+   "chain": "0x80000041",
+   "recOff": "0x0041858B",
+   "addr": "0x0301"
+  },
+  {
+   "chain": "0x80000973",
+   "recOff": "0x004194E1",
+   "addr": "0x0302"
+  },
+  {
+   "chain": "0x80000977",
+   "recOff": "0x00419553",
+   "addr": "0x0303"
+  },
+  {
+   "chain": "0x80000934",
+   "recOff": "0x004195C5",
+   "addr": "0x0301"
+  },
+  {
+   "chain": "0x8000097B",
+   "recOff": "0x00419637",
+   "addr": "0x0300"
+  },
+  {
+   "chain": "0x800017F2",
+   "recOff": "0x0049BCD3",
+   "addr": "0x0501"
+  },
+  {
+   "chain": "0x80001791",
+   "recOff": "0x0049BD8F",
+   "addr": "0x0549"
+  },
+  {
+   "chain": "0x80001836",
+   "recOff": "0x0049BE79",
+   "addr": "0x0543"
+  },
+  {
+   "chain": "0x8000183A",
+   "recOff": "0x0049BF63",
+   "addr": "0x0541"
+  },
+  {
+   "chain": "0x8000183C",
+   "recOff": "0x0049C04D",
+   "addr": "0x0546"
+  },
+  {
+   "chain": "0x8000183E",
+   "recOff": "0x0049C137",
+   "addr": "0x0547"
+  },
+  {
+   "chain": "0x80001840",
+   "recOff": "0x0049C221",
+   "addr": "0x0548"
+  },
+  {
+   "chain": "0x80001842",
+   "recOff": "0x0049C30B",
+   "addr": "0x0544"
+  },
+  {
+   "chain": "0x80001844",
+   "recOff": "0x0049C3F5",
+   "addr": "0x0542"
+  },
+  {
+   "chain": "0x80001846",
+   "recOff": "0x0049C4DF",
+   "addr": "0x0545"
+  },
+  {
+   "chain": "0x8000184D",
+   "recOff": "0x0049C887",
+   "addr": "0x051F"
+  },
+  {
+   "chain": "0x800017FE",
+   "recOff": "0x004A3075",
+   "addr": "0x0504"
+  },
+  {
+   "chain": "0x80001800",
+   "recOff": "0x004A315F",
+   "addr": "0x0505"
+  },
+  {
+   "chain": "0x80001802",
+   "recOff": "0x004A3249",
+   "addr": "0x0502"
+  },
+  {
+   "chain": "0x80001804",
+   "recOff": "0x004A3333",
+   "addr": "0x0503"
+  },
+  {
+   "chain": "0x800018A7",
+   "recOff": "0x004A341D",
+   "addr": "0x0530"
+  },
+  {
+   "chain": "0x800018AB",
+   "recOff": "0x004A3507",
+   "addr": "0x0533"
+  },
+  {
+   "chain": "0x800018AD",
+   "recOff": "0x004A35F1",
+   "addr": "0x0534"
+  },
+  {
+   "chain": "0x800018AF",
+   "recOff": "0x004A36DB",
+   "addr": "0x053E"
+  },
+  {
+   "chain": "0x800018B1",
+   "recOff": "0x004A37C5",
+   "addr": "0x053F"
+  },
+  {
+   "chain": "0x800018B4",
+   "recOff": "0x004A3999",
+   "addr": "0x052E"
+  },
+  {
+   "chain": "0x800018B6",
+   "recOff": "0x004A3A83",
+   "addr": "0x052D"
+  },
+  {
+   "chain": "0x800018B8",
+   "recOff": "0x004A3B6D",
+   "addr": "0x052F"
+  },
+  {
+   "chain": "0x800018BA",
+   "recOff": "0x004A3C57",
+   "addr": "0x0531"
+  },
+  {
+   "chain": "0x800018BC",
+   "recOff": "0x004A3D41",
+   "addr": "0x0536"
+  },
+  {
+   "chain": "0x800018BE",
+   "recOff": "0x004A3E2B",
+   "addr": "0x0537"
+  },
+  {
+   "chain": "0x800018C0",
+   "recOff": "0x004A3F15",
+   "addr": "0x0538"
+  },
+  {
+   "chain": "0x800018C2",
+   "recOff": "0x004A3FFF",
+   "addr": "0x0539"
+  },
+  {
+   "chain": "0x800018C4",
+   "recOff": "0x004A40E9",
+   "addr": "0x053A"
+  },
+  {
+   "chain": "0x800018C6",
+   "recOff": "0x004A41D3",
+   "addr": "0x053C"
+  },
+  {
+   "chain": "0x800018C8",
+   "recOff": "0x004A42BD",
+   "addr": "0x053B"
+  },
+  {
+   "chain": "0x800018CA",
+   "recOff": "0x004A43A7",
+   "addr": "0x053D"
+  },
+  {
+   "chain": "0x800018CC",
+   "recOff": "0x004A4491",
+   "addr": "0x0532"
+  },
+  {
+   "chain": "0x800018CE",
+   "recOff": "0x004A457B",
+   "addr": "0x0540"
+  },
+  {
+   "chain": "0x800018D0",
+   "recOff": "0x004A4665",
+   "addr": "0x0567"
+  },
+  {
+   "chain": "0x80001921",
+   "recOff": "0x004AE605",
+   "addr": "0x0547"
+  },
+  {
+   "chain": "0x800019D3",
+   "recOff": "0x005189EE",
+   "addr": "0x02C5"
+  },
+  {
+   "chain": "0x800019F2",
+   "recOff": "0x00518F55",
+   "addr": "0x809D"
+  },
+  {
+   "chain": "0x800019F3",
+   "recOff": "0x00518FC7",
+   "addr": "0x809E"
+  },
+  {
+   "chain": "0x80001E32",
+   "recOff": "0x0051A70C",
+   "addr": "0x7001"
+  },
+  {
+   "chain": "0x80001E35",
+   "recOff": "0x0051A7E1",
+   "addr": "0x7003"
+  },
+  {
+   "chain": "0x80001E37",
+   "recOff": "0x0051A8B6",
+   "addr": "0x7004"
+  },
+  {
+   "chain": "0x80001E39",
+   "recOff": "0x0051A98B",
+   "addr": "0x7005"
+  },
+  {
+   "chain": "0x80001E3C",
+   "recOff": "0x0051AA60",
+   "addr": "0x7006"
+  },
+  {
+   "chain": "0x80001E3E",
+   "recOff": "0x0051AB2A",
+   "addr": "0x7008"
+  },
+  {
+   "chain": "0x80001E40",
+   "recOff": "0x0051ABFF",
+   "addr": "0x7009"
+  },
+  {
+   "chain": "0x80001E42",
+   "recOff": "0x0051ACD4",
+   "addr": "0x700B"
+  },
+  {
+   "chain": "0x80001E44",
+   "recOff": "0x0051ADA9",
+   "addr": "0x700C"
+  },
+  {
+   "chain": "0x80001E46",
+   "recOff": "0x0051AE7E",
+   "addr": "0x700D"
+  },
+  {
+   "chain": "0x80001E48",
+   "recOff": "0x0051AF53",
+   "addr": "0x700E"
+  },
+  {
+   "chain": "0x80001E4A",
+   "recOff": "0x0051B028",
+   "addr": "0x700F"
+  },
+  {
+   "chain": "0x80001E4C",
+   "recOff": "0x0051B0FD",
+   "addr": "0x7010"
+  },
+  {
+   "chain": "0x80001E4E",
+   "recOff": "0x0051B1D2",
+   "addr": "0x7012"
+  },
+  {
+   "chain": "0x80001E50",
+   "recOff": "0x0051B2A7",
+   "addr": "0x7015"
+  },
+  {
+   "chain": "0x80001E52",
+   "recOff": "0x0051B37C",
+   "addr": "0x7017"
+  },
+  {
+   "chain": "0x80001E54",
+   "recOff": "0x0051B451",
+   "addr": "0x7018"
+  },
+  {
+   "chain": "0x80001E56",
+   "recOff": "0x0051B526",
+   "addr": "0x7019"
+  },
+  {
+   "chain": "0x80001A3C",
+   "recOff": "0x0051B6D0",
+   "addr": "0x701D"
+  },
+  {
+   "chain": "0x80001E5A",
+   "recOff": "0x0051B7A5",
+   "addr": "0x7023"
+  },
+  {
+   "chain": "0x80001E5C",
+   "recOff": "0x0051B87A",
+   "addr": "0x7024"
+  },
+  {
+   "chain": "0x80001E5E",
+   "recOff": "0x0051B94F",
+   "addr": "0x7025"
+  },
+  {
+   "chain": "0x80001E64",
+   "recOff": "0x0051BB12",
+   "addr": "0x7031"
+  },
+  {
+   "chain": "0x80001E66",
+   "recOff": "0x0051BBE7",
+   "addr": "0x7032"
+  },
+  {
+   "chain": "0x80001E68",
+   "recOff": "0x0051BCBC",
+   "addr": "0x7033"
+  },
+  {
+   "chain": "0x80001E6A",
+   "recOff": "0x0051BD91",
+   "addr": "0x7034"
+  },
+  {
+   "chain": "0x80001E6C",
+   "recOff": "0x0051BE66",
+   "addr": "0x7035"
+  },
+  {
+   "chain": "0x80001E6E",
+   "recOff": "0x0051BF3B",
+   "addr": "0x7036"
+  },
+  {
+   "chain": "0x80001E70",
+   "recOff": "0x0051C010",
+   "addr": "0x7037"
+  },
+  {
+   "chain": "0x80001E72",
+   "recOff": "0x0051C0E5",
+   "addr": "0x7038"
+  },
+  {
+   "chain": "0x80001E74",
+   "recOff": "0x0051C1BA",
+   "addr": "0x7039"
+  },
+  {
+   "chain": "0x80001E76",
+   "recOff": "0x0051C28F",
+   "addr": "0x703A"
+  },
+  {
+   "chain": "0x80001E78",
+   "recOff": "0x0051C364",
+   "addr": "0x703B"
+  },
+  {
+   "chain": "0x80001E7A",
+   "recOff": "0x0051C439",
+   "addr": "0x703C"
+  },
+  {
+   "chain": "0x80001E7C",
+   "recOff": "0x0051C50E",
+   "addr": "0x703D"
+  },
+  {
+   "chain": "0x80001E7E",
+   "recOff": "0x0051C5E3",
+   "addr": "0x703E"
+  },
+  {
+   "chain": "0x80001E80",
+   "recOff": "0x0051C6B8",
+   "addr": "0x703F"
+  },
+  {
+   "chain": "0x80001E82",
+   "recOff": "0x0051C78D",
+   "addr": "0x7040"
+  },
+  {
+   "chain": "0x80001E84",
+   "recOff": "0x0051C862",
+   "addr": "0x7042"
+  },
+  {
+   "chain": "0x8000244F",
+   "recOff": "0x0056AA57",
+   "addr": "0x016F"
+  },
+  {
+   "chain": "0x80002451",
+   "recOff": "0x0056AABE",
+   "addr": "0x016E"
+  },
+  {
+   "chain": "0x80002453",
+   "recOff": "0x0056AB25",
+   "addr": "0x029C"
+  },
+  {
+   "chain": "0x80002455",
+   "recOff": "0x0056AB8C",
+   "addr": "0x0452"
+  },
+  {
+   "chain": "0x80002458",
+   "recOff": "0x0056AC25",
+   "addr": "0x0453"
+  },
+  {
+   "chain": "0x8000245E",
+   "recOff": "0x0056ADAA",
+   "addr": "0x0451"
+  },
+  {
+   "chain": "0x80002460",
+   "recOff": "0x0056AE11",
+   "addr": "0x0214"
+  },
+  {
+   "chain": "0x80002467",
+   "recOff": "0x0056B030",
+   "addr": "0x028A"
+  },
+  {
+   "chain": "0x800024B4",
+   "recOff": "0x0056CBCC",
+   "addr": "0x80AA"
+  },
+  {
+   "chain": "0x8000254C",
+   "recOff": "0x0056F21E",
+   "addr": "0x0289"
+  },
+  {
+   "chain": "0x80002623",
+   "recOff": "0x00576EDF",
+   "addr": "0x09FC"
+  },
+  {
+   "chain": "0x80002ECE",
+   "recOff": "0x00577079",
+   "addr": "0x0110"
+  },
+  {
+   "chain": "0x80002ED1",
+   "recOff": "0x0057710E",
+   "addr": "0x0113"
+  },
+  {
+   "chain": "0x80002ED4",
+   "recOff": "0x005771A3",
+   "addr": "0x0112"
+  },
+  {
+   "chain": "0x80002ED7",
+   "recOff": "0x00577238",
+   "addr": "0x0117"
+  },
+  {
+   "chain": "0x80002ED9",
+   "recOff": "0x005772CD",
+   "addr": "0x0118"
+  },
+  {
+   "chain": "0x80002EDC",
+   "recOff": "0x00577362",
+   "addr": "0x0116"
+  },
+  {
+   "chain": "0x80002EDE",
+   "recOff": "0x005773F7",
+   "addr": "0x0115"
+  },
+  {
+   "chain": "0x80002EE1",
+   "recOff": "0x0057748C",
+   "addr": "0x0111"
+  },
+  {
+   "chain": "0x80002EE3",
+   "recOff": "0x00577521",
+   "addr": "0x0114"
+  },
+  {
+   "chain": "0x80002EE6",
+   "recOff": "0x005775B6",
+   "addr": "0x0107"
+  },
+  {
+   "chain": "0x80002EEA",
+   "recOff": "0x0057764B",
+   "addr": "0x0108"
+  },
+  {
+   "chain": "0x80002EEE",
+   "recOff": "0x005776D5",
+   "addr": "0x0109"
+  },
+  {
+   "chain": "0x80002C90",
+   "recOff": "0x0057775F",
+   "addr": "0x010C"
+  },
+  {
+   "chain": "0x80002EF2",
+   "recOff": "0x005777F4",
+   "addr": "0x011B"
+  },
+  {
+   "chain": "0x80002EF5",
+   "recOff": "0x0057787E",
+   "addr": "0x011A"
+  },
+  {
+   "chain": "0x80002EF9",
+   "recOff": "0x00577908",
+   "addr": "0x010F"
+  },
+  {
+   "chain": "0x80002EFC",
+   "recOff": "0x00577992",
+   "addr": "0x010A"
+  },
+  {
+   "chain": "0x80002EFE",
+   "recOff": "0x00577A27",
+   "addr": "0x010B"
+  },
+  {
+   "chain": "0x80002F01",
+   "recOff": "0x00577AE0",
+   "addr": "0x010E"
+  },
+  {
+   "chain": "0x80002F04",
+   "recOff": "0x00577B75",
+   "addr": "0x0104"
+  },
+  {
+   "chain": "0x80002F08",
+   "recOff": "0x00577C0A",
+   "addr": "0x0105"
+  },
+  {
+   "chain": "0x80002F0B",
+   "recOff": "0x00577C9F",
+   "addr": "0x0106"
+  },
+  {
+   "chain": "0x80002F0F",
+   "recOff": "0x00577D34",
+   "addr": "0x0102"
+  },
+  {
+   "chain": "0x80002F14",
+   "recOff": "0x00577E99",
+   "addr": "0x0103"
+  },
+  {
+   "chain": "0x80002F17",
+   "recOff": "0x00577F2E",
+   "addr": "0x0000"
+  },
+  {
+   "chain": "0x80002F19",
+   "recOff": "0x00577FC3",
+   "addr": "0x0001"
+  },
+  {
+   "chain": "0x80002F1C",
+   "recOff": "0x00578058",
+   "addr": "0x0400"
+  },
+  {
+   "chain": "0x80002F1E",
+   "recOff": "0x005780E3",
+   "addr": "0x0119"
+  },
+  {
+   "chain": "0x80002F21",
+   "recOff": "0x00578186",
+   "addr": "0x010D"
+  },
+  {
+   "chain": "0x80002F3D",
+   "recOff": "0x0057856C",
+   "addr": "0x0100"
+  },
+  {
+   "chain": "0x80002F41",
+   "recOff": "0x00578601",
+   "addr": "0x0101"
+  },
+  {
+   "chain": "0x800035B1",
+   "recOff": "0x005E9EC0",
+   "addr": "0x0004"
+  },
+  {
+   "chain": "0x80003789",
+   "recOff": "0x0060E1BD",
+   "addr": "0x01DB"
+  },
+  {
+   "chain": "0x8000378B",
+   "recOff": "0x0060E22F",
+   "addr": "0x02E3"
+  },
+  {
+   "chain": "0x8000378D",
+   "recOff": "0x0060E2A1",
+   "addr": "0x01DA"
+  },
+  {
+   "chain": "0x8000378F",
+   "recOff": "0x0060E313",
+   "addr": "0x02D0"
+  },
+  {
+   "chain": "0x80003792",
+   "recOff": "0x0060E3F7",
+   "addr": "0x01D6"
+  },
+  {
+   "chain": "0x80003794",
+   "recOff": "0x0060E469",
+   "addr": "0x01D9"
+  },
+  {
+   "chain": "0x80004A86",
+   "recOff": "0x0065DFBC",
+   "addr": "0x0123"
+  },
+  {
+   "chain": "0x80004A88",
+   "recOff": "0x0065E09D",
+   "addr": "0x0124"
+  },
+  {
+   "chain": "0x80004A91",
+   "recOff": "0x0065E7A5",
+   "addr": "0x0131"
+  },
+  {
+   "chain": "0x80004A93",
+   "recOff": "0x0065E886",
+   "addr": "0x0134"
+  },
+  {
+   "chain": "0x80004A95",
+   "recOff": "0x0065E967",
+   "addr": "0x0135"
+  },
+  {
+   "chain": "0x80004A9A",
+   "recOff": "0x0065EDCC",
+   "addr": "0x0133"
+  },
+  {
+   "chain": "0x80004A9E",
+   "recOff": "0x0065EF8E",
+   "addr": "0x012E"
+  },
+  {
+   "chain": "0x80004C30",
+   "recOff": "0x0067DB2B",
+   "addr": "0x0402"
+  },
+  {
+   "chain": "0x80004C32",
+   "recOff": "0x0067DBC4",
+   "addr": "0x0180"
+  },
+  {
+   "chain": "0x80004C34",
+   "recOff": "0x0067DC76",
+   "addr": "0x0401"
+  },
+  {
+   "chain": "0x80004C36",
+   "recOff": "0x0067DD0F",
+   "addr": "0x0408"
+  },
+  {
+   "chain": "0x80004C5F",
+   "recOff": "0x0067E065",
+   "addr": "0x017D"
+  },
+  {
+   "chain": "0x80004C72",
+   "recOff": "0x0067E96D",
+   "addr": "0x017E"
+  },
+  {
+   "chain": "0x80004EAF",
+   "recOff": "0x006863E9",
+   "addr": "0x0960"
+  }
+ ]
+}

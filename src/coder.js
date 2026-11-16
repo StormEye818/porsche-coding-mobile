@@ -35,6 +35,46 @@ import {
   oemEnterSequences, oemIsSessionless, selectOemSequence, OEM_SENDABLE_SID,
 } from './oem-enter-frames.js';
 import { evaluateWriteAlignmentChecks } from './write-alignment.js';
+import { timeoutFor, KEEPALIVE_MS, MAX_PENDING_MS } from './comm-timeouts.js';
+import { needsSegmentation } from './isotp-tx.js';
+
+// ═══════════════════════════════════════════════════════════════
+//  7F <sid> 78（responsePending）的续等参数
+//
+//  ⚠️⚠️ 这两个数的**定义**在 `src/comm-timeouts.js` 的 `OUR_DESIGN` 命名空间里
+//     （与 `EVIDENCE_OEM` 硬隔离），本文件只引用、不定义。看到它们不要在任何
+//     文档里写成「原厂诊断仪的等待时间是 2500ms / 60000ms」—— 包内没有等价常量。
+//
+//     原厂侧唯一的等待参数是全局 `iCommunicationMaximumWaitTime`
+//     （`SetCommunicationMaximumWaitTime(ms)`，COMM 层三档 5000 / 8000 / 16000；
+//      字节级证据见 `src/comm-timeouts.js` 的 `EVIDENCE_OEM` 与
+//      `data/comm-timeouts-oem.json`），它约束的是**单次收帧**的等待上限，
+//     与「收到 78 之后隔多久补一发 TesterPresent」是两件事。
+//     原厂也**没有**周期性 TesterPresent：1008 条序列 / 501 个 `3E` 帧，
+//      100% 位于序列索引 0、100% 在会话帧之前，即**只在建链时发一次**，
+//      处理过程中不保活。
+//
+//     KEEPALIVE_MS 的取值理由（ISO 14229-2 的 S3server = 5000ms 会话保持定时器）：
+//      取它的一半 2500ms 作保活节拍 —— 保证「ECU 判会话超时之前，我们一定先补过
+//      一次 3E 00」，同时两次保活之间不会把 CAN 打得太密。它**同时**决定
+//      「收到 78 之后等多久再去问一趟」，因此必须 ≤ S3/2，否则保活本身失效。
+//
+//     MAX_PENDING_MS 是「因为 78 而延长等待」的**总上限**（从第一次 78 起算）：
+//      超过即判「结果不明」并**报错上浮**，绝不重发原帧。60s 覆盖真实长例程
+//      （排气/校准/匹配实测 3~10s）并留足余量。
+//
+//  运行期可覆盖（测试要用小时节拍，否则一条用例白等 2.5s × N 轮）：
+//    · `coder.keepAliveMs = 10`   —— 实例级保活节拍
+//    · `uds(..., { maxPendingMs })` —— 单次调用的续等总上限
+//
+//  门禁：tools/verify-keepalive-78.mjs（6 条行为断言，断言名 KEEPALIVE_78_SINGLE_SEND）。
+// ═══════════════════════════════════════════════════════════════
+// 具名转出（保持既有 import 路径可用；取值的唯一定义仍在 comm-timeouts.js）
+export { KEEPALIVE_MS, MAX_PENDING_MS };
+/** 保活帧：UDS TesterPresent（suppressPosRspMsgIndicationBit=0，要正响应）。 */
+const KEEPALIVE_FRAME = '3E00';
+/** ISO-TP/ELM 单次收帧的最小窗口（与旧实现的下限一致）。 */
+const MIN_RECV_WINDOW_MS = 500;
 
 // ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
 //   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
@@ -429,6 +469,106 @@ export function parseRespAuto(hexStr, reqEcho = '', reqSid = null) {
   return (iso.kind === 'empty' && caf.kind !== 'empty') ? caf : iso;
 }
 
+/**
+ * 把适配器一次返回的**整段文本**拆成「逐帧字节数组」。
+ *
+ * 为什么需要：`7F xx 78` 续等期间，一次 `elm.cmd()` 的返回里可能同时出现
+ * 保活应答（`7E 00`）、又一次挂起（`7F xx 78`）甚至迟到的最终正响应。
+ * `parseRespAuto` 只给出**一个**整体解释，无法回答「这一轮到底收到了哪几帧」，
+ * 而「78 之后绝不重发」的正确性恰恰取决于逐帧判定。
+ *
+ * 拆法：每行一帧，去掉行首 3 位（11-bit）/8 位（29-bit）CAN ID token，
+ * 其余 token 按字节展开（兼容 ATS0 连写）。与 `frameIdsOf` 同一套 ID 判别规则，
+ * 但不丢载荷。
+ *
+ * @param {string} text  适配器原文（可能多行）
+ * @returns {number[][]} 每行的字节数组（不含 CAN ID）
+ */
+export function payloadFramesOf(text) {
+  const out = [];
+  for (const ln of String(text || '').split(/[\r\n]+/)) {
+    const line = ln.replace(/searching\.*/gi, '').trim();
+    if (!line) continue;
+    const toks = line.split(/\s+/).filter((t) => /^[0-9A-Fa-f]+$/.test(t));
+    if (!toks.length) continue;
+    let start = 0;
+    if (toks.length > 1 && (toks[0].length === 3 || toks[0].length === 8)) start = 1;
+    const bytes = [];
+    for (let i = start; i < toks.length; i++) {
+      const t = toks[i];
+      if (t.length < 2) continue;                       // 单 hex 位不是完整字节
+      for (let k = 0; k + 2 <= t.length; k += 2) bytes.push(parseInt(t.substr(k, 2), 16) & 0xff);
+    }
+    out.push(bytes);
+  }
+  return out;
+}
+
+/**
+ * 在一段原文里找**针对 reqSid 的**负响应码：`7F <reqSid> <code>`。
+ *
+ * ⚠️ 必须带 reqSid 过滤：78 续等期间的保活应答 `7F 3E 12` 是**保活帧自己的**
+ *    NRC，不能当成原请求失败（否则 ECU 只是不接受 TesterPresent 就会误判写入失败）。
+ * 逐行按位滑动查找（兼容 CAF0 的 PCI 前缀 / CAF1 的纯数据），取第一次命中。
+ *
+ * @param {string} text
+ * @param {number} reqSid  原请求的服务号
+ * @returns {number|null}  NRC 码；未命中返回 null
+ */
+export function findNrcFor(text, reqSid) {
+  const sid = reqSid & 0xff;
+  for (const bytes of payloadFramesOf(text)) {
+    for (let i = 0; i + 1 < bytes.length; i++) {
+      if (bytes[i] === 0x7f && bytes[i + 1] === sid) {
+        return i + 2 < bytes.length ? (bytes[i + 2] & 0xff) : 0;
+      }
+    }
+  }
+  return null;
+}
+
+/** 两位大写十六进制（日志/错误文案用）。 */
+function hex2(n) {
+  return (n & 0xff).toString(16).toUpperCase().padStart(2, '0');
+}
+
+/**
+ * 从整段应答里**切出**「以 `<wantResp>` 开头的那一帧及其后续帧」。
+ *
+ * 为什么要切：78 续等期间一次 `elm.cmd()` 的返回可能同时含
+ *   `7E8 02 7E 00`（保活帧自己的正响应）
+ *   `7E8 03 7F 21 78`（又一次挂起）
+ *   `7E8 05 61 A1 99 00`（迟到的最终正响应）
+ * `parseRespAuto` 给出的是**整段唯一解释**（CAF1 会把各行载荷首尾相接），
+ * body[0] 变成保活应答的首字节 → 迟到的正响应被顶掉、被当成「本轮无事发生」。
+ *
+ * 切法：逐行取载荷（与 `payloadFramesOf` 同一套 ID 判别），找到**第一个**
+ * 以 `wantResp` 开头的行，从该行原文起整段返回给解析器 —— 后续连续帧
+ * （CAF0 的 `2x …` / CAF1 的多行纯数据）随之保留，多帧重组不受影响。
+ *
+ * @param {string} text     适配器原文（可能多行）
+ * @param {number} wantResp 期望的正响应 SID（reqSid + 0x40）
+ * @param {string} reqEcho  请求回显行（归一化 hex），命中即跳过
+ * @returns {string|null}   切好的原文；找不到返回 null（调用方保持原解释）
+ */
+function sliceFromPositiveFrame(text, wantResp, reqEcho = '') {
+  const lines = String(text || '').split(/[\r\n]+/);
+  const frames = payloadFramesOf(text);
+  if (frames.length !== lines.filter((l) => l.trim()).length) return null;   // 行/帧对不齐，不冒险切
+  let fi = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const bytes = frames[fi++];
+    if (!bytes || !bytes.length) continue;
+    if (bytes[0] !== (wantResp & 0xff)) continue;
+    // 回显行不带 CAN ID 或整行就是请求原文 —— 跳过（不能把回显当响应）
+    const bare = lines[i].replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+    if (reqEcho && bare === reqEcho) continue;
+    return lines.slice(i).join('\r');
+  }
+  return null;
+}
+
 export class Coder {
   /**
    * @param {Elm327} elm   已锁定协议的 ELM327
@@ -440,6 +580,11 @@ export class Coder {
     this.rx = rx;
     this.ecuName = ecuName;
     this.verbose = verbose;        // ← 打印每条收发，方便 debug
+    // ★ 2026-11-16 78 续等节拍（可读写）。取值定义在 comm-timeouts.js 的 OUR_DESIGN，
+    //   实例级可覆盖：测试把它设成 10，避免一条用例白等 2.5s × N 轮。
+    this.keepAliveMs = KEEPALIVE_MS;
+    // ★ 78 续等总上限（实例默认，单次调用可用 { maxPendingMs } 覆盖）。
+    this.maxPendingMs = MAX_PENDING_MS;
     this.seedKeyProvider = null;   // ← 算法插槽
     this.protocol = 6;             // CAN 11bit/500k（保时捷实证）。link-doctor 锁定后可覆盖
     this.backups = [];
@@ -650,7 +795,7 @@ export class Coder {
       // 只有「本次目标会话」且 flag=1 的会话帧才是硬要求；写路径 strictSession 一律硬要求。
       const hard = isSession && !soft && (opts.strictSession === true || sessByte === sess);
       try {
-        const r = await this.uds(f.hex, sid === 0x3e ? 2000 : 3000,
+        const r = await this.uds(f.hex, timeoutFor('SHORT'),
           { allowEmpty: soft || sid === 0x3e });
         sent++;
         // T03-b：身份四帧的原始应答留证（app 层裁决复用，不二次发帧）。
@@ -698,7 +843,7 @@ export class Coder {
       this._say('  (原厂序列未取到识别文本 —— 补采 1A9F / 22F1A2)');
       for (const cmd of ['1A9F', '22F1A2']) {
         try {
-          const r = await this.uds(cmd, 3000, { allowEmpty: true });
+          const r = await this.uds(cmd, timeoutFor('SHORT'), { allowEmpty: true });
           let b = Array.from(r?.body || []);
           if (b[0] === 0x5a) b = b.slice(2);
           else if (b[0] === 0x62) { b = b.slice(3); sawUdsIdent = true; }
@@ -795,7 +940,7 @@ export class Coder {
     }
     // ② TesterPresent 保活 —— 一律 `3E 00`（GAG rec#35；全包无 3E 80 模板）。
     //   会话建立后发送（实车断点：会话前 3E 00 被拒）。
-    await this.uds('3E00', 2000, { allowEmpty: true }).catch(() => {});
+    await this.uds('3E00', timeoutFor('SHORT'), { allowEmpty: true }).catch(() => {});
     // ③ 识别 ECU（失败不致命，只记日志）
     // ★ 2026-10-18：把 1A 9F/94/92 的 ASCII 文本留下来，用于自动选变体。
     //   参考诊断仪 不弹变体选择，它是按 ECU 识别/ODX 变体名自动进模块的；我们之前
@@ -829,7 +974,7 @@ export class Coder {
     let sawUdsIdent = false;   // 62 F1 A2 → UDS 模块（lastReadSid 不能记成 1A）
     for (const cmd of identChain) {
       try {
-        const id = await this.uds(cmd, 3000, { allowEmpty: true });
+        const id = await this.uds(cmd, timeoutFor('SHORT'), { allowEmpty: true });
         let b = Array.from(id.body || []);
         if (b[0] === 0x5a) b = b.slice(2);           // 5A 9F / 5A 94 / 5A 92
         else if (b[0] === 0x62) { b = b.slice(3); sawUdsIdent = true; }   // 62 F1 A2（UDS 族识别，DSN.BIN 身份记录）
@@ -932,7 +1077,7 @@ export class Coder {
       return v.length >= 11 ? v : '';
     };
     try {
-      const r = await this.uds('1A90', 3000);
+      const r = await this.uds('1A90', timeoutFor('SHORT'));
       const b = Array.from(r.body || []);
       out.steps.push(`1A90 → ${b.map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`);
       if (rxOk(r.raw) && b[0] === 0x5a && b[1] === 0x90) {
@@ -941,11 +1086,11 @@ export class Coder {
       }
     } catch (e) { out.steps.push(`1A90 → ${e.message}`); }
     try {
-      const s = await this.uds('1003', 3000);
+      const s = await this.uds('1003', timeoutFor('SHORT'));
       const sb = Array.from(s.body || []);
       out.steps.push(`1003 → ${sb.map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`);
       if (!rxOk(s.raw) || sb[0] !== 0x50 || sb[1] !== 0x03) return out;
-      const r = await this.uds('22F190', 3000);
+      const r = await this.uds('22F190', timeoutFor('SHORT'));
       const b = Array.from(r.body || []);
       out.steps.push(`22F190 → ${b.map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(空)'}`);
       if (rxOk(r.raw) && b[0] === 0x62 && b[1] === 0xf1 && b[2] === 0x90) {
@@ -974,7 +1119,7 @@ export class Coder {
     const RETAIN = new Set([...VIN_KEYS, ...NAME_KEYS]);
     const step = async (req, { retain = false } = {}) => {
       try {
-        const r = await this.uds(req, 3000, { allowEmpty: true });
+        const r = await this.uds(req, timeoutFor('SHORT'), { allowEmpty: true });
         const body = Array.from(r.body || []);
         // 5A xx / 61 xx / 62 xx xx 头剥离：1A=5A+1B、21=61+1B、22=62+2B
         let skip = 2;
@@ -1159,9 +1304,19 @@ export class Coder {
    * ⚠️ 空响应必须报错 —— 早先不报，导致「会话就绪」是假成功，
    *    后面读出空块也看不出问题（实车日志教训）。
    *
-   * @param {boolean} allowEmpty  允许空响应（如 TesterPresent）
+   * ⚠️ **任何请求帧都不得因 `7F xx 78` 而被重发**（2026-11-16 定案，详见下方续等循环）。
+   *    78 =「ECU 已受理、正在处理」，重发等于再提交一次：`31 01` 会重启例程、
+   *    `2E/3B` 会重复写入、`27` 会重复提交 key。旧的 `continue` 重发已删除。
+   *
+   * @param {boolean} allowEmpty   允许空响应（如 TesterPresent）
+   * @param {boolean} pendingWait  收到 78 时续等最终响应（**仅读写包装**传 true）
+   * @param {boolean} anyRx        不校验回帧 CAN ID（功能寻址广播 0x7DF 专用）
+   * @param {number}  maxPendingMs 78 续等的总上限（ms，从首次 78 起算）；
+   *                   缺省取 `this.maxPendingMs`（实例默认 = OUR_DESIGN.MAX_PENDING_MS = 60s）
    */
-  async uds(payloadHex, timeoutMs = 6000, { allowEmpty = false, pendingWait = false, anyRx = false } = {}) {
+  async uds(payloadHex, timeoutMs = timeoutFor('REQUEST'), {
+    allowEmpty = false, pendingWait = false, anyRx = false, maxPendingMs = null,
+  } = {}) {
     // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑨）：回帧 ID 硬校验。
     //   原厂的链路层用 SetAddress/UpdateCanFilterId 做 CAN 过滤，**只可能收到该 ECU 的帧**；
     //   ELM 的 ATCRA 在 EA 通道可能不生效（真车探 0x7F1 回帧头 7E8 即此）。
@@ -1190,52 +1345,175 @@ export class Coder {
           + `（期望仅 0x${this.rx.toString(16).toUpperCase()}；按 FilterId 语义拒绝解析，防止跨 ECU 读写）`);
       }
     };
-    // ★ NRC `7F xx 78`（responsePending）= **续等**直至正响应或超时（RE-FLOWSPEC §5 /
-    //   Set7F78Ctrl 语义，证据锚=读写包装）；其余 NRC 单发即败（不重试不换 SID，错误上浮）。
-    //   重发帧与原帧逐字节一致（同 payloadHex）。
-    //   ⚠️ 仅读写包装（readBlock/写入帧）传 pendingWait —— 例程层（31）的 78 必须上浮给
-    //   pollRoutineResults 的 31 03 跟随轮询（REA 执行流语义），吞掉会杀掉轮询。
-    const deadline = Date.now() + Math.max(1000, timeoutMs);
+    // ══════════════════════════════════════════════════════════
+    //  `7F <sid> 78`（responsePending）的续等循环 —— 2026-11-16 重写
+    //
+    //  ⚠️ 铁律：**任何请求帧都不得因 78 被重发**。78 的语义是「ECU 已受理、
+    //     正在处理」，不是「没收到」，重发等于再提交一次。对 `31 01`（例程启动，
+    //     非幂等）、`2E/3B`（写）、`27`（提交 key）、`2F/17/11/14` 尤其致命。
+    //     旧实现 `continue` 把 `payloadHex` 原样再发一遍，直接违反文件头
+    //     「超时≠未执行、禁止自动重试写入」红线。
+    //
+    //  续等做法：收到 78 后只补发保活帧 `3E 00`，逐轮扫描该轮**所有**帧 —
+    //     · `<reqSid+0x40>` 正响应（迟到也可以）→ 成功返回
+    //     · `7F <reqSid> <code ≠ 78>` → NRC 上浮（单发即败，不换 SID 不重试）
+    //     · 又是 `7F <reqSid> 78` → 继续续等，再补一轮保活
+    //     · 只有 `7E xx` / `7F 3E xx` / 空 → 忽略，继续续等
+    //     · 超过 maxPendingMs 仍未拿到最终响应 → 抛「结果不明」，提示回读核验
+    //
+    //  `pendingWait` 的作用范围**不变**：只有读写包装传它（readBlock 读帧 /
+    //  写入帧 / 回滚帧）。例程层 `31` 不传 —— 它的 78 必须**上浮**给
+    //  `runRoutine` → `pollRoutineResults` 的 `31 03` 跟随轮询（原厂执行流语义）。
+    // ══════════════════════════════════════════════════════════
+    const reqNorm = String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+    const reqSid = parseInt(reqNorm.slice(0, 2), 16) & 0xff;
+    if (!Number.isFinite(reqSid)) throw new CodingError(`空请求：${payloadHex}`);
+    const wantResp = (reqSid + 0x40) & 0xff;
+
+    // 78 续等节拍与总上限：单次调用 > 实例 > 模块默认（三者都非法才回默认）。
+    const posNum = (v) => (Number.isFinite(v) && v > 0 ? v : null);
+    const kaMs = posNum(this.keepAliveMs) ?? KEEPALIVE_MS;
+    const capMs = posNum(maxPendingMs) ?? posNum(this.maxPendingMs) ?? MAX_PENDING_MS;
+
+    let deadline = Date.now() + Math.max(1000, timeoutMs);
+    let pendingRounds = 0;          // 已收到的 `7F <sid> 78` 轮数
+    let pendingCapAt = 0;           // 首次 78 起算的续等硬上限时刻
     for (;;) {
-    const raw = (await this.elm.cmd(payloadHex, Math.min(timeoutMs, Math.max(500, deadline - Date.now()))) || '').trim();
-    checkRx(raw);
-    // 调试：原始收发都记下来
-    this._trace(`  >> ${payloadHex}`);
-    this._trace(`  << ${raw || '(空)'}`);
-    // ★ 2026-11-04：自适应解析（裸 ISO-TP / 纯数据两种适配器输出通吃）
-    const reqSid = parseInt(String(payloadHex).replace(/[^0-9A-Fa-f]/g, '').slice(0, 2), 16) & 0xff;
-    const p = parseRespAuto(raw, String(payloadHex || '').replace(/[^0-9A-Fa-f]/g, ''), reqSid);
-    if (p.kind === 'nrc') {
-      if (pendingWait && (p.code || 0) === 0x78 && Date.now() < deadline) {
-        // ★ 2026-11-12 全量审计修 bug：写帧 / 解锁帧收到 7F 78 时**不重发原请求**。
-        //   NRC 0x78 是「ECU 已受理、正在处理」，最终响应随后到达；原实现 continue
-        //   会把 3B/2E 写帧或 27 0A key 帧原样再发一次 —— 等于重复写入 / 重复提交 key，
-        //   与 coder.js 顶部「超时≠未执行、禁止自动重试写入」红线直接冲突。
-        //   现在明确报错，让上层按「结果不明 → 重连核验」处理，绝不自动重发。
-        if (reqSid === 0x2e || reqSid === 0x3b || reqSid === 0x27 || reqSid === 0x17) {
-          throw new CodingError(
-            `写/解锁帧 ${payloadHex} 收到 7F 78（响应挂起）—— 不自动重发，`
-            + '避免重复写入或重复提交 key；请重连核验 ECU 实际结果后再操作');
+      // ── 发送：首轮发**原请求原文**（逐字节，含空格写法）；收到 78 之后
+      //    只发保活帧 —— 绝不重发原帧。──
+      if (pendingRounds > 0) {
+        const waitMs = Math.max(0, Math.min(kaMs, pendingCapAt - Date.now()));
+        await new Promise((r) => setTimeout(r, waitMs));
+      }
+      const sending = pendingRounds === 0 ? payloadHex : KEEPALIVE_FRAME;
+      const now = Date.now();
+      // 首轮窗口 = min(传入 timeoutMs, 剩余期限)；续等窗口 = 一个保活节拍，
+      // 但**不得小于 MIN_RECV_WINDOW_MS** —— 保活节拍只决定「隔多久问一趟」，
+      // 不能当成「适配器多久必须吐完一帧」的读窗口（节拍 10ms 的测试里会让
+      // elm.cmd 在适配器回帧前就判超时）。上限仍被续等硬上限截断。
+      // ══════════════════════════════════════════════════════════
+      //  多帧发送：PCI 必须**我们自己出**（不能委托适配器固件）
+      //
+      //  经典 CAN 的 ISO-TP 单帧上限 = 7 字节，而我们的写请求几乎全部越线：
+      //   `2F <DID2> <controlOption> <state>` 实测 71 个 DID 里 70 个越线
+      //   （7B×1 / 8B×68 / 9B×1 / 11B×1 —— state 长度是可变的，别假定 4 字节）；
+      //   原厂 31 最长 14 字节；`2E` = 3 + 回读块（静态下界最大 258B 块 ⇒ 261 字节帧）。
+      //
+      //  两条路只有一条能用：
+      //   ① 委托适配器（ATCAF1：ELM327 自动加 PCI / 自行分段）
+      //   ② 自己拼（ATCAF0 + `isotp-tx.js` 分段 + 等 FC）
+      //  ①在这条链路上不成立 —— 本文件有实车结论：vLinker MS 经 EA 通道
+      //  **不执行 ATCAF1**（RX 仍带 PCI，这正是 `parseRespAuto` 必须同时兼容
+      //  两种解释的原因）。而原厂自带 COMM 层（`libCOMM_ABSTRACT_LAYER.so`）
+      //  自己做 ISO-TP，PCI 本来就是它自己拼的 ⇒ 要对齐原厂线上字节，只能走 ②。
+      //
+      //  ⚠️ 与 78 语义无关：续等轮（`pendingRounds > 0`）发的是 `3E00`（2 字节，
+      //     永远走单帧），分段只发生在**首轮**；所以「原帧全程只发 1 次」这条
+      //     不变量对多帧请求同样成立 —— 78 挂起期间一个 CF 都不会补发。
+      // ══════════════════════════════════════════════════════════
+      const kaWindow = Math.max(kaMs, MIN_RECV_WINDOW_MS);
+      const windowMs = pendingRounds === 0
+        ? Math.min(timeoutMs, Math.max(MIN_RECV_WINDOW_MS, deadline - now))
+        : Math.max(MIN_RECV_WINDOW_MS, Math.min(kaWindow, pendingCapAt - now));
+      const segTx = pendingRounds === 0 && needsSegmentation(sending)
+        && typeof this.elm.sendIsoTp === 'function';
+      const raw = ((segTx
+        ? await this.elm.sendIsoTp(sending, windowMs)
+        : await this.elm.cmd(sending, windowMs)) || '').trim();
+      checkRx(raw);
+      // 调试：原始收发都记下来
+      this._trace(`  >> ${sending}`);
+      this._trace(`  << ${raw || '(空)'}`);
+
+      // ① 正响应优先（迟到也可以）：本轮任何位置出现 <reqSid+0x40> 即成功。
+      //   ⚠️ 续等轮里 `3E 00` 自己的应答（7E 00 / 7F 3E xx）与本请求的最终响应
+      //      可能出现在**同一次** cmd 返回里（真车 ECU 就是在收到下一帧时把结果带出来）。
+      //      整段解析会把保活应答当成 body[0] → 迟到的正响应被顶掉。所以整段不像时
+      //      按帧切片，从第一个以 <reqSid+0x40> 开头的帧重新解析（多帧重组不受影响）。
+      let p = parseRespAuto(raw, reqNorm, reqSid);
+      let sliceUsed = false;
+      if (!(p.body && p.body.length && (p.body[0] & 0xff) === wantResp)) {
+        const sliced = sliceFromPositiveFrame(raw, wantResp, reqNorm);
+        if (sliced != null) {
+          p = parseRespAuto(sliced, reqNorm, reqSid);
+          sliceUsed = true;
         }
-        this._trace('  (7F 78 响应挂起 —— 续等重发原帧)');
-        await new Promise((r) => setTimeout(r, 150));
+      }
+      if (p.body && p.body.length && (p.body[0] & 0xff) === wantResp) {
+        if (pendingRounds > 0) {
+          this._trace(`  (78 挂起后第 ${pendingRounds} 轮保活收到最终正响应 —— 原帧全程只发过 1 次)`);
+        }
+        return { raw, ...p, pendingRounds, sliceUsed };
+      }
+      // ② 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU）
+      if (p.kind === 'truncated') {
+        throw new CodingError(
+          `服务 ${payloadHex} 多帧应答被截断：声明 ${p.expected} 字节，实收 ${p.received} 字节。` +
+          `可能是超时 / 假提示符 / 流控异常 —— 不能拿短块继续，更不能写回。`);
+      }
+      // ③ 针对**本请求**的 NRC。保活帧自己的 `7F 3E xx` 不算（findNrcFor 按 reqSid 过滤）。
+      let nrc = findNrcFor(raw, reqSid);
+      if (nrc == null && p.kind === 'nrc' && ((p.service | 0) & 0xff) === reqSid) {
+        nrc = (p.code | 0) & 0xff;
+      }
+      if (nrc != null) {
+        if (nrc === 0x78) {
+          if (!pendingWait) {
+            // 未声明续等的调用点（31 / 2F / 27 / 17 / 11 / 14 …）：78 **单发上浮**，
+            // 本层不重发、不吞掉。例程层由 runRoutine 转 `31 03` 跟随轮询。
+            throw new CodingError(
+              `服务 ${payloadHex} 回 7F ${hex2(reqSid)} 78（ECU 已受理、仍在处理）——`
+              + '本层不重发原帧；例程请走 31 03 跟随轮询，读写请回读核验', 0x78);
+          }
+          // 「ECU 已受理、正在处理」→ 延长等待，**不重发原帧**。
+          if (pendingRounds === 0) {
+            pendingCapAt = Date.now() + Math.max(1000, capMs);
+          }
+          pendingRounds += 1;
+          deadline = Math.max(deadline, Date.now() + kaMs * 2);
+          if (Date.now() >= pendingCapAt) {
+            throw new CodingError(`${this.pendingTimeoutMessage(payloadHex, pendingRounds, kaMs)}`, 0x78);
+          }
+          this._trace(
+            `  (7F ${hex2(reqSid)} 78 响应挂起 —— 第 ${pendingRounds} 轮补 `
+            + `${KEEPALIVE_FRAME} 保活续等；原帧不重发)`);
+          continue;
+        }
+        throw new CodingError(
+          `服务 0x${(p.service ?? reqSid).toString(16)} 被拒（NRC 0x${nrc.toString(16)}）`, nrc);
+      }
+      // ④ 续等轮：本轮只有保活自己的应答（7E xx / 7F 3E xx）或空 → 忽略，继续续等。
+      if (pendingRounds > 0) {
+        if (Date.now() >= pendingCapAt) {
+          throw new CodingError(`${this.pendingTimeoutMessage(payloadHex, pendingRounds, kaMs)}`, 0x78);
+        }
         continue;
       }
-      throw new CodingError(`服务 0x${p.service?.toString(16)} 被拒（NRC 0x${(p.code||0).toString(16)}）`, p.code);
+      // ⑤ 首轮：保持原有判定顺序（空响应必须报错，除非 allowEmpty）
+      if (p.kind === 'empty' && !allowEmpty) {
+        throw new CodingError(
+          `服务 ${payloadHex} 无应答 —— ECU 未响应。` +
+          `可能：地址不对 / ECU 不在该 CAN 上 / 未点火 / 需先换会话`);
+      }
+      return { raw, ...p, pendingRounds };
     }
-    // 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU）
-    if (p.kind === 'truncated') {
-      throw new CodingError(
-        `服务 ${payloadHex} 多帧应答被截断：声明 ${p.expected} 字节，实收 ${p.received} 字节。` +
-        `可能是超时 / 假提示符 / 流控异常 —— 不能拿短块继续，更不能写回。`);
-    }
-    if (p.kind === 'empty' && !allowEmpty) {
-      throw new CodingError(
-        `服务 ${payloadHex} 无应答 —— ECU 未响应。` +
-        `可能：地址不对 / ECU 不在该 CAN 上 / 未点火 / 需先换会话`);
-    }
-    return { raw, ...p };
-    }
+  }
+
+  /**
+   * 78 续等耗尽后的统一错误文案（含「结果不明」，上层按此文案分流）。
+   *
+   * 关键：明确告诉操作者**不要重试**、而要去回读核验 —— 因为 ECU 可能已经
+   * 执行了写入，重试等于重复写。文案里的「结果不明」四个字是
+   * `tools/verify-keepalive-78.mjs` 的断言锚点，改动需同步改门禁。
+   *
+   * @param {string} payloadHex 原请求（只用于文案，**不会**被再发一次）
+   * @param {number} rounds     已续等轮数（= 已补发的 3E00 次数）
+   * @param {number} kaMs       实际使用的保活节拍（默认 2500，测试可覆盖成 10）
+   */
+  pendingTimeoutMessage(payloadHex, rounds, kaMs = KEEPALIVE_MS) {
+    return `服务 ${payloadHex} 结果不明（ECU 长时间处理未返回）→ 请回读核验，禁止自动重试`
+      + `（已续等 ${rounds} 轮、共 ${rounds} 次 ${KEEPALIVE_FRAME} 保活`
+      + `（每轮 ${kaMs}ms）；原请求全程只发过 1 次，未重发）`;
   }
 
   /** 调试轨迹（可关） */
@@ -1287,7 +1565,7 @@ export class Coder {
     const idBytes = (readSid === 0x22) ? 4 : 2;    // ← 位宽随 SID
     const idHex = id.toString(16).toUpperCase().padStart(idBytes, '0');
     const sid = readSid.toString(16).toUpperCase().padStart(2, '0');
-    const r = await this.uds(`${sid}${idHex}`, 6000, { pendingWait: true });
+    const r = await this.uds(`${sid}${idHex}`, timeoutFor('REQUEST'), { pendingWait: true });
 
     // 校验正响应 SID（request SID + 0x40）
     const wantResp = (readSid + 0x40) & 0xFF;
@@ -1339,7 +1617,7 @@ export class Coder {
     //    裸 `27 09` 可能吃 NRC 0x13。与 securityAccessEx 保持同一口径：
     //    KWP `17 00 00`；UDS level 0x09 带 `0100`；其他 level 无实测证据→裸发。
     const seedTail = kwp ? '00' : (level === 0x09 ? '0100' : '');
-    const s = await this.uds(`${sidHex}${lv.toString(16).padStart(2, '0')}${seedTail}`, 5000);
+    const s = await this.uds(`${sidHex}${lv.toString(16).padStart(2, '0')}${seedTail}`, timeoutFor('SHORT'));
     // ⚠️ 先校验正响应 SID，再切 seed（与 securityAccessEx 同口径）：
     //    地址错/串线时可能拿到别的正响应，直接 slice 会把垃圾当 seed。
     const wantSeedSid = kwp ? 0x57 : 0x67;
@@ -1385,7 +1663,7 @@ export class Coder {
     //    这条在 securityAccess()/securityAccessEx() 两处都必须一致。
     const keySub = kwp ? 0x40 : (lv + 1);
     const kHex = kArr.map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-    const kr = await this.uds(`${sidHex}${keySub.toString(16).padStart(2, '0')}${kHex}`, 6000);
+    const kr = await this.uds(`${sidHex}${keySub.toString(16).padStart(2, '0')}${kHex}`, timeoutFor('REQUEST'));
     const wantKeySid = kwp ? 0x57 : 0x67;
     if (!kr.body.length || kr.body[0] !== wantKeySid) {
       throw new CodingError(
@@ -1591,7 +1869,7 @@ export class Coder {
     const lidBytes = (writeSid === 0x2E) ? 4 : 2;
     const wr = await this.uds(
       `${writeSid.toString(16).toUpperCase().padStart(2, '0')}` +
-      `${lid.toString(16).toUpperCase().padStart(lidBytes, '0')}${hex}`, 8000, { pendingWait: true });
+      `${lid.toString(16).toUpperCase().padStart(lidBytes, '0')}${hex}`, timeoutFor('REQUEST'), { pendingWait: true });
     // 正响应 SID = 写 SID + 0x40（3B→7B / 2E→6E）。地址错/串线时不能拿别的正响应当写成功。
     const wantWriteSid = (writeSid + 0x40) & 0xff;
     if (!wr.body.length || wr.body[0] !== wantWriteSid) {
@@ -1668,7 +1946,7 @@ export class Coder {
     }
     const kwpRestore = bk.readSid !== 0x22;
     await this.securityAccessEx({ level: kwpRestore ? 0x00 : 0x09, kwp: kwpRestore });
-    const wr = await this.uds(`${sid}${idHex}${hex}`, 8000, { pendingWait: true });
+    const wr = await this.uds(`${sid}${idHex}${hex}`, timeoutFor('REQUEST'), { pendingWait: true });
     const want = (Number.parseInt(sid, 16) + 0x40) & 0xff;
     if (!wr.body.length || wr.body[0] !== want) {
       throw new CodingError(
@@ -1756,7 +2034,7 @@ async function pollRoutineResults(routineId, {
     if (shouldStop && shouldStop()) return { done: false, result: null, nrc: last, polls, aborted: true };
     polls += 1;
     try {
-      const r = await this.uds(`3103${routineId.toString(16).toUpperCase().padStart(4, '0')}`, 6000);
+      const r = await this.uds(`3103${routineId.toString(16).toUpperCase().padStart(4, '0')}`, timeoutFor('REQUEST'));
       if (!r.body.length || r.body[0] !== 0x71) {
         throw new CodingError(
           `例程结果 31 03 响应异常：期望 71，` +
@@ -1823,7 +2101,7 @@ Object.assign(Coder.prototype, { pollRoutineResults, runRoutine });
  *   2f 80 01 00
  * 会话：实测多在 `10 85` 下执行。
  */
-async function ioControl(did, controlOption = 0x03, state = '', timeoutMs = 8000) {
+async function ioControl(did, controlOption = 0x03, state = '', timeoutMs = timeoutFor('REQUEST')) {
   if (!Number.isFinite(did) || did < 0 || did > 0xffff) {
     throw new CodingError(`执行器 DID 0x${Number(did).toString(16)} 超出 2 字节`);
   }
@@ -1921,7 +2199,7 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   //    其他 level（0x04/0x02/0xB6…）没有实测尾参证据，保持裸发，不猜。
   const seedTail = kwp ? '00' : (level === 0x09 ? '0100' : '');
   // 取 seed
-  const s = await this.uds(`${reqSid}${lvHex}${seedTail}`, 5000, { allowEmpty: true });
+  const s = await this.uds(`${reqSid}${lvHex}${seedTail}`, timeoutFor('SHORT'), { allowEmpty: true });
   // ⚠️ 校验取 seed 的正响应 SID（57 = KWP / 67 = UDS）。
   //    此前不校验：地址错、模块串线、回显没剔干净时，拿到的「seed」其实是别的报文，
   //    照样拿去算 key 并发出去 —— 白吃一次安全尝试计数，还看不出根因。
@@ -1990,7 +2268,7 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   // ⚠️ KWP 的 key 子功能是 0x40（实测 `17 40` / `17 40 00`），不是 lv+1（`17 01`）。
   //    与 securityAccess() 保持一致；UDS 才是 level+1。
   const keySub = kwp ? 0x40 : (lv + 1);
-  const kr = await this.uds(`${reqSid}${keySub.toString(16).toUpperCase().padStart(2, '0')}${kHex}`, 6000);
+  const kr = await this.uds(`${reqSid}${keySub.toString(16).toUpperCase().padStart(2, '0')}${kHex}`, timeoutFor('REQUEST'));
   // 发 key 也要校验正响应 SID（2026-10-18 审计）：地址错/串线时可能拿到别的正响应，
   // 不能仅凭「没抛 NRC」就宣布解锁成功。
   const wantKeySid = kwp ? 0x57 : 0x67;
@@ -2145,7 +2423,7 @@ Coder.prototype.runWritePrologue = async function (mode = 'ident') {
   this._say(`  写前编排 [${mode}] ${seq.length} 步`);
   for (const cmd of seq) {
     try {
-      await this.uds(cmd, 5000, { allowEmpty: true });
+      await this.uds(cmd, timeoutFor('SHORT'), { allowEmpty: true });
     } catch (e) {
       this._say(`    ⚠️ ${cmd} → ${e.message}`);
     }

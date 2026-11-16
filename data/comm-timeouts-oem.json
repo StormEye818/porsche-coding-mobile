@@ -1,0 +1,508 @@
+{
+  "schema": "porsche-coder/comm-timeouts/1",
+  "unit": "ms",
+  "what": "原厂诊断仪侧唯一的通讯等待上限参数 SetCommunicationMaximumWaitTime(ms) 的可复跑取值、逐处坐标，以及「已证字节但未证语义」的隔离候选清单",
+  "appliesTo": "单次「请求 → 最终响应」的等待上限。**不是** ATST 的 4ms tick，**不是** UI 超时，**不是** 78 挂起后的保活节拍",
+  "notInThisTable": [
+    "KEEPALIVE_MS（78 挂起后的保活节拍）/ MAX_PENDING_MS（78 续等总上限）= **我方设计值**，定义在 src/comm-timeouts.js 的 OUR_DESIGN 命名空间，原厂包内无对应字节（包内不存在周期性 TesterPresent）",
+    "ATST / ATSTFF 的 4ms tick 单位 = 适配器侧参数，见 src/elm327.js"
+  ],
+  "source": {
+    "api": "SetCommunicationMaximumWaitTime",
+    "globalVariableHint": "iCommunicationMaximumWaitTime",
+    "libDirGlob": "ref/*/V24.58",
+    "lib": "libCOMM_ABSTRACT_LAYER.so",
+    "libMd5": "e15ea3297a6778e7f3ed1e61cd5b78bc",
+    "decompile": "ref/reverse/ghidra/libCOMM_ABSTRACT_LAYER.txt",
+    "decompileProvenance": "同目录 libCOMM_ABSTRACT_LAYER.log 的 IMPORTING 行指向同一文件，MD5=e15ea3297a6778e7f3ed1e61cd5b78bc，与上表 libMd5 一致",
+    "reproduceCommand": "sed -n '<line>p' ref/reverse/ghidra/libCOMM_ABSTRACT_LAYER.txt",
+    "reproduceCountCommand": "grep -n 'SetCommunicationMaximumWaitTime(' ref/reverse/ghidra/libCOMM_ABSTRACT_LAYER.txt",
+    "reproduceByteCommand": "node -e \"const b=require('fs').readFileSync('ref/*/V24.58/<lib>');console.log(b.subarray(<fileOffset>,<fileOffset>+<n>).toString('hex'))\"",
+    "addressNote": "ghidra 反编译里的函数地址 = objdump 反汇编地址 + 0x10000（例：ghidra FUNC Connector_Identify @ 0004a7d4 ↔ objdump 0x3a7d4）。本表只用行号 + 原文定位，不用 ghidra 地址，避免这个偏移引起误读",
+    "offsetNote": "**.text 段 p_offset == p_vaddr（偏移即地址）；.data 段不是** —— 全局初始化常量的 VA 0xC3024 对应**文件偏移 0xC2024**（差 0x1000，文件总长 0xC2900）。本表对 .data 只记 fileOffset，门禁只许用 fileOffset 读字节：按 VA 读会越界抛 ERR_OUT_OF_RANGE，若门禁 try/catch 吞掉就变成「永远绿」的假断言",
+    "caveat": "ref/ 整个目录在 .gitignore 内（研究产物只留本地）。因此本表的坐标在干净克隆上不可复跑 —— 门禁 tools/verify-comm-timeouts.mjs 分三层：(a) 解码 JSON 里记录的 immBytes 做算术自证、(c) 与 src/comm-timeouts.js 双向相等，这两层**任何环境都必须真跑**；只有 (b) 回读 .so 现场字节与重定位表在 ref/ 缺失时打印 SKIP_REF 并跳过，而不是伪造通过"
+  },
+  "findings": [
+    "全仓 27 个 .so 里，只有 libCOMM_ABSTRACT_LAYER.so 把 SetCommunicationMaximumWaitTime 定义为**函数**（nm -D 类型 T）；其余 26 个（含 libPORSCHE.so / libPORSCHE_ACTF.so / libOBD2_SPEC_APP.so / libPORSCHE_READWRITE.so / libPORSCHE_LINK.so / libPORSCHE_SPEC_DME.so / libPORSCHE_SPEC_PAB.so）都是**未初始化的全局变量**（nm -D 类型 B）",
+    "COMM 层内部共 8 处写入：5000 ×1（TOPIV_SetIoLine）/ 8000 ×3（Connector_Identify ×2 + Super16ResetConnector）/ 16000 ×4（CanResetConnector + CANII_SetCanIOLine + CANII_SetCanVolvoKLine + Super16_SetIOLine）—— 这 8 处是**本表接线值（5000 / 8000 / 16000）的全部来源**",
+    "另有跨库 5 个候选调用点（libPORSCHE 18000、libPORSCHE_COMM 18000、libPORSCHE_ACTF 25000、libOBD2_SPEC_APP 3000 与 20000）：每个点的**字节层**（movw 立即数）与**重定位层**（该调用点算出的 GOT 槽 == .rel.dyn 的 r_offset，且该条 r_info&0xff = 21 = R_ARM_GLOB_DAT、符号名 = SetCommunicationMaximumWaitTime）都已逐字节复核通过",
+    "但这 5 个点的**语义/可达性层未证**：SetCommunicationMaximumWaitTime 在这些库里是**函数指针变量**，静态无法判定「指针是否被初始化 / 该初始化分支运行时是否可达」。未证的东西不接线 ⇒ 全部归入 unresolvedCandidates，只作留档证据，不参与 timeoutFor()",
+    "因此本工具实际只用 5000 / 8000 / 16000 三档。18000 / 25000 / 3000 / 20000 **不**出现在 src 的任何档位里（门禁 ⑧b 断言这一点）",
+    "COMM 层 8 处全部夹在 BeginCombination() / EndCombination() 之间，紧跟 SetEcuCommunicationVoltageLogic(0xff,0xff) + SetCommunicationParameter(1,8,1,0) + SetEcuCommTimeInterval(...) + SetEcuBaudRate(...) —— 即该值是**链路建立参数组**的一员，随连接器/IO 线组合整组下发",
+    "因此它是「当前链路的单帧等待上限」，不是按 SID 分档的请求超时；原厂没有 24/27/2E 各自的超时",
+    "取值维度是**平台库 × 初始化分支**，不是按 ECU 模块：同一库里同一个值会在多条 Initialize 分支重复出现（libPORSCHE 3 处 18000、libPORSCHE_COMM 5 处 18000）。DME / PAB 自己不设该值（对 setter 的调用点为 0），它们继承 libPORSCHE / libPORSCHE_COMM 在开端口时写入的值 —— 该值见 unresolvedCandidates，语义未证",
+    "我方采用 3 档中最接近真实请求-应答语义的 IDENTIFY(8000) 与链路基线 LINK_DEFAULT(5000)；RESET(16000) 是硬件复位/IO 线切换专用，本工具不做硬件复位，故不使用（档位保留以备将来）"
+  ],
+  "consumers": {
+    "what": "把 SetCommunicationMaximumWaitTime 当**只读全局变量**引用的库（nm -D 类型 B = BSS 未初始化，说明本库没有自己的静态取值）",
+    "reproduceCommand": "nm -D ref/*/V24.58/<lib>.so | grep CommunicationMaximumWaitTime",
+    "expectedSymbolType": "B",
+    "count": 26,
+    "libs": {
+      "libCARINFO.so": "0x1e2ac",
+      "libDEVICEID.so": "0x12c30",
+      "libDIAG.so": "0x449cf8",
+      "libDIAGPROGFUN.so": "0x85b14",
+      "libOBD2_SPEC_APP.so": "0x86a5c",
+      "libPORSCHE.so": "0x1ffd0",
+      "libPORSCHEReset.so": "0x42c5c4",
+      "libPORSCHE_ACTF.so": "0xfb4c0",
+      "libPORSCHE_CALC.so": "0x10b410",
+      "libPORSCHE_CDSF.so": "0x44ac0",
+      "libPORSCHE_CODING.so": "0x292cc",
+      "libPORSCHE_COMM.so": "0x343e0",
+      "libPORSCHE_DTCF.so": "0x60350",
+      "libPORSCHE_ENTERSYSPASSWORD.so": "0x913b4",
+      "libPORSCHE_FILE.so": "0x9d3c4",
+      "libPORSCHE_LINK.so": "0x1782bc",
+      "libPORSCHE_MAINTENANCEF.so": "0x3933c",
+      "libPORSCHE_PROGRAMMING.so": "0x6e398",
+      "libPORSCHE_READWRITE.so": "0x24e3cc",
+      "libPORSCHE_SPECF.so": "0x4fe1a4",
+      "libPORSCHE_SPEC_DME.so": "0x7a340",
+      "libPORSCHE_SPEC_PAB.so": "0x1f2a8",
+      "libPORSCHE_STDDUI.so": "0x6b348",
+      "libPORSCHE_SYSP.so": "0x48de14",
+      "libPORSCHE_VERF.so": "0x3a2c4",
+      "libReadOBDVIN.so": "0x13fc8"
+    }
+  },
+  "kinds": {
+    "LINK_DEFAULT": {
+      "valueMs": 5000,
+      "role": "链路默认等待（TOPIV 通道设 IO 线时下发的基线值），同时也是 .data 里的全局初始值",
+      "anchors": [
+        {
+          "lib": "libCOMM_ABSTRACT_LAYER.so",
+          "insnOffset": "0x3B20E",
+          "fileOffset": "0x3B20E",
+          "immBytes": "41 F2 88 30",
+          "encoding": "movw",
+          "disasm": "movw r0, #0x1388",
+          "provenance": "TOPIV_SetIoLine 内的 setter 调用入参"
+        },
+        {
+          "lib": "libCOMM_ABSTRACT_LAYER.so",
+          "insnOffset": "0x36DCA",
+          "fileOffset": "0x36DCA",
+          "immBytes": "41 F2 88 32",
+          "encoding": "movw",
+          "disasm": "movw r2, #0x1388",
+          "provenance": "SetParaToComm(ptype!=1) 分支里对同一个全局的 str 直写（不走 setter 调用）"
+        }
+      ],
+      "occurrences": {
+        "bytePatternHits": ["0x3b20e"],
+        "status": "verified-count",
+        "note": "按第一条 anchor 的 immBytes 在 .text 全文件字节搜索得 1 处；第二条 anchor 是另一个编码（movw r2），单独计数 1 处"
+      },
+      "evidence": [
+        {
+          "line": 26661,
+          "lineText": "SetCommunicationMaximumWaitTime(5000);",
+          "enclosingFunction": "TOPIV_SetIoLine",
+          "ghidraFunctionAddress": "0004b19c"
+        }
+      ]
+    },
+    "IDENTIFY": {
+      "valueMs": 8000,
+      "role": "连接器识别 / 连接器复位的中档等待（识别阶段要等连接器回版本帧）",
+      "anchors": [
+        {
+          "lib": "libCOMM_ABSTRACT_LAYER.so",
+          "insnOffset": "0x3A97E",
+          "fileOffset": "0x3A97E",
+          "immBytes": "4F F4 FA 50",
+          "encoding": "mov.w",
+          "disasm": "mov.w r0, #0x1f40",
+          "provenance": "Connector_Identify 内的 setter 调用入参"
+        },
+        {
+          "lib": "libCOMM_ABSTRACT_LAYER.so",
+          "insnOffset": "0x36D22",
+          "fileOffset": "0x36D22",
+          "immBytes": "4F F4 FA 52",
+          "encoding": "mov.w",
+          "disasm": "mov.w r2, #0x1f40",
+          "provenance": "SetParaToComm(ptype==1) 分支里对同一个全局的 str 直写"
+        }
+      ],
+      "occurrences": {
+        "bytePatternHits": ["0x3a97e", "0x3a9fa", "0x3c058", "0x4b3ba"],
+        "status": "verified-count",
+        "note": "按 immBytes 字节搜索命中 4 处；前 3 处经反编译核对为 Connector_Identify ×2 + Super16ResetConnector，第 4 处 0x4b3ba 位于 .text 尾部，疑为字面量池同字节巧合，未逐个反汇编确认归属"
+      },
+      "evidence": [
+        {
+          "line": 25903,
+          "lineText": "SetCommunicationMaximumWaitTime(8000);",
+          "enclosingFunction": "Connector_Identify",
+          "ghidraFunctionAddress": "0004a7d4"
+        },
+        {
+          "line": 25947,
+          "lineText": "SetCommunicationMaximumWaitTime(8000);",
+          "enclosingFunction": "Connector_Identify",
+          "ghidraFunctionAddress": "0004a7d4"
+        },
+        {
+          "line": 27770,
+          "lineText": "SetCommunicationMaximumWaitTime(8000);",
+          "enclosingFunction": "Super16ResetConnector",
+          "ghidraFunctionAddress": "0004c044"
+        }
+      ]
+    },
+    "RESET": {
+      "valueMs": 16000,
+      "role": "连接器复位 + CAN/K 线 IO 线切换的长档等待（本工具未实现链路复位，故未使用）",
+      "anchors": [
+        {
+          "lib": "libCOMM_ABSTRACT_LAYER.so",
+          "insnOffset": "0x3AE5E",
+          "fileOffset": "0x3AE5E",
+          "immBytes": "4F F4 7A 50",
+          "encoding": "mov.w",
+          "disasm": "mov.w r0, #0x3e80",
+          "provenance": "CanResetConnector 内的 setter 调用入参"
+        }
+      ],
+      "occurrences": {
+        "bytePatternHits": ["0x3ae5e", "0x3afc4", "0x3b0de", "0x3b494"],
+        "status": "verified-count",
+        "note": "按 immBytes 字节搜索命中 4 处，与反编译枚举的 4 个调用点（CanResetConnector / CANII_SetCanIOLine / CANII_SetCanVolvoKLine / Super16_SetIOLine）数目一致"
+      },
+      "evidence": [
+        {
+          "line": 26251,
+          "lineText": "SetCommunicationMaximumWaitTime(16000);",
+          "enclosingFunction": "CanResetConnector",
+          "ghidraFunctionAddress": "0004ae04"
+        },
+        {
+          "line": 26402,
+          "lineText": "SetCommunicationMaximumWaitTime(16000);",
+          "enclosingFunction": "CANII_SetCanIOLine",
+          "ghidraFunctionAddress": "0004af90"
+        },
+        {
+          "line": 26472,
+          "lineText": "SetCommunicationMaximumWaitTime(16000);",
+          "enclosingFunction": "CANII_SetCanVolvoKLine",
+          "ghidraFunctionAddress": "0004b0ac"
+        },
+        {
+          "line": 26769,
+          "lineText": "SetCommunicationMaximumWaitTime(16000);",
+          "enclosingFunction": "Super16_SetIOLine",
+          "ghidraFunctionAddress": "0004b454"
+        }
+      ]
+    }
+  },
+  "globalDefault": {
+    "what": "全局变量的 .data 初始化常量（**不是** setter 调用，任何只 grep setter 符号的校验都会漏掉它）",
+    "lib": "libCOMM_ABSTRACT_LAYER.so",
+    "fileOffset": "0xC2024",
+    "va": "0xC3024",
+    "bytes": "88 13 00 00",
+    "encoding": "u32le",
+    "decodedMs": 5000,
+    "proof": ".data 全局初始化常量；紧邻 g_AnstimeOut@0xC2020 同为 5000，其后 0xC2028 起为 ASCII 'Comm Version:4_3_0'。VA 与文件偏移差 0x1000，读字节只许用 fileOffset",
+    "reproduceCommand": "xxd -s 0xc2024 -l 16 libCOMM_ABSTRACT_LAYER.so"
+  },
+  "unresolvedCandidates": [
+    {
+      "lib": "libPORSCHE.so",
+      "offset": "0xD282",
+      "immBytes": "44 F2 50 60",
+      "encoding": "movw",
+      "disasm": "movw r0, #0x4650",
+      "decodedMs": 18000,
+      "relocOffset": "0x1E294",
+      "relocType": 21,
+      "relocSymbol": "SetCommunicationMaximumWaitTime",
+      "status": "unresolved",
+      "why": "达到该符号的调用点已证（字节 + GOT 槽 == .rel.dyn r_offset + r_info&0xff=21 R_ARM_GLOB_DAT），但「函数指针是否被初始化 / 该分支是否可达」未证，故不接线",
+      "siblingOffsets": ["0xD282", "0xD4E8", "0xD844"],
+      "attributedBy": "ghidra：PorscheCanInitialize_VIN / PorscheKwpInitialize_VIN / PorscheKwpComm_VIN"
+    },
+    {
+      "lib": "libPORSCHE_COMM.so",
+      "offset": "0x122AE",
+      "immBytes": "44 F2 50 60",
+      "encoding": "movw",
+      "disasm": "movw r0, #0x4650",
+      "decodedMs": 18000,
+      "relocOffset": "0x331BC",
+      "relocType": 21,
+      "relocSymbol": "SetCommunicationMaximumWaitTime",
+      "status": "unresolved",
+      "why": "同 libPORSCHE：字节 + 重定位已证，语义/可达性未证，故不接线",
+      "siblingOffsets": ["0xFAF8", "0xFDFA", "0x11B98", "0x11D32", "0x122AE"],
+      "attributedBy": "ghidra：PorscheCommunicationPro ×2 / PorscheKwpInitialize / PorscheCanInitialize / PorscheBoschInitialize"
+    },
+    {
+      "lib": "libPORSCHE_ACTF.so",
+      "offset": "0x3DA92",
+      "immBytes": "46 F2 A8 10",
+      "encoding": "movw",
+      "disasm": "movw r0, #0x61a8",
+      "decodedMs": 25000,
+      "relocOffset": "0xF8B58",
+      "relocType": 21,
+      "relocSymbol": "SetCommunicationMaximumWaitTime",
+      "status": "unresolved",
+      "why": "同上：执行器/功能测试链的候选值，语义未证，不接线",
+      "siblingOffsets": ["0x3DA92"],
+      "attributedBy": "ghidra：FlashCanInit"
+    },
+    {
+      "lib": "libOBD2_SPEC_APP.so",
+      "offset": "0xF392",
+      "immBytes": "40 F6 B8 30",
+      "encoding": "movw",
+      "disasm": "movw r0, #0x0bb8",
+      "decodedMs": 3000,
+      "relocOffset": "0x4D2F4",
+      "relocType": 21,
+      "relocSymbol": "SetCommunicationMaximumWaitTime",
+      "status": "unresolved",
+      "why": "同上：OBD2 CAN 初始化分支的候选值，语义未证，不接线",
+      "siblingOffsets": ["0xF392"],
+      "attributedBy": "ghidra：OBD_CAN_Enter_NewInit"
+    },
+    {
+      "lib": "libOBD2_SPEC_APP.so",
+      "offset": "0x1C3B6",
+      "immBytes": "44 F6 20 60",
+      "encoding": "movw",
+      "disasm": "movw r0, #0x4e20",
+      "decodedMs": 20000,
+      "relocOffset": "0x4D2F4",
+      "relocType": 21,
+      "relocSymbol": "SetCommunicationMaximumWaitTime",
+      "status": "unresolved",
+      "why": "另一初始化分支（InitCanCommParam_Base），与上一条 3000 共用同一个 GOT 槽；未能判定该分支的适用条件，不接线",
+      "siblingOffsets": ["0x1C3B6", "0xF0AC"],
+      "attributedBy": "ghidra：InitCanCommParam_Base / InitialKwpMode"
+    }
+  ],
+  "usage": {
+    "note": "我方哪个语义用哪一档，以及为什么这样映射。原则：只允许「不小于原硬编码值」的替换，绝不因数据驱动而把等待时间调短（调短会造成假超时 → 误报「结果不明」）",
+    "IDENTIFY": [
+      "诊断请求-应答的等待上限：读块（21/22/1A）、写帧（2E/3B）、回滚写、安全访问 key 提交、例程结果查询（31 03）",
+      "理由：这些是『正常单帧请求 + 等最终响应』，量级与连接器识别同级；原硬编码 6000/8000 落在本档，替换后 6000→8000 只增不减"
+    ],
+    "LINK_DEFAULT": [
+      "短请求：识别链单帧读（1A/22F1xx）、会话切换（10 xx）、保活（3E 00）",
+      "理由：这类请求原厂按链路基线 5000 等；原硬编码 2000/3000/5000 落在本档，替换后只增不减"
+    ],
+    "RESET": [
+      "（未使用）链路复位 / IO 线切换。本工具不做硬件复位，若将来加，用本档"
+    ]
+  },
+  "status": {
+    "verified": [
+      "LINK_DEFAULT",
+      "IDENTIFY",
+      "RESET"
+    ],
+    "unresolved": [
+      "libPORSCHE.so@0xD282 = 18000",
+      "libPORSCHE_COMM.so@0x122AE = 18000",
+      "libPORSCHE_ACTF.so@0x3DA92 = 25000",
+      "libOBD2_SPEC_APP.so@0xF392 = 3000",
+      "libOBD2_SPEC_APP.so@0x1C3B6 = 20000"
+    ],
+    "note": "三档接线值都有反编译原文行号 + 字节锚点 + 同文件 MD5；unresolvedCandidates 里的 5 条字节与重定位都已复核，但语义层未证，**不进 timeoutFor()**。想接线必须先补第三层证据（指针初始化 + 分支可达性），补完把 status 从 unresolved 改成 verified 再改 src"
+  },
+  "migration": {
+    "note": "category ①「ECU 请求-应答截止时间」的迁移清单。门禁 tools/verify-comm-timeouts.mjs 逐条断言 anchor 在源码里真实存在且含 timeoutFor(<role>)，并核对每文件条数 —— 任何一处被改回硬编码数字，条数即少、门禁即红（行号漂移不影响）。",
+    "policy": "只允许「新值 ≥ 旧值」的替换，绝不因数据驱动把等待调短",
+    "sites": [
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const r = await this.uds(f.hex, timeoutFor('SHORT'),"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const r = await this.uds(cmd, timeoutFor('SHORT'), { allowEmpty: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "await this.uds('3E00', timeoutFor('SHORT'), { allowEmpty: true }).catch(() => {});"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const id = await this.uds(cmd, timeoutFor('SHORT'), { allowEmpty: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const r = await this.uds('1A90', timeoutFor('SHORT'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const s = await this.uds('1003', timeoutFor('SHORT'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const r = await this.uds('22F190', timeoutFor('SHORT'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const r = await this.uds(req, timeoutFor('SHORT'), { allowEmpty: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "async uds(payloadHex, timeoutMs = timeoutFor('REQUEST'), {"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "const r = await this.uds(`${sid}${idHex}`, timeoutFor('REQUEST'), { pendingWait: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const s = await this.uds(`${sidHex}${lv.toString(16).padStart(2, '0')}${seedTail}`, timeoutFor('SHORT'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "const kr = await this.uds(`${sidHex}${keySub.toString(16).padStart(2, '0')}${kHex}`, timeoutFor('REQUEST'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "`${lid.toString(16).toUpperCase().padStart(lidBytes, '0')}${hex}`, timeoutFor('REQUEST'), { pendingWait: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "const wr = await this.uds(`${sid}${idHex}${hex}`, timeoutFor('REQUEST'), { pendingWait: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "const r = await this.uds(`3103${routineId.toString(16).toUpperCase().padStart(4, '0')}`, timeoutFor('REQUEST'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "async function ioControl(did, controlOption = 0x03, state = '', timeoutMs = timeoutFor('REQUEST')) {"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "const s = await this.uds(`${reqSid}${lvHex}${seedTail}`, timeoutFor('SHORT'), { allowEmpty: true });"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "REQUEST",
+        "anchor": "const kr = await this.uds(`${reqSid}${keySub.toString(16).toUpperCase().padStart(2, '0')}${kHex}`, timeoutFor('REQUEST'));"
+      },
+      {
+        "file": "src/coder.js",
+        "role": "SHORT",
+        "anchor": "await this.uds(cmd, timeoutFor('SHORT'), { allowEmpty: true });"
+      },
+      {
+        "file": "src/app.js",
+        "role": "REQUEST",
+        "anchor": "const wr = await coder.uds(`${sidHex}${lidHex}${b.raw.toUpperCase()}`, timeoutFor('REQUEST'), { pendingWait: true });"
+      },
+      {
+        "file": "src/app.js",
+        "role": "REQUEST",
+        "anchor": "await coder.uds(raw, timeoutFor('REQUEST'), { allowEmpty: isRead(raw) });"
+      },
+      {
+        "file": "src/app.js",
+        "role": "REQUEST",
+        "anchor": "const wr = await coder.uds(`${sidHex}${lidHex}${clean.toUpperCase()}`, timeoutFor('REQUEST'), { pendingWait: true });"
+      },
+      {
+        "file": "src/app.js",
+        "role": "REQUEST",
+        "anchor": "await coder.uds(`${sidHex}${lidHex}${backupHex.toUpperCase()}`, timeoutFor('REQUEST'), { pendingWait: true });"
+      }
+    ],
+    "counts": {
+      "src/coder.js": 19,
+      "src/app.js": 4
+    },
+    "notMigrated": [
+      {
+        "site": "src/coder.js:readVinByObd  timeoutMs=1500",
+        "category": "①",
+        "reason": "OBD 功能寻址广播（0x7DF）的**聚合**预算：同一个 timeoutMs 会被 21/09/02 三条广播共用并各自重试，语义不是「单帧请求-应答」，套链路档位会把它放大 3 倍以上"
+      },
+      {
+        "site": "src/coder.js:routineControl  timeoutMs=15000",
+        "category": "①",
+        "reason": "例程**启动**预算，原厂包内只有链路等待值、没有例程预算值；15000 是产品预算，任何链路档位都更小，按「只增不减」不能替换"
+      },
+      {
+        "site": "src/coder.js:readDtc     timeoutMs=10000",
+        "category": "①",
+        "reason": "同上：DTC 读是全表返回，预算大于任何链路档位，替换会变短"
+      },
+      {
+        "site": "src/coder.js:clearDtc    timeoutMs=15000",
+        "category": "①",
+        "reason": "同上：清码后 ECU 需重建 DTC 表，预算大于任何链路档位"
+      },
+      {
+        "site": "src/coder.js:660/1173    elm.cmd(ATFCSH/ATCRA, 1500)",
+        "category": "③",
+        "reason": "适配器 AT 命令的应答窗口，不是 ECU 请求"
+      },
+      {
+        "site": "src/elm327.js 全部数值",
+        "category": "③",
+        "reason": "适配器层：cmd() 的 timeoutMs 是「等适配器送 prompt」的读窗口（含 120ms 轮询节拍），ATST/ATSTFF 的 4ms tick 也在此；属适配器能力，不是 ECU 等待"
+      },
+      {
+        "site": "src/app.js:112-149 探针段（ATAR / ATST08 / 221409 / 22F1A2 / ATSTFF，400~800ms）",
+        "category": "④",
+        "reason": "进模块前的**存活探测**窗口：故意设短（ATST08=8×4=32ms）以便快速判死，与「正常请求-应答」语义相反，换成 5000 会让一个不存在的地址拖 5s × N 个候选"
+      },
+      {
+        "site": "src/app.js:640/678 缓存与链路自检（800/2000ms）",
+        "category": "④",
+        "reason": "同上，探测/缓存阶段的短窗口"
+      },
+      {
+        "site": "src/app.js:714-732  ATSP6 / ATST0F / ATSTFF（800ms）",
+        "category": "③④",
+        "reason": "AT 命令与 ATST 设置（ATST0F=15×4=60ms 的快速探测节拍）"
+      },
+      {
+        "site": "src/app.js:maxMs/intervalMs（30000/1500/1200）",
+        "category": "②",
+        "reason": "例程轮询的**总预算与间隔**，属 UI 等待体验参数，不是单帧截止时间"
+      },
+      {
+        "site": "src/app.js:1133 new Elm327(mock,{timeoutMs:2000})",
+        "category": "③",
+        "reason": "适配器读窗口默认值"
+      },
+      {
+        "site": "src/app.js:1768/2535/2697/3805/4405/4483/4658 其余 uds/maxMs",
+        "category": "①/② 混合",
+        "reason": "这些调用点的旧值都 ≤ 所选档位或语义不同（短读/会话/轮询预算），按「只增不减」本轮不动。它们**不是**没分类：凡是「等适配器 prompt」的进 ③、凡是「探测/缓存短窗口」的进 ④、凡是「轮询总预算/间隔」的进 ②；剩下真正属 ① 的（readVinByObd / routineControl / readDtc / clearDtc）已在上方逐条列明不迁移的理由（预算大于任何链路档位，替换即变短）。"
+      }
+    ]
+  }
+}

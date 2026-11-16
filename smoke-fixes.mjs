@@ -3,7 +3,8 @@
  * 2026-10-15 全量修复冒烟测试 —— 只验本次改动的代码路径。
  * 跑法: node smoke-fixes.mjs
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { Elm327 } from './src/elm327.js';
 import { Coder, parseResp, parseRespCaf1, CodingError } from './src/coder.js';
 import { resolveKey, resolveKeyByName, makeResolverProvider } from './src/seedkey-resolver.js';
@@ -12,7 +13,7 @@ import { pswCalc } from './src/seedkey-pswcalc.js';
 import { parseDtcPayload } from './src/dtc.js';
 import { parseAddrPair, overrideFor } from './src/addr.js';
 import { LinkDoctor } from './src/link-doctor.js';
-import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
+import { parseFieldInput, fieldInRange, extractField, injectField, featureFramesFor } from './src/schema.js';
 import { autoPickVariant, pickModelByName } from './src/variant.js';
 import { familyCandidates, identMatch } from './src/probe.js';
 import { specialFunctionsFor, FEATURE_DATA_SOURCES } from './src/special-catalog.js';
@@ -1568,11 +1569,29 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
   const coderSrc = readFileSync('./src/coder.js', 'utf8');
   ok('setAddress 内部 await address()',
      /async setAddress\([\s\S]*?await this\.address\(\);/.test(coderSrc));
-  // ★ 任务清单⑤：KWP 流 10 89 直接建会话（不发 10 03）；NRC 7F 78 续等
+  // ★ 任务清单⑤：KWP 流 10 89 直接建会话（不发 10 03）
   ok('KWP 流直接建会话（enterSession 不发 10 03）',
      /family === 'kwp'/.test(coderSrc) && /readVehicleIdentity/.test(coderSrc));
-  ok('NRC 7F 78 续等（其余 NRC 单发上浮）',
-     /\(p\.code \|\| 0\) === 0x78/.test(coderSrc));
+  // ★ 2026-11-16：78 语义由「源码正则」升级为**行为断言**。
+  //   旧断言 `/\(p\.code \|\| 0\) === 0x78/.test(coderSrc)` 只证明「源码里有这行字」，
+  //   改个变量名/换个写法就骗过去了（自证）；而且它锁定的正是被推翻的「续等重发」实现。
+  //   现在真发帧验铁律：78 = 已受理待处理 → 只补保活、**原帧绝不重发**。
+  {
+    const ecu78 = new MockAdapter({ latencyMs: 0, delay78: { nrcTimes: 2, delayMs: 0 } });
+    const e78 = new Elm327(ecu78, { timeoutMs: 3000 });
+    await e78.init({ protocol: 6 });
+    const c78 = new Coder(e78, { tx: 0x7E0, rx: 0x7E8, verbose: false });
+    await c78.setAddress(0x7E0, 0x7E8, '78校验ECU');
+    const mark78 = ecu78.txLog.length;
+    const r78 = await c78.uds('2E0102AABB', 8000, { pendingWait: true }).catch(() => null);
+    const after78 = ecu78.txLog.slice(mark78).map((x) => x.replace(/\s+/g, '').toUpperCase());
+    const nWrite78 = after78.filter((f) => f === '2E0102AABB').length;
+    const nKeep78 = after78.filter((f) => f === '3E00').length;
+    ok('NRC 7F 78 只续等、不重发原帧（写帧恰 1 次 / 2 次保活 / 最终拿到 6E）',
+      !!r78 && r78.body[0] === 0x6e && nWrite78 === 1 && nKeep78 === 2,
+      `写帧=${nWrite78} 次 · 3E00=${nKeep78} 次 · 响应=`
+        + (r78 ? r78.body.map((b) => b.toString(16).padStart(2, '0')).join(' ') : 'null'));
+  }
   // ★ 任务清单④：件号 token 采集扩 1A 87/91/92/94（不只 1A84）
   ok('件号 token 采集（1A87/91/92/94 + 0x20 分词）', /lastPartTokens/.test(coderSrc));
   ok('识别循环连续 3 条无数据提前结束', /identMiss >= 3/.test(coderSrc));
@@ -1656,6 +1675,35 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
 }
 
 // ─────────────────────────────────────────────────────────────────
+// [15c] catalog 构帧字节（2026-11-13 缺陷回归闸）
+//   旧 `featureFramesFor('actuator')` 对 2f 构 7 字节（丢 UDS 0x2F 的必需字节 controlOption），
+//   对 31 构 4 字节（写死 sub=01、丢 params）。这里是最便宜的两条金丝雀；
+//   全量逐字节校准在 tools/verify-catalog-frame-bytes.mjs（CATALOG_FRAME_BYTE_EQUAL_431）。
+// ─────────────────────────────────────────────────────────────────
+console.log('\n[15c] catalog 构帧字节（2F controlOption 必需 / 31 带 sub+params）');
+{
+  const actItems = JSON.parse(readFileSync('./data/actuator.json', 'utf8')).items || [];
+  const a2f = actItems.find((x) => x.form === '2f' && Number.isInteger(x.did));
+  const a2fFrame = (featureFramesFor('actuator', a2f) || [])[0] || '';
+  const a2fDid = Number(a2f.did).toString(16).toUpperCase().padStart(4, '0');
+  const a2fState = String(a2f.drive.state).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  ok('2F 构帧 = 2F<DID><controlOption><state>（8 字节；controlOption 是 0x2F 必需字节）',
+    a2fFrame === `2F${a2fDid}03${a2fState}` && a2fFrame.length === 16
+      && (Number(a2f.did) !== 0x0101 || a2fFrame === '2F010103FF000000'),
+    `frame=${a2fFrame}（${a2fFrame.length / 2} 字节）`);
+
+  const a31 = actItems.find((x) => x.form === '31' && x.rid != null && String(x.params || '').trim());
+  const a31Frame = (featureFramesFor('actuator', a31) || [])[0] || '';
+  const a31Params = String(a31.params).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  ok('31 构帧 = 31<sub><RID><params>（参数不丢，长度 4+params 字节）',
+    a31Frame.startsWith(`31${Number(a31.sub).toString(16).toUpperCase().padStart(2, '0')}`
+      + `${Number(a31.rid).toString(16).toUpperCase().padStart(4, '0')}`)
+      && a31Frame.endsWith(a31Params)
+      && a31Frame.length === 8 + a31Params.length,
+    `${a31.name}=${a31Frame} params=${a31Params}`);
+}
+
+// ─────────────────────────────────────────────────────────────────
 // [F14] T04-c 任务 3/4：零 fetch 数据同步可达 + D-2 三命名空间 + 反例可证伪
 //   与 e2e 的 F13 互补：F13 验「UI 入口 → 实发帧」，F14 验「打包/命名空间/静态证据」。
 // ─────────────────────────────────────────────────────────────────
@@ -1677,9 +1725,53 @@ console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
   ok('F14 UI bootstrap 注入 www/index.html 且 feature-catalog.js 被真实引用',
     /__featureCatalogReady/.test(syncSrc) && /feature-catalog\.js/.test(syncSrc)
       && /copyFileSync\(CATALOG_SRC, CATALOG_DST\)/.test(syncSrc));
-  ok('F14 顶层 json 差集在 sync 里显式归零（app fetch / catalog 消费 / 编译进 src 三类标注）',
-    /SYNC_DATA_CONSISTENT/.test(syncSrc) && /差集\s*\$\{diff\}/.test(syncSrc)
-      && /离线生成器中间产物/.test(syncSrc));
+  // ★ 2026-11-16：这一条原来是 `ok('…', /SYNC_DATA_CONSISTENT/.test(syncSrc) && …)` ——
+  //   断言的是「sync.mjs 源码里有几个字符串」：改文案就红、把 diff 改名就红，
+  //   而「三桶算错了 / 新增数据文件没记账」它一点都抓不到。这与
+  //   「sysdata-comm.json 只在注释里出现却被算成 fetch」是同一类错误（拿字符串包含冒充行为）。
+  //   现在改成**真跑 `node scripts/sync.mjs --dry`**（该模式不写盘），解析末行字段断言。
+  //   top 一律**独立复算**一遍，不信任 sync 自己打印的 top（否则是自证）。
+  const countedTop = (() => {
+    const src = readFileSync('./scripts/sync.mjs', 'utf8');
+    const m = /const SKIP = new Set\(\[([\s\S]*?)\]\);/.exec(src);
+    const skipNames = new Set([...(m ? m[1] : '').matchAll(/['"]([^'"\r\n]+)['"]/g)].map((x) => x[1]));
+    const reM = /const skip = \(name\) => SKIP\.has\(name\) \|\| \/(.+?)\/\.test\(name\)/.exec(src);
+    const skipRe = reM ? new RegExp(reM[1]) : null;
+    const names = readdirSync('./data', { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => e.name);
+    const synced = names.filter((nm) => !(skipNames.has(nm) || (skipRe && skipRe.test(nm))));
+    return { total: names.length, synced: synced.length, skipCount: skipNames.size };
+  })();
+  let dry = { ran: false, line: '', why: '' };
+  try {
+    const out = execFileSync(process.execPath, ['scripts/sync.mjs', '--dry'],
+      { cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const lines = out.trim().split('\n');
+    dry = { ran: true, line: (lines[lines.length - 1] || '').trim(), why: '' };
+  } catch (err) {
+    // ⚠️ 不是「吞掉」：--dry 退出码非 0（或抛错）在这里被记成一条 **FAIL**，
+    //    并带上 exit code 与前几行 stderr，整轮仍是 exit 1。
+    dry = {
+      ran: false,
+      line: '',
+      why: `exit=${err.status} ${String(err.stderr || err.message || '').trim().split('\n').slice(0, 3).join(' | ')}`,
+    };
+  }
+  const dryField = (k) => {
+    const mm = new RegExp(`(?:^|\\s)${k}=(\\d+)`).exec(dry.line);
+    return mm ? Number(mm[1]) : NaN;
+  };
+  const dryParsed = dry.ran && /^SYNC_DATA_CONSISTENT top=/.test(dry.line);
+  ok('F14 SYNC_DATA_CONSISTENT 真跑 --dry：三桶闭合 + top 独立复算 + 未登记/幽灵/diff 全 0',
+    dryParsed
+      && dryField('top') === countedTop.synced
+      && dryField('unregistered') === 0 && dryField('ghost') === 0 && dryField('diff') === 0
+      && dryField('app') + dryField('catalog') + dryField('compiled') === dryField('top'),
+    dryParsed
+      ? `${dry.line} ｜ 独立复算 top=${countedTop.synced}`
+        + `（data/ 顶层 ${countedTop.total} 个 json，SKIP ${countedTop.skipCount} 项）`
+        + ` ｜ app+catalog+compiled=${dryField('app') + dryField('catalog') + dryField('compiled')}`
+      : `--dry 未通过（不能说明差集归零）：${dry.why || '末行不是 SYNC_DATA_CONSISTENT top=…'}`);
 
   // D-2 三命名空间：67 menuId / 79 RID / 687 功能序列，无 sf∩rv 指标
   const sf = readD('special-functions.json');

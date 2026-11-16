@@ -327,6 +327,354 @@ export function enumeratePages(doc, arrayKey) {
     pages: pages.length, groupsWithinCap };
 }
 
+/* ──────────────────────────────────────────────────────────────────
+ * ★ 2026-11-13 UDS 构帧：catalog/枚举路径的**单一来源**（缺陷修复）
+ *
+ * 背景（复核过的缺陷，不是推测）：
+ *   旧 `featureFramesFor('actuator')` 对 `form:'2f'` 构出 `2F<DID4><state>` = **7 字节**，
+ *   而原厂实测帧是 **8 字节** `2F 01 01 03 FF 00 00 00`：
+ *   UDS 0x2F（InputOutputControlByIdentifier）报文结构是
+ *     `2F <DID hi> <DID lo> <controlOption 1B> <controlState …>`
+ *   —— **controlOption 是必需字节**（原厂用 0x03 = shortTermAdjustment），旧构帧把它省了，
+ *   等于把 state 的第一个字节当成 controlOption 发出去，语义是错的。
+ *   同理 `31` 例程帧旧构帧是 `3101<RID4>` = 4 字节，丢了 `sub`（写死 01）与 `params`，
+ *   而记录/实测是 `31 <sub> <RID2B> <params…>`（例：`31 01 0005 01 00` = 6 字节）。
+ *
+ * 证据与校准（2026-11-16 数据层重建后的口径，条数由门禁现算，不写死在这里）：
+ *   · 命令块布局 = `[0]变体 [1]类别(2F→01/31→10/容器→FF) [2]controlOption|sub [3]SID
+ *     [4:6]==00 00 [6:8]逐项地址 u16 **LE** [8:10]==00 00 [10]选择器`，
+ *     `entry.ctrlBytes` 就是整条命令块（典型 11 字节）；
+ *   · `form:'2f'` 的逐项 DID = 命令块 +6 的 u16 LE（31 的 RID 同一槽位同一端序）；
+ *   · `data/gag-actuators.json`（GAG 实测 2F 帧，71 DID）逐 DID 给出 drive/release
+ *     与 observedStates：did 命中实测集的条目 `stateSrc='measured'`，
+ *     其余是记录默认 `FF 00 00 00`（`stateSrc='default'`，不冒充实测）；
+ *   · `0x31` 的 params 取两个源：GAG 实测例程库（`paramsSrc='gag-lib'`）与包内
+ *     `function-sequences.json` 的 31 模板（`paramsSrc='specf-seq' / 'specf-seq-empty'`）；
+ *     两表都没有模板时 `paramsSrc='no-template'`（**不等于**「不需要参数」）——
+ *     未解决条数见 `source.paramsUnresolved`，六桶分解见 `source.paramsStats`；
+ *     记录尾字节是变体选择器，不是载荷；
+ *   · 逐项地址的确定性用**结构标签**表达（`didResolve` / `ridResolve`：
+ *     `single-address` / `multi-resolved-by-module` / `ambiguous-in-module` / `multi-address`；
+ *     多址另带 `multiAddressBasis`，只有 `high-byte-differs` / `high-byte-same` 两个取值）。
+ *     `high-byte-differs` 只是「两个候选的高字节不同」这一数值事实，**不声称**分属不同
+ *     功能域/模块 —— 实测高字节不是模块族，所以不做 `cross-family` 这种结论式命名；
+ *   · 同一 chain 若还有一种 27 字节记录在 `+6` 给出不同地址，条目带
+ *     `rawLayoutConflict` / `cmdRaw` / `rawLayoutCandidates`，**取值不取舍**（只并列）。
+ *     ⚠️ 另一种形态的读数**不进** `didCandidates`/`ridCandidates`：候选列表的语义是
+ *     「规范 11 字节形态下多个 ECU 各有一份同名功能」，与「同一 ECU 的另一种记录写法」
+ *     是两件事，混标会把两个事实压成一个数字；
+ *   · `driveDisabled === true`（参数多候选 / 两表无模板 / 地址在模块内歧义）时
+ *     `featureFramesFor` 一律返回 `[]`：**不发帧**比"发一个猜的帧"安全，理由在
+ *     `driveDisabledReason` 里，界面必须显式说出来。
+ *   逐条逐字节校准见门禁 `tools/verify-catalog-frame-bytes.mjs`
+ *   （stdout 打印的断言名以 `CATALOG_FRAME_BYTE_EQUAL_` 开头，审计器按它判定）。
+ *
+ * 与生产路径的关系（本次**不改** src/coder.js）：
+ *   coder.js:1826 `ioControl()` 构 `2F${did}${co}${state}`（8 字节，正确）；
+ *   coder.js:1716 `routineControl()` 构 `31${sf}${rid}${params}`（带 params，正确）。
+ *   本模块与它们**同构**，消掉「同一件事两套实现」。
+ * ────────────────────────────────────────────────────────────────── */
+
+/** 0x2F 的 controlOption 默认值 = 0x03（shortTermAdjustment；原厂实测值）。 */
+export const IO_CONTROL_DEFAULT_OPTION = 0x03;
+
+/** 0x31 的 sub-function 默认值 = 0x01（startRoutine；记录缺 sub 时用）。 */
+export const ROUTINE_DEFAULT_SUB = 0x01;
+
+/* 0x2F controlOption 语义（ISO 14229，coder.js:1817-1822 同口径）：
+ *   0x00 returnControlToECU / 0x01 resetToDefault
+ *   0x02 freezeCurrentState / 0x03 shortTermAdjustment
+ * ⚠️ 构帧不把值域卡在 0..3：GAG 实测 observedCtrls 里出现过 0x04（did 0x0110），
+ *    卡值域会把实测形态丢掉。值域校验归调用方/门禁，构帧只保证字节形态。 */
+
+/**
+ * 把数字/数字串转成整数。`'0x..'` 按 16 进制，纯数字串按 10 进制（与数据文件写法一致）。
+ * @param {*} v
+ * @returns {number} 非整数返回 NaN
+ */
+function toIntStrict(v) {
+  if (typeof v === 'number') return Number.isInteger(v) ? v : NaN;
+  if (typeof v !== 'string') return NaN;
+  const s = v.trim();
+  if (!s) return NaN;
+  if (/^0x[0-9a-f]+$/i.test(s)) return Number.parseInt(s.slice(2), 16);
+  if (/^[0-9]+$/.test(s)) return Number.parseInt(s, 10);
+  return NaN;
+}
+
+/** 数字 → 定宽大写 hex（不截断；调用方保证在范围内）。 */
+function hexPad(value, width) {
+  return value.toString(16).toUpperCase().padStart(width, '0');
+}
+
+/**
+ * 例程模板字段（`'0x0404'` / `'0404'` / `1028`）一律按 **16 进制** 解析 ——
+ * data/routine-templates.json 的 routineId/sub 全部是 0x 前缀 hex 串
+ * （139/139），与 coder.js:1723 `routineId.toString(16)` 同口径。
+ * @param {*} v
+ * @returns {number} 非法返回 NaN
+ */
+function parseHexNumber(v) {
+  if (typeof v === 'number') return Number.isInteger(v) ? v : NaN;
+  if (typeof v !== 'string') return NaN;
+  const s = v.trim().replace(/^0x/i, '');
+  if (!s || !/^[0-9a-f]+$/i.test(s)) return NaN;
+  return Number.parseInt(s, 16);
+}
+
+/**
+ * 把数据文件里的字节串（`'FF 00 00 00'` / `'FF000000'` / `'0x0B'`）规范化成
+ * **大写、无分隔符、长度为偶数**的 hex 串。
+ * @param {*} v
+ * @returns {string|null} 非法返回 null（调用方拒绝构帧），空值返回 ''
+ */
+function normalizeHexBytes(v) {
+  if (v == null) return '';
+  let s = String(v).trim();
+  if (!s) return '';
+  s = s.replace(/0x/gi, ' ');
+  const tokens = s.split(/[^0-9A-Fa-f]+/).filter(Boolean);
+  let out = '';
+  for (const t of tokens) {
+    if (t.length > 2) {
+      if (t.length % 2) return null;      // 连写且奇数长度 = 半个字节，拒绝
+      out += t.toUpperCase();
+    } else {
+      out += t.toUpperCase().padStart(2, '0');
+    }
+  }
+  return out.length % 2 === 0 ? out : null;
+}
+
+/**
+ * 构造 UDS 0x2F（InputOutputControlByIdentifier）请求帧。
+ *   `2F <DID 2B> <controlOption 1B> <controlState …>`
+ * controlOption 是**必需字节**，不接受「缺失即当作没有」：缺省时显式回落到
+ * `IO_CONTROL_DEFAULT_OPTION`（0x03），并把回落依据交给 `resolveIoControlDrive()`
+ * / `explainActuatorFrame()` 留痕。
+ * @param {number|string} did 标识符 0..0xFFFF
+ * @param {number|string} [controlOption] 0..0xFF，缺省 0x03
+ * @param {string} [state] 控制状态字节串，如 `'FF 00 00 00'`
+ * @returns {string} 大写无空格 hex；参数非法返回 ''
+ */
+export function buildIoControlFrame(did, controlOption = IO_CONTROL_DEFAULT_OPTION, state = '') {
+  const d = toIntStrict(did);
+  if (!Number.isInteger(d) || d < 0 || d > 0xffff) return '';
+  const co = (controlOption == null || controlOption === '')
+    ? IO_CONTROL_DEFAULT_OPTION
+    : toIntStrict(controlOption);
+  if (!Number.isInteger(co) || co < 0 || co > 0xff) return '';
+  const st = normalizeHexBytes(state);
+  if (st === null) return '';
+  return `2F${hexPad(d, 4)}${hexPad(co, 2)}${st}`;
+}
+
+/**
+ * 构造 UDS 0x31（RoutineControl）请求帧。
+ *   `31 <sub-function 1B> <routineIdentifier 2B> <routineControlOptionRecord …>`
+ * params 为请求参数记录（记录字段/模板原样），无则空串（不发明参数）。
+ * @param {number|string} [sub] 0..0xFF，缺省 0x01
+ * @param {number|string} rid 例程 ID 0..0xFFFF
+ * @param {string} [params] 参数字节串，如 `'01 00'`
+ * @returns {string} 大写无空格 hex；参数非法返回 ''
+ */
+export function buildRoutineFrame(sub = ROUTINE_DEFAULT_SUB, rid, params = '') {
+  const s = (sub == null || sub === '') ? ROUTINE_DEFAULT_SUB : toIntStrict(sub);
+  const r = toIntStrict(rid);
+  if (!Number.isInteger(s) || s < 0 || s > 0xff) return '';
+  if (!Number.isInteger(r) || r < 0 || r > 0xffff) return '';
+  const p = normalizeHexBytes(params);
+  if (p === null) return '';
+  return `31${hexPad(s, 2)}${hexPad(r, 4)}${p}`;
+}
+
+/**
+ * drive.state 缺失时的兜底状态（GAG 实测全族 drive 态都是 FF 00 00 00；保留旧行为并留痕）。
+ */
+const FALLBACK_IO_STATE = 'FF 00 00 00';
+
+/**
+ * 从执行器条目解析 0x2F 的 drive 形态，并给出**来源痕迹**（不用默认值掩盖数据缺失）。
+ * 旧实现在 drive 缺失时静默回落 `'FF 00 00 00'`，看不出是数据缺还是记录本来如此；
+ * 这里把回落显式标成 `fallback-*`。
+ * @param {object} entry data/actuator.json 条目
+ * @returns {{controlOption:number, controlOptionSource:string, state:string, stateSource:string}}
+ */
+export function resolveIoControlDrive(entry) {
+  const e = entry || {};
+  const drive = (e.drive && typeof e.drive === 'object') ? e.drive : {};
+  const rawCo = drive.controlOption;
+  const co = (rawCo == null || rawCo === '') ? IO_CONTROL_DEFAULT_OPTION : toIntStrict(rawCo);
+  const coOk = Number.isInteger(co) && co >= 0 && co <= 0xff;
+  const rawState = drive.state;
+  const stateEmpty = rawState == null || String(rawState).trim() === '';
+  return {
+    controlOption: coOk ? co : IO_CONTROL_DEFAULT_OPTION,
+    controlOptionSource: coOk
+      ? ((rawCo == null || rawCo === '') ? 'default-0x03（entry.drive.controlOption 缺失）' : 'entry.drive.controlOption')
+      : `default-0x03（entry.drive.controlOption 非法：${String(rawCo)}）`,
+    state: stateEmpty ? FALLBACK_IO_STATE : String(rawState),
+    stateSource: stateEmpty ? `fallback-${FALLBACK_IO_STATE.replace(/ /g, '')}（entry.drive.state 缺失）` : 'entry.drive.state',
+  };
+}
+
+/**
+ * 从执行器条目解析 0x31 的 sub/RID/params，并给出参数来源痕迹。
+ * `form:'31'` 条目字段为 `sub` / `rid` / `params`（见 tools/build-actuators.py）。
+ * @param {object} entry
+ * @returns {{sub:number, rid:number, params:string, paramsSource:string, ok:boolean}}
+ */
+export function resolveRoutineFields(entry) {
+  const e = entry || {};
+  const sub = (e.sub == null || e.sub === '') ? ROUTINE_DEFAULT_SUB : toIntStrict(e.sub);
+  const rid = toIntStrict(e.rid);
+  const params = normalizeHexBytes(e.params);
+  const ok = Number.isInteger(sub) && sub >= 0 && sub <= 0xff
+    && Number.isInteger(rid) && rid >= 0 && rid <= 0xffff
+    && params !== null;
+  return {
+    sub: Number.isInteger(sub) ? sub : ROUTINE_DEFAULT_SUB,
+    rid: Number.isInteger(rid) ? rid : NaN,
+    params: params == null ? '' : params,
+    paramsSource: (e.params == null || String(e.params).trim() === '')
+      ? 'empty（记录无参数）'
+      : (e.paramsSrc ? String(e.paramsSrc) : 'entry.params'),
+    ok,
+  };
+}
+
+/**
+ * 执行器条目的构帧 + 调试痕迹（catalog 路径的**唯一**构帧入口）。
+ * `featureFramesFor('actuator', …)` 内部只调本函数，返回值里的 trace 字段说明
+ * controlOption/state/params 各自来自记录还是回落，**并原样带出地址确定性的结构标签**
+ * （`didResolve` / `ridResolve` / `multiAddressBasis` / `rawLayoutConflict`）——
+ * 构帧不因地址有多个候选而改变，歧义只在痕迹与 UI 上显式暴露。
+ * @param {object} entry
+ * @returns {{form:string, frame:string, byteLen:number, controlOption:number|null,
+ *   controlOptionSource:string, state:string, stateSource:string,
+ *   sub:number|null, rid:number|null, params:string, paramsSource:string,
+ *   didResolve:string|null, ridResolve:string|null, multiAddressBasis:string|null,
+ *   rawLayoutConflict:boolean}}
+ */
+export function explainActuatorFrame(entry) {
+  const e = entry || {};
+  const form = String(e.form || '').toLowerCase();
+  // 地址确定性：数据层给的**结构标签**，这里只透传（不重新判定、不改变构帧结果）
+  const addrTrace = {
+    didResolve: e.didResolve == null ? null : String(e.didResolve),
+    ridResolve: e.ridResolve == null ? null : String(e.ridResolve),
+    multiAddressBasis: e.multiAddressBasis == null ? null : String(e.multiAddressBasis),
+    rawLayoutConflict: e.rawLayoutConflict === true,
+    moduleResolution: e.moduleResolution == null ? null : String(e.moduleResolution),
+    // 驱动闸：数据层判定"不能安全驱动"时，构帧结果仍给出，但 UI/调用方应拦下
+    driveDisabled: e.driveDisabled === true,
+    driveDisabledReason: e.driveDisabledReason == null ? '' : String(e.driveDisabledReason),
+  };
+  if (form === '2f') {
+    const dr = resolveIoControlDrive(e);
+    const frame = buildIoControlFrame(e.did, dr.controlOption, dr.state);
+    return {
+      form, frame, byteLen: frame.length / 2,
+      controlOption: dr.controlOption, controlOptionSource: dr.controlOptionSource,
+      state: dr.state, stateSource: dr.stateSource,
+      sub: null, rid: null, params: '', paramsSource: '',
+      ...addrTrace,
+    };
+  }
+  if (form === '31') {
+    const rf = resolveRoutineFields(e);
+    const frame = rf.ok ? buildRoutineFrame(rf.sub, rf.rid, rf.params) : '';
+    return {
+      form, frame, byteLen: frame.length / 2,
+      controlOption: null, controlOptionSource: '',
+      state: '', stateSource: '',
+      sub: rf.sub, rid: rf.rid, params: rf.params, paramsSource: rf.paramsSource,
+      ...addrTrace,
+    };
+  }
+  return {
+    form, frame: '', byteLen: 0,
+    controlOption: null, controlOptionSource: '', state: '', stateSource: '',
+    sub: null, rid: null, params: '', paramsSource: '',
+    ...addrTrace,
+  };
+}
+
+/**
+ * 执行器卡片的**渲染模型**（纯函数，UI 与测试共用同一份，避免"测试断言渲染字符串"）。
+ *
+ * 三条已确证的 UI 缺陷在这里收口：
+ *   ① RID 在数据里是**十进制数字**（`rid: 53250` 实际是 RID 0xD002），旧实现
+ *      `String(a.rid).padStart(4,'0')` 直接把十进制当十六进制印出来 → 用户看到
+ *      「例程 31 01 53250」。本函数一律走 `ridHex`（缺字段时才用 16 进制补零现算）。
+ *   ② 同名多址条目（`didResolve`/`ridResolve` ≠ `single-address`，即候选地址 > 1）**不是多条记录**，
+ *      而是同一功能在本目录里有多个候选地址：把候选全列出来并注明本卡片用的是哪个，
+ *      避免用户以为看到的是两个不同执行器。
+ *   ③ `unverified` / `rawLayoutConflict` 必须有可见标记，不许静默当成可信地址。
+ *   ④ `driveDisabled` 必须在卡片上说出来（理由来自数据），否则用户只会看到"点了没反应"。
+ *
+ * @param {object} entry data/actuator.json 的条目
+ * @returns {{form:string, line:string, notes:string[], warn:boolean, usedHex:string}}
+ *   `line` = 主行（形态 + 地址 + 平台块/链），`notes` = 需要显式说清的附加事实，
+ *   `warn` = 是否该高亮（notes 非空即 true）。
+ */
+export function describeActuatorCard(entry) {
+  const e = entry || {};
+  const form = String(e.form || '').toLowerCase();
+  const didNum = toIntStrict(e.did);
+  const ridNum = toIntStrict(e.rid);
+  const lidNum = toIntStrict(e.lid);
+
+  let line = '';
+  let usedHex = '';
+  if (form === '2f' && Number.isInteger(didNum)) {
+    usedHex = String(e.didHex || `0x${hexPad(didNum, 4)}`);
+    line = `驱动 2F ${usedHex} · 回位 ctrl 0x00`;
+  } else if (form === '31' && e.rid != null) {
+    // ★ 必须用 ridHex：rid 是十进制数，直接 padStart 会把 53250 显示成「53250」
+    usedHex = String(e.ridHex || (Number.isInteger(ridNum) ? `0x${hexPad(ridNum, 4)}` : ''));
+    line = `例程 31 01 ${usedHex}（执行=启动+轮询 31 03）`;
+  } else if (form === '30' && Number.isInteger(lidNum)) {
+    usedHex = `0x${hexPad(lidNum, 2)}`;
+    line = `本地标识符 ${usedHex}（KWP 0x30，本目录不构帧）`;
+  } else {
+    line = '状态 / 信息项（目录项）';
+  }
+  // 平台块 / chain：给的是"这条记录在哪"，不声称能区分同名条目
+  // （同名多址条目常常同 chain 同 block，见 notes 里的候选清单）。
+  if (e.block && e.chain) line += ` · ${e.block} / ${e.chain}`;
+
+  const notes = [];
+  const cands = form === '2f' ? e.didCandidates : (form === '31' ? e.ridCandidates : null);
+  const resolve = form === '2f' ? e.didResolve : (form === '31' ? e.ridResolve : '');
+  // 多候选（multi-resolved-by-module / ambiguous-in-module / multi-address）都要列候选：
+  // 判"能不能按模块拆开"是**数据层**的事，用户要看的始终是"这个功能在本目录有几个地址、
+  // 本卡片用的是哪个"。只认 multi-address 会让 18 条里的 13 条在界面上无声消失。
+  const multiCand = resolve !== 'single-address' && resolve !== 'unverified' && !!resolve;
+  if (multiCand && Array.isArray(cands) && cands.length > 1) {
+    const list = cands
+      .map((c) => String(c.didHex || c.ridHex || ''))
+      .filter(Boolean)
+      .join(' / ');
+    notes.push(`该功能在本目录有 ${cands.length} 个候选地址：${list}（本卡片用 ${usedHex || '?'}）`);
+  }
+  if (resolve === 'unverified') {
+    notes.push(`地址待验证（${usedHex || '?'} 低于命名空间底线 0x0100，且无实测背书）`);
+  }
+  if (e.rawLayoutConflict === true && Array.isArray(e.rawLayoutCandidates)) {
+    const list = e.rawLayoutCandidates
+      .map((c) => `${String(c.valueHex)}（${c.layout === 'cmd-block-11B' ? '11 字节规范块' : '27 字节块'}）`)
+      .join(' / ');
+    notes.push(`记录存在两种布局：${list}；本卡片按 11 字节规范块取值`);
+  }
+  if (e.driveDisabled === true) {
+    // 理由必须是数据给的（数据没写就如实说"没写"，不许在这里编一个）
+    const why = String(e.driveDisabledReason || '').trim();
+    notes.push(`本卡片已禁用驱动${why ? `：${why}` : '（数据未写理由 —— 视为数据缺陷）'}`);
+  }
+  return { form, line, notes, warn: notes.length > 0, usedHex };
+}
+
 /**
  * 由静态记录生成 elm.cmd 帧（记录驱动，不替记录发明默认值）。
  * @param {'measure'|'actuator'|'routine'} kind
@@ -339,28 +687,27 @@ export function featureFramesFor(kind, entry) {
     const sid = Number(e.readSid ?? 0x22);
     const pid = Number(e.pid ?? e.lid);
     if (!Number.isInteger(sid) || !Number.isInteger(pid)) return [];
-    const width = sid === 0x22 ? 4 : 2;
+    const width = sid === 0x22 ? 4 : 2;   // 22 <DID2B> / 21|1A <LID1B>
     return [`${sid.toString(16).toUpperCase().padStart(2, '0')}`
       + `${pid.toString(16).toUpperCase().padStart(width, '0')}`];
   }
   if (kind === 'actuator') {
-    if (e.form === '2f' && Number.isInteger(Number(e.did))) {
-      const did = Number(e.did).toString(16).toUpperCase().padStart(4, '0');
-      const state = String((e.drive && e.drive.state) || 'FF 00 00 00')
-        .replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-      return [`2F${did}${state}`];
-    }
-    if (e.form === '31' && e.rid != null) {
-      return [`3101${Number(e.rid).toString(16).toUpperCase().padStart(4, '0')}`];
-    }
-    return [];
+    // ★ 单一来源：0x2F / 0x31 都走 explainActuatorFrame（内部调 build* 纯函数）
+    // ★ 数据层说这条不能安全驱动（参数多候选 / 无模板 / 模块级地址歧义）时**不出帧**：
+    //   给 UI 一个"看起来能发"的帧，比不给帧危险得多（标定值猜错等于写坏 ECU）。
+    if (e.driveDisabled === true) return [];
+    const r = explainActuatorFrame(e);
+    return r.frame ? [r.frame] : [];
   }
   if (kind === 'routine') {
-    const rid = Number.parseInt(String(e.routineId || '').replace(/^0x/i, ''), 16);
-    const sub = Number.parseInt(String(e.sub || '0x01').replace(/^0x/i, ''), 16);
-    if (!Number.isFinite(rid) || !Number.isFinite(sub)) return [];
-    return [`31${sub.toString(16).toUpperCase().padStart(2, '0')}`
-      + `${rid.toString(16).toUpperCase().padStart(4, '0')}`];
+    // 例程模板（data/routine-templates.json）：routineId/sub/params 原样构帧，
+    // 与 coder.js:1725 `31${sf}${rid}${params}` 同构；模板无参数时就是 `31<sub><RID2B>`。
+    const rid = parseHexNumber(e.routineId);
+    const sub = (e.sub == null || e.sub === '')
+      ? ROUTINE_DEFAULT_SUB
+      : parseHexNumber(e.sub);
+    const frame = buildRoutineFrame(sub, rid, e.params);
+    return frame ? [frame] : [];
   }
   return [];
 }
@@ -375,4 +722,11 @@ export function featureFramesFor(kind, entry) {
 if (typeof globalThis !== 'undefined') {
   globalThis.__pcEnumeratePages = enumeratePages;
   globalThis.__pcFeatureFramesFor = featureFramesFor;
+  // ★ 2026-11-13 构帧单一来源：把纯构帧函数与调试痕迹也挂出来，
+  //   门禁/审计脚本可在浏览器控制台里直接复算 2F/31 帧（不必再抄一遍构帧逻辑）。
+  globalThis.__pcBuildIoControlFrame = buildIoControlFrame;
+  globalThis.__pcBuildRoutineFrame = buildRoutineFrame;
+  globalThis.__pcExplainActuatorFrame = explainActuatorFrame;
+  // 卡片渲染模型：UI 与 e2e 共用同一份，测试断言的是**函数返回值**而不是渲染字符串/正则
+  globalThis.__pcDescribeActuatorCard = describeActuatorCard;
 }

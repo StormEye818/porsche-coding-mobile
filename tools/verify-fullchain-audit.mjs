@@ -46,6 +46,75 @@ const mkCoder = (m, family, tx = 0x7e0, rx = 0x7e8) => {
   return c;
 };
 const frames = (m) => m.txLog.filter((x) => !x.startsWith('AT'));
+/**
+ * 逻辑业务帧序列 —— 把 ISO-TP 分段还原成一条。
+ *
+ * ⚠️ 2026-11-17：写帧 34 / 35 字节（`3B 21` + 32 字节块 / `2E 0021` + 32 字节块）
+ *    会被 `elm327.sendIsoTp` 分段成 FF + CF，`txLog` 里看到的是 `1022…` / `21…`。
+ *    「写序列」这类断言必须看**业务载荷**，否则分段一上线，帧数就从 6/7 变 11/12，
+ *    看起来像「多发了帧」——其实一帧都没多发，只是同一帧换成了线上一串。
+ *
+ * ⚠️ 只靠「首 nibble 是不是 1」判首帧会**误吃业务帧**：
+ *     `170000`（KWP 安全访问）首字节 0x17 的 nibble 也是 1，声明长度会被读成 0x700 = 1792，
+ *     于是它后面的所有帧都被当成它的 CF 吃掉。
+ * ⇒ 首帧判定必须**前向验证**：声明长度 > 7 **且**紧跟的 `ceil((len-6)/7)` 帧
+ *    恰好是 `2x` 且序号 1,2,3… 连续。凑不齐就不是分段，按业务单帧交出。
+ *    （`1003` 声明长度 3 ≤ 7 也走这条正路，不会被误判。）
+ */
+const isType = (hex, t) => hex.length >= 2 && (parseInt(hex.slice(0, 2), 16) >> 4) === t;
+const cfSeqOk = (hex, seq) => hex.length >= 4 && isType(hex, 2)
+  && (parseInt(hex.slice(0, 2), 16) & 0xf) === (seq & 0xf);
+const logicalFrames = (m) => {
+  const raw = m.txLog.filter((x) => !x.startsWith('AT'))
+    .map((x) => x.replace(/[^0-9A-Fa-f]/g, '').toUpperCase());
+  const out = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const hex = raw[i];
+    if (isType(hex, 1) && hex.length >= 4) {
+      const len = ((parseInt(hex.slice(0, 2), 16) & 0xf) << 8) | parseInt(hex.slice(2, 4), 16);
+      const nCf = len > 7 && hex.length >= 16 ? Math.ceil((len - 6) / 7) : 0;
+      let complete = nCf > 0 && i + nCf < raw.length;
+      for (let k = 1; complete && k <= nCf; k += 1) {
+        if (!cfSeqOk(raw[i + k], k)) complete = false;
+      }
+      if (complete) {
+        let data = hex.slice(4);
+        for (let k = 1; k <= nCf; k += 1) data += raw[i + k].slice(2);
+        out.push(data.slice(0, len * 2));
+        i += nCf;
+        continue;
+      }
+    }
+    out.push(hex);
+  }
+  return out;
+};
+/**
+ * 报错信息用的序列格式化 —— **带长度**，避免 `slice(0, 10)` 把 35 字节载荷
+ * 显示成和 8 字节帧一样长的 5 字节，让报错本身骗人。
+ */
+const fmtSeq = (list) => list
+  .map((x) => (x.length > 16 ? `${x.slice(0, 12)}…(${x.length / 2}B)` : x))
+  .join(' → ');
+/**
+ * 断言「某条业务载荷在线上确实是 1 FF + ceil((len-6)/7) CF、序号连续」。
+ *
+ * @param {string[]} txFrames 适配器在 `caf=0` 下收到的原始帧（mock 的 `txFrames`）
+ * @param {string} payload    重组后的业务载荷（无空格大写）
+ * @returns {{frames:number, need:number, len:number, ok:boolean}}
+ */
+const segShapeOf = (txFrames, payload) => {
+  const ff = txFrames[0] || '';
+  const len = ff.length >= 4
+    ? (((parseInt(ff.slice(0, 2), 16) & 0xf) << 8) | parseInt(ff.slice(2, 4), 16))
+    : -1;
+  const need = len > 7 ? Math.ceil((len - 6) / 7) : 0;
+  const cfs = txFrames.slice(1);
+  const shapeOk = isType(ff, 1) && len === payload.length / 2
+    && txFrames.length === 1 + need
+    && cfs.every((f, i) => cfSeqOk(f, i + 1));
+  return { frames: txFrames.length, need, len, ok: shapeOk };
+};
 const P_UDS = { id: 'a', module: 'Audit', name: '审计写', lid: 0x21,
   readSid: 0x22, writeSid: 0x2e, byte: 0, bit: 0, bitsize: 8,
   level: 'source-defined', risk: 'low' };
@@ -63,13 +132,31 @@ console.log('\n[1] BUG-1：原厂 flag=0 会话（尽力而为）不得被 stric
   const before = await c.readBlock(0x21, 0x22);
   const v = extractField(before, P_UDS) === 0x5a ? 0x3c : 0x5a;
   m.txLog.length = 0;
+  m.txFrames.length = 0;
+  m.txPayloads.length = 0;
   let err = '';
   try { await c.applyChange(P_UDS, v, { dryRun: false }); } catch (ex) { err = ex.message; }
   ok('1003 无正响应时写流程仍跑通（不抛错）', !err, err);
-  const f = frames(m);
-  ok('写帧序列仍为 会话→备份→安全→写→回读', f.length === 7
-    && f[1] === '1003' && f.some((x) => x.startsWith('2E'))
-    && f[f.length - 1] === '220021', f.map((x) => x.slice(0, 10)).join(' → '));
+  // 业务载荷层：会话 → 备份读 → 安全 → 写 → 回读。
+  // ⚠️ 别断「总帧数 == 常量」：那是**编码假设**，载荷长度一变就假红。
+  const f = logicalFrames(m);
+  const expWrite = '2E0021'
+    + before.map((b, i) => (i === 0 ? v : b))
+      .map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join('');
+  ok('写帧序列仍为 会话→备份→安全→写→回读（业务载荷层，不以帧数常量判定）',
+    f.length === 7 && f[0] === '3E00' && f[1] === '1003' && f[2] === '220021'
+    && f[3] === '27090100' && f[4] === '270A1234'
+    && f[6] === '220021', fmtSeq(f));
+  // 写载荷逐字节：`2E 0021` + 回读块（仅 byte0 改成新值），不是「开头像 2E」就算过
+  ok('写载荷逐字节 == 2E0021 + 回读块（仅目标字节改为新值）',
+    f[5] === expWrite,
+    `实发 ${f[5]} / 期望 ${expWrite}`);
+  // 原始帧形态：1 FF（长度位 == 载荷字节数）+ ceil((len-6)/7) 个序号连续的 CF
+  const shape = segShapeOf(m.txFrames, f[5]);
+  ok('写帧线上形态 == 1 FF + ceil((len-6)/7) 个 CF（序号连续），且 FF 长度位 == 载荷字节数',
+    shape.ok && shape.len === 35 && shape.need === 5 && m.txPayloads.includes(f[5]),
+    `FF len=${shape.len} 载荷=${f[5].length / 2}B 段数=${shape.frames}（应 1+${shape.need}）`
+      + ` 重组命中=${m.txPayloads.includes(f[5])}`);
   ok('回读一致', extractField(await c.readBlock(0x21, 0x22), P_UDS) === v);
 }
 {
@@ -151,12 +238,22 @@ console.log('\n[3] 帧序对齐复核');
   const before = await c.readBlock(0x21, 0x21);
   const v = extractField(before, P_KWP) === 0x5a ? 0x3c : 0x5a;
   m.txLog.length = 0;
+  m.txFrames.length = 0;
+  m.txPayloads.length = 0;
   await c.applyChange(P_KWP, v, { dryRun: false });
-  const f = frames(m);
-  ok('KWP 6 帧主写模板未变',
-    f.length === 6 && f[0] === '1089' && f[1] === '3E00'
-    && f[3] === '170000' && f[4].startsWith('3B') && f[5] === '2121',
-    f.map((x) => x.slice(0, 10)).join(' → '));
+  const f = logicalFrames(m);
+  // `3B 21` + 32 字节块 = 34 字节 > 7 ⇒ 线上必然是 FF + CF；
+  // 断言的是**重组后的 6 条业务帧**，不是线上帧数（线上是 1+4 = 5 段）。
+  ok('KWP 6 帧主写模板未变', f.length === 6 && f[0] === '1089' && f[1] === '3E00'
+    && f[3] === '170000' && f[4].startsWith('3B') && f[5] === '2121', fmtSeq(f));
+  const expKwp = '3B21'
+    + before.map((b, i) => (i === 0 ? v : b))
+      .map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join('');
+  const kShape = segShapeOf(m.txFrames, f[4]);
+  ok('KWP 写载荷逐字节 == 3B21 + 回读块，且线上形态 == 1 FF + ceil((34-6)/7) 个 CF',
+    f[4] === expKwp && kShape.ok && kShape.len === 34 && kShape.need === 4
+    && m.txPayloads.includes(expKwp),
+    `实发 ${f[4]} / 期望 ${expKwp} / FF len=${kShape.len} 段数=${kShape.frames}（应 1+${kShape.need}）`);
 }
 
 // ── ④ 第十阶段审计其余修复的回归 ───────────────────────────────
@@ -172,21 +269,51 @@ console.log('\n[4] 审计其余修复回归');
     !frames(m).some((x) => /^10[0-9A-F]{2}$/i.test(x)), frames(m).join(' → ') || '(空)');
   ok('协议层含统一 sessionless 护栏', /统一护栏跳过会话建立/.test(coderSrc));
 
-  // C3：写帧收到 7F 78 不得重发原请求（重复写入红线）
+  // C3：写帧收到 7F 78 不得重发原请求（重复写入红线）。
+  // ★ 2026-11-16 语义更新：78 = 「ECU 已受理、正在处理」，正确做法是**补保活 3E 00
+  //   续等**并把迟到的最终响应（正响应或非 78 的 NRC）上浮，**不是**当场报错、
+  //   更不是重发原帧。这里用一个「先 78、下一帧回 NRC 0x79」的 ECU 验证整条链：
+  //   写帧只上总线 1 次 + 保活帧恰好 1 次 + 迟到的 NRC 0x79 上浮。
   let hits = 0;
+  let sawWrite = false;
+  let gaveFinal = false;
   const m2 = new MockAdapter({ latencyMs: 0, hooks: {
     uds: (cmd) => {
-      if (cmd.toUpperCase().startsWith('3B') && hits++ === 0) return '7E8 03 7F 3B 78';
+      const up = cmd.toUpperCase();
+      if (up.startsWith('3B') && hits++ === 0) { sawWrite = true; return '7E8 03 7F 3B 78'; }
+      // 写帧挂起之后的**第一发**保活才带出迟到的最终响应（会话自身的 3E00 不算）
+      if (sawWrite && !gaveFinal && up.startsWith('3E')) { gaveFinal = true; return '7E8 03 7F 3B 79'; }
       return undefined;
     },
   } });
   const c2 = mkCoder(m2, 'kwp');
-  let err = '';
-  try { await c2.applyChange(P_KWP, 0x5a, { dryRun: false }); } catch (ex) { err = ex.message; }
-  const writeFrames = m2.txLog.filter((x) => x.toUpperCase().startsWith('3B'));
-  ok('写帧收到 7F 78 只发 1 次、明确报错不重发',
-    writeFrames.length === 1 && /不自动重发/.test(err),
-    `写帧×${writeFrames.length} / ${err.slice(0, 60)}`);
+  let err = null;
+  try { await c2.applyChange(P_KWP, 0x5a, { dryRun: false }); } catch (ex) { err = ex; }
+  // ⚠️ 写帧现在会被分段：`3B` 载荷在 `txLog` 里落成 `10223B…`（FF）+ 4 个 CF，
+  //    所以「写帧上了几次总线」必须按**业务载荷**数，不能按 `startsWith('3B')` 数原文
+  //    —— 那样会数出 0 次，看起来像「写帧根本没发」。
+  const norm1 = (x) => x.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+  const writeIdx = m2.txLog.findIndex((x) => {
+    const h = norm1(x);
+    return h.startsWith('3B') || (h.startsWith('10') && h.slice(4, 6) === '3B');
+  });
+  const writeLogical = logicalFrames(m2).filter((x) => x.startsWith('3B'));
+  const writeAssembled = m2.txPayloads.filter((p) => p.startsWith('3B'));
+  const afterWrite = writeIdx >= 0 ? m2.txLog.slice(writeIdx) : [];
+  const keepFrames = afterWrite.filter((x) => norm1(x) === '3E00');
+  ok('写帧收到 7F 78 只发 1 次、补 3E00 续等并上浮迟到的 NRC（不重发）',
+    writeLogical.length === 1 && writeAssembled.length === 1
+    && keepFrames.length === 1 && !!err && err.nrc === 0x79,
+    `写载荷×${writeLogical.length}（mock 重组完成 ${writeAssembled.length} 次 · 重发会让这两数变 2）`
+      + ` · 写后 3E00×${keepFrames.length} · nrc=${err ? err.nrc : '无'}`
+      + ` / ${err ? err.message.slice(0, 40) : ''}`);
+  // 线上形态单独断：1 FF（长度位 == 载荷字节数）+ ceil((len-6)/7) 个序号连续的 CF
+  const wShape = segShapeOf(m2.txFrames, writeLogical[0] || '');
+  ok('挂起写帧的线上形态 == 1 FF + ceil((len-6)/7) 个 CF（序号连续）',
+    wShape.ok && wShape.len === (writeLogical[0] || '').length / 2
+    && wShape.frames === 1 + wShape.need,
+    `FF len=${wShape.len} 载荷=${(writeLogical[0] || '').length / 2}B`
+      + ` 段数=${wShape.frames}（应 1+${wShape.need}）`);
 
   // 重复免探针直绑（0x07F1 肇事地址）已由生成器全局后处理取消
   const plan = JSON.parse(R('../data/bind-plan.json'));

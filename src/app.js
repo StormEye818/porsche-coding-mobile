@@ -12,8 +12,9 @@
  *
  * 连接与适配器通信参考同门工具；车上的读写走本项目协议层（coder.js）。
  */
+import { timeoutFor } from './comm-timeouts.js';
 import { Coder, CodingError, MissingSeedKeyError, parseResp, parseRespCaf1, parseRespAuto, frameIdsOf, atCmdOk, familyOfReadSid, familyOfItems } from './coder.js';
-import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange, hasReadService, hasWriteService, isReadOnlyItem, readOnlyReason, resolveBlockReadSid, WRITE_SIDS, READ_SIDS, SAFETY } from './schema.js';
+import { canWrite, riskLabel, extractField, decodeValue, validateParam, parseFieldInput, fieldInRange, hasReadService, hasWriteService, isReadOnlyItem, readOnlyReason, resolveBlockReadSid, describeActuatorCard, WRITE_SIDS, READ_SIDS, SAFETY } from './schema.js';
 import { makeProvider, pickVariant } from './seedkey.js';
 import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './variant.js';
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, MODULE_TO_ECUID_LEGACY, SYSTEM_TO_ECUID } from './module-ecu-map.js';
@@ -4012,7 +4013,7 @@ async function restoreCoding(sysLabel) {
       const lidHex = Number(b.lid).toString(16).toUpperCase().padStart(writeWide ? 4 : 2, '0');
       try {
         await coder.securityAccess(0x09, isKwp);
-        const wr = await coder.uds(`${sidHex}${lidHex}${b.raw.toUpperCase()}`, 8000, { pendingWait: true });
+        const wr = await coder.uds(`${sidHex}${lidHex}${b.raw.toUpperCase()}`, timeoutFor('REQUEST'), { pendingWait: true });
         const want = (writeSid + 0x40) & 0xFF;
         if (!wr.body.length || wr.body[0] !== want) {
           throw new Error(`写响应异常：期望 ${want.toString(16)}，实得 `
@@ -4291,22 +4292,32 @@ async function showSysExtra(f) {
       }
       return g;
     };
-    const card = (a) => `
+    // ★ 卡片 meta 一律由 schema.describeActuatorCard() 生成（纯函数，e2e 断言同一份）：
+    //   修掉「RID 十进制当十六进制显示」，并把多址/未验证/双布局这些事实显式说出来。
+    const card = (a) => {
+      const m = describeActuatorCard(a);
+      // ★ 禁驱动（参数多候选 / 两表无模板 / 地址在模块内歧义）→ 按钮**置灰 + 理由**：
+      //   数据层的 driveDisabled 已由 schema.featureFramesFor 落实为「不出帧」，
+      //   界面这一侧必须同样表态，否则用户只会看到"点了没反应"。
+      const blocked = a.driveDisabled === true;
+      // 理由在 title 里再给一次（hover 可见）；esc 只转 <>&，属性里的引号必须自己再转义
+      const dis = blocked
+        ? ` disabled aria-disabled="true" title="${esc(a.driveDisabledReason || '本卡片已禁用驱动').replace(/"/g, '&quot;')}"`
+        : '';
+      const disStyle = blocked ? ' style="opacity:.45;cursor:not-allowed"' : '';
+      return `
       <div class="specialItem">
         <div class="siName">${esc(a.name)}</div>
-        <div class="siMeta">${a.form === '2f' && a.did
-          ? `驱动 2F ${esc(a.didHex)} · 回位 ctrl 0x00`
-          : a.form === '31' && a.rid != null
-            ? `例程 31 01 ${esc(String(a.rid).padStart(4, '0'))}（执行=启动+轮询 31 03）`
-            : '状态 / 信息项（目录项）'}</div>
-        ${a.form === '2f' && a.did ? `<div class="siActs">
-          <button class="actOn" data-did="${a.did}" data-state="${esc((a.drive && a.drive.state) || 'FF 00 00 00')}">驱动</button>
-          <button class="actOff" data-did="${a.did}">回位</button>
+        <div class="siMeta">${esc(m.line)}${m.notes.map((n) => `<div style="color:var(--warn,#c56);margin-top:2px">⚠ ${esc(n)}</div>`).join('')}</div>
+        ${a.form === '2f' && a.did ? `<div class="siActs"${disStyle}>
+          <button class="actOn" data-did="${a.did}" data-state="${esc((a.drive && a.drive.state) || 'FF 00 00 00')}"${dis}>驱动</button>
+          <button class="actOff" data-did="${a.did}"${dis}>回位</button>
         </div>` : ''}
-        ${a.form === '31' && a.rid != null ? `<div class="siActs">
-          <button class="actRun" data-rid="${a.rid}" data-sub="${a.sub || 1}" data-params="${esc(a.params || '')}">执行</button>
+        ${a.form === '31' && a.rid != null ? `<div class="siActs"${disStyle}>
+          <button class="actRun" data-rid="${a.rid}" data-sub="${a.sub || 1}" data-params="${esc(a.params || '')}"${dis}>执行</button>
         </div>` : ''}
       </div>`;
+    };
     let actHtml = '';
     const routine = all.filter((a) => a.form === '31' && a.rid != null);
     const sect = (title, list, limit) => {
@@ -4493,7 +4504,7 @@ async function showSysExtra(f) {
             const lvl = (lvlByte & 1) ? lvlByte : (lvlByte - 1);
             await coder.securityAccessEx({ level: lvl, kwp: sid === 0x17 }).catch(() => {});
           } else {
-            await coder.uds(raw, 6000, { allowEmpty: isRead(raw) });
+            await coder.uds(raw, timeoutFor('REQUEST'), { allowEmpty: isRead(raw) });
           }
           log(`  ✅ ${done}/${cmds.length} ${raw.slice(0, 24)}`, 'ok');
         } catch (e) {
@@ -4649,6 +4660,10 @@ async function showSysExtra(f) {
     b.onclick = async () => {
       if (!needLink()) return;
       try {
+        // ⚠️ data/actuator.json 的 `rid` 是**十进制数字**（53250 = 0xD002），
+        //   按钮的 data-rid 也是它原样落进 DOM，所以这里必须按 10 进制解析回来；
+        //   只有**显示**才转 16 进制（见下面 ridHex，或 schema.describeActuatorCard）。
+        //   旧 bug 是显示侧把十进制当十六进制印（「例程 31 01 53250」），不是这行。
         const rid = parseInt(b.dataset.rid, 10);
         const sub = parseInt(b.dataset.sub, 10) || 1;
         const params = (b.dataset.params || '').replace(/ /g, '');
@@ -4840,7 +4855,7 @@ async function showSysExtra(f) {
       const sidHex = writeSid.toString(16).toUpperCase().padStart(2, '0');
       const lidHex = Number(lid).toString(16).toUpperCase().padStart(writePad, '0');
       try {
-        const wr = await coder.uds(`${sidHex}${lidHex}${clean.toUpperCase()}`, 8000, { pendingWait: true });
+        const wr = await coder.uds(`${sidHex}${lidHex}${clean.toUpperCase()}`, timeoutFor('REQUEST'), { pendingWait: true });
         const want = (Number(writeSid) + 0x40) & 0xff;
         if (!wr.body.length || wr.body[0] !== want) throw new Error('写响应 SID 不符');
         const idOk = writeSid === 0x2E
@@ -4857,7 +4872,7 @@ async function showSysExtra(f) {
         try {
           await coder.enterSessionFor('coding', { skipIdent: true, strictSession: true });
           await coder.securityAccess(0x09, isKwp);
-          await coder.uds(`${sidHex}${lidHex}${backupHex.toUpperCase()}`, 8000, { pendingWait: true });
+          await coder.uds(`${sidHex}${lidHex}${backupHex.toUpperCase()}`, timeoutFor('REQUEST'), { pendingWait: true });
           const restored = await coder.readBlock(lid, readSid);
           const ok = restored.map((b) => b.toString(16).padStart(2, '0')).join('') === backupHex.toUpperCase();
           throw new Error(e.message + (ok ? '（已恢复原块）' : '（⚠️ 恢复也失败，请用恢复备份）'));

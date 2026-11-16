@@ -869,6 +869,75 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
   });
 }
 
+// ⑬ 行为层对齐行（2026-11-17 新增）—— 字节对齐之外的四层
+//
+// 为什么必须有这一段：238 行全部回答「该发什么字节」，**没有一行**回答
+// 「这些字节怎么上总线、等多久、ECU 说 78 时怎么办」。而 431 能离线做完
+// 全链路，说明这些规则也静态存在于包内，必须同等对待、同等由确定性命令证明。
+// 5 行对应 5 个新门禁，forensicGrade 由 gateVerdict 真跑 gate 决定（非手填）。
+{
+  add('AD-BEHAV-ISOTP-MULTIFRAME', 'BEHAVIOR-TRANSPORT', 'ISO-TP 多帧 TX 分段（我方拼 PCI）', {
+    originalText: '我方 TX 必须自行完成 ISO-TP 分段：≤7 字节单帧，>7 字节 1 个 FF + ceil((n-6)/7) 个 CF，序号 1..0xF 回绕、末帧补 0x00；分段后重组必须与业务载荷逐字节相等。依据：适配器 ATCAF1 在 EA 通道不被执行，PCI 必须由我方拼（src/coder.js:327 实车记录），而 431 自身的写帧实测最长 261 字节（2E 32 字节块 + 回读块），远超单帧 7 字节上限',
+    evidence431: 'COMMAND.GAG.bin:71 个 2F 实测 DID 帧长分布 7×1/8×68/9×1/11×1；31 请求 236 条分布 {4:42,5:73,6:77,7:13,8:16,9:1,12:9,14:5}；2E 静态最大块 258B',
+    codePath: 'src/isotp-tx.js:segmentPayload',
+    gate: 'tools/verify-isotp-tx.mjs', assertion: 'ISOTP_TX_SEGMENTATION_OEM',
+    diffCmd: 'node tools/verify-isotp-tx.mjs',
+    nextCarrier: 'src/elm327.js:sendIsoTp（ATCAF0 → FF/FC/CF → finally 恢复 ATCAF1）',
+    scanCmd: 'node -e "const s=require(\'fs\').readFileSync(\'src/isotp-tx.js\',\'utf8\');console.log(\'MAX_SF_PAYLOAD\',/MAX_SF_PAYLOAD\\s*=\\s*7/.test(s))"',
+    carrierPhase: 'T05',
+    check: evidence('门禁自证：7B 边界单帧 / 8B 起分段 / 11B / 71 个实测 DID 逐条拼回逐字节相等',
+      'tools/verify-isotp-tx.mjs', 'ISOTP_TX_SEGMENTATION_OEM'),
+  });
+  add('AD-BEHAV-78-SINGLE-SEND', 'BEHAVIOR-SESSION', '7F xx 78 语义：不重发、补保活续等', {
+    originalText: '7F xx 78 = ECU 已受理、正在处理：原请求只上总线 1 次，绝不重发；改为补保活 3E 00 续等，迟到的最终响应（正响应或非 78 的 NRC）上浮；保活自身回 7F 3E xx 不算失败。431 侧依据：全部 Resend Frame 串只挂在超时分支，Set7F78Ctrl 仅被 libOBD2_SPEC_APP.so 引用，2E/3B/27/17 无 SID 特判',
+    evidence431: 'libCOMM_ABSTRACT_LAYER.so:Resend Frame（仅超时分支）/ Set7F78Ctrl 导入方唯一',
+    codePath: 'src/coder.js:uds',
+    gate: 'tools/verify-keepalive-78.mjs', assertion: 'KEEPALIVE_78_SINGLE_SEND',
+    diffCmd: 'node tools/verify-keepalive-78.mjs',
+    nextCarrier: 'src/coder.js:pendingRounds 分支（78→78→6E 全链；31 01 的 pendingWait 作用域保持不变）',
+    scanCmd: 'node -e "const s=require(\'fs\').readFileSync(\'src/coder.js\',\'utf8\');console.log(\'KEEPALIVE\',/KEEPALIVE_MS/.test(s))"',
+    carrierPhase: 'T05',
+    check: evidence('门禁自证：写帧恰好 1 次 / 3E00 恰好 2 次 / 迟到 NRC 0x79 上浮 / 耗尽报「结果不明」时写帧仍为 1',
+      'tools/verify-keepalive-78.mjs', 'KEEPALIVE_78_SINGLE_SEND'),
+  });
+  add('AD-BEHAV-COMM-TIMEOUT', 'BEHAVIOR-TIMEOUT', '等待参数单一真值表（5000/8000/16000）', {
+    originalText: '等待参数单一真值：LINK_DEFAULT 5000 / IDENTIFY 8000 / RESET 16000 ms，取自 libCOMM_ABSTRACT_LAYER.so 的 .data 全局 int（文件偏移 0xC2024 / VA 0xC3024，init 88 13 00 00 = 5000）；未知角色必须抛错、不得回落默认值；未定值的 5 处跨库候选列入 unresolvedCandidates，且必须证明 timeoutFor() 解析不到它们',
+    evidence431: 'libCOMM_ABSTRACT_LAYER.so:0xC3024（file 0xC2024）init 0x1388；BeginCombination/EndCombination 内 8 处调用点',
+    codePath: 'src/comm-timeouts.js:timeoutFor',
+    gate: 'tools/verify-comm-timeouts.mjs', assertion: 'COMM_TIMEOUT_431_STATIC',
+    diffCmd: 'node tools/verify-comm-timeouts.mjs',
+    nextCarrier: 'src/comm-timeouts.js:COMM_TIMEOUT（数据侧真值 data/comm-timeouts-oem.json 双向等式）',
+    scanCmd: 'node -e "const s=require(\'fs\').readFileSync(\'src/comm-timeouts.js\',\'utf8\');console.log(\'431字面量\',(s.match(/431/g)||[]).length)"',
+    carrierPhase: 'T05',
+    check: evidence('门禁自证：3 个已接线值 ∈{5000,8000,16000}、越界集为空、5 条候选逐条字段齐备且 timeoutFor 全不可解析',
+      'tools/verify-comm-timeouts.mjs', 'COMM_TIMEOUT_431_STATIC'),
+  });
+  add('AD-BEHAV-CATALOG-FRAME', 'BEHAVIOR-CATALOG', '执行器构帧地址取自命令块 +6 u16LE', {
+    originalText: '执行器构帧字节级：2F 条目 DID / 31 条目 RID 均取自 ALL_ACTINFO 命令块 +6 的 u16LE（不是 +0 的类别字）；320 条 2F / 283 条 31 逐条与 BIN 独立重解析结果相等。反例已钉死：把 +0..+1 类别字当 DID 会把 150 个具名执行器塌成同一个 0x0101 地址',
+    evidence431: 'ALL_ACTINFO.BIN:命令块 +6 u16LE（sha256 aa856e33…）；GAG 实测 DID 集 LE 53 命中 / BE 14，随机基线 0.31',
+    codePath: 'src/schema.js:featureFramesFor',
+    gate: 'tools/verify-catalog-frame-bytes.mjs', assertion: 'CATALOG_FRAME_BYTE_EQUAL_431',
+    diffCmd: 'node tools/verify-catalog-frame-bytes.mjs',
+    nextCarrier: 'data/actuator.json didCandidates/ridCandidates（规范 11 字节记录形态下的候选地址）',
+    scanCmd: 'node -e "const d=require(\'./data/actuator.json\');const i=d.items;console.log(\'2f\',i.filter(x=>x.form===\'2f\').length,\'31\',i.filter(x=>x.form===\'31\').length)"',
+    carrierPhase: 'T05',
+    check: evidence('门禁自证：门禁自己重解析 BIN，320/320 + 283/283；端序 LE 53:BE 14 与随机基线 0.31 对比；old-path 反例 0/320',
+      'tools/verify-catalog-frame-bytes.mjs', 'CATALOG_FRAME_BYTE_EQUAL_431'),
+  });
+  add('AD-BEHAV-WWW-DATA', 'BEHAVIOR-ARTIFACT', '出厂产物 www/data 与仓库 data 逐文件字节相等', {
+    originalText: '出厂产物 www/data 与仓库 data 逐文件 sha256 相等，且同步集之外的残留文件为 0；同步集必须从 scripts/sync.mjs 现读（SKIP / RUNTIME_REACHABLE），不得硬编码。并须证明产物「一致 ≠ 正确」：feature-catalog.js 消费同步后的数据时，3 个不同 DID 的 2F 条目必须出 3 个互不相同的 8 字节帧',
+    evidence431: 'scripts/sync.mjs:SKIP 9 项 / RUNTIME_REACHABLE 12 项（运行时零 fetch 项不进安装包）',
+    codePath: 'src/special-catalog.js:FEATURE_DATA_SOURCES',
+    gate: 'tools/verify-www-data-identical.mjs', assertion: 'WWW_DATA_BYTE_IDENTICAL',
+    diffCmd: 'node tools/verify-www-data-identical.mjs',
+    nextCarrier: 'scripts/sync.mjs（先清空再拷，避免旧中间产物滞留 www/data）',
+    scanCmd: 'node -e "const s=require(\'fs\').readFileSync(\'scripts/sync.mjs\',\'utf8\');console.log(\'SKIP项\',(s.match(/SKIP = new Set/g)||[]).length)"',
+    carrierPhase: 'T05',
+    check: evidence('门禁自证：同步集现读 sync.mjs 源码解析、双向 sha256、缺失/不同/多余三类全 0，另有 5 组 mkdtemp 反向自检',
+      'tools/verify-www-data-identical.mjs', 'WWW_DATA_BYTE_IDENTICAL'),
+  });
+}
+
 // ─────────────────────────── 落盘 ───────────────────────────
 const numberSources = measureNumberSources();
 const legacyNumbers = legacyNumbersFromPrd();

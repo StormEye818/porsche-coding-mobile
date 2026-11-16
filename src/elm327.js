@@ -5,7 +5,36 @@
  * 传输靠 PortLike：write(bytes|string) + on('data')。
  *
  * 实测（vLinker MS）：ELM327 v2.3，应答带命令回显，直到 '>' 提示符结束。
+ *
+ * ⚠️ 多帧发送（`sendIsoTp`）刻意**不**引用 `comm-timeouts.js`：
+ *    `timeoutFor` 的档位是「ECU 请求-应答截止时间」语义（category ①），
+ *    适配器层窗口属 category ③，两者不能混用（门禁 `COMM_TIMEOUT_*_STATIC`
+ *    的第 ⑦ 条断言就在钉这条）。FC 等待窗口因此**继承调用方传入的 `timeoutMs`**
+ *    （即 `coder.uds` 那条请求自己的截止时间），必要时用
+ *    `opts.fcWaitMs` / `opts.fcRetryMs` / `opts.cfWindowMs` 覆盖。
  */
+import { needsSegmentation, segmentPayload, parseFlowControl } from './isotp-tx.js';
+
+/**
+ * 去掉 ELM 提示符噪声，只留数据行。
+ *
+ * 为什么需要：多帧发送时一次 `_cmdLocked` 的返回里可能出现**两个** prompt ——
+ * 先是「这一帧没有业务应答」的空 prompt，随后异步到达的流控帧又带一个 prompt
+ * （真车同样如此：FC 是接收方自己上总线的，落在一个命令窗口内）。
+ * 若只剥末尾一个 `>`，行首会留下 `\r\r>`，把 `30 00 00` 污染成 `>7e8 30 00 00`。
+ *
+ * @param {string} text
+ * @returns {string} 逐行 trim、去空行、`>` 变空格后的文本
+ */
+function stripPrompts(text) {
+  return String(text == null ? '' : text)
+    .replace(/>/g, ' ')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join('\n');
+}
 
 export class Elm327Error extends Error {
   constructor(msg, code) {
@@ -178,6 +207,178 @@ export class Elm327 {
   /** 发一帧 UDS/ISO-TP 十六进制，返回去空白的应答文本 */
   async request(hexStr, timeoutMs = 5000) {
     return this.cmd(hexStr, timeoutMs);
+  }
+
+  /**
+   * 发一条业务载荷，**需要时自行做 ISO-TP 分段**（ATCAF0 + 自拼 PCI）。
+   *
+   * 为什么必须自己做（不是「也可以自己做」）：
+   *   vLinker MS 经 EA 通道**不执行 ATCAF1**（`coder.js` 有实车记录：CAF1 下 RX 仍带 PCI），
+   *   把加 PCI / 分段委托给适配器固件在这条路上不成立；而原厂自带 COMM 层
+   *   （`libCOMM_ABSTRACT_LAYER.so`）本来就是自己拼 PCI 的。要对齐原厂线上字节，只能自己拼。
+   *
+   * 行为（严格）：
+   *   · 载荷 ≤ 7 字节 → **直接走现有 `cmd`**，行为零变化（SF 路径一个字没动）；
+   *   · 载荷 ≥ 8 字节 →
+   *       1. `ATCAF0`：回执非 OK 立即抛 `ISO_TP_TX_UNSUPPORTED`，**一条业务帧都不发**；
+   *       2. 发 FF，等 FC（`parseFlowControl` 逐帧找）；找不到再等一轮，
+   *          仍无 → `ISO_TP_TX_FC_TIMEOUT`（**重发 FF 等于重复提交，绝对禁止**）；
+   *       3. 按 `blockSize` / `stMinMs` 发 CF；每发完一个 block 必须再等一次 FC；
+   *          FC 状态 2（overflow）→ `ISO_TP_TX_OVERFLOW` 并**立即停发**；
+   *          FC 状态 1（WAIT）→ 不推进，继续等下一帧 FC；
+   *       4. `finally` 里恢复 `ATCAF1`（恢复失败也留痕到 `this.log`），保证后续读路径不受影响。
+   *
+   * @param {string} payloadHex 业务载荷（可带空格）
+   * @param {number} timeoutMs  FC 等待/CF 窗口基准（继承自调用方的请求截止时间）
+   * @param {object} opts  `{ fcWaitMs, fcRetryMs, cfWindowMs }` 覆盖上面三个窗口
+   * @returns {Promise<string>} 最后一轮 `cmd` 的原始文本（让 `Coder.uds` 的解析层完全不用改）
+   */
+  async sendIsoTp(payloadHex, timeoutMs = this.timeoutMs, opts = {}) {
+    // SF 路径：不加 PCI、不改 caf，原样交给 cmd。
+    if (!needsSegmentation(payloadHex)) return this.cmd(payloadHex, timeoutMs, opts);
+    // 整段发送必须独占串口（半双工）：用既有 reqChain 串行锁把它锁住。
+    const run = this.reqChain.then(() => this._sendIsoTpLocked(payloadHex, timeoutMs, opts));
+    this.reqChain = run.then(() => {}, () => {});
+    return run;
+  }
+
+  /** `sendIsoTp` 的锁定实现（内部只用 `_cmdLocked`，不能再走 `cmd` 以免自锁）。 */
+  async _sendIsoTpLocked(payloadHex, timeoutMs, opts = {}) {
+    const seg = segmentPayload(payloadHex);
+    const base = Number(timeoutMs) > 0 ? Number(timeoutMs) : this.timeoutMs;
+    const fcWaitMs = Number(opts.fcWaitMs) > 0 ? Number(opts.fcWaitMs) : base;
+    const fcRetryMs = Number(opts.fcRetryMs) > 0 ? Number(opts.fcRetryMs) : base;
+    const cfWindowMs = Number(opts.cfWindowMs) > 0 ? Number(opts.cfWindowMs) : base;
+    const atWindowMs = Math.min(fcWaitMs, 2000);
+
+    // ── 1) 交出 PCI 控制权：ATCAF0 必须回 OK ──
+    const ack = await this._cmdLocked('ATCAF0', atWindowMs, { noDelay: true });
+    if (!/\bOK\b/i.test(String(ack || ''))) {
+      throw new Elm327Error(
+        `ATCAF0 未被接受（回「${String(ack || '(空)').trim().slice(0, 24)}」）—— `
+        + '适配器不肯交出 PCI 控制权时，多帧请求无法自行拼装；拒绝发送（宁可拒发，不发垃圾）',
+        'ISO_TP_TX_UNSUPPORTED');
+    }
+
+    let restored = false;
+    /** 恢复 ATCAF1；失败不抛（`finally` 里抛会盖掉真正的错误），但必须留痕。 */
+    const restoreCaf1 = async () => {
+      if (restored) return;
+      restored = true;
+      try {
+        const r = await this._cmdLocked('ATCAF1', atWindowMs, { noDelay: true });
+        if (!/\bOK\b/i.test(String(r || ''))) {
+          this.log.push(['ATCAF1', `${String(r || '(空)').trim()} (恢复非 OK 回执)`]);
+        }
+      } catch (e) {
+        this.log.push(['ATCAF1', `恢复失败：${e.message}`]);
+      }
+    };
+
+    try {
+      // ── 2) FF + 第一个 FC ──
+      this.log.push(['TX-SEG', seg.frames[0]]);
+      let text = await this._cmdLocked(seg.frames[0], fcWaitMs, { noDelay: true });
+      let fc = this._findFlowControl(text);
+      if (!fc) {
+        // 再等一轮：只等，不重发 FF（重发 = 再提交一次）
+        text = await this._readPending(fcRetryMs);
+        fc = this._findFlowControl(text);
+      }
+      if (!fc) {
+        throw new Elm327Error(
+          `ISO-TP 首帧后未收到流控帧（等 ${fcWaitMs + fcRetryMs}ms）—— `
+          + '不重发首帧（重发等于把同一份数据再提交一次）', 'ISO_TP_TX_FC_TIMEOUT');
+      }
+      this._assertNotOverflow(fc);
+
+      // ── 3) 按 blockSize / stMin 发 CF ──
+      let idx = 1;
+      while (idx < seg.frames.length) {
+        // WAIT（status=1）：不推进，继续等下一帧 FC
+        if (fc.status === 1) {
+          const t = await this._readPending(fcRetryMs);
+          const f2 = this._findFlowControl(t);
+          if (!f2) {
+            throw new Elm327Error(
+              `ECU 回 WAIT 流控后未再给 FC（等 ${fcRetryMs}ms）—— 停发，不硬着头皮发完`,
+              'ISO_TP_TX_FC_TIMEOUT');
+          }
+          this._assertNotOverflow(f2);
+          fc = f2;
+          continue;
+        }
+        const blockLen = fc.blockSize === 0
+          ? seg.frames.length - idx
+          : Math.min(fc.blockSize, seg.frames.length - idx);
+        for (let k = 0; k < blockLen; k += 1) {
+          const frame = seg.frames[idx];
+          idx += 1;
+          this.log.push(['TX-SEG', frame]);
+          text = await this._cmdLocked(frame, cfWindowMs, { noDelay: true });
+          if (fc.stMinMs > 0 && idx < seg.frames.length) {
+            await new Promise((r) => setTimeout(r, Math.ceil(fc.stMinMs)));
+          }
+        }
+        if (idx >= seg.frames.length) break;      // 末帧发完 → 不需要再要 FC
+        // 一个 block 发完：必须再拿一个 FC 才继续
+        let f2 = this._findFlowControl(text);
+        if (!f2) f2 = this._findFlowControl(await this._readPending(fcRetryMs));
+        if (!f2) {
+          throw new Elm327Error(
+            `已发 ${idx - 1} 个连续帧后未收到后续流控帧 —— 停发，不硬着头皮发完`,
+            'ISO_TP_TX_FC_TIMEOUT');
+        }
+        this._assertNotOverflow(f2);
+        fc = f2;
+      }
+      return stripPrompts(text);
+    } finally {
+      await restoreCaf1();
+    }
+  }
+
+  /** FC 状态 2 = overflow：立即停发，未发出的 CF 一律丢弃。 */
+  _assertNotOverflow(fc) {
+    if (fc && fc.status === 2) {
+      throw new Elm327Error(
+        'ECU 回流控溢出（FC status=2 / 0x32）—— 立即停发；'
+        + '说明它没准备好接这么多数据，继续发只会把已收的部分也毁掉',
+        'ISO_TP_TX_OVERFLOW');
+    }
+  }
+
+  /** 在一段应答文本里找第一个流控帧（逐行，容忍行首 CAN ID）。 */
+  _findFlowControl(text) {
+    for (const line of stripPrompts(text).split(/\n+/)) {
+      const fc = parseFlowControl(line);
+      if (fc) return fc;
+    }
+    return null;
+  }
+
+  /**
+   * 只等不发的读（用于「等 ECU 主动送来的 FC」）。
+   *
+   * ⚠️ 为什么需要一个「不发命令的读」：ISO-TP 的 FC 是接收方**主动**上总线的，
+   *    不是对某条请求的应答。此时再发一帧去「催」FC，等于往总线上塞业务帧，
+   *    会把 FF/CF 序列打断（真车直接 STOPPED）。
+   */
+  async _readPending(timeoutMs) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < timeoutMs) {
+      const s = new TextDecoder('latin1').decode(this.buf);
+      if (s.includes('>')) {
+        const out = this._drain();
+        this.log.push(['WAIT-FC', out]);
+        return stripPrompts(out);
+      }
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    const out = this._drain();
+    this.buf = new Uint8Array(0);
+    this.log.push(['WAIT-FC', out || '(超时)']);
+    return stripPrompts(out);
   }
 
   /** 把 ELM 应答文本里的 hex 字节抽出来 */

@@ -14,6 +14,7 @@
  *   - 可注入故障（无应答 / NRC），用来验错误反馈
  */
 import { Emitter } from './emitter.js';
+import { MAX_SF_PAYLOAD } from './isotp-tx.js';
 
 /**
  * 模拟车身份（VIN / 车名 / 车型 / 模块身份串四者同源，2026-11-13 修复）。
@@ -57,9 +58,29 @@ export class MockAdapter extends Emitter {
     this.writeVerify = opts.writeVerify || null;
     this.hooks = opts.hooks || {};
     // 观测用计数器（演练脚本断言）
-    this.stats = { keyTries: 0, keyRejects: 0, routineCalls: 0, nrc78: 0, writes: 0, writeRejects: 0 };
+    this.stats = {
+      keyTries: 0, keyRejects: 0, routineCalls: 0, nrc78: 0, writes: 0, writeRejects: 0,
+      txSegErrors: 0,
+    };
     this.lastSeed = null;
     this.txLog = [];
+    // ★ 2026-11-17：与 txLog **同下标**的时刻数组（验 STmin 节拍用）。
+    this.txTimes = [];
+    // ★ 2026-11-17 TX 方向的 ISO-TP 模型（仅 caf===0）观测面：
+    //   · txFrames   每一段的原文（`10082F…` / `2100…`），按发送顺序
+    //   · txPayloads 重组后的**业务载荷**（`2F010103FF000000`）—— 断言「我方发出的
+    //                业务帧逐字节等于记录值」应该看这个，而不是 txLog（txLog 是线上分段）
+    this.txFrames = [];
+    this.txPayloads = [];
+    // 流控（FC）配方：blockSize / stMin(原始字节) / status(低 nibble，2=溢出)
+    //   blockSize>0 时「收满一个 block 才回一次 FC」，且 FC 是**异步推送**的
+    //   （真车 ECU 主动上总线，不靠客户端触发）—— 没等 FC 就硬发 CF 会被丢帧。
+    this.fc = { blockSize: 0, stMin: 0, status: 0, ...(opts.fc || {}) };
+    // FC 异步推送延迟（ms）：给客户端留出「停下来等」的窗口
+    this.fcDelayMs = opts.fcDelayMs ?? 5;
+    // 指定命令回 `?`（验「ATCAF0 不被支持 → 拒绝发送」）
+    this.rejectAt = (opts.rejectAt || []).map((s) => String(s).toUpperCase());
+    this._rxSeg = null;               // TX 分段重组中的状态
     this.at = { echo: false, headers: true, protocol: 6 };
     this.address = { tx: 0x7E0, rx: 0x7E8 };
     // ★ 2026-10-29：默认按真车行为（ATCAF1：适配器自动加/剥 PCI）。
@@ -86,6 +107,23 @@ export class MockAdapter extends Emitter {
     this.replay = opts.replay || null;
     this.replayUsed = new Set();
     this.replayMisses = [];
+    // ★ 2026-11-16 延迟最终响应（`7F xx 78` 挂起）能力 —— 验「78 只续等、绝不重发原帧」。
+    //   delay78 = { nrcTimes: 2, frames: ['61A1 FF 00 00 00'], delayMs: 120, keepAliveNrc: 0x12 }
+    //     · nrcTimes      本次请求总共回几次 `7F <sid> 78`（**含原请求那一次**）
+    //     · frames        挂起结束后要「带出来」的帧（原样，`\r` 分隔多行）。
+    //                     省略则用原请求的正常应答（`#respond` 的结果）
+    //     · delayMs       最后一次应答的额外延迟（模拟 ECU 还在算；0/null = 不加）
+    //     · keepAliveNrc  非空时，等待期间**保活帧自己的**应答改成 `7F 3E <code>`
+    //                     （默认回正常的 `7E 00`）—— 用来验「保活自报 NRC 不算本请求失败」
+    //   时序（nrcTimes=2，请求 2E…）：
+    //     原请求 → 7F 2E 78 ；第 1 轮 3E00 → 7F 2E 78 ；第 2 轮 3E00 → 「3E 自己的应答」+「pending 帧」
+    //   ⚠️ pending 帧**挂在后续某一帧的应答里**一起返还 —— 真车 ECU 处理完不会自己主动上总线，
+    //      它是在收到下一帧时才把结果带出来。这正是「保活 + 扫描本轮所有帧」的前提。
+    //   ⚠️ txLog 记录**每一次** TX 的原始字符串（含 AT 命令与业务帧），
+    //      「原帧只出现 1 次」就是从这里数出来的。
+    this.delay78 = opts.delay78 || null;
+    this._d78 = null;                 // { sid, pending, nrcLeft, keepAliveNrc } —— 挂起中的原请求
+    this._delayHint = 0;              // 下一次应答的额外延迟（ms），由 #uds 设置
     this.name = 'vLinker MS (模拟)';
   }
 
@@ -93,6 +131,7 @@ export class MockAdapter extends Emitter {
   write(data) {
     const cmd = String(data).replace(/\r/g, '').trim();
     this.txLog.push(cmd);
+    this.txTimes.push(Date.now());
     setTimeout(() => {
       // ⚠️⚠️ 无论 #handle 返回什么，都**必须**回一个 prompt ——
       //    静默不回会让 elm.cmd 永远等不到 → enterSession 挂死 → 转圈停不下来
@@ -104,22 +143,41 @@ export class MockAdapter extends Emitter {
         out = 'NO DATA';
       }
       if (out === null || out === undefined) out = 'NO DATA';
-      // ⚠️ Elm327 按字节收（_feed 拼 Uint8Array），必须发 Uint8Array 不能发字符串
-      const s = out + '\r\r>';
-      const u8 = new Uint8Array(s.length);
-      for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i) & 0xff;
-      this.emit('data', u8);
+      // ★ 2026-11-16：延迟最终响应（delay78.delayMs）。#handle 已在本轮同步算出
+      //   应答，这里只是把**回送时刻**推迟 —— 相当于 ECU 还在算。
+      const extra = this._delayHint || 0;
+      this._delayHint = 0;
+      if (extra > 0) {
+        setTimeout(() => this.#emitText(out), extra);
+        return;
+      }
+      this.#emitText(out);
     }, this.latencyMs);
+  }
+
+  /** 把一段文本（含结尾 prompt）按字节推给上层（Elm327._feed 收 Uint8Array）。 */
+  #emitText(out) {
+    const s = out + '\r\r>';
+    const u8 = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i) & 0xff;
+    this.emit('data', u8);
   }
   close() { }
 
   // ---- 伪造 ELM327 ----
   #handle(cmd) {
-    const up = cmd.toUpperCase();
+    const up = cmd.toUpperCase().trim();
+    if (this.rejectAt.includes(up)) return '?';        // 验「适配器不支持」路径
     if (up.startsWith('AT')) {
       if (up === 'ATZ') return 'ELM327 v2.3';
       if (up === 'ATI') return this.name;
       if (up === 'ATRV') return '12.6V';
+      // ★ 2026-11-17：CAF 必须能被真的关掉 —— 关掉之后由**我方**拼 PCI（见 #txIsoTp）
+      if (up.startsWith('ATCAF')) {
+        const v = parseInt(cmd.slice(5), 10);
+        if (v === 0 || v === 1) this.caf = v;
+        return 'OK';
+      }
       if (up.startsWith('ATSH')) { this.address.tx = parseInt(cmd.slice(4), 16) || 0x7E0; return 'OK'; }
       if (up.startsWith('ATCRA')) { this.address.rx = parseInt(cmd.slice(5), 16) || 0x7E8; return 'OK'; }
       if (up.startsWith('ATSP')) { this.at.protocol = +cmd.slice(4) || 6; return 'OK'; }
@@ -141,14 +199,202 @@ export class MockAdapter extends Emitter {
       this.replayMisses.push(clean);
       return 'NO DATA';
     }
-    // 外部钩子可接管任意请求（返回 undefined = 走下面的默认实现）
-    const hooked = this.hooks.uds ? this.hooks.uds(cmd) : undefined;
+    // ★ 2026-11-17：caf=0 时线上是**带 PCI 的原始帧**，必须先按 ISO-TP 重组再交给业务层。
+    //   这不是「多此一举」：把 8 字节业务帧原样发出去时，首字节 0x2F 的高 nibble=2
+    //   会被当成 CF —— 重组器会判「无首帧」，回 NO DATA。旧路径正是这样失败的（门禁 ⑧）。
+    if (this.caf === 0) return this.#txIsoTp(cmd);
+    return this.#dispatch(cmd);
+  }
+
+  /**
+   * 把一条**业务载荷**（已剥 PCI）交给业务层：先问外部钩子，再走默认实现。
+   *
+   * ⚠️ caf=0（我们自己拼 PCI）时，钩子必须作用在**重组后的载荷**上，而不是线上帧。
+   *    否则 `hooks.uds` 看到的是 `10223B…` 这种带 PCI 的首帧，既有测试里
+   *    `cmd.startsWith('3B')` 这类判据会全部落空 —— 表现为「钩子根本没被调用」，
+   *    看起来像客户端没发写帧，实际是 mock 的建模缺口。
+   */
+  #dispatch(payloadHex) {
+    const hooked = this.hooks.uds ? this.hooks.uds(payloadHex) : undefined;
     if (hooked !== undefined && hooked !== null) return hooked;
-    return this.#uds(cmd);
+    return this.#uds(payloadHex);
+  }
+
+  /**
+   * TX 方向的 ISO-TP 模型（仅 `caf === 0`）。
+   *
+   * 语义（对应 `elm327.sendIsoTp`）：
+   *   · `1x`（FF）→ 记下声明长度与已收字节，回一帧 FC（`30 <BS> <STmin>`）；
+   *     若 fc.status 低 nibble = 2 → 立刻回 `32 …` 并**不再接受任何 CF**
+   *     （客户端必须停发；硬发的 CF 一律丢）。
+   *   · `2x`（CF）→ 校序号、拼字节；收满声明长度就把**业务载荷**交给 `#dispatch`，
+   *     应答照常回（caf=0 时带 PCI）。
+   *   · `0x`（SF）→ 按 PCI 长度位剥出载荷再交 `#dispatch`。**必须剥**：`06 3E 00`
+   *     原样交给业务层，业务层会把 `0x06` 当 SID 解析（错帧）。
+   *   · `3x`（FC）→ 现实中「客户端发 FC」不会出现；保持原样交 `#uds`，
+   *     不做重组也不剥 PCI（改了零收益、只有回归风险）。
+   *   · `blockSize > 0` 时，收满一个 block 就**异步推送**一帧 FC（真车 ECU 是
+   *     主动上总线的），并把状态置为「等 FC」；此时收到 CF 一律丢帧并记
+   *     `stats.txSegErrors` —— 这样「没等 FC 就硬发」必然失败，门禁才抓得到。
+   *   · 序号错 / 缺首帧 / 长度不符 → 回 `NO DATA` + `txSegErrors++`。
+   */
+  #txIsoTp(hex) {
+    const clean = String(hex || '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+    if (!clean.length || clean.length % 2 !== 0) { this.stats.txSegErrors += 1; return 'NO DATA'; }
+    const bytes = [];
+    for (let i = 0; i < clean.length; i += 2) bytes.push(parseInt(clean.substr(i, 2), 16) & 0xff);
+    this.txFrames.push(clean);
+    const pci = bytes[0];
+    const type = (pci >> 4) & 0x0f;
+
+    // ── CF ──
+    if (type === 0x2) {
+      const seg = this._rxSeg;
+      if (!seg) { this.stats.txSegErrors += 1; return 'NO DATA'; }        // 缺首帧
+      if (seg.awaitFc) { this.stats.txSegErrors += 1; this._rxSeg = null; return 'NO DATA'; }
+      if ((pci & 0x0f) !== seg.expectSeq) {                               // 序号错
+        this.stats.txSegErrors += 1;
+        this._rxSeg = null;
+        return 'NO DATA';
+      }
+      seg.expectSeq = (seg.expectSeq + 1) & 0x0f;
+      for (const b of bytes.slice(1)) seg.data.push(b);
+      seg.cfCount += 1;
+      if (seg.data.length >= seg.len) {
+        const payload = seg.data.slice(0, seg.len);
+        const hexPayload = payload.map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+        this._rxSeg = null;
+        this.txPayloads.push(hexPayload);
+        return this.#dispatch(hexPayload);                                // 交给业务层（钩子优先）
+      }
+      const bs = Number(this.fc.blockSize) || 0;
+      if (bs > 0 && seg.cfCount > 0 && seg.cfCount % bs === 0) {
+        seg.awaitFc = true;
+        this.#scheduleFc();
+      }
+      return '';
+    }
+
+    // ── FF ──
+    if (type === 0x1) {
+      const len = ((pci & 0x0f) << 8) | (bytes[1] | 0);
+      if (len <= 0 || len > 0x0fff) { this.stats.txSegErrors += 1; return 'NO DATA'; }
+      const data = bytes.slice(2);
+      // 溢出：先回 FC 0x32，然后**不接受任何 CF**（客户端应停发）
+      if ((Number(this.fc.status) & 0x0f) === 2) {
+        this._rxSeg = null;
+        return this.#flowControlFrame();
+      }
+      if (data.length >= len) {                                           // 畸形 SF-in-FF：直接完成
+        const payload = data.slice(0, len);
+        const hexPayload = payload.map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+        this._rxSeg = null;
+        this.txPayloads.push(hexPayload);
+        return this.#dispatch(hexPayload);
+      }
+      this._rxSeg = { len, data, expectSeq: 1, cfCount: 0, awaitFc: false };
+      return this.#flowControlFrame();
+    }
+
+    // ── SF（0x0）──
+    if (type === 0x0) {
+      // `0L <L 字节载荷>`：**必须剥 PCI**。把 `06 3E 00` 原样交给业务层，
+      // 业务层会把 0x06 当 SID 解析 —— 那是最难查的一类错帧（能解析、但答非所问）。
+      const len = pci & 0x0f;
+      if (len <= 0 || len > MAX_SF_PAYLOAD || bytes.length < 1 + len) {
+        this.stats.txSegErrors += 1;
+        return 'NO DATA';
+      }
+      const hexPayload = bytes.slice(1, 1 + len)
+        .map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+      return this.#dispatch(hexPayload);
+    }
+
+    // ── FC（0x3）：现实中不会由客户端发出，保持原样交给业务层 ──
+    return this.#uds(clean);
+  }
+
+  /** 组一帧 FC 原文：`<CAN ID> 30|status <BS> <STmin>`。 */
+  #flowControlFrame() {
+    // ⚠️ FC 是**接收方**在总线上发的 3 字节帧，`ATCAF0` 下适配器原样打印（`7e8 30 00 00`），
+    //    前面**没有** SF 的 PCI 长度字节 —— 别走 #frame（它会给 payload 加 `0N`）。
+    const id = this.address.rx.toString(16).padStart(this.address.rx > 0x7ff ? 8 : 3, '0');
+    const b = (v) => (Number(v) & 0xff).toString(16).padStart(2, '0');
+    return [
+      id,
+      b(0x30 | (Number(this.fc.status) & 0x0f)),
+      b(Number(this.fc.blockSize) || 0),
+      b(Number(this.fc.stMin) || 0),
+    ].join(' ');
+  }
+
+  /** 异步推送一帧 FC（模拟 ECU 主动上总线），并把「等 FC」状态解除。 */
+  #scheduleFc() {
+    setTimeout(() => {
+      const seg = this._rxSeg;
+      if (!seg || !seg.awaitFc) return;
+      seg.awaitFc = false;
+      seg.cfCount = 0;
+      this.#emitText(this.#flowControlFrame());
+    }, Number(this.fcDelayMs) || 5);
   }
 
   // ---- 伪造 UDS/KWP ----
+  /**
+   * 78（responsePending）延迟最终响应的状态机 —— 包在 `#respond` 外面。
+   *
+   * 语义（对应 coder.uds 的续等循环）：
+   *   1. 原请求首次到达 → 先回 `7F <sid> 78`，把**要带出来的帧**存进 `_d78.pending`
+   *   2. 之后每收到一帧（任意命令）：若 `nrcLeft > 0` 再回一个 78，否则
+   *      回「本帧自己的正常应答」+ `\r` + `pending` 各帧，然后清空
+   *   3. `pending` 一旦取走就清空 `_d78`，后续 3E 回到普通的 `7E 00` 应答
+   *
+   * ⚠️ 原请求**只被记账一次**：`_d78` 非空期间同一 sid 的原请求不会再次进入这里
+   *    （真车也不会因为我们重发就重新受理）。所以 txLog 里原帧出现几次，
+   *    就证明我们发了几次 —— 这是「78 不重发」断言的观测点。
+   */
   #uds(hex) {
+    const clean = String(hex || '').replace(/\s+/g, '').toUpperCase();
+    const sid = parseInt(clean.slice(0, 2), 16);
+    const d78 = this.delay78;
+    // ── 挂起中：每收一帧先消化一次 78，最后一次把 pending 帧随本轮应答带出 ──
+    if (this._d78) {
+      if (this._d78.nrcLeft > 0) {
+        this._d78.nrcLeft -= 1;
+        this.stats.nrc78++;
+        return this.#frame([0x7F, this._d78.sid, 0x78]);
+      }
+      const pend = this._d78.pending || [];
+      const kaNrc = this._d78.keepAliveNrc;
+      this._d78 = null;
+      this._delayHint = Number(d78?.delayMs) > 0 ? Number(d78.delayMs) : 0;
+      // 本帧自己的应答：保活帧可被要求回 NRC（验「保活自报 NRC 不算本请求失败」）
+      const own = (sid === 0x3E && kaNrc != null)
+        ? this.#frame([0x7F, 0x3E, Number(kaNrc) & 0xff])
+        : this.#respond(clean);
+      const parts = [own, ...pend].filter((x) => x !== '' && x != null);
+      return parts.length ? parts.join('\r') : 'NO DATA';
+    }
+    const out = this.#respond(clean);
+    // ── 原请求首次进入挂起状态 ──
+    if (d78 && Number(d78.nrcTimes) > 0 && sid !== 0x3E && Number.isFinite(sid)) {
+      const frames = Array.isArray(d78.frames) && d78.frames.length
+        ? d78.frames.map((f) => String(f))
+        : [out];
+      this._d78 = {
+        sid,
+        pending: frames.filter((f) => f !== '' && f != null),
+        nrcLeft: Number(d78.nrcTimes) - 1,
+        keepAliveNrc: d78.keepAliveNrc,
+      };
+      this.stats.nrc78++;
+      return this.#frame([0x7F, sid, 0x78]);
+    }
+    return out;
+  }
+
+  // ---- 伪造 UDS/KWP 的默认应答 ----
+  #respond(hex) {
     const clean = hex.replace(/\s+/g, '').toUpperCase();
     const bytes = [];
     for (let i = 0; i < clean.length; i += 2) bytes.push(parseInt(clean.substr(i, 2), 16));

@@ -142,7 +142,11 @@ tools/resolve-pcrel.py
 # ── 2026-11-06：内部研究资料第二批（RE-*.md 专题，绝不进仓库）──
 RE-*.md
 # RE 工具链第二批（读 .so/.BIN 的提取/查询工具，只留本地）
-tools/build-actuators.py
+# ★ 2026-11-16：tools/build-actuators.py 已摘出（同 build-routines-verified.py:109-112 先例）——
+#   它是 data/actuator.json 的**唯一生成器**，不入仓则数据的每一处口径都无法复核/复现。
+#   它的「生成器模式」仍需 ALL_ACTINFO.BIN（本地才有），但代码本身必须入库：
+#   `--bin <path>` 显式传入，或仓库内 ref/decoded/ALL_ACTINFO.BIN，缺输入时硬失败退出 2。
+# tools/build-actuators.py
 tools/gfs-variant-table.py
 tools/idsearch-query.py
 # iOS 模拟构建产物

@@ -13,7 +13,7 @@
  *
  * 跑法： node tools/verify-all-models.mjs （已接入 npm test 末尾）
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { sysIdForModule, modulesForSysId, planSysIdFor, MODEL_SYSID_INDEX } from '../src/model-sysid-map.js';
 import { isCharNum, vinCharsetFilter } from '../src/coder.js';
 import { MODEL_NAME_TABLE, matchModelNameExact } from '../src/model-name-table.js';
@@ -212,6 +212,11 @@ console.log('\n[H] 2026-11-11 原厂对齐改造回归');
   const schema = readFileSync(new URL('../src/schema.js', import.meta.url), 'utf8');
   const variant = readFileSync(new URL('../src/variant.js', import.meta.url), 'utf8');
   const probe = readFileSync(new URL('../src/probe.js', import.meta.url), 'utf8');
+  // ★ 2026-11-16：等待/保活常量数据驱动后新增 src/comm-timeouts.js（值来自原厂侧取证）。
+  // ★ 2026-11-17：本文件已不再**点名**它 —— ⑤ 匿名化断言改为扫 src/*.js 全目录，
+  //   点名清单只证明「这几个文件干净」，证明不了「要发布的代码干净」。
+  //   原注释担心的「长 hex 串被误判」（如 0x4310 含 431）在 ⑤ 里用「先剥 0x 字面量再扫」解决，
+  //   不需要退回点名。commTimeouts 变量本身也不再单独保留（⑤ 扫全目录已覆盖它）。
   // ① 读 VIN：去掉自创形态校验；autoSearch 不预建 10 89
   ok('读 VIN 无 looksVin/looksLikePartNo 自创防御层',
     !/const looksVin\s*=/.test(coder) && !/looksLikePartNo\(/.test(coder));
@@ -278,8 +283,33 @@ console.log('\n[H] 2026-11-11 原厂对齐改造回归');
       `rejected=${rejected} reason=${reason.slice(0, 50)}`);
   }
   // ⑤ 匿名化：源码不得出现第三方工具字样
-  ok('源码无第三方工具字样', !app.includes('4' + '31') && !coder.includes('4' + '31')
-    && !schema.includes('4' + '31') && !variant.includes('4' + '31') && !probe.includes('4' + '31'));
+  //
+  // ⚠️ 2026-11-17 收紧：原来**点名 6 个文件**，等价于「只检查我们恰好想到的文件」——
+  //    实测 src/elm327.js 新增注释里带了一个工具名、src/model-sysid-map.js 从 HEAD
+  //    起就有一个，两者都因为不在名单里而全绿。规则是「src/ 不得出现」，就必须扫全目录。
+  //    点名清单与全目录扫描的差别不是覆盖面大小，是**断言强度**：
+  //    前者只证明「这 6 个文件干净」，后者才证明「要发布的代码干净」。
+  const SRC_DIR = new URL('../src/', import.meta.url);
+  // 递归取：今天是 33 个平铺文件、零子目录，但用非递归写法等于把「将来加子目录」
+  // 变成一处静默漏检 —— 正是这条断言刚被批评过的那种弱点。
+  const srcFiles = readdirSync(SRC_DIR, { recursive: true })
+    .filter((f) => typeof f === 'string' && f.endsWith('.js'))
+    .sort();
+  const offenders = [];
+  for (const f of srcFiles) {
+    // 先剥掉 0x 十六进制字面量：`0x4310` / `0x1431` 这类常量里含 "431"，
+    // 是**数值**不是工具名。不剥就会把地址常量误判成工具字样——这正是旧注释
+    // 里「目录级扫描会误判」的真实原因；解法是剥字面量，不是退回点名清单。
+    const text = readFileSync(new URL(f, SRC_DIR), 'utf8').replace(/0x[0-9A-Fa-f]+/g, '0x');
+    const lines = text.split('\n')
+      .map((l, i) => [i + 1, l])
+      .filter(([, l]) => l.includes('4' + '31'))
+      .map(([i]) => `${f}:${i}`);
+    if (lines.length) offenders.push(...lines);
+  }
+  ok('源码无第三方工具字样（递归扫 src/**/*.js + 剥 0x 字面量，非点名）', offenders.length === 0,
+    `扫描 ${srcFiles.length} 个文件 · 命中 ${offenders.length} 处`
+    + (offenders.length ? ` · ${offenders.slice(0, 6).join(', ')}` : ''));
 }
 
 // ── T04-d：U-1 三件套断言名落地为实跑行为断言（不是字符串占位）────────

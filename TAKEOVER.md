@@ -3,15 +3,37 @@
 > **新 agent 从这里开始读。** 读完这一份就能接着干，不用翻别的。
 > 细节在 `HANDOFF.md`（按时间追加的完整记录，78KB+），**别从头读它**，查具体踩坑时再 grep。
 >
-> 最后更新：**2026-11-12（第十一阶段 B→A 收口）** · **以 `B-TO-A-CLOSURE-20261112.md` 为准**；
+> 最后更新：**2026-11-17（行为层收口：238 → 243 行全 A）**。
 > 第十阶段审计见 `AUDIT-20261112.md`，闸门状态见 `WRITE-GATE-OPEN-20261112.md`。
 >
 > ⚠️ 本页及续篇中的旧覆盖率/「已全对齐」表述均为历史资料，不再作为实车写入验收。
-> 当前真实行为门禁（`npm test` 全绿，28 步）：`test-align431` **38**、`smoke-fixes` **373**、
-> `verify-all-models` **79**、`e2e-flow` 118、`verify-pending` **69**、 `walkthrough` 84、
-> `verify-runtime-safety` 30、`verify-sysdata-comm` 16、`verify-oem-session` **32**、
-> `verify-oem-frames` **37**、`verify-fullchain` **38**、`verify-write-gate` **60**、
-> `verify-fullchain-audit` **89**，均 0 失败。
+>
+> **唯一权威证明命令：`npm run audit:align431`** —— 基线 41 + 新增 202 = **243 行全 A / 非 A 0 /
+> 退出码 0**（sha256 稳定，两次独立运行逐字节相同）。下面的分步计数只是它的输入，会随每轮变动，
+> **以命令输出为准，不要把这个列表当硬编码依据**（这页历史上就因为写了 28 步 / smoke 373 /
+> fullchain-audit 89 而落后过一整轮）。
+>
+> 当前 `npm test` **33 步** 全绿（实测 8m32s，退出码 0）：
+```
+test-align431 38 · smoke-fixes 375 · e2e-flow 127 · walkthrough 84 · verify-all-models 79
+verify-runtime-safety 30 · verify-sysdata-comm 16 · verify-oem-session 32 · verify-oem-frames 37
+verify-fullchain 38 · verify-write-gate 60 · verify-fullchain-audit 95 · verify-hb1 10
+verify-oem-probe-diff 9 · verify-menu-tree-no-truncation 8 · D2 6 · verify-ui-text-gag 5
+verify-www-data-identical 22 · verify-catalog-frame-bytes 61 · verify-isotp-tx 18
+verify-keepalive-78 6 · verify-comm-timeouts 20
+```
+>
+> **2026-11-17 新增一层：行为对齐（238 → 243 行）。** 原 238 行全部回答「该发什么字节」，
+> 没有一行回答「这些字节怎么上总线、等多久、ECU 回 78 时怎么办」。新增 5 行
+> （`AD-BEHAV-*`）：ISO-TP 多帧分段（我方拼 PCI）、`7F xx 78` 不重发+补保活、
+> 等待参数 5000/8000/16000 单一真值、执行器构帧地址取自命令块 `+6` u16LE、
+> 出厂产物 `www/data` 与仓库 `data` 逐文件 sha256 相等。
+> **行数变化是补漏，不是凑数**；声称「全对齐」时必须连这 5 行一起算。
+>
+> ⚠️ 沙箱限制（不是产品缺陷）：`node scripts/sync.mjs` 会清空 `www/data`（4636 文件），
+> 在 WorkBuddy 沙箱内会撞批量删除护栏。用 `NODE_OPTIONS= node scripts/sync.mjs` 即可；
+> 普通终端无此问题。**不要**为绕开它把「整目录重建」改成「只删差异」——那是正确行为，改了是本末倒置。
+
 > **写闸门已按「逐帧对齐 431 主写模板」打开**：4588/4588 有静态地址证据的变体放行（旧值 3817 已作废），
 > 另 771 个由全局表/枚举探针给出地址后同样放行；`setWriteGateMode('whitelist-only')` 可切回保守只读。
 >
