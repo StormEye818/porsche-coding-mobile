@@ -57,13 +57,16 @@ const loadVectors = (name) => {
  *   所以 skipped 计数要按**断言数**记，否则「通过数 + 跳过数」对不上。
  */
 const skipped = (name, why, n = 1) => {
+  // 汇总按**断言数**计（n），但一行 SKIP/FAIL 只对应一个断言组；
+  // 所以 n>1 时把条数写到行尾，否则「汇总 13 failed / 日志 9 行 FAIL」会被当成 bug。
+  const suffix = n > 1 ? `（本组 ${n} 条断言）` : '';
   if (REQUIRE_LOCAL_ASSETS) {
     fail += n;
-    console.log(`  FAIL ${name} -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);
+    console.log(`  FAIL ${name} -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}${suffix}`);
     return;
   }
   skip += n;
-  console.log(`  SKIP ${name} -- ${why}${n > 1 ? `（本组 ${n} 条断言未跑）` : ''}`);
+  console.log(`  SKIP ${name} -- ${why}${suffix}`);
 };
 
 class FakePort {
