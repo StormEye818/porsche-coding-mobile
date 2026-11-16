@@ -22,44 +22,57 @@ import { Coder, CodingError } from '../src/coder.js';
 import { computeVariantKey } from '../src/seedkey-registry.js';
 import { extractField, injectField } from '../src/schema.js';
 
-// ── 本地资产缺失的降级（2026-11-17）─────────────────────────────────
-// 本脚本的核心前提是「严格 ECU 用**真机真值表**校验 key」：`TRUTH` 是那 10 + 1 + 1
-// 个 seed/key 的唯一来源。`tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机
-// 对拍表，不入库），干净 clone 上必然不存在。
+// ── 按「依赖真值表与否」拆分（2026-11-17）──────────────────────────
+// `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库），干净
+// clone 上必然不存在。本脚本 84 条断言里，**54 条**的存在前提是那张真值表：
+//   · `[3]` 前半 3 条（`:119` `TRUTH.filter(...).slice(0,10)` 逐点校验 key）
+//   · `[9]` 完整上车序列 5 条（`TRUTH[5]` 做 seed/key）
+//   · ui-sim 遍历 46 条（15 模块 × 3 + 汇总 1；`:368` `keyVerifier: () => bytesOf(TRUTH[0].key)`）
+// 其余 **30 条**不读真值表，资产缺失时照跑。
 //
-// 缺资产时**不能**退化成「ECU 一律接受 key」—— 那会把 [3] 的「key 算错就吃 NRC 0x35」
-// 从真断言变成假绿，正是本项目一直在打的那类病。所以整脚本降级为**可见的 SKIP**：
-//   · 打印 SKIP 行 + 汇总带 skipped 计数（禁止 try/catch 静默吞，
-//     禁令见 verify-comm-timeouts.mjs:26）；
-//   · `ALIGN431_REQUIRE_LOCAL_ASSETS=1` ⇒ 升级为 FAIL / exit 1（验收链用这个）。
+// ⚠️ 三条硬约束（别为了多跑几条而破）：
+//   · **不许**把 ui-sim 的 `keyVerifier` 换成 `computeVariantKey(VID, seed)`：
+//     ECU 拿工具算的 key 去校验工具算的 key ⇒ 永远相等、永远绿。文件 `:12` 那句
+//     「不是拿自己的算法自证 —— 算错就吃 NRC 0x35」会被自己破掉。
+//   · `TOTAL_EXPECTED` 必须是**常量**：拆分最容易死人的方式不是拆错，是某条断言
+//     被顺手删掉、总数从 84 掉到 83，而汇总照样绿。末尾自证把这条堵死。
+//   · 那 30 条**不含 key 正确性**（用的是宽容 ECU），汇总下面必须明说，
+//     否则「30 通过」会被读成「解锁验过了」——比 0 通过更危险。
 const VECTORS_PEND = new URL('./vectors/pend-samples.json', import.meta.url);
 const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
-if (!existsSync(VECTORS_PEND)) {
-  const why = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库（缺 pend-samples.json）';
-  if (REQUIRE_LOCAL_ASSETS) {
-    console.log(`  FAIL 全链路演练（会话→解锁→读→写→特殊功能 + ui-sim 遍历） -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);
-    console.log('\n===== 全链路演练：0 通过 / 1 失败 / 0 跳过 =====');
-    process.exit(1);
-  }
-  console.log(`  SKIP 全链路演练（会话→解锁→读→写→特殊功能 + ui-sim 遍历） -- ${why}`);
-  console.log('  原因：没有真值表就无法构造「会真正校验 key 的严格 ECU」，'
-    + '而改用宽容 ECU 会让 [3] 的 key 校验断言变成假绿；故整体降级而不是局部假跑。');
-  console.log('\n===== 全链路演练：0 通过 / 0 失败 / 1 跳过 =====');
-  console.log('  这 1 项本轮**一次都没跑**，不要读成「验过且全过」；要连它一起验用 `npm run test:full`。');
-  process.exit(0);
-}
+const LOCAL_ASSET_WHY = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库（缺 pend-samples.json）';
+/** 本脚本**固定** 84 条断言：30 条不依赖真值表 + 54 条依赖。不许改成运行时推导。 */
+const TOTAL_EXPECTED = 84;
 
 let pass = 0, fail = 0, skip = 0;
 const ok = (n, c, x = '') => {
   if (c) { pass++; console.log(`  ok   ${n}${x ? ' — ' + x : ''}`); }
   else { fail++; console.log(`  FAIL ${n}${x ? ' — ' + x : ''}`); }
 };
+/**
+ * 一条因「缺本地资产」而没跑的断言。
+ * 宽松模式记 SKIP（可见、计入 skip），`ALIGN431_REQUIRE_LOCAL_ASSETS=1` 时记 FAIL。
+ * 禁止 try/catch 静默吞 —— 吞掉就成了「永远绿」的假断言（禁令见 verify-comm-timeouts.mjs:26）。
+ */
+const skipped = (name, why) => {
+  if (REQUIRE_LOCAL_ASSETS) {
+    fail++;
+    console.log(`  FAIL ${name} -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);
+    return;
+  }
+  skip++;
+  console.log(`  SKIP ${name} -- ${why}`);
+};
 const hexOf = (u8) => Array.from(u8).map((b) => b.toString(16).padStart(2, '0')).join('');
 const bytesOf = (h) => Uint8Array.from(h.match(/../g).map((x) => parseInt(x, 16)));
 
 // ── 真值表（真机 真值对拍）：ECU 用它校验 key ────────────────────────────────
+// 缺失时为 null（不是空表）：空表会让 `TRUTH.filter(...)` 得到空数组、
+// 循环零次、`good === total` 变成 `0 === 0` —— 假绿。
 const VID = '3D5365460CB39FEFC14651DF5075A1B8';       // 第五轮刚收编的内联 VM 变体
-const TRUTH = JSON.parse(readFileSync(VECTORS_PEND, 'utf8'))[VID];
+const TRUTH = existsSync(VECTORS_PEND)
+  ? JSON.parse(readFileSync(VECTORS_PEND, 'utf8'))[VID]
+  : null;
 
 /** 建一台严格 ECU */
 function strictEcu(opts = {}) {
@@ -114,6 +127,12 @@ console.log('\n[2] 会话建立');
 // ───────────────────────────────────────────────────────────────────────────
 console.log('\n[3] 安全访问 —— key 用真机真值表逐点校验');
 {
+if (!TRUTH) {
+  // ↓ 这 3 条是 [3] 前半：全都以 `TRUTH.filter(...)` 取种子点，缺表无从下手。
+  skipped('真机 seed 逐点通过 ECU 校验（且确实各发了 1 次 key）', LOCAL_ASSET_WHY);
+  skipped('key 错 → ECU 回 NRC 0x35 且工具抛错', LOCAL_ASSET_WHY);
+  skipped('ECU 侧确实拒绝了', LOCAL_ASSET_WHY);
+} else {
   // ⚠️ 全零 seed 是「ECU 已解锁/无需解锁」的合法应答（coder.js 里显式处理），
   //    那一轮不会发 key —— 不能拿来验 key 校验，否则断言是虚的。
   const rows = TRUTH.filter((r) => r.seed !== '00000000').slice(0, 10);
@@ -155,6 +174,7 @@ console.log('\n[3] 安全访问 —— key 用真机真值表逐点校验');
        threw ? `nrc=0x${threw.nrc?.toString(16)}` : '没抛错（静默放行 = 危险）');
     ok('ECU 侧确实拒绝了', ecu.stats.keyRejects === 1, `rejects=${ecu.stats.keyRejects}`);
   }
+}   // ← 结束「真值表存在」分支：下面是 [3] 后半，不读 TRUTH，照跑
 
   // 全零 seed = 无需解锁，不该发 key
   {
@@ -294,7 +314,14 @@ console.log('\n[8] 特殊功能：长例程（NRC 0x78 → 跟随轮询）');
 
 // ───────────────────────────────────────────────────────────────────────────
 console.log('\n[9] 完整上车序列（会话 → 解锁 → 读 → 写 → 特殊功能）');
-{
+if (!TRUTH) {
+  // ↓ 这 5 条整段挂在 `TRUTH[5]` 上（seed 与期望 key 都来自那一行）
+  skipped('① 进会话 + 解锁通过（key 经真值校验）', LOCAL_ASSET_WHY);
+  skipped('② 读编码', LOCAL_ASSET_WHY);
+  skipped('③ 写入 + 回读一致', LOCAL_ASSET_WHY);
+  skipped('④ 特殊功能跑通（含 0x78 轮询）', LOCAL_ASSET_WHY);
+  skipped('⑤ 全程 ECU 没拒过 key / 没拒过写', LOCAL_ASSET_WHY);
+} else {
   const row = TRUTH[5];
   const ecu = strictEcu({
     seedBytes: Array.from(bytesOf(row.seed)),
@@ -356,6 +383,19 @@ console.log('\n[9] 完整上车序列（会话 → 解锁 → 读 → 写 → �
       const writable = items.filter((it) => WRITE_SIDS.includes(Number(it.writeSid)));
       const badWrite = writable.filter((it) =>
         (Number(it.writeSid) === 0x2E ? it.lid > 0xffff : it.lid > 0xff));
+      if (!TRUTH) {
+        // 本块 46 条（15 模块 × 3 + 汇总）随真值表一起 SKIP。
+        // ⚠️ 其中「写帧可按记录成帧」「LID 位宽合法」两条**本可**不读 TRUTH 独立跑，
+        //    之所以不拆：本块的语义是「在严格 mock 上走完整上车链路」，只跑一半会让
+        //    读的人以为「这个模块验过了」。宁少跑、不误导。
+        skipped(`${model} → ${modName}：写帧可按记录成帧（${writable.length} 条可写 / ${items.length} 条记录）`,
+          LOCAL_ASSET_WHY);
+        skipped(`${model} → ${modName}：LID 位宽合法（读 SID ${items[0].readSid.toString(16)}）`,
+          LOCAL_ASSET_WHY);
+        skipped(`${model} → ${modName}：读帧=记录 SID 形态（未取 ECU 帧）`, LOCAL_ASSET_WHY);
+        walked++;
+        continue;
+      }
       ok(`${model} → ${modName}：写帧可按记录成帧（${writable.length} 条可写 / ${items.length} 条记录）`,
         badWrite.length === 0,
         badWrite.length ? `LID 超位宽 ×${badWrite.length}` : '无配对表（记录 writeSid 直发）');
@@ -379,8 +419,31 @@ console.log('\n[9] 完整上车序列（会话 → 解锁 → 读 → 写 → �
       walked++;
     }
   }
-  ok(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, walked >= 15, moduleGaps.join(' | '));
+  if (!TRUTH) {
+    skipped(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, LOCAL_ASSET_WHY);
+  } else {
+    ok(`ui-sim 遍历抽样（3 车型 × ≥5 模块，共 ${walked} 个模块全链路）`, walked >= 15, moduleGaps.join(' | '));
+  }
 }
 
+// ── 自证闭合 + 汇总 ────────────────────────────────────────────────────────
+// `TOTAL_EXPECTED` 是**常量**而不是运行时推导：推导出来的数永远等于实跑的数，
+// 等于没查。这条断言防的是「某条断言被顺手删掉 / 某个分支忘了计 skip」——
+// 那种情况下汇总照样绿、exit 照样 0，只有这里会红。
+{
+  const accounted = pass + fail + skip;
+  if (accounted !== TOTAL_EXPECTED) {
+    fail++;
+    console.log(`  FAIL 断言总数自证：实跑 ${pass} + 失败 ${fail - 1} + 跳过 ${skip} = ${accounted}`
+      + ` ≠ 预期 ${TOTAL_EXPECTED}（差 ${TOTAL_EXPECTED - accounted} 项 —— 有断言被删或被漏计）`);
+  }
+}
 console.log(`\n===== 全链路演练：${pass} 通过 / ${fail} 失败 / ${skip} 跳过 =====`);
+if (!TRUTH) {
+  // 这一行不是装饰：缺真值表时那 30 条用的是**宽容** ECU（`strictEcu()` 不传 keyVerifier
+  // ⇒ MockAdapter 收任何 key），所以它们通过 ≠ key 算对了。不写明，「30 通过」会被读成
+  // 「解锁验过了」——那比 0 通过更危险，因为 0 通过没人会误解。
+  console.log('  本轮通过的项**不含 key 正确性**（用宽容 ECU 跑会话/读写/轮询语义）；'
+    + 'key 逐点对拍见 `npm run test:full`（需 tools/vectors/，.gitignore:118 不入库）。');
+}
 process.exit(fail ? 1 : 0);

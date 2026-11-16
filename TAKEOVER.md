@@ -132,7 +132,9 @@ cd ~/porsche-coder
 node smoke-fixes.mjs        # 回归，当前 150/150（2026-10-18 第二~六轮）
 node e2e-flow.mjs           # 端到端，当前 33/33
 node tools/verify-pending.mjs  # 待逆项，当前 通过 65 / 失败 1（只剩刻意拒写的 mode 0x1d）
-node tools/walkthrough.mjs     # 全链路演练（严格模拟车），当前 38/38
+# 注：下面这行此前写作「38/38」，那是**第五轮口径的历史值**，实测早已是 84 项；
+#     干净 clone 上没有 tools/vectors/（.gitignore:118），其中 54 项会降级为可见 SKIP。
+node tools/walkthrough.mjs     # 全链路演练（严格模拟车）：本机 84/84；干净 clone 30 通过 / 54 跳过（缺真值表，见 .gitignore:118）
 node tools/coverage.mjs     # DRIVELINKS 覆盖：有算法 635 / 原厂无 case 341 / 拒写 4 = 980
 node tools/name-map-coverage.mjs  # 名字表覆盖：有算法 131 / 空壳 1 / 拒写 0 = 132
 ```
