@@ -15,6 +15,20 @@
  *   - 分母清单 3/13/16、527/402/185、120/40、163/148/12、74/111、
  *     67/79/687、13873/153/119657 各自标源、互不替代。
  *
+ * ★ 时间维（2026-11-17 补）：门禁模型必须能表达「这个数字在什么时候为真」。
+ *   METRICS 只存**当前实测值**。按日期冻结的历史快照文档里那个值是**当日事实**，
+ *   用今天的值去量它是范畴错误 —— 会把正确的历史记录判成错误，进而训练人
+ *   「遇红就改标注」，最终把这条断言废掉（本轮 373/375、118/127、89/95 即如此）。
+ *   处理方式：把在册文档**显式**分成两集（NEVER_EXEMPT 现行权威 / HISTORY_SNAPSHOT
+ *   一次性留痕），后者不参与 drift 比对、仍参与 obsolete 与白名单统计，豁免条数逐文件打印。
+ *   ★★ 方法论：**「豁免」必须来自显式分类，不能来自模式推断。**
+ *   模式（日期、前缀）只能用来**提示**，不能用来**决定**：凡是「判错了会静默变绿」的
+ *   规则，都是在把门禁往松的方向腐蚀。显式列表 + 分区断言的失败方向唯一 ——
+ *   漏分类就红（U2_DOC_PARTITION），从不了绿。
+ *   活文档（TAKEOVER.md）**绝不豁免**：它在 NEVER_EXEMPT 里，且
+ *   U2_TOKEOVER_NEVER_EXEMPT + U2_DOC_PARTITION 把这条从「一条可被后人改掉的单独断言」
+ *   升级为**结构性保证**（互斥分区禁止它同时出现在另一集）。
+ *
  * 数字 diff = 0 退出码 0，否则非 0。
  * 跑法：node tools/verify-u2-numbers.mjs
  */
@@ -120,6 +134,64 @@ const OBSOLETE = Object.freeze([
 const ANNOT_RE = /历史|旧值|快照|推翻|待改|引用|更正|现行|统一到|改为|已作废|作废|不再|非缺口/;
 
 /**
+ * ★ 时间维（2026-11-17）：**显式分区**，不靠模式推断。
+ *
+ * 问题：`METRICS` 只存**当前实测值**；而按日期冻结的快照文档里那个值是**当日事实**
+ * （`AUDIT-20261112.md` 写 smoke 373，那一天它就是 373）。用今天的 375 去量它是
+ * 范畴错误 —— 会把正确的历史记录判成错误，进而训练人「遇红就改标注」，
+ * 最后把这条断言废掉。
+ *
+ * 解法：把「在册文档」（`CURRENT_SCOPE_DOCS`，7 份）**显式**划成两集：
+ *   NEVER_EXEMPT      现行权威 —— 永不豁免
+ *   HISTORY_SNAPSHOT  一次性留痕 —— 不参与 drift 比对（obsolete / 白名单统计照旧）
+ *
+ * 为什么不用「文件名带 \d{8} 且早于某常量即豁免」：
+ *   · 会把 `PRD-FULLALIGN-431-20261113.md`（现行权威）与
+ *     `GAP-INVENTORY-20261112.md`（41 行基线源）一起豁免 —— 7 份在册文档豁免 5 份，
+ *     drift 检查只剩 `ACCEPTANCE-MATRIX.md` + `TAKEOVER.md`；
+ *   · 根因是范畴错误：**文件名日期编码的是「写就日」，不是「是否现行」**
+ *     （与「拿今天的值量当天的记录」同一类错误）。PRD 写于 11-13，今天仍是权威文本；
+ *   · 那个常量还会腐烂：需要每轮人工推进，而**忘给新文档分类**在旧方案里是**静默变绿**。
+ *     显式分区把失败方向锁成唯一：漏分类 → `U2_DOC_PARTITION` 立即红。
+ *
+ * 分区断言（支点，双向 + 互斥）：
+ *   U2_DOC_PARTITION          并集 === CURRENT_SCOPE_DOCS ∧ 交集为空 ∧ 无越界（不漏、不重）
+ *   U2_TOKEOVER_NEVER_EXEMPT  TAKEOVER 不得出现在 HISTORY_SNAPSHOT（且必须实际不被豁免）
+ */
+const TAKEOVER_FILE = 'TAKEOVER.md';
+const ACCEPTANCE_FILE = 'ACCEPTANCE-MATRIX.md';
+
+/** 现行权威：永不豁免。改这里的唯一后果是「检查范围缩水」，所以逐份写清理由。 */
+const NEVER_EXEMPT = Object.freeze([
+  PRD_FILE,          // PRD-FULLALIGN-431-20261113.md —— 现行权威；文件名日期只是写就日
+  GAP_FILE,          // GAP-INVENTORY-20261112.md —— 41 行基线源（Q1 原文保留另有行级豁免）
+  ACCEPTANCE_FILE,   // 验收矩阵，无日期，无歧义
+  TAKEOVER_FILE,     // 活文档，永远受检
+]);
+
+/** 一次性留痕：显式白名单，逐份写出。只有这 3 份，且不会增长。 */
+const HISTORY_SNAPSHOT = Object.freeze([
+  'AUDIT-20261112.md',
+  'B-TO-A-CLOSURE-20261112.md',
+  'RE-GAPVERIFY-20261112.md',
+]);
+
+/**
+ * @param {string} file 相对仓库根的 .md 文件名
+ * @returns {boolean} 是否属于 HISTORY_SNAPSHOT（→ 不参与 drift）
+ *
+ * 默认值必须偏向**更严**的一侧：「我不能断定它是历史」时按现行处理。
+ * 因此这里只做两件事 —— 命中 NEVER_EXEMPT 一律 false，命中 HISTORY_SNAPSHOT 才是 true，
+ * 其余（含带日期但未分类的文档）一律 false。
+ */
+function isHistoricalSnapshotOf(file) {
+  const base = String(file).split('/').pop();
+  if (base === TAKEOVER_FILE) return false;   // 结构性保险（另有 U2_TOKEOVER_NEVER_EXEMPT）
+  if (NEVER_EXEMPT.includes(base)) return false;
+  return HISTORY_SNAPSHOT.includes(base);
+}
+
+/**
  * ★ G5：数字**被改错**检测（精确、低噪声）。
  *
  * 只对「口径级」规范数字（CANON，均 ≥ 686）做 ±1 检测：
@@ -138,13 +210,18 @@ const ANNOT_RE = /历史|旧值|快照|推翻|待改|引用|更正|现行|统一
  * 这样 1070→1075、373→300、89→80 三种改错都会被精确抓住（不是靠邻域近似）。
  * 历史标注（同行有 历史/旧值/快照/引用/推翻/当时/基线）与 Q1 强制基线行仍豁免。
  */
+// ⚠️ 本表是**人工抄自门禁 stdout** 的权威值快照，不是从文档里读的。
+//    门禁断言数一变（本轮 smoke 373→375、e2e 118→127、fullchain-audit 89→95），
+//    这里必须同步更新，否则**正确的文档反而会被判冲突**（2026-11-17 提交后复跑即发生）。
+//    更新纪律：只从 `node <gate>.mjs` 的输出里抄数字，**不许**从文档抄
+//    —— 从文档抄就变成「拿文档验证文档」，这条断言立刻失去意义。
 const METRICS = Object.freeze([
-  { name: 'smoke-fixes', value: 373 },
-  { name: 'e2e-flow', value: 118 },
+  { name: 'smoke-fixes', value: 375 },
+  { name: 'e2e-flow', value: 127 },
   { name: 'verify-all-models', value: 79 },
   { name: 'verify-oem-session', value: 32 },
   { name: 'verify-oem-frames', value: 37 },
-  { name: 'verify-fullchain-audit', value: 89 },
+  { name: 'verify-fullchain-audit', value: 95 },
   { name: 'verify-fullchain', value: 38 },
   { name: 'verify-write-gate', value: 60 },
   { name: 'verify-runtime-safety', value: 30 },
@@ -235,17 +312,25 @@ const conflicts = [];
 const whitelistHits = {};
 const pendingCarriers = {};
 const driftConflicts = [];
+const historicalExempt = {};
 for (const f of markdownFiles()) {
-  const lines = readText(f).split('\n');
+  const text = readText(f);
+  const lines = text.split('\n');
+  const inScope = CURRENT_SCOPE_DOCS.includes(f);
+  // ★ 时间维：HISTORY_SNAPSHOT（显式白名单）里的文档不做 drift 比对 —— 那里的数字是当日事实。
+  const historical = isHistoricalSnapshotOf(f);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const hits = legacy.filter((t) => { try { return boundaryRe(t).test(line); } catch { return false; } });
-    // ★ G5：锚点漂移检测 —— 现行文档里被改错的实测数字（1070→1071 等）也计冲突。
-    // U-7/Q4：数字清理范围 = 6 份基线文档 + 现行 PRD；范围外历史文档不判定漂移
-    // U-7/Q4：数字清理范围 = 6 份基线文档 + 现行 PRD；范围外历史文档不判定漂移。
-    // G5 两条独立可失败规则：① 同文档 ±1 笔误（drift）② PRD 声明旧值未标注（obsolete）。
-    const drifts = CURRENT_SCOPE_DOCS.includes(f) ? driftHits(line, readText(f)) : [];
-    const obsoletes = CURRENT_SCOPE_DOCS.includes(f) ? obsoleteHits(line, f) : [];
+    // G5 两条独立可失败规则：① 指标锚定的精确比对（drift）② PRD 声明旧值未标注（obsolete）。
+    // U-7/Q4：数字清理范围 = 6 份基线文档 + 现行 PRD；历史快照文档（按文件名）额外退出 drift。
+    const drifts = (inScope && !historical) ? driftHits(line, text) : [];
+    if (inScope && historical && driftHits(line, text).length) {
+      // 只用于打印「本可抓到、但按时间层豁免」的条数：证明豁免真在生效且范围可见。
+      // 范围外文档本来就不跑 drift，不计入，免得把「本来不管」说成「豁免」。
+      historicalExempt[f] = (historicalExempt[f] || 0) + 1;
+    }
+    const obsoletes = inScope ? obsoleteHits(line, f) : [];
     if (!hits.length && !drifts.length && !obsoletes.length) continue;
     const inBaselineA = f === GAP_FILE && BASELINE_A_LINES.has(i + 1);
     const c = classify(f, i + 1, line, inBaselineA);
@@ -276,6 +361,44 @@ for (const f of markdownFiles()) {
 }
 L.push(`② 旧值表述白名单分类=${JSON.stringify(whitelistHits)}`);
 L.push(`②b U-5 历史快照数字待补顶部指向（T03/T04 载体，非本批次冲突）=${JSON.stringify(pendingCarriers)}`);
+// ②c 时间层分区（显式分类，逐份打印，不静默）：
+//    这些行本来会被 drift 抓到，但所在文档属于 HISTORY_SNAPSHOT（当日事实）。
+//    豁免**必须有出处**（显式白名单），不能靠模式推断 —— 否则判错方向就是静默变绿。
+const scopeSet = new Set(CURRENT_SCOPE_DOCS);
+const neverSet = new Set(NEVER_EXEMPT);
+const histSet = new Set(HISTORY_SNAPSHOT);
+
+// 分区断言①：不漏（在册但未分类）/ 不重（同时归两集）/ 不越界（分类了但不在册）
+const unclassified = CURRENT_SCOPE_DOCS.filter((f) => !neverSet.has(f) && !histSet.has(f));
+const dualClassed = NEVER_EXEMPT.filter((f) => histSet.has(f));
+const offScope = [...new Set([...neverSet, ...histSet])].filter((f) => !scopeSet.has(f));
+const partitionOk = unclassified.length === 0 && dualClassed.length === 0 && offScope.length === 0;
+
+// 分区断言②：TAKEOVER 不得出现在 HISTORY_SNAPSHOT（结构性，不靠函数里的 if 兜着）
+const takeoverInHist = histSet.has(TAKEOVER_FILE);
+const takeoverExempted = isHistoricalSnapshotOf(TAKEOVER_FILE);
+const takeoverInScope = scopeSet.has(TAKEOVER_FILE);
+const liveDocOk = takeoverInHist === false && takeoverExempted === false && takeoverInScope === true;
+
+const exemptRows = Object.values(historicalExempt).reduce((s, n) => s + n, 0);
+const exemptFiles = Object.keys(historicalExempt).length;
+const liveDocs = CURRENT_SCOPE_DOCS.filter((f) => !histSet.has(f));
+
+L.push('②c 历史快照文档（显式白名单 HISTORY_SNAPSHOT，不参与 drift；豁免必须有出处，不能靠模式推断）');
+L.push(`   NEVER_EXEMPT 现行权威（${NEVER_EXEMPT.length} 份，永不豁免）= ${JSON.stringify(NEVER_EXEMPT)}`);
+L.push(`   HISTORY_SNAPSHOT 一次性留痕（${HISTORY_SNAPSHOT.length} 份，不增长）= ${JSON.stringify(HISTORY_SNAPSHOT)}`);
+L.push(`   已豁免行数（本可被 drift 抓到、因时间层放行）=${JSON.stringify(historicalExempt)}`);
+L.push(`   合计 ${exemptRows} 行 / ${exemptFiles} 个文件；现行受检文档 ${liveDocs.length} 个 = ${JSON.stringify(liveDocs)}`);
+L.push(`U2_DOC_PARTITION 在册文档 ${CURRENT_SCOPE_DOCS.length} 份完整划分`
+  + `：未分类=${JSON.stringify(unclassified)}｜同时归两集=${JSON.stringify(dualClassed)}`
+  + `｜分类了但不在册=${JSON.stringify(offScope)}`);
+if (!partitionOk) {
+  L.push('  FAIL U2_DOC_PARTITION 在册文档未被完整、互斥地划分为「现行」与「历史快照」两集');
+}
+L.push(`U2_TOKEOVER_NEVER_EXEMPT TAKEOVER.md：在 HISTORY_SNAPSHOT 内=${takeoverInHist}（必须 false）`
+  + `｜实际被豁免=${takeoverExempted}（必须 false）｜在 CURRENT_SCOPE_DOCS 内=${takeoverInScope}（必须 true）`);
+if (!liveDocOk) L.push('  FAIL U2_TOKEOVER_NEVER_EXEMPT 活文档 TAKEOVER.md 被时间层豁免或掉出受检范围');
+
 for (const c of conflicts) L.push(`  CONFLICT ${c}`);
 L.push(`③ 文档数字 diff=${conflicts.length}`);
 
@@ -313,12 +436,15 @@ L.push(`③ 文档数字 diff=${conflicts.length}`);
     + ` 合计=${measureDiff + conflicts.length}（清单 ${live.length} 项动态机读）`);
   const diffOk = measureDiff + conflicts.length === 0;
 
-  globalThis.__u2BehaviorOk = d5Ok && nsOk && diffOk;
+  globalThis.__u2BehaviorOk = d5Ok && nsOk && diffOk && liveDocOk && partitionOk;
   if (!d5Ok) L.push('  FAIL U2_D5_13873 maxText 实跑值与 13873 不符');
   if (!nsOk) L.push('  FAIL U2_NAMESPACE_SEPARATED 三命名空间计数与 67/79/687 不符');
   if (!diffOk) L.push('  FAIL U2_NUMBER_DIFF_ZERO 存在数字冲突');
+  if (!liveDocOk) L.push('  FAIL U2_TOKEOVER_NEVER_EXEMPT 活文档豁免/掉范围');
+  if (!partitionOk) L.push('  FAIL U2_DOC_PARTITION 分区不完整或两集重叠');
   // 行为断言直接并入退出码：任一翻红即非 0（反例注入可证伪）
-  L.push(`U2 行为断言合计：d5Ok=${d5Ok} nsOk=${nsOk} diffOk=${diffOk}`);
+  L.push(`U2 行为断言合计：d5Ok=${d5Ok} nsOk=${nsOk} diffOk=${diffOk}`
+    + ` liveDocOk=${liveDocOk} partitionOk=${partitionOk}`);
 }
 L.push('说明：分母各自标源——3/13/16（候选分组）、527/402/185（cat=0x10 / cat=0x60）、120/40（family-default / 共享 16 候选）、163/148/12（身份链）、74/111（帧序口径 / commCat10Exact）、67/79/687（menuId / 通信 RID / 功能序列）、13873/153/119657（D-5 / D-3 长度 / D-3 itemIds）互不替代。');
 L.push('复跑命令：node tools/verify-u2-numbers.mjs ; node tools/build-align431-rows.mjs ; npm run audit:align431');
