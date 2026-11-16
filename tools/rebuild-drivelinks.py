@@ -110,8 +110,18 @@ def main():
         'recordCount': nrec,
         'ecu': ecu,
     }
+    # ★ 2026-11-13 T03-f：modeVerified 由生成器产出（不是手改 JSON）。
+    #   与 tools/export-drivelinks-v3.py 共用同一实现：node 实跑 resolveKey 求
+    #   「已实现 securityModel mode」集合，逐记录标注；绝不一律 true。
+    import importlib.util  # 文件名带连字符，不能用普通 import
+    _helper = Path(__file__).resolve().parent / 'export-drivelinks-v3.py'
+    _spec = importlib.util.spec_from_file_location('dl_v3_helper', _helper)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    true_count, total = _mod.annotate_mode_verified(doc)
     OUT.write_text(json.dumps(doc, ensure_ascii=False, separators=(',', ':')))
-    print(f'ecu {len(index)} entries {nrec} -> {OUT}')
+    print(f'ecu {len(index)} entries {nrec} -> {OUT}'
+          f' · modeVerified=true {true_count}/{total}')
 
 
 if __name__ == '__main__':

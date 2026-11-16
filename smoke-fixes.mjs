@@ -3,7 +3,7 @@
  * 2026-10-15 全量修复冒烟测试 —— 只验本次改动的代码路径。
  * 跑法: node smoke-fixes.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { Elm327 } from './src/elm327.js';
 import { Coder, parseResp, parseRespCaf1, CodingError } from './src/coder.js';
 import { resolveKey, resolveKeyByName, makeResolverProvider } from './src/seedkey-resolver.js';
@@ -15,7 +15,7 @@ import { LinkDoctor } from './src/link-doctor.js';
 import { parseFieldInput, fieldInRange, extractField, injectField } from './src/schema.js';
 import { autoPickVariant, pickModelByName } from './src/variant.js';
 import { familyCandidates, identMatch } from './src/probe.js';
-import { specialFunctionsFor } from './src/special-catalog.js';
+import { specialFunctionsFor, FEATURE_DATA_SOURCES } from './src/special-catalog.js';
 import { MockAdapter } from './src/mock-adapter.js';
 
 let pass = 0, fail = 0;
@@ -1653,6 +1653,84 @@ console.log('\n[20] 真车链路：CAF1 多帧 / 寻址 / 协议分派');
       ok('连接码换算：IC 0x7C0→0x00EE', f(0x7C0) === 0x00EE);
     }
   }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// [F14] T04-c 任务 3/4：零 fetch 数据同步可达 + D-2 三命名空间 + 反例可证伪
+//   与 e2e 的 F13 互补：F13 验「UI 入口 → 实发帧」，F14 验「打包/命名空间/静态证据」。
+// ─────────────────────────────────────────────────────────────────
+console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
+{
+  const readD = (f) => JSON.parse(readFileSync(`./data/${f}`, 'utf8'));
+  const syncSrc = readFileSync('./scripts/sync.mjs', 'utf8');
+  const catalogSrc = readFileSync('./src/special-catalog.js', 'utf8');
+
+  // 运行时可达清单：12 份数据逐份在 sync.mjs 声明、在 special-catalog.js 声明、文件实存。
+  // 显式钉死 12：删掉任一数据源后不能靠「两边一起变小」自洽（反例注入实测过）。
+  const declared = FEATURE_DATA_SOURCES.length === 12
+    && FEATURE_DATA_SOURCES.every((f) => syncSrc.includes(`'${f}'`)
+      && catalogSrc.includes(`'${f}'`) && existsSync(`./data/${f}`))
+    && /RUNTIME_REACHABLE = Object\.freeze\(\[/.test(syncSrc);
+  ok('F14 SYNC_DATA_CONSISTENT 12/12 份功能数据在 RUNTIME_REACHABLE 且真实存在',
+    declared && /RUNTIME_REACHABLE/.test(syncSrc) && /fs\.rmSync/.test(syncSrc),
+    `${FEATURE_DATA_SOURCES.length} 份 / safe-delete 护栏保留=${/fs\.rmSync/.test(syncSrc)}`);
+  ok('F14 UI bootstrap 注入 www/index.html 且 feature-catalog.js 被真实引用',
+    /__featureCatalogReady/.test(syncSrc) && /feature-catalog\.js/.test(syncSrc)
+      && /copyFileSync\(CATALOG_SRC, CATALOG_DST\)/.test(syncSrc));
+  ok('F14 顶层 json 差集在 sync 里显式归零（app fetch / catalog 消费 / 编译进 src 三类标注）',
+    /SYNC_DATA_CONSISTENT/.test(syncSrc) && /差集\s*\$\{diff\}/.test(syncSrc)
+      && /离线生成器中间产物/.test(syncSrc));
+
+  // D-2 三命名空间：67 menuId / 79 RID / 687 功能序列，无 sf∩rv 指标
+  const sf = readD('special-functions.json');
+  const rv = readD('routines-verified.json');
+  const smap = readD('special-function-map.json');
+  const seq = readD('function-sequences.json');
+  ok('F14 D2_NAMESPACE_CLEAN 67 menuId / 79 RID / 687 功能序列三命名空间独立',
+    sf.namespace?.canonicalField === 'menuId' && sf.functions.length === 67
+      && rv.items.length === 79 && seq.functions.length === 687
+      && rv.namespaces?.menuId === 67 && rv.namespaces?.rid === 79
+      && rv.namespaces?.functionSequence === 687,
+    `67/79/687；menuId 逐条等 map=${JSON.stringify(sf.functions.map((f) => f.menuId)) === JSON.stringify(smap.maps.map((m) => m.menuId))}`);
+  ok('F14 D2_RID_79_79 79 个 RID 全带字节坐标 + noRid 16 单列',
+    rv.items.every((x) => Array.isArray(x.byteCoords) && x.byteCoords.length
+      && x.byteCoords.every((c) => c.idxOff && c.payloadOff && c.cmdId && c.body))
+      && rv.noRidCount === 16 && rv.noRidEntries.length === 16,
+    `indexOff=${rv.byteEvidence?.indexOff} records31=${rv.byteEvidence?.records31}`
+      + ` vendorExtPseudoRids=${rv.vendorExtPseudoCount}`);
+  ok('F14 D2 悬空引用 E3_HUD_Shakedown_Test 归零且附静态证据坐标',
+    smap.sequenceCoverage?.danglingRefsAfter === 0
+      && smap.sequenceCoverage?.indexedTotal === 687
+      && smap.sequenceCoverage?.coverageDiff === 0
+      && (smap.sequenceCoverage?.staticOnlyEntries || []).length === 1
+      && smap.sequenceCoverage.staticOnlyEntries[0].staticEvidence.length >= 3);
+  const mView = readD('measure.json').view;
+  const aView = readD('actuator.json').view;
+  ok('F14 767 只是 MENU.BIN:0x4C 条目计数证据，不是分页规则/渲染上限',
+    mView?.count431?.u16LE === 767 && mView.count431.bytes === 'FF 02'
+      && /不是分页规则/.test(mView.count431.note)
+      && aView?.count431?.u16LE === 767
+      && mView?.groupCap === 30 && aView?.groupCap === 40
+      && mView.totalItems === 1719 && aView.totalItems === 2506,
+    `bytes=[${mView?.count431?.bytes}] u16LE=767 / groupCap ${mView?.groupCap}:${aView?.groupCap}`);
+  ok('F14 任一分组下条目数 ≤ app 现有渲染上限（X/X 两组全绿）',
+    mView.pages.every((p) => p.count <= 30) && aView.pages.every((p) => p.count <= 40)
+      && mView.groupsWithinCap === `${mView.pages.length}/${mView.pages.length}`
+      && aView.groupsWithinCap === `${aView.pages.length}/${aView.pages.length}`,
+    `measure ${mView.groupsWithinCap} 组 ≤30 / actuator ${aView.groupsWithinCap} 组 ≤40`);
+  // ★ 裁定 B：枚举/构帧实现必须在 app.js 已 import 的 src/schema.js 里，
+  //   且真的进 app.bundle.js；www/index.html bootstrap 真的调用 enumeratePages。
+  const appImports = readFileSync('./src/app.js', 'utf8');
+  const schemaSrc = readFileSync('./src/schema.js', 'utf8');
+  const bundle = readFileSync('./www/app.bundle.js', 'utf8');
+  const syncSrc2 = readFileSync('./scripts/sync.mjs', 'utf8');
+  ok('F14 enumeratePages 在 app.js import 图内（src/schema.js + app.bundle.js）且 UI bootstrap 真调用',
+    /from '\.\/schema\.js'/.test(appImports)
+      && /export function enumeratePages\(/.test(schemaSrc)
+      && bundle.includes('function enumeratePages(')
+      && /enumeratePages\(catalog\.sources/.test(syncSrc2)
+      && /__featureCatalogEnumerated/.test(syncSrc2),
+    `app.js import schema.js=${/from '\.\/schema\.js'/.test(appImports)} / bundle 含 enumeratePages=${bundle.includes('function enumeratePages(')}`);
 }
 
 console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed =====');

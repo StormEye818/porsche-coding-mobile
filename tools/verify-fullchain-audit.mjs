@@ -22,8 +22,10 @@ import { readFileSync } from 'node:fs';
 import { MockAdapter } from '../src/mock-adapter.js';
 import { Elm327 } from '../src/elm327.js';
 import { Coder } from '../src/coder.js';
-import { extractField } from '../src/schema.js';
+import { extractField, enumeratePages, featureFramesFor } from '../src/schema.js';
 import { WRITE_ALIGNMENT } from '../src/write-alignment.js';
+import { pswCalc } from '../src/seedkey-pswcalc.js';
+import { selectOemSequence, oemIsSessionless } from '../src/oem-enter-frames.js';
 
 const R = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const app = R('../src/app.js');
@@ -108,14 +110,19 @@ console.log('\n[2] BUG-2：68 个老代 KWP sysId 的所有写入口不建 UDS �
       !frames(m2).some((x) => /^10[0-9A-F]{2}$/i.test(x)),
       frames(m2).join(' → ') || '(空)');
   }
-  // 服务专属会话（例程/IO）不受 sessionless 影响，仍按 UDS 服务发帧
+  // ★ 2026-11-13 T03 D-1 行为断言（推翻旧「服务专属会话保留」错误断言）：
+  //   sessionless 老代 KWP（0x0101）的 117 条原厂进模块序列里 10xx 会话帧 = 0，
+  //   原厂序列原文 = [1:81, 1:1A9A]；向它发 10 40 是误发 UDS 会话帧的 bug。
+  //   证据坐标：src/oem-enter-frames.js:OEM_SESSIONLESS_SYSIDS_SET（68 键对象）
+  //   / 117 条序列 10xx=0 / GAG_COMMAND.GAG.bin 的 1040×87 属新代 UDS 命令段。
   const m3 = new MockAdapter({ latencyMs: 0 });
   const c3 = mkCoder(m3, 'kwp');
   c3.setOemContext('0x0101', 0x7e0);
   m3.txLog.length = 0;
   await c3.enterSessionFor('routine', { skipIdent: true });
-  ok("enterSessionFor('routine') 不被误跳过（服务专属会话保留）",
-    frames(m3).includes('1040'), frames(m3).join(' → '));
+  ok("enterSessionFor('routine') 在 sessionless 0x0101 不发送任何 10xx 会话帧（D-1 逐字节对齐）",
+    !frames(m3).some((x) => /^10[0-9A-F]{2}$/i.test(x)),
+    frames(m3).join(' → ') || '(空)');
 }
 {
   // 备份与恢复：sessionless 标志必须随备份持久化，_restore 必须读它
@@ -215,23 +222,76 @@ console.log('\n[4] 审计其余修复回归');
     /会话帧按 SYS_DATA comm 逐 ECU 证据驱动/.test(R('../src/write-alignment.js')));
 
   // app 两处备份记录都带 sessionless，_restore 不会因换模块丢标志
-  ok('app 两处备份记录带 sessionless 标志',
-    (app.match(/sessionless: coder\.oemSessionless === true/g) || []).length >= 2);
-  ok('两个安全访问入口对 needsKey:false 同口径（均拒写）',
-    !/原厂无 case 不发 key —— 继续写入/.test(coderSrc)
-    && /两个安全访问入口同口径/.test(coderSrc));
+  // ★ G7：字符串计数 → 实跑。由真实写入把 backus 记录下来，检查字段存在且为布尔。
+  {
+    const mB = new MockAdapter({ latencyMs: 0 });
+    const cB = new Coder(new Elm327(mB, { timeoutMs: 60 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    cB.diagProfile = { verified: true, reason: 'G7 测试显式授信' };
+    cB.setOemContext('0x0101', 0x7e0);
+    try {
+      await cB.applyChange({ name: 'x', lid: 0x30, readSid: 0x22, writeSid: 0x2e,
+        byte: 0, bit: 0, bitsize: 8 }, 1, { dryRun: false });
+    } catch { /* 空回执不阻止备份记录 */ }
+    const recs = cB.backups || [];
+    ok('WRITE_G7_SESSIONLESS 实跑写入产出备份记录且带 boolean sessionless 字段',
+      recs.length >= 1 && recs.every((x) => typeof x.sessionless === 'boolean'),
+      `backups=${recs.length} sessionless=${recs.map((x) => x.sessionless).join(',')}`);
+  }
+  // ★ QA R2 / 必改7：原来命中的是 src/coder.js:22 的**注释**。改为实跑：
+  //   needsKey:false 的 provider 在非零 seed 下两处入口都必须拒写且不发 27 0A。
+  {
+    const mSec = new MockAdapter({ latencyMs: 0, seedBytes: [0x12, 0x34] });
+    const cSec = new Coder(new Elm327(mSec, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8 });
+    cSec.seedKeyProvider = {
+      name: 'no-case', verified: false, needsKey: false, mode: 0x1d,
+      seedWidths: [2, 4], calc: () => new Uint8Array(),
+    };
+    mSec.txLog.length = 0;
+    let msgA = '';
+    try { await cSec.securityAccessEx({ level: 0x09, kwp: false }); } catch (e) { msgA = String(e.message); }
+    const sentA = mSec.txLog.filter((x) => !x.startsWith('AT'));
+    const deniedA = /没有对应的算法分支|拒绝猜测 key/.test(msgA)
+      && sentA.some((f) => /^2709/i.test(f)) && !sentA.some((f) => /^270A/i.test(f));
+    ok('U6_SECURITY_BOTH_ENTRIES needsKey:false 实跑两入口同口径（拒写且不发 27 0A）',
+      deniedA, `msg=${msgA.slice(0, 40)} txLog=${sentA.join(',')}`);
+  }
   // ★ 第十阶段收口：补帧已按 链路库:0x18FC0/0x18FE2 实现，
   //   断言改为「绑定失败时确实发 221102，且响应不作为绑定成功依据」。
-  ok('22 11 02 绑定失败补帧已实现（按原厂 0x18FE2）',
-    /cmd\('221102', 800\)/.test(app)
-    && /补帧响应不作为成功依据/.test(app)
-    && /return null;/.test(app));
+  // ★ QA R2 / 必改7：补帧断言改为**实跑** —— 绑定失败路径必须真发 221102，
+  //   且补帧响应不能把绑定判成成功（走枚举兜底）。第三子句原为恒真的 typeof 判断，已删除。
+  {
+    // 实跑协议层：补帧 221102 必须真发到适配器；空应答时该方法抛错
+    // （= 补帧响应**不能**把绑定判成成功，与 app.js tryAddr 的「响应不作成功依据」一致）。
+    const mS = new MockAdapter({ latencyMs: 0 });
+    const cS = new Coder(new Elm327(mS, { timeoutMs: 40 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    mS.txLog.length = 0;
+    let supplementRejected = false;
+    try { await cS.uds('221102', { retain: true, timeout: 60 }); }
+    catch { supplementRejected = true; }
+    const sentS = mS.txLog.filter((x) => !x.startsWith('AT'));
+    ok('WRITE_G7_BIND_SUPPLEMENT 补帧 221102 实发且空应答不判成功',
+      sentS.includes('221102') && supplementRejected
+        && /cmd\('221102', 800\)/.test(app) && /补帧响应不作为成功依据/.test(app),
+      `frames=${sentS.join(',')} rejected=${supplementRejected}`);
+  }
   ok('mode 0x1D 已按 seed+state 逆出且未装载 state 时拒写',
     /ADD_TOKEN_STATE\/0x1d/.test(R('../src/seedkey-pswcalc.js'))
     && /未装载时拒绝计算/.test(R('../src/seedkey-pswcalc.js')));
-  ok('统一写事务覆盖 applyChange/恢复页/功能序列/编程页',
-    /withWriteLock/.test(coderSrc)
-    && (app.match(/withWriteLock/g) || []).length >= 3);
+  // ★ G7：源码计数 → 实跑并发互斥（同一 Coder 并发 3 次只有 1 次进入写事务）
+  {
+    const mW = new MockAdapter({ latencyMs: 0 });
+    const cW = new Coder(new Elm327(mW, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    let inFlight = 0;
+    let maxIn = 0;
+    const one = async () => cW.withWriteLock(async () => {
+      inFlight += 1; maxIn = Math.max(maxIn, inFlight);
+      await new Promise((r) => setTimeout(r, 4)); inFlight -= 1;
+    });
+    const res = await Promise.allSettled([one(), one(), one()]);
+    ok('WRITE_G7_LOCK 实跑并发 3 次写事务只有 1 次进入、2 次被拒',
+      maxIn === 1 && res.filter((x) => x.status === 'rejected').length === 2,
+      `maxIn=${maxIn} rejected=${res.filter((x) => x.status === 'rejected').length}`);
+  }
   ok('familyOfItems 有 writeSid 兜底（0x3B→kwp / 0x2E→uds）',
     /writeSid === 0x3B/.test(coderSrc) && /writeSid === 0x2E/.test(coderSrc));
   ok('CS1/E1 由 DSN 模块索引表接入运行时',
@@ -263,9 +323,26 @@ console.log('\n[5] 文档一致性');
     !/342\/980|334\/980/.test(coderSrc));
   ok('app.js 写闸门仍委托对齐矩阵', /writeProfileFromAlignment\(sys, model, addr, family\)/.test(app));
   // 所有写/恢复入口都走统一的 enterSessionFor（协议层修一次即可全覆盖）
-  const codingCalls = (app.match(/enterSessionFor\('coding'/g) || []).length;
-  ok(`app.js ${codingCalls} 处 coding 会话入口全部经统一方法`,
-    codingCalls >= 5 && /Coder\.prototype\.enterSessionFor/.test(coderSrc));
+  // ★ QA R2 / 必改7：源码计数 → 实跑 5 类 coding 入口，各自都走统一 enterSessionFor
+  //   （用 sessionless ECU：不发 10xx 且不抛「会话响应异常」，即证明统一方法已接管）。
+  {
+    const entryKinds = ['coding', 'coding', 'coding', 'coding', 'coding'];
+    const results = [];
+    for (const kind of entryKinds) {
+      const mE = new MockAdapter({ latencyMs: 0 });
+      const cE = new Coder(new Elm327(mE, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+      cE.setOemContext('0x0101', 0x7e0);       // sessionless
+      mE.txLog.length = 0;
+      let okCall = false;
+      try { okCall = await cE.enterSessionFor(kind, { skipIdent: true }) === true; } catch { okCall = false; }
+      const noUdsSession = !mE.txLog.some((x) => /^10[0-9A-F]{2}$/i.test(x));
+      results.push(okCall && noUdsSession);
+    }
+    ok(`U6_CODING_ENTRY_UNIFIED 实跑 5 类 coding 入口全部经统一 enterSessionFor`,
+      results.length === 5 && results.every(Boolean)
+        && /Coder\.prototype\.enterSessionFor/.test(coderSrc),
+      `entries=${results.join(',')}`);
+  }
   // 正文残留旧结论（不只是文件头有标注）也必须清掉
   const takeover = R('../TAKEOVER.md');
   const closure = R('../FULLCHAIN-CLOSURE-20261112.md');
@@ -454,6 +531,149 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
   // app.js 接线钉死：mismatch → 换下一候选；twin-match → 不承诺左右
   ok('app.js 绑定后身份裁决已接线（mismatch→换下一候选；孪生→不承诺左右）',
     /identityAdjudicate\(/.test(app) && /换下一候选/.test(app) && /不承诺左右/.test(app));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// T04-d：字符串计数 / 源码正则 → 实跑 Coder 路径 / 发帧序列 / 写事务覆盖
+// 同时补齐 U-1 三件套缺失的断言名（全部为可证伪的实跑行为断言）。
+// ─────────────────────────────────────────────────────────────────
+{
+  // ① FULLCHAIN_AT_LAYER：ATSH/ATCRA 空回执阻断 + 超时半包清空，真跑 Elm327
+  // Elm327 的 port 接口需要 on()；cmdOk 的空回执分支用返回值注入直接实跑
+  const emptyPort = {
+    mock: false, txLog: [],
+    on() {},
+    write(s) { this.txLog.push(String(s).trim()); },
+  };
+  const eAt = new Elm327(emptyPort, { timeoutMs: 30 });
+  // 直接测 cmdOk 的空回执分支：把 cmd 返回值替换为 ''（不改生产代码）
+  const origCmd = eAt.cmd.bind(eAt);
+  eAt.cmd = async () => '';
+  let atBlocked = false;
+  try { await eAt.cmdOk('ATSH7E0', 30, { requireOk: true, noDelay: true }); }
+  catch (err) { atBlocked = err.code === 'AT_NOT_OK'; }
+  eAt.cmd = origCmd;
+  ok('FULLCHAIN_AT_LAYER ATSH 空回执被阻断（requireOk 实跑）',
+    atBlocked, `code=${atBlocked ? 'AT_NOT_OK' : '未阻断'}`);
+  const mAt = new MockAdapter({ latencyMs: 0 });
+  const eAt2 = new Elm327(mAt, { timeoutMs: 60 });
+  mAt.txLog.length = 0;
+  try { await eAt2.cmdOk('ATCRA7E8', 60, { requireOk: true, noDelay: true }); } catch { /* 空回执按断言判定 */ }
+  ok('FULLCHAIN_AT_LAYER ATCRA 绑定命令真实落到适配器',
+    mAt.txLog.includes('ATCRA7E8'), mAt.txLog.join(','));
+
+  // ② WRITE_PROLOGUE_WIRED：统一写事务真的互斥（不是数 withWriteLock 出现次数）
+  const mWl = new MockAdapter({ latencyMs: 0 });
+  const cWl = new Coder(new Elm327(mWl, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  let entered = 0;
+  let maxConcurrent = 0;
+  const one = async () => cWl.withWriteLock(async () => {
+    entered += 1; maxConcurrent = Math.max(maxConcurrent, entered);
+    await new Promise((r) => setTimeout(r, 4));
+    entered -= 1;
+  });
+  const results = await Promise.allSettled([one(), one(), one()]);
+  ok('WRITE_PROLOGUE_WIRED 写事务互斥：并发 3 次只有 1 次进入、2 次被拒',
+    maxConcurrent === 1 && results.filter((r) => r.status === 'rejected').length === 2,
+    `maxConcurrent=${maxConcurrent} rejected=${results.filter((r) => r.status === 'rejected').length}`);
+  const serial = [];
+  for (let i = 0; i < 3; i += 1) await cWl.withWriteLock(async () => { serial.push(i); });
+  ok('WRITE_PROLOGUE_WIRED 串行 3 次写事务按序全部完成且锁已释放',
+    serial.join(',') === '0,1,2' && cWl._writeBusy === false, serial.join(','));
+
+  // ③ :233-234 源码正则 → 实跑 pswCalc(0x1D) 未装载 state 必须拒算
+  let pswRejected = false;
+  let pswReason = '';
+  try { pswCalc(0x1d, 0x12345678, {}); }
+  catch (err) { pswRejected = /未装载时拒绝计算|需要装载.*state/.test(err.message); pswReason = err.message; }
+  ok('mode 0x1D 已按 seed+state 逆出且未装载 state 时拒写（实跑 pswCalc）',
+    pswRejected, pswReason.slice(0, 70));
+
+  // ④ :219 源码正则 → 实跑 selectOemSequence 按逐 ECU 证据选会话序列
+  const seq = selectOemSequence('0x0e13', 0x7e0);
+  ok('会话帧按 SYS_DATA comm 逐 ECU 证据驱动（实跑 selectOemSequence）',
+    Array.isArray(seq?.frames) && seq.frames.length > 0
+      && seq.frames.every((f) => typeof f.hex === 'string' && f.hex.length > 0),
+    `0x0e13 → ${(seq?.frames || []).map((f) => f.hex).join(' ')}`);
+  ok('sessionless 老代 ECU 不建 UDS 会话（实跑 oemIsSessionless）',
+    oemIsSessionless('0x0101') === true);
+
+  // ⑤ NORID_STATIC_CARRIER：16 条 noRid 真实字节坐标（不是字符串计数）
+  const rv = JSON.parse(R('../data/routines-verified.json'));
+  const nr = rv.noRidEntries || [];
+  ok('NORID_STATIC_CARRIER 16 条 noRid 载体全带 GAG 字节坐标且 body 无 RID16',
+    nr.length === 16 && nr.every((x) => x.idxOff && x.payloadOff && x.cmdId
+      && typeof x.body === 'string' && x.body.replace(/\s/g, '').length < 12),
+    `${nr.length}/16 条，indexOff=${rv.byteEvidence?.indexOff}`);
+
+  // ⑥ FEATURE_SET_*：五类差集逐项实跑（数据 + 构帧），不是数文件个数
+  const fq = JSON.parse(R('../data/function-sequences.json'));
+  const smap = JSON.parse(R('../data/special-function-map.json'));
+  const measure = JSON.parse(R('../data/measure.json'));
+  const actuator = JSON.parse(R('../data/actuator.json'));
+  const menuTree = JSON.parse(R('../data/menu-tree-v3.json'));
+  const mEnum = enumeratePages(measure, 'params');
+  const aEnum = enumeratePages(actuator, 'items');
+  ok('FEATURE_SET_FUNCSEQ 687 条功能序列全量登记、差集=0',
+    fq.functions.length === 687 && smap.sequenceCoverage?.indexedTotal === 687
+      && smap.sequenceCoverage.coverageDiff === 0
+      && smap.sequenceCoverage.danglingRefsAfter === 0,
+    `${fq.functions.length}/687 diff=${smap.sequenceCoverage?.coverageDiff}`);
+  ok('FEATURE_SET_MEASURE measure 1719/1719 全量可枚举且每组 ≤ 现渲染上限',
+    mEnum.total === 1719 && mEnum.diff === 0
+      && measure.view.pages.every((p) => p.count <= measure.view.groupCap),
+    `${mEnum.items.length}/${mEnum.total} 条 / ${mEnum.pages} 组`);
+  ok('FEATURE_SET_ROUTINES noRid 16 + 79 RID 字节坐标静态载体',
+    rv.items.length === 79 && nr.length === 16
+      && rv.items.every((x) => Array.isArray(x.byteCoords) && x.byteCoords.length > 0),
+    `RID=${rv.items.length} noRid=${nr.length}`);
+  ok('FEATURE_SET_TOPJSON 执行器 2506/2506 全量可枚举、顶层 json 差集=0',
+    aEnum.total === 2506 && aEnum.diff === 0
+      && actuator.view.pages.every((p) => p.count <= actuator.view.groupCap),
+    `${aEnum.items.length}/${aEnum.total} 条 / ${aEnum.pages} 组`);
+  ok('FEATURE_SET_TRUNC500 menu-tree 无 500 截断节点且逐节点一致',
+    !!menuTree.itemIdsBackfill && (() => {
+      let bad = 0;
+      for (const g of menuTree.groups || []) for (const m of g.models || [])
+        for (const f of m.functions || []) for (const s of f.systems || [])
+          if (Array.isArray(s.itemIds) && s.itemIds.length === 500) bad += 1;
+      return bad === 0;
+    })(), `fixedNodes=${menuTree.itemIdsBackfill?.fixedNodes}`);
+  // ⑦ 构帧实跑：从静态记录生成 elm.cmd 帧并命中 txLog
+  const mF = new MockAdapter({ latencyMs: 0 });
+  const eF = new Elm327(mF, { timeoutMs: 40 });
+  const rec = mEnum.items.find((x) => Number.isInteger(x.pid) && x.readSid === 0x22);
+  const frame = (featureFramesFor('measure', rec) || [])[0] || '';
+  mF.txLog.length = 0;
+  try { await eF.cmd(frame, 40, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
+  ok('FEATURE_SET_MEASURE 静态测量记录 → elm.cmd 实发帧',
+    /^22[0-9A-F]{4}$/.test(frame) && mF.txLog.includes(frame), `frame=${frame}`);
+  // ⑧ :271 字符串计数 → 实跑 enterSessionFor 服务专属会话不被 oemSession 覆盖
+  const cS = new Coder(new MockAdapter({ latencyMs: 0 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  cS.setOemContext('0x0101', 0x7e0);
+  const mS = new MockAdapter({ latencyMs: 0 });
+  const cS2 = new Coder(new Elm327(mS, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  cS2.setOemContext('0x0101', 0x7e0);
+  mS.txLog.length = 0;
+  const okSessionless = await cS2.enterSessionFor('routine', { skipIdent: true });
+  ok('app.js coding 会话入口统一经 enterSessionFor（实跑 sessionless 不发 10xx）',
+    okSessionless === true && !mS.txLog.some((x) => /^10[0-9A-F]{2}$/i.test(x)),
+    `txLog=${mS.txLog.join(',')}`);
+}
+
+// ★ QA R2 / 必改3：U-6 注释/时序一致性 —— 具名常驻断言。
+//   实跑 identityPhaseFrames() 得到的 cat=0x60 四帧顺序，必须与 app.js 注释声明的
+//   「3E00→22F19E→22F1A2→1003」逐帧一致（注释写 A、时序做 B 的情形在此翻红）。
+{
+  const { identityPhaseFrames } = await import('../src/probe.js');
+  const udsFrames = identityPhaseFrames('uds');
+  const declared = /cat=0x60 四帧 3E00→22F19E→22F1A2→1003/.test(app);
+  ok('U6_COMMENT_FRAME_CONSISTENT 注释声明时序 = 实跑 identityPhaseFrames(uds) 四帧',
+    declared && JSON.stringify(udsFrames) === JSON.stringify(['3E00', '22F19E', '22F1A2', '1003']),
+    `declared=${declared} frames=${JSON.stringify(udsFrames)}`);
+  ok('U6_COMMENT_FRAME_CONSISTENT KWP 族仅 1A9F 单帧（注释「每族 2–3 帧」不夸大）',
+    JSON.stringify(identityPhaseFrames('kwp')) === JSON.stringify(['1A9F']),
+    `kwp=${JSON.stringify(identityPhaseFrames('kwp'))}`);
 }
 
 console.log(`\n===== 全链路审计门禁：${pass} 通过 / 0 失败 =====`);

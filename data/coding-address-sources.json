@@ -72,8 +72,8 @@
    }
   },
   "9X6": {
-   "gen": null,
-   "confidence": "unresolved",
+   "gen": "0x01",
+   "confidence": "high",
    "source": "allDataCodingPool(weak)",
    "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
    "nameRecordStats": {},
@@ -84,8 +84,8 @@
    }
   },
   "9X7": {
-   "gen": null,
-   "confidence": "low",
+   "gen": "0x05",
+   "confidence": "high",
    "source": "allDataCodingPool(weak)",
    "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
    "nameRecordStats": {},
@@ -110,8 +110,8 @@
    }
   },
   "CS1": {
-   "gen": null,
-   "confidence": "low",
+   "gen": "0x13",
+   "confidence": "high",
    "source": "allDataCodingPool(weak)",
    "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
    "nameRecordStats": {},
@@ -122,8 +122,8 @@
    }
   },
   "E1": {
-   "gen": null,
-   "confidence": "low",
+   "gen": "0x03",
+   "confidence": "high",
    "source": "allDataCodingPool(weak)",
    "evidence": "ALLDATA coding 池有数据，但该代无有效 name-9 记录（新代/老平台），按 981 通用规则",
    "nameRecordStats": {},

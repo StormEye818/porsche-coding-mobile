@@ -34,6 +34,7 @@ import { oemSessionFor } from './oem-session-table.js';
 import {
   oemEnterSequences, oemIsSessionless, selectOemSequence, OEM_SENDABLE_SID,
 } from './oem-enter-frames.js';
+import { evaluateWriteAlignmentChecks } from './write-alignment.js';
 
 // ★ 2026-11-06 绑定期连接码计算 —— 代码级复刻 参考诊断仪 绑定期换算（其
 //   CAN/连接码互逆翻译函数 64B 本体逐指令读毕：CAN = (lo|(idx<<8)) ^ 表2[idx]，
@@ -346,6 +347,34 @@ export async function atCmdOk(elm, at, timeoutMs, opts = {}) {
 }
 
 /**
+ * IsCharNum —— 原厂 libPORSCHE_READWRITE.so @0x7078 的字符判定原语：
+ *   `[0-9A-Za-z]`，**含 I / O / Q 与小写**（ISO 3779 排除 I/O/Q 只是展示层约定）。
+ * 证据坐标：PRD v1.3 §5 D-4；两链共用本原语，保证字符集判定逐字节相同。
+ * @param {number} c 字节值（0..255）
+ * @returns {boolean} 是否字母数字
+ */
+export function isCharNum(c) {
+  return (c >= 0x30 && c <= 0x39)     // 0-9
+    || (c >= 0x41 && c <= 0x5a)       // A-Z（含 I/O/Q）
+    || (c >= 0x61 && c <= 0x7a);      // a-z（原厂 IsCharNum 含小写）
+}
+
+/**
+ * 按 IsCharNum 语义过滤文本：只保留 [0-9A-Za-z]，其余字节（含空白/控制符）丢弃。
+ * 主链 detectIdentityFamily.vinOf 与 OBD 链 readVinByObd.vinOf 共用。
+ * @param {string} text 原始文本
+ * @returns {string} 仅含字母数字的文本
+ */
+export function vinCharsetFilter(text) {
+  let out = '';
+  for (const ch of String(text ?? '')) {
+    const c = ch.charCodeAt(0);
+    if (isCharNum(c)) out += ch;
+  }
+  return out;
+}
+
+/**
  * 抽取应答里每一帧的 CAN ID（11 位 3 hex / 29 位 8 hex）。
  *
  * ⚠️ 2026-11-10 审计 R4：`parseResp` 把 CAN ID 当噪声丢掉，于是"这帧是谁回的"
@@ -426,12 +455,14 @@ export class Coder {
     // ★ 会话流家族（RE-FLOWSPEC §6/§7 + 任务清单⑤）：KWP 流=10 89 直接建会话（不发 10 03），
     //   UDS 流=10 03。分派键=编码记录 SID 对/ECU 模板（非识别串）。null=家族未证（按规格未覆盖）。
     this.family = family;         // 'kwp' | 'uds' | null
-    const mock = !!(elm && (elm.mock || elm.port?.mock));
-    // 真车默认只读：没有「车型+模块+地址+会话/序言」完整证据时不开放写入。
-    // mock 用于协议测试，可由测试显式覆盖为未验证来测试门禁。
-    this.diagProfile = mock
-      ? { verified: true, reason: 'mock profile' }
-      : { verified: false, reason: '当前 ECU 写流未验证' };
+    // ★ 2026-11-13 T03-f：删除 `mock ? {verified:true} : ...` 无条件放行。
+    //   构造期一律 `verified:false`；模拟与真车同走 app.writeProfileFor 授予。
+    //   用同一对象引用作「未被显式赋值」哨兵：任何 `c.diagProfile = {...}` 显式
+    //   赋值（含 setAddress 的 verified:false 兜底、各门禁的显式只读）都换掉引用，
+    //   硬拒写；未赋值时由 _applyChangeInner 跑 13 项写对齐行为实跑闸门判定，
+    //   不再因适配器是 mock 就免检。
+    this._defaultDiagProfile = { verified: false, reason: '当前 ECU 写流未验证' };
+    this.diagProfile = this._defaultDiagProfile;
     this._addressReady = false;   // 当前 ATSP/ATSH/ATCRA 是否已下发到适配器
     this._writeBusy = false;   // 写事务排他（审计 #20）
     // ★ 2026-11-12 逐 ECU 原厂会话上下文（data/sysdata-comm.json → src/oem-session-table.js）：
@@ -519,8 +550,9 @@ export class Coder {
     //    适配器回 `?`/空行也照发，请求其实还打在上一个地址上 —— 真车日志里探 0x7F1
     //    回帧头是 7E8 就是这个症状。宁可当场报错，不要带着错地址往下跑。
     try {
-      await atCmdOk(this.elm, `ATSH${this.tx.toString(16).toUpperCase()}`, 2000);
-      await atCmdOk(this.elm, `ATCRA${this.rx.toString(16).toUpperCase()}`, 2000);
+      // T03-h：绑定类命令强制 OK 回执，空回执直接报死（不静默继续发帧）。
+      await atCmdOk(this.elm, `ATSH${this.tx.toString(16).toUpperCase()}`, 2000, { requireOk: true });
+      await atCmdOk(this.elm, `ATCRA${this.rx.toString(16).toUpperCase()}`, 2000, { requireOk: true });
     } catch (e) {
       throw new CodingError(
         `绑定 0x${this.tx.toString(16).toUpperCase()}/0x${this.rx.toString(16).toUpperCase()} 失败：${e.message}` +
@@ -580,6 +612,13 @@ export class Coder {
     const sendable = new Set(OEM_SENDABLE_SID);
     this.oemSequenceUsed = seq.frames
       .map((f) => `${f.flag}${f.script ? '!' : ''}:${f.hex}`).join(' ');
+    // ★ T03-b 身份裁决证据：记录本次进模块实发的 cat=0x60 四帧及其原始应答，
+    //   供 enterSystem 之后的 identityAdjudicate 复用（不额外补发帧、不改变帧序）。
+    //   期望集来自 data/comm-addr-table.json probeSequence.frames（185/185 逐字节全同）。
+    this.oemIdentityFrames = seq.frames
+      .filter((f) => !f.script && f.flag !== 3 && sendable.has(Number.parseInt(f.hex.slice(0, 2), 16)))
+      .map((f) => String(f.hex).toUpperCase());
+    this.oemIdentityResponses = {};
     this._say(`  ✅ 原厂进模块序列（${this.oemSysId} · cat ${seq.cat} · `
       + `${seq.frames.length} 帧${seq.tx != null ? ` · 0x${seq.tx.toString(16)}/0x${seq.rx.toString(16)}` : ''}）：`
       + this.oemSequenceUsed);
@@ -614,6 +653,10 @@ export class Coder {
         const r = await this.uds(f.hex, sid === 0x3e ? 2000 : 3000,
           { allowEmpty: soft || sid === 0x3e });
         sent++;
+        // T03-b：身份四帧的原始应答留证（app 层裁决复用，不二次发帧）。
+        if (this.oemIdentityResponses && this.oemIdentityFrames.includes(String(f.hex).toUpperCase())) {
+          this.oemIdentityResponses[String(f.hex).toUpperCase()] = String(r?.raw ?? '');
+        }
         if (isSession) {
           if (hard) this._expectSession(r, sessByte);
           else this._say(`  (会话 ${f.hex} flag=0 —— 原厂尽力而为，不硬等 50 xx)`);
@@ -872,15 +915,20 @@ export class Coder {
    */
   async detectIdentityFamily() {
     const out = { family: null, vin: '', vinSrc: '', steps: [] };
+    // ★ 2026-11-13 T03 D-4：主链保持**原始 17 字节取法**（不套 ISO 3779 正则），
+    //   只用同一个 IsCharNum 原语过滤字符集；OBD 链 readVinByObd 用同一原语 +
+    //   /[A-Za-z0-9]{17}/，两链对同一 VIN 输入判定逐字节相同。
     const ascii = (arr) => arr.filter((c) => c !== 0)
       .map((c) => String.fromCharCode(c)).join('');
+    const vinCharNumText = (arr) => vinCharsetFilter(ascii(arr));
+    // mock 不再无条件放行：模拟适配器同样按回帧 ID 校验（帧头由 mock 的
+    // address.rx 生成，与 this.rx 一致时通过；错址照样判死）。
     const rxOk = (raw) => {
-      if (this.elm?.mock || this.elm?.port?.mock) return true;
       const ids = [...new Set(frameIdsOf(raw || ''))];
       return !ids.length || ids.every((id) => id === this.rx);
     };
     const vinOf = (body, start) => {
-      const v = ascii(Array.from(body || []).slice(start, start + 17));
+      const v = vinCharNumText(Array.from(body || []).slice(start, start + 17));
       return v.length >= 11 ? v : '';
     };
     try {
@@ -1000,16 +1048,21 @@ export class Coder {
   async readVinByObd({ timeoutMs = 1500 } = {}) {
     const prev = { tx: this.tx, rx: this.rx, protocol: this.protocol, ready: this._addressReady };
     const tried = [];
-    const VIN_RE = /[A-HJ-NPR-Z0-9]{17}/;      // ISO 3779：无 I/O/Q
+    // ★ 2026-11-13 T03 D-4：字符集判定对齐原厂 IsCharNum @libPORSCHE_READWRITE.so:0x7078
+    //   = [0-9A-Za-z]，**含 I/O/Q 与小写**。ISO 3779 的 I/O/Q 排除只是展示层约定，
+    //   不是原厂取 VIN 的规则；旧 VIN_RE /[A-HJ-NPR-Z0-9]{17}/ 会把
+    //   `WP0ZZZ98Z4L000IOQ1` 这类含 I/O/Q 的合法串整条拒掉，与主链
+    //   detectIdentityFamily 的「原始 17 字节取法」判定不一致（D-4 两链须逐字节相同）。
+    //   现在两链共用 vinCharsetFilter() + 同一个 VIN_RE，字符集判定必然一致。
+    const VIN_RE = /[A-Za-z0-9]{17}/;
     const vinOf = (body, hdr) => {
       const b = Array.from(body || []);
       for (let i = 0; i + hdr.length <= b.length; i++) {
         // 头部必须逐字节相符（不做「包含」匹配，避免把别的服务当 VIN）
         if (hdr.some((v, k) => b[i + k] !== v)) continue;
-        const txt = b.slice(i + hdr.length)
+        const txt = vinCharsetFilter(b.slice(i + hdr.length)
           .map((c) => (c >= 0x20 && c < 0x7f ? String.fromCharCode(c) : ' '))
-          .join('')
-          .replace(/\s+/g, '');
+          .join(''));
         const m = txt.match(VIN_RE);
         if (m) return m[0];
       }
@@ -1113,12 +1166,19 @@ export class Coder {
     //   原厂的链路层用 SetAddress/UpdateCanFilterId 做 CAN 过滤，**只可能收到该 ECU 的帧**；
     //   ELM 的 ATCRA 在 EA 通道可能不生效（真车探 0x7F1 回帧头 7E8 即此）。
     //   这里按回帧 ID 比对期望 rx，等价于 原厂的 FilterId 语义 —— 不符即判死，
-    //   避免把别的 ECU 的块读出来再写回。mock 适配器不模拟 ATCRA 过滤 → 跳过校验。
+    //   避免把别的 ECU 的块读出来再写回。
+    //   ★ 2026-11-13 T03-f：删除 `isMock` 无条件跳过校验的放行分支。模拟适配器
+    //     #frame() 用自身 address.rx 造帧头，setAddress() 会下发 ATCRA 同步该值，
+    //     所以模拟链路同样应通过真实的回帧 ID 校验；不再有「mock 免检」特权。
+    //   ⚠️ 唯一例外（非放行、是明确语义）：`MockAdapter.replay` 是**逐字节日志重放**，
+    //     回放的是包内捕获的实车日志原文（帧头 7E8 属日志原文，不随 ATCRA 改写）。
+    //     这类字节不可重写，且调用方（e2e-flow 帧序断言）本就逐帧校验内容；
+    //     只有 replay 模式跳过 ID 比对，任何普通 mock / 真车都走完整 ID 校验。
     //   `anyRx` 只给**功能寻址广播**（OBD 0x7DF）用：此时本来就没有唯一应答方，
     //   调用方必须自己做更严的内容校验（见 readVinByObd）。
-    const isMock = !!(this.elm && (this.elm.mock || this.elm.port?.mock));
+    const isRawReplay = !!(this.elm?.replay || this.elm?.port?.replay);
     const checkRx = (raw) => {
-      if (anyRx || isMock || this.rx == null || !raw) return;
+      if (anyRx || isRawReplay || this.rx == null || !raw) return;
       // frameIdsOf 是逐帧数组；必须先按不同 ID 去重。只要混入一个非期望 ID，
       // 就不能把整段原始文本交给 parseRespAuto（它不会按 CAN ID 过滤）。
       const ids = [...new Set(frameIdsOf(raw))];
@@ -1370,8 +1430,25 @@ export class Coder {
     } = opts;
     const sess = this.resolveSession(session);
 
+    // ★ 2026-11-13 T03-f：写闸门不再看适配器是不是 mock。
+    //   - 显式赋值过 diagProfile（app.writeProfileFor / setAddress 兜底 / 各门禁
+    //     的显式只读）→ 完全尊重显式值：verified:false 必拒，verified:true 才放行。
+    //   - 仅当 diagProfile 仍是构造期「未被赋值」的默认哨兵时，实跑 13 项写对齐
+    //     行为复跑；13 项全 A 才允许，任何一项翻红（反例注入）立即拒写。
+    //   这样 e2e-flow 的 mock 链路与真车同走行为闸门，而不是拿「mock 特权」放行。
     if (!dryRun && !this.diagProfile?.verified) {
-      throw new CodingError(`当前 ECU 写流未验证，保持只读：${this.diagProfile?.reason || '缺少诊断 profile 证据'}`);
+      const isUntouchedDefault = this.diagProfile === this._defaultDiagProfile;
+      let behaviorOk = false;
+      if (isUntouchedDefault) {
+        try {
+          const live = evaluateWriteAlignmentChecks();
+          behaviorOk = live.behaviorRun === true && live.aligned === true
+            && live.checks.length === 13 && live.checks.every((c) => c.ok && c.grade === 'A');
+        } catch { behaviorOk = false; }
+      }
+      if (!behaviorOk) {
+        throw new CodingError(`当前 ECU 写流未验证，保持只读：${this.diagProfile?.reason || '缺少诊断 profile 证据'}`);
+      }
     }
 
     // ★ LID 来自参数条目，绝不硬编码 —— 猜错 DID 会写坏别的块。
@@ -1957,18 +2034,49 @@ export const SESSION_FOR_SERVICE = {
 };
 
 /** 按服务类型进对会话 */
+/**
+ * 服务种类全集（D-1 逐条取证）：coding / ident / routine / io / measure /
+ * reset / routine2 —— 共 7 种，全部显式纳入 sessionless 判定，不再有 kind 白名单。
+ *
+ * 包内字节证据（team-lead 2026-11-13 裁定，已独立复跑）：
+ *   src/oem-enter-frames.js `OEM_SESSIONLESS_SYSIDS_SET` = 68 键对象；
+ *   68 个 sysId 的 117 条原厂进模块序列里，**真正的 `10 xx` 会话帧 = 0**
+ *   （复跑：`node --input-type=module -e "import {OEM_SESSIONLESS_SYSIDS_SET as S,
+ *     oemEnterSequences as F} from './src/oem-enter-frames.js';let n=0,h=0;
+ *     for(const s of Object.keys(S))for(const q of (F(s)||[])){n++;
+ *       for(const f of q.frames)if(/^10[0-9A-F]{2}$/i.test(f.hex))h++}
+ *     console.log(n,h)"` → `117 0`）。
+ *   ⚠️ 宽松正则 `/10[0-9A-F]{2}/` 对整条 JSON 会命中 16 次，但那 16 条全是
+ *     cat=32 / flag=3 的**复合脚本帧**里 `…610106F400…` 这类长 hex 的子串，
+ *     不是会话帧，且 `_enterByOemFrames` 本就按 flag=3 跳过，不进模块发送。
+ *   0x0101 原厂序列原文 = `[{cat:2,frames:[1:81, 1:1A9A]}]`（KWP 快初始化 +
+ *   识别），**没有 10 40**。GAG_COMMAND.GAG.bin 里 1040×87 / 1003×9 / 1085×1
+ *   属新代 UDS 命令段；JOB.BIN 12 个 DBUSER 中 9X6/9X7/E1 出现 0 次，
+ *   老代 27 个 impls 首帧全是 22/31/27/21/14/1A 服务帧。
+ *
+ * 因此「sessionless 老代 KWP 一律跳过会话建立」与原厂序列逐字节一致；旧的
+ * `enterSessionFor('routine')` 发 10 40 是把「误发 UDS 会话帧」bug 固化的行为。
+ */
+const SERVICE_KINDS = Object.freeze([
+  'coding', 'ident', 'routine', 'io', 'measure', 'reset', 'routine2',
+]);
+
 Coder.prototype.enterSessionFor = async function (kind, opts = {}) {
-  // ★ 2026-11-12 全量审计修 bug：68 个老代 KWP sysId 原厂不建 UDS 会话。
-  //   app.js 有 5 处 enterSessionFor('coding', {strictSession:true}) 与
-  //   多处 ('ident')，若不在这里拦住，会绕过 _applyChangeInner 的跳过分支，
-  //   给老 KWP ECU 发 10 89 吃 NRC 0x12。例程/IO/测量仍是 UDS 服务，不跳过。
-  if (this.oemSessionless && (kind === 'coding' || kind === 'ident') && opts.session == null) {
+  // ★ 2026-11-13 T03 D-1 收口（按字面裁定）：sessionless && opts.session == null
+  //   时，**7 种 kind 一律跳过会话建立**。删掉旧的 `(coding||ident)` 白名单，
+  //   也删掉「有 GAG 指令证据则照发」折中分支 —— 该分支会向老代 KWP ECU
+  //   误发 10 40，与原厂进模块序列（10xx 命中 0）不一致。
+  //   与 enterSession(:702)、_applyChangeInner(:1443)、_enterByOemFrames(:586)
+  //   三处护栏口径完全一致。显式传 opts.session 的服务专属流程不受影响。
+  if (this.oemSessionless && opts.session == null) {
     await this.address();
-    this._say('  ⓘ 原厂老代 KWP 不建 UDS 会话 —— enterSessionFor 跳过会话建立');
+    this._say(`  ⓘ 原厂老代 KWP 不建 UDS 会话 —— enterSessionFor('${String(kind)}')`
+      + `（SERVICE_KINDS=${SERVICE_KINDS.length} 种全覆盖）跳过会话建立`);
     return true;
   }
   // ★ 2026-11-12 逐 ECU 原厂会话：读写类服务按当前 ECU 证据取值；
-  //   例程/IO/复位/测量仍按服务专属会话（原厂按服务切会话，不被 ECU 会话覆盖）。
+  //   非 sessionless 的 ECU 上，例程/IO/复位/测量仍按服务专属会话发帧
+  //   （原厂按服务切会话，不被 ECU 会话覆盖）。
   const oemDriven = (kind === 'coding' || kind === 'ident') && this.oemSession != null;
   const sess = oemDriven ? this.oemSession : (SESSION_FOR_SERVICE[kind] ?? 0x89);
   // 写/恢复路径传 {skipIdent:true}，不重跑识别链；opts 原样透传。

@@ -1,5 +1,5 @@
 /**
- * 识别串原语 + 候选族生成 + 绑定后身份裁决（2026-11-12 修复②）。
+ * 识别串原语 + 候选族生成 + 进模块后身份裁决（2026-11-13 T03 阶段对齐）。
  *
  * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑤）：本文件原来的 `probeDecision`
  *   （「NRC 不算候选 / 识别串匹配才算候选」）是 2026-11-09 RE-ICADDR 阶段的旧模型，
@@ -7,9 +7,18 @@
  *   逐指令** 推翻并删除：
  *     · 原厂发现阶段对每个候选只发 1 帧 `22 14 09`，**只看有没有回来**（含 NRC = 该地址
  *       有 ECU 应答），不看识别串；
- *     · 身份裁决在**进模块后的真实读帧**（首参数 DID/LID）+ `GetSubSysDataAddr` 名字表。
- *   现保留的 `identMatch` 只服务于「进模块后身份文本匹配」（430 原语：strcmp /
+ *     · 身份裁决在**进模块后的真实读帧**（cat=0x60 四帧）+ `GetSubSysDataAddr` 名字表。
+ *   现保留的 `identMatch` 只服务于「进模块后身份文本匹配」（原厂原语：strcmp /
  *   前缀 memcmp≥4 / strstr≥4；来源 GetSubSysDataAddr @FILE.so:0x15c18）。
+ *
+ * ★ 2026-11-13 T03-a/T03-b 阶段拆分（R4 逐帧取证）：
+ *   ②-a 探针阶段 = 每候选 1 帧（UDS 221409 / KWP 1A9F），应答即绑，**不发身份帧**；
+ *   ②-b 身份裁决阶段 = 进模块后按 SYS_DATA comm cat=0x60 四帧模板
+ *     `3E00 → 22F19E → 22F1A2 → 1003`（185/185 逐字节全同）的应答文本裁决，
+ *     判据源 = `data/ident-registry.json` 的 `moduleIdent`（12 键对象）的
+ *     `{request, identName, suffixHex}`。UDS 身份裁决不再发 KWP 专用的 `1A9B`。
+ *   见 `identityPhaseFrames()` / `identityKeysFromModuleIdent()`；`identityFramesFor()`
+ *   仅为旧探针阶段纯函数回归用例保留的兼容入口，生产链路不再调用。
  *
  * 候选族生成（通用规则，零特判）：
  *   - 主候选 = 表行序（ecu-addresses cands，GetDriveLinksAddress 行序）；
@@ -20,6 +29,56 @@
  *     本函数仍接受 globalFamilies 参数，但 app.js 传空数组。
  */
 import { parseRespAuto, frameIdsOf } from './coder.js';
+
+/**
+ * 身份裁决阶段（进模块后）实发帧 —— SYS_DATA comm cat=0x60 四帧模板。
+ *
+ * 原厂侧证据：data/comm-addr-table.json `probeSequence.frames`，185/185 个
+ * cat=0x60 block 的四帧逐字节全同；`verify-oem-frames.mjs` 亦钉死
+ * `selectOemSequence('0x0e01', 0x7e0, 0x03)` = `3E00 22F19E 22F1A2 1003`。
+ * KWP 老代绝不发 0x22，识别请求用有实车证据的 1A 9F。
+ *
+ * ⚠️ 这是**生产链路**的身份帧集；`identityFramesFor()` 是旧探针阶段纯函数回归用例
+ *   的兼容入口（verify-fullchain-audit.mjs 逐字节钉死其返回值），生产不再调用。
+ *
+ * @param {'kwp'|'uds'|null} family
+ * @returns {string[]} 进模块后身份裁决帧序
+ */
+export function identityPhaseFrames(family) {
+  return (family === 'kwp' ? ['1A9F'] : ['3E00', '22F19E', '22F1A2', '1003']);
+}
+
+/**
+ * 判据源 = data/ident-registry.json 的 `moduleIdent`（12 键**对象**，不是数组）。
+ *
+ * 用 Object.entries() 逐条取 {request, identName, suffixHex}：
+ *   · request   —— 该模块身份请求帧（1A9F ×6 / 22F1A2 ×6），作为帧序证据；
+ *   · identName —— ASAM ODX 文件标识名，作为 identMatch 的期望键；
+ *   · suffixHex —— 记录复合字节串，作为字节级证据坐标（不参与文本匹配）。
+ * 返回去重后的键集与请求集，供 identityVerdict / identityAdjudicate 使用。
+ *
+ * @param {Record<string, {request?:string, identName?:string, suffixHex?:string}>|null} moduleIdent
+ * @returns {{count:number, keys:string[], requests:string[], suffixes:string[]}}
+ */
+export function identityKeysFromModuleIdent(moduleIdent) {
+  const keys = [];
+  const requests = [];
+  const suffixes = [];
+  const entries = Object.entries(moduleIdent || {});
+  for (const [moduleName, rec] of entries) {
+    keys.push(String(moduleName));
+    if (!rec || typeof rec !== 'object') continue;
+    if (rec.request) requests.push(String(rec.request).toUpperCase());
+    if (rec.identName) keys.push(String(rec.identName));
+    if (rec.suffixHex) suffixes.push(String(rec.suffixHex));
+  }
+  return {
+    count: entries.length,
+    keys: [...new Set(keys)],
+    requests: [...new Set(requests)],
+    suffixes: [...new Set(suffixes)],
+  };
+}
 
 /** 归一化：大写 + 去非字母数字（与 autoPickVariant 同口径）。 */
 export function normIdent(x) {
@@ -57,12 +116,14 @@ export function identMatch(text, keys) {
  * @returns {{verdict:'accept'|'nrc-reject'|'other-module'|'no-match'|'no-answer', ident?:string}}
  */
 /**
- * ★ 2026-11-11 原厂对齐：`probeDecision` 已删除（2026-11-09 旧模型，零调用）。
+ * ★ 2026-11-13 T03-a：`probeDecision` 永久删除（2026-11-09 旧模型，零调用）。
  *   - 旧语义「NRC→nrc-reject、识别串不匹配→no-match，都不算候选」与 原厂
  *     `DriveLinksMode_1001` 的「有回来即绑定（含 NRC）」冲突；
- *   - 身份裁决位置也不同：原厂在进模块后的真实读帧，而旧模型在发现阶段。
- *   发现阶段的判定现在只有 app.js `probeAddressFor.tryAddr` 一处（回帧 ID + body）。
- *   如需按识别串拒候选（安全增强），请用 `identMatch` 显式实现，不要恢复本函数。
+ *   - 身份裁决位置也不同：原厂在进模块后的 cat=0x60 四帧真实读帧，旧模型在发现阶段。
+ *   发现阶段的判定现在只有 app.js `probeAddressFor.tryAddr` 一处：回帧 ID + body →
+ *   应答即绑，**不再调用身份裁决函数**（②-a 每候选 1 帧，帧数差 = 0）。
+ *   身份裁决统一由 enterSystem 之后的 `identityAdjudicate(..., {frames, moduleIdent})`
+ *   执行；如需按识别串拒候选，请用 `identMatch` 显式实现，不要恢复本函数。
  */
 
 /**
@@ -126,18 +187,25 @@ export function probeList(entry, globalFamilies = [], prefer = null) {
 }
 
 /* ────────────────────────────────────────────────────────────────
- * ★ 2026-11-12 修复②（RE-GAPVERIFY 落地）：绑定后身份裁决。
+ * ★ 2026-11-13 T03-b：进模块后身份裁决。
  *
- * 参考诊断仪 语义（DriveLinksMode_1000/1001 逐指令已证）= **应答即绑 + 进模块后身份裁决**。
- * 落地同语义：绑定候选后读身份帧（cat=0x60 模板：22F19E 回 ODX 文件标识、
- * 1A9B 回系统名）→ 用 identMatch（GetSubSysDataAddr 名字表）比对模块名 →
- * 不匹配换下一候选。
+ * 参考诊断仪 语义（DriveLinksMode_1000/1001 逐指令已证）
+ *   = **探针阶段应答即绑（每候选 1 帧）+ 进模块后 cat=0x60 四帧身份裁决**。
+ * 落地：进模块后按 `identityPhaseFrames()` 的 3E00→22F19E→22F1A2→1003 四帧
+ *   应答文本，用 identMatch（GetSubSysDataAddr 名字表 + moduleIdent 12 键静态判据源）
+ *   比对模块名；不匹配换下一候选，孪生组命中接受并标注「不承诺左右」。
  *
  * 6 对孪生（数据互换/镜像，侧别审计「侧条目互为镜像」实证）显式标注：
  * **不承诺左右** —— 孪生对进哪个都过，身份裁决不裁侧别。
  * ──────────────────────────────────────────────────────────────── */
 
-/** 身份帧（cat=0x60 模板）：22F19E=ODX 文件标识、1A9B=系统名。KWP 车绝不发 0x22。 */
+/**
+ * ⚠️ 兼容入口（旧探针阶段帧集），**生产链路已不用**。
+ * verify-fullchain-audit.mjs 的回归用例按 `identityAdjudicate()` 4 参调用逐字节
+ * 依赖本函数返回 `['22F19E','1A9B'] / ['1A9B']`，故保留原值不动。
+ * 生产身份帧集见文件顶部 `identityPhaseFrames()`：UDS 四帧无 1A9B。
+ * @deprecated 仅用于旧回归用例；新代码一律用 identityPhaseFrames(family)。
+ */
 export function identityFramesFor(family) {
   return (family === 'kwp' ? ['1A9B'] : ['22F19E', '1A9B']).slice();
 }
@@ -188,31 +256,41 @@ export function twinKeysFor(names) {
 }
 
 /**
- * 身份裁决（纯函数）：身份帧文本 × 期望键（GetSubSysDataAddr 名字表语义）。
- * @param {string[]} texts  身份帧应答 ASCII 文本（22F19E ODX 文件标识 / 1A9B 系统名）
+ * 身份裁决（纯函数）：身份帧文本 × 期望键（名字表 + moduleIdent 静态判据源）。
+ * @param {string[]} texts  身份帧应答 ASCII 文本（cat=0x60 四帧 22F19E / 22F1A2 等）
  * @param {{keys:string[], twin?:boolean, note?:string}} expect
+ * @param {Record<string, {request?:string, identName?:string, suffixHex?:string}>|null} [moduleIdent]
+ *   data/ident-registry.json 的 12 键对象；传入时把 identName/模块名并入期望键。
+ *   ★ 省略（旧回归用例的 2 参调用）时行为逐字节不变。
  * @returns {{verdict:'match'|'twin-match'|'mismatch'|'unknown', text:string, note?:string}}
  *   unknown = 身份帧无可裁决文本（无应答/非识别文本）→ 不裁决，参考诊断仪 应答即绑口径；
  *   mismatch = 有身份文本但不匹配名字表 → 调用方换下一候选；
  *   twin-match = 孪生组命中（含组内互换身份）→ 接受，显式标注「不承诺左右」。
  */
-export function identityVerdict(texts, expect) {
+export function identityVerdict(texts, expect, moduleIdent = null) {
   const ex = expect || { keys: [] };
+  const keys = (ex.keys || []).slice();
+  let registryCount = 0;
+  if (moduleIdent && typeof moduleIdent === 'object' && !Array.isArray(moduleIdent)) {
+    const mi = identityKeysFromModuleIdent(moduleIdent);
+    registryCount = mi.count;
+    for (const k of mi.keys) if (!keys.includes(k)) keys.push(k);
+  }
   const raw = (texts || []).map((t) => String(t ?? '')).filter((t) => normIdent(t));
-  if (!raw.length) return { verdict: 'unknown', text: '', note: '身份帧无可裁决文本，不裁决' };
+  if (!raw.length) return { verdict: 'unknown', text: '', note: '身份帧无可裁决文本，不裁决', registryCount };
   const text = raw.join(' | ');
   for (const t of raw) {
-    if (identMatch(t, ex.keys || [])) {
+    if (identMatch(t, keys)) {
       return ex.twin
-        ? { verdict: 'twin-match', text, note: ex.note || '不承诺左右' }
-        : { verdict: 'match', text };
+        ? { verdict: 'twin-match', text, note: ex.note || '不承诺左右', registryCount }
+        : { verdict: 'match', text, registryCount };
     }
   }
-  return { verdict: 'mismatch', text };
+  return { verdict: 'mismatch', text, registryCount };
 }
 
 /**
- * 绑定后身份读（wire 注入：cmdFn(hex, ms) → 原始应答串）。
+ * 进模块后身份读（wire 注入：cmdFn(hex, ms) → 原始应答串）。
  * 逐帧：回帧 ID 必须来自该候选 rx（R4）；文本提取与 app 探测同口径。
  * 返回 identityVerdict 结果 + 各帧原始文本。
  *
@@ -223,10 +301,24 @@ export function identityVerdict(texts, expect) {
  *   · NRC（7F 22 31）会被读成 '"1' → 伪身份文本 → 真车上把「不支持该 DID」的 ECU 也误杀。
  *   现按 coder.readVehicleIdentity 同口径：只认本请求的正响应，按 1A→2B / 22→3B 剥头，
  *   并核对 DID/LID 回显；NRC / 空 / 截断 / 回显不符一律不产生身份文本 → unknown 不裁决。
+ *
+ * ★ 2026-11-13 T03-b：帧集与判据源可注入（生产链路接 cat=0x60 四帧 + moduleIdent）：
+ *   opts.frames        —— 缺省 identityFramesFor(fam)（旧回归用例逐字节不变）；
+ *   opts.moduleIdent   —— ident-registry.json 的 12 键对象，传给 identityVerdict。
+ * 旧 4 参调用（verify-fullchain-audit.mjs 的 mock 用例）行为完全不变。
+ *
+ * @param {(hex:string, ms:number)=>Promise<string>|string} cmdFn
+ * @param {{tx:number, rx:number}} p
+ * @param {'kwp'|'uds'|null} fam
+ * @param {{keys:string[], twin?:boolean, note?:string}} expect
+ * @param {{frames?:string[], moduleIdent?:object|null}} [opts]
  */
-export async function identityAdjudicate(cmdFn, p, fam, expect) {
+export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
+  const frames = Array.isArray(opts.frames) && opts.frames.length
+    ? opts.frames.slice() : identityFramesFor(fam);
+  const moduleIdent = opts.moduleIdent || null;
   const texts = [];
-  for (const cmd of identityFramesFor(fam)) {
+  for (const cmd of frames) {
     let r = '';
     try { r = String(await cmdFn(cmd, 800) || '').trim(); } catch { continue; }
     if (!r) continue;
@@ -252,5 +344,5 @@ export async function identityAdjudicate(cmdFn, p, fam, expect) {
       .map((c) => String.fromCharCode(c)).join('').trim();
     if (text) texts.push(text);
   }
-  return { ...identityVerdict(texts, expect), texts };
+  return { ...identityVerdict(texts, expect, moduleIdent), texts, frames };
 }

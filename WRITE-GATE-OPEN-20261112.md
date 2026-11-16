@@ -16,7 +16,7 @@
 用户的逻辑成立：431 的写流程本身是实车验证过的，我们只要证明逐帧复刻、且没有掺入自创行为，
 就继承该验证。此前把「本 ECU 是否单独做过实车测试」当闸门，是把**流程验证**误当成**模块验证**。
 
-打开的规模：从原先「仅 981 Cayman DME 一条」→ **3817 / 3817 个有静态地址证据的变体全部放行**，
+打开的规模：从原先「仅 981 Cayman DME 一条」→ **4588 / 4588 个有静态地址证据的变体全部放行**，
 另 771 个无 sysId 映射的变体由全局表/枚举探针给出地址后同样放行（共 25 车型 / 1146 模块 / 4588 变体）。
 
 ---
@@ -105,10 +105,10 @@ UDS + sysId 0x0e13（证据会话 0x03）: 3E00 → 1003 → 220021 → 27090100
 
 ## 4. 回归（`npm test` 全绿，15 项门禁）
 
-`test-align431` 38 / `smoke-fixes` 359 / `e2e-flow` 105 / `verify-pending` 68（1 刻意拒写）/
-`walkthrough` 84 / `verify-all-models` 68 / `verify-runtime-safety` 24 /
-`verify-sysdata-comm` 16 / `verify-oem-session` 28 / `verify-oem-frames` 34 /
-`verify-fullchain` 30 / **`verify-write-gate` 36（新增）** / `check-bundle` / `boot-smoke`。
+`test-align431` 38 / `smoke-fixes` 373 / `e2e-flow` 118 / `verify-pending` 69（刻意拒写 0）/
+`walkthrough` 84 / `verify-all-models` 79 / `verify-runtime-safety` 30 /
+`verify-sysdata-comm` 16 / `verify-oem-session` 32 / `verify-oem-frames` 37 /
+`verify-fullchain` 38 / **`verify-write-gate` 60（新增）** / `check-bundle` / `boot-smoke`。
 
 `verify-write-gate` 覆盖：对齐矩阵 13 项、闸门放行/5 类拒绝判据、记录级闸门仍生效、
 全车型 4588 变体覆盖率、保守模式回退、源码匿名化、写前编排分派键复核（窗口伪影）、

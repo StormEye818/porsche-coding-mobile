@@ -15,7 +15,9 @@
   D. 车型 → 平台：data/model-map.json（多平台车型取 isDefault / variantCount 最大）。
 
 置信度：high（gap≥15%）/ medium（5%≤gap<15%）/ low（gap<5% 或平票）/ unresolved（无交集）。
-只有 high/medium 的平台才在运行时启用平台专属 sysId；其余保持原全局表（不猜）。
+9X6/9X7 的规范 type 由 data/vehicle-id-type-map.json 的 canonicalType 静态定案
+（9X6=0x01、9X7=0x05；DSN 模块表 sysIdLow 全集覆盖最多且为其它候选严格超集），
+全平台均由 DSN 模块索引表产出唯一 (module,type,fullSysId)，无全局表回退。
 
 输出 data/all-model-sysids.json（同时由 tools/build-model-sysid-map.mjs 编译成 src 模块）。
 用法： python3 tools/export-all-model-sysids.py
@@ -239,8 +241,8 @@ def main():
     #   老代 0x01-0x0A 的 sysDataOff 是 u32 数值表、没有 ASCII 名字，名字投票必然
     #   平票/零交集 —— 这不是「包内不可证」，而是找错了载体。DSN 索引的 id 严格
     #   ≡ SYS_DATA root type ≡ sysId 高字节，与 9 个已定案平台完全吻合。
-    #   **只定 gen，不动 confidence / modules**：这些平台的模块 sysId 仍缺证据，
-    #   运行时必须继续走全局表回退（apply=false），绝不因 gen 定案就猜模块地址。
+    #   本阶段只定 gen / typeCandidates；模块与 confidence 由后续 DSN 模块索引表
+    #   补源（全平台唯一 (module,type,fullSysId)，无全局表回退、无 apply=false）。
     pmap_path = ROOT / 'data' / 'platform-type-map.json'
     if pmap_path.exists():
         pmap = json.loads(pmap_path.read_text())
@@ -261,14 +263,16 @@ def main():
             if e:
                 e['indexGenDivergence'] = d
 
-    # ★ 2026-11-12 第十阶段收口：DSN.BIN 各平台模块索引表给出「模块名 → sysId 低字节」
-    #   （生成器 tools/build-dsn-module-sysids.mjs）。此前判「老代模块 sysId 结构性不可证」
-    #   是找错载体：老代 sysDataOff 确实是纯 u32 数值表，但模块名索引在 DSN.BIN。
-    #   只补「原本 0 模块」且单 type 的平台（CS1=0x13 / E1=0x03）：
-    #     - 同名多 id / 多 type 候选一律不猜（生成器已排除，runtimeModules 为空）
-    #     - 9X6/9X7 是多 type 平台，runtimeModules 故意为空 → 保持全局表回退
-    #     - 已有 name-9 投票结果的平台一律不覆盖，避免 981 等既有链路回归
+    # ★ 2026-11-13 HB-1 收口：DSN.BIN 各平台模块索引表给出「模块名 → (type,fullSysId)」
+    #   唯一映射（生成器 tools/build-dsn-module-sysids.mjs schemaVersion=2）。
+    #   - 9X6 / 9X7 的规范 type 由 vehicle-id-type-map.json canonicalType 静态定案
+    #     （9X6=0x01 / 9X7=0x05），不再留空 runtimeModules、不再走全局表回退；
+    #   - E1_ 前缀跨代模块归 type 0x03；_9x7_pcm2_gw 标 gatewayNoSysId 不进运行时；
+    #   - 全部 14 平台均产出 runtimeModules，逐条 (module,type,fullSysId) 静态唯一。
+    #   - 已有 name-9 投票结果的平台一律不覆盖，避免 981 等既有链路回归。
     dsn_path = ROOT / 'data' / 'dsn-module-sysids.json'
+    vim_path = ROOT / 'data' / 'vehicle-id-type-map.json'
+    vim = json.loads(vim_path.read_text()) if vim_path.exists() else {}
     if dsn_path.exists():
         dsn = json.loads(dsn_path.read_text())
         for dsn_name, r in (dsn.get('platforms') or {}).items():
@@ -282,24 +286,50 @@ def main():
             e = platforms[plat_key]
             if e['modulesResolved'] > 0:
                 continue                      # 已有证据，绝不覆盖
+            canon = r.get('canonicalType') or (r['types'][0] if r.get('types') else None)
             e['modules'] = {
                 n: {'sysId': sid, 'method': 'dsn-module-index',
+                    # type 来自 fullSysId 高字节（E1_ 跨代模块为 0x03，非平台 canonicalType）
+                    'type': f'0x{int(sid, 16) >> 8:02x}',
+                    'canonicalType': canon,
                     'evidence': (f"DSN.BIN 模块索引表 @0x{r['payloadOff']:X}："
-                                 f"sysIdLow={int(sid, 16) & 0xff} + type {r['types'][0]} "
+                                 f"sysIdLow={int(sid, 16) & 0xff} + "
+                                 f"type 0x{int(sid, 16) >> 8:02x}（canonicalType {canon}）"
                                  f"→ {sid}（权威 sysIds 集合校验通过）")}
                 for n, sid in mods.items()
             }
             e['modulesResolved'] = len(e['modules'])
             e['confidence'] = 'high'
-            e['confidenceFrom'] = 'DSN.BIN 模块索引表（显式字节证据，非负启发式投票）'
-            e['genEvidence'] = (f"平台→type 与模块→sysId 均由 DSN.BIN 显式索引定案；{e['genEvidence']}")
+            e['confidenceFrom'] = 'DSN.BIN 模块索引表 + canonicalType 严格超集硬校验（显式字节证据）'
+            # 9X6 / 9X7：gen 由 canonicalType 静态定案（0x01 / 0x05），applied=true。
+            if plat_key.upper() in ('9X6', '9X7'):
+                expected = (vim.get('canonicalType') or {}).get(plat_key.upper())
+                if expected:
+                    e['gen'] = expected.lower()
+                    e['genSource'] = 'data/vehicle-id-type-map.json:canonicalType（严格超集硬校验）'
+                    e['canonicalType'] = expected
+                    e['canonicalTypeEvidence'] = (
+                        (vim.get('supersetProof') or {}).get(plat_key.upper()) or {})
+            e['genEvidence'] = (f"平台→type 与模块→(type,fullSysId) 均由 DSN.BIN 显式索引 + "
+                                f"canonicalType 静态定案；{e['genEvidence']}")
             e['dsnModuleIndex'] = {
                 'payloadOff': r['payloadOffHex'],
                 'rows': r['rowCount'], 'unique': r['uniqueCount'],
+                'mappings': r.get('mappingCount'),
+                'canonicalType': canon,
+                'gatewayNoSysId': r.get('gatewayNoSysIdCount', 0),
                 'ambiguous': r['ambiguousCount'], 'unresolved': r['unresolvedCount'],
             }
+            # 41/41 映射表完整保留：网关行以 gatewayNoSysId 单列（不进 modules /
+            # runtimeModules），使「9X7 41/41 唯一映射」与「网关不进运行时」同时可证。
+            e['gatewayNoSysId'] = [
+                {'name': g['name'], 'low': g.get('low'), 'gatewayNoSysId': True,
+                 'inRuntimeModules': False}
+                for g in (r.get('gatewayNoSysId') or [])
+            ]
+            e['applyPlatformSysIds'] = True
 
-    # D. 车型展开（只引用 high/medium 平台；其余保持全局表，不猜）
+    # D. 车型展开（全平台均已有唯一静态映射；不再回退全局表）
     models = {}
     for model, hits in mm['modelMap'].items():
         best = sorted(hits, key=lambda h: (not h.get('isDefault'), -h.get('variantCount', 0)))[0]
@@ -326,11 +356,11 @@ def main():
                   '+ 14× *_ALLDATA.BIN 目录 + model-map.json + 981-sysids.json',
         'method': '平台→代际优先取 DSN.BIN 显式索引（id≡root type≡sysId 高字节）；'
                   '未定案平台再用变体名∩type 名字集交集(top1 gap≥15% high/≥5% medium)；'
-                  '模块→sysId：原本 0 模块且单 type 的平台(CS1/E1)取 DSN 模块索引表的唯一映射，'
-                  '其余用限定该代 name-9 投票（已有结果不覆盖）；981 沿用已验收 48/48。'
-                  '多 type 平台(9X6/9X7)的 DSN 记录低字节可解但高字节需运行时 VIN/识别应答，'
-                  '故意不接入，保持全局表回退',
-        'rule': '只有 high/medium 平台在运行时启用平台专属 sysId；low/unresolved 保持全局 MODULE_TO_ECUID（宁可不覆盖也不猜）',
+                  '模块→sysId：全 14 平台取 DSN 模块索引表的唯一 (module,type,fullSysId) 映射；'
+                  '9X6/9X7 规范 type 由 canonicalType 严格超集硬校验静态定案（0x01/0x05）；'
+                  'E1_ 跨代模块归 0x03、low=0x00 网关标 gatewayNoSysId 不进运行时；'
+                  '已有 name-9 投票结果的平台不覆盖；981 沿用已验收 48/48。',
+        'rule': '全平台均启用平台专属 sysId（applyPlatformSysIds=true）；无全局表回退、无 gen=null、无 unknown 保底',
         'stats': {'platforms': len(platforms), 'models': len(models), **dict(stats)},
         'platforms': platforms,
         'models': models,
@@ -341,7 +371,7 @@ def main():
         print(f'  {p:8s} gen={str(e["gen"]):6s} conf={e["confidence"]:10s} '
               f'模块 {e["modulesResolved"]:3d}/{e["systems"]:3d} 路由owner={e["routeOwnerCount"]:2d} 车型={len(model_of_platform[p])}')
     applied = sum(1 for m in models.values() if m['applyPlatformSysIds'])
-    print(f'车型启用平台专属映射：{applied}/{len(models)}（其余保持全局表）')
+    print(f'车型启用平台专属映射：{applied}/{len(models)}（全平台唯一静态映射，无全局表回退）')
     if not (platforms.get('9X1', {}).get('gen') == '0x0e' and platforms['9X1']['modulesResolved'] == 48):
         raise SystemExit('❌ 981/9X1 回归失败')
     print('✅ 9X1 → 0x0E / 48 模块回归通过')

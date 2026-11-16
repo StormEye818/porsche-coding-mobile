@@ -7,12 +7,12 @@
 > 第十阶段审计见 `AUDIT-20261112.md`，闸门状态见 `WRITE-GATE-OPEN-20261112.md`。
 >
 > ⚠️ 本页及续篇中的旧覆盖率/「已全对齐」表述均为历史资料，不再作为实车写入验收。
-> 当前真实行为门禁（`npm test` 全绿，16 项）：`test-align431` **38**、`smoke-fixes` **362**、
-> `verify-all-models` **72**、`e2e-flow` 105、`verify-pending` **69**、 `walkthrough` 84、
-> `verify-runtime-safety` 24、`verify-sysdata-comm` 16、`verify-oem-session` **29**、
-> `verify-oem-frames` **34**、`verify-fullchain` **30**、`verify-write-gate` **36**、
-> `verify-fullchain-audit` **53**，均 0 失败。
-> **写闸门已按「逐帧对齐 431 主写模板」打开**：3817/3817 有静态地址证据的变体放行，
+> 当前真实行为门禁（`npm test` 全绿，28 步）：`test-align431` **38**、`smoke-fixes` **373**、
+> `verify-all-models` **79**、`e2e-flow` 118、`verify-pending` **69**、 `walkthrough` 84、
+> `verify-runtime-safety` 30、`verify-sysdata-comm` 16、`verify-oem-session` **32**、
+> `verify-oem-frames` **37**、`verify-fullchain` **38**、`verify-write-gate` **60**、
+> `verify-fullchain-audit` **89**，均 0 失败。
+> **写闸门已按「逐帧对齐 431 主写模板」打开**：4588/4588 有静态地址证据的变体放行（旧值 3817 已作废），
 > 另 771 个由全局表/枚举探针给出地址后同样放行；`setWriteGateMode('whitelist-only')` 可切回保守只读。
 >
 > **全量收口（本轮）新增**：
@@ -52,7 +52,7 @@
 > ⚠️ **已有续篇：`TAKEOVER-20261018.md`。** 第二轮把待逆收编 + 功能审查 + REA/431 对照都推完了，
 > 现状数字（覆盖率 / 回归数）**以续篇为准**。本篇的 §5 待办清单大部分已销项，仍可用作方法论与踩坑参考。
 > 续篇 §9 记的是第四轮：**字长 VM（mode 0x6E–0x77 族）9 个全部收编**，拒写 20 → 6 条。
-> 续篇 §10–§11 记的是第五轮：**内联 VM 家族 4 个变体收编**（含 `3D536546` = mode `0xb1`）拒写 6 → 4 条，并新建 `tools/walkthrough.mjs`（38/38）用真机真值表校验 key 跑通读写 + 特殊功能。
+> 续篇 §10–§11 记的是第五轮：**内联 VM 家族 4 个变体收编**（含 `3D536546` = mode `0xb1`）拒写 6 → 4 条，并新建 `tools/walkthrough.mjs`（当时 38/38，历史值）验 key 跑通读写 + 特殊功能。
 >
 > ⚠️ **第三轮（最新）：`TAKEOVER-20261018-R3.md`。** 本轮修了 30+ 个功能 bug、补 0x79/0x7a/0x7b、
 > 修 KWP `17 40`/UDS `27 09 01 00`/真机 `ATAL`+流控/单帧截断/DTC 混解析等；
@@ -384,9 +384,9 @@ A: `xcrun devicectl list devices` 看状态。`available (paired)` 但装不上�
 
 ### 11.2 验证与生成物（全绿）
 
-- `tools/verify-pending.mjs` **68 通过 / 0 失败 / 1 刻意拒写**（32 点 oracle 真值）
+- `tools/verify-pending.mjs` **69 通过 / 0 失败 / 0 刻意拒写**（32 点 oracle 真值）
 - `tools/sa2-registry-selfcheck.py`（Unicorn 真 .so）**135/135 变体 · 675/675 用例 · 0 失败**
-- `smoke-fixes.mjs` **343/0** · `name-map-coverage` **131 可算 + 1 空壳 + 0 拒写**
+- `smoke-fixes.mjs` **373/0** · `name-map-coverage` **131 可算 + 1 空壳 + 0 拒写**
 - **registry 生成物重生成（v2）**：`tools/gen-seedkey-registry.py` 重写 ——
   生成段（SA2 50 = verify 46 + oracle 补跑 4 / ADD 44 / 特殊 3 / INLINE_VM 4 = rodata 重提取）
   + 维护段 `analysis/seedkey-registry-extra.js`（RC/循环/CRC/MULADD 族，32 点对拍冻结）。

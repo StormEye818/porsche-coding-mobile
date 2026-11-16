@@ -249,4 +249,30 @@ console.log('\n[5] 全车型覆盖与写流程');
   ok('拒写原因与原厂序列无关（不是帧序卡点）', !/原厂进模块序列|会话响应异常/.test(msg), msg);
 }
 
+// ── T04-d：:234 的 app 源码正则 → 实跑 selectOemSequence / Coder 发帧序列 ──
+{
+  const m = new MockAdapter({ latencyMs: 0 });
+  const c = new Coder(new Elm327(m, { timeoutMs: 60 }),
+    { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  c.setOemContext('0x0e13', 0x7e0);
+  m.txLog.length = 0;
+  try { await c.enterSession(undefined, { family: 'uds', oemSequence: true }); }
+  catch { /* 末尾会话无回执按发帧序列判定 */ }
+  const frames = m.txLog.filter((x) => !x.startsWith('AT'));
+  ok('协议层原厂序列模式实跑发帧（非 app 源码正则）',
+    frames.length >= 3 && frames.some((f) => /^10[0-9A-F]{2}$/i.test(f)),
+    frames.join(','));
+  const seq = selectOemSequence('0x0e13', 0x7e0);
+  ok('按绑定地址挑选原厂序列（实跑 selectOemSequence，逐帧可复算）',
+    Array.isArray(seq?.frames) && seq.frames.length > 0
+      && seq.frames.every((f) => typeof f.hex === 'string'),
+    (seq?.frames || []).map((f) => f.hex).join(' '));
+  ok('68 个 sessionless sysId 的 117 条序列零 10xx 会话帧（实跑静态证据）',
+    Object.keys(OEM_SESSIONLESS_SYSIDS_SET).length === 68
+      && Object.keys(OEM_SESSIONLESS_SYSIDS_SET).every((k) =>
+        oemEnterSequences(k).every((q) => (q.frames || []).every((f) =>
+          !/^10[0-9A-F]{2}$/i.test(String(f.hex || ''))))),
+    `68 键 / ${OEM_ENTER_STATS?.sequenceCount ?? ''} 序列`);
+}
+
 console.log(`\n===== 原厂进模块帧序列门禁：${pass} 通过 / 0 失败 =====`);

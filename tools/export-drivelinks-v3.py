@@ -24,6 +24,7 @@
 import bisect
 import json
 import struct
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -31,6 +32,72 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DL = Path('/Users/se818/porsche-mapper/ref/decoded/PORSCHE_DRIVELINKS.BIN')
 OUT = ROOT / 'data' / 'drivelinks-v3.json'
+SMALL_DL = ROOT / 'data' / 'drivelinks.json'
+
+
+# ────────────────────────────────────────────────────────────────
+# ★ 2026-11-13 T03-f：seed/key 生产链证据字段 modeVerified
+#
+# 语义 = 「记录复合 u32 的低字节（mode）确为**已实现**的 securityModel mode」。
+# 判据不是「mode 非空」、更不是「一律 true」（把 mode 0x00 / 0x1D / >0x77
+# 无 case 的记录标 true 会算出垃圾 key → NRC 0x35 → 重试吃满 0x36 锁死）。
+# 真实判据由 **node 实跑 src/seedkey-resolver.js 的 resolveKey** 得出：
+#   resolveKey(mode, 0x12345678) 不抛错 且 needsKey===true 且 outlen>0。
+# 未验证的记录 modeVerified=false，app.js 的 mode 闸门不放行，
+# 仍回落名字分发（ASAP1A 变体符号），保持只读安全。
+# ────────────────────────────────────────────────────────────────
+MODE_VERIFY_JS = (
+    "import { resolveKey } from './src/seedkey-resolver.js';"
+    "const modes = JSON.parse(process.argv[1]);"
+    "const ok = [];"
+    "for (const m of modes) {"
+    "  try { const r = resolveKey(m, 0x12345678, { ecuId: null });"
+    "        if (r.needsKey === true && (r.outlen | 0) > 0) ok.push(m); }"
+    "  catch (e) { /* 未实现 / 需运行时 state → 不标 true */ }"
+    "}"
+    "process.stdout.write(JSON.stringify(ok));"
+)
+
+
+def implemented_modes(modes):
+    """实跑 resolveKey 得到已实现的 securityModel mode 集合（无硬编码名单）。"""
+    proc = subprocess.run(
+        ['node', '--input-type=module', '-e', MODE_VERIFY_JS, json.dumps(sorted(modes))],
+        cwd=str(ROOT), capture_output=True, text=True, check=True,
+    )
+    return set(json.loads(proc.stdout.strip() or '[]'))
+
+
+def annotate_mode_verified(doc):
+    """就地把 modeVerified 写进 drivelinks.json 文档的每条记录（仅该字段）。"""
+    rows = [r for arr in doc.get('ecu', {}).values() for r in arr]
+    modes = {r['mode'] for r in rows if r.get('mode') is not None}
+    verified = implemented_modes(modes)
+    true_count = 0
+    for r in rows:
+        is_verified = r.get('mode') is not None and r['mode'] in verified
+        r['modeVerified'] = bool(is_verified)
+        if is_verified:
+            true_count += 1
+    doc.setdefault('stats', {})['modeVerified'] = {
+        'true': true_count,
+        'false': len(rows) - true_count,
+        'implementedModes': sorted(verified),
+        'policy': 'resolveKey(mode, 0x12345678) 实跑不抛错且 needsKey=true 且 outlen>0',
+        'source': 'src/seedkey-resolver.js resolveKey + PORSCHE_DRIVELINKS 记录复合低字节',
+        'repro': 'python3 tools/export-drivelinks-v3.py --annotate-mode-verified',
+    }
+    return true_count, len(rows)
+
+
+def annotate_drivelinks_file():
+    """独立复跑入口：读 data/drivelinks.json → 写回带 modeVerified 的版本。"""
+    doc = json.loads(SMALL_DL.read_text(encoding='utf-8'))
+    true_count, total = annotate_mode_verified(doc)
+    SMALL_DL.write_text(json.dumps(doc, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+    print(f'data/drivelinks.json: modeVerified=true {true_count}/{total} 条'
+          f'（未验证 {total - true_count} 条回落名字分发）')
+    return 0
 
 # 已证锚点：sysId → (internal, 说明)。用来确认解析没跑偏。
 ANCHORS = {
@@ -162,6 +229,8 @@ def parse_record(dl, off, end, mode_hint):
 
 
 def main():
+    if '--annotate-mode-verified' in sys.argv:
+        return annotate_drivelinks_file()
     check_only = '--check' in sys.argv
     dl = DL.read_bytes()
     dirc = parse_directory(dl)

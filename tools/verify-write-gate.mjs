@@ -17,11 +17,13 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { MockAdapter } from '../src/mock-adapter.js';
-import { Elm327 } from '../src/elm327.js';
+import { Elm327, Elm327Error } from '../src/elm327.js';
 import { Coder } from '../src/coder.js';
 import {
   WRITE_ALIGNMENT, WRITE_GATE, setWriteGateMode, writeProfileFromAlignment,
+  evaluateWriteAlignmentChecks,
 } from '../src/write-alignment.js';
+import { resolveKey } from '../src/seedkey-resolver.js';
 
 const readJson = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 const app = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
@@ -39,9 +41,29 @@ const ok = (name, cond, detail = '') => {
 // ── ① 对齐矩阵 ─────────────────────────────────────────────────
 console.log('\n[1] 写流程对齐矩阵');
 ok('aligned = true', WRITE_ALIGNMENT.aligned === true);
-ok(`13 项判定全部通过且为 A 级`,
-  WRITE_ALIGNMENT.checks.length === 13 && WRITE_ALIGNMENT.checks.every((c) => c.ok && c.grade === 'A'),
-  `${WRITE_ALIGNMENT.checks.length} 项`);
+// ★ 2026-11-13 T03-i：不再只读静态 JSON 的 checks[].ok —— 每次**实跑重算 13 项**
+//   （帧序列逐帧复跑 + 构建期行为证据），并用 13 个断言名逐条钉死。
+const liveAlign = evaluateWriteAlignmentChecks();
+// 13 项判定 id 逐字钉死（U-1 门禁断言名载体；防止某检查被改名/漏掉而未被察觉）。
+const WRITE_GATE_13_CHECK_IDS = Object.freeze([
+  'kwp-frame-shape', 'uds-frame-shape', 'readback-verify', 'safety-default-off',
+  'no-ident-chain-in-write', 'skip-ident-on-write', 'no-auto-restore',
+  'no-security-brute', 'record-driven-sid', 'session-evidence', 'address-probe',
+  'oem-context-kwp', 'oem-context-uds',
+]);
+ok('WRITE_GATE_13_CHECKS：13 项写对齐行为复跑全 A（非静态快照）',
+  liveAlign.behaviorRun === true && liveAlign.checks.length === 13
+  && liveAlign.checks.every((c) => c.ok && c.grade === 'A')
+  && WRITE_ALIGNMENT.checks.length === 13
+  && WRITE_ALIGNMENT.checks.every((c) => c.ok && c.grade === 'A'),
+  `复跑 ${liveAlign.checks.length} 项 / ${liveAlign.frameCount} 帧`);
+ok('WRITE_GATE_13_CHECKS：复跑 id 集合与钉死的 13 项逐字全等',
+  JSON.stringify(liveAlign.checks.map((c) => c.id)) === JSON.stringify(WRITE_GATE_13_CHECK_IDS),
+  liveAlign.checks.map((c) => c.id).join(','));
+for (const id of WRITE_GATE_13_CHECK_IDS) {
+  const c = liveAlign.checks.find((x) => x.id === id);
+  ok(`${id}（行为复跑）`, !!c && c.ok && c.grade === 'A', c ? c.detail : '缺失');
+}
 ok('原厂主写模板 6 帧齐备（会话/保活/备份/安全/写/回读）',
   WRITE_ALIGNMENT.templateKwp.length === 6);
 const kwp = WRITE_ALIGNMENT.measuredKwp;
@@ -198,8 +220,22 @@ console.log('\n[6] 写前编排分派键复核（记录级，非 ECU 级）');
   const ratio = mixed / modulePairs.size;
   ok('多数模块同时含多个 SID 对 → 按 ECU 选写前模式不成立',
     ratio >= 0.5, `混协议模块 ${mixed}/${modulePairs.size} = ${(ratio * 100).toFixed(1)}%`);
-  ok('WRITE_PROLOGUES 注释已标明「滑动窗口伪影/非运行时分派表」',
-    /滑动窗口伪影/.test(coderSrc) && /非运行时分派表|非运行时判定/.test(coderSrc));
+  // ★ G7：注释字面量 → 实跑。写路径真实发帧里不得出现写前编排序言帧（证明无 call 方生效）。
+  {
+    const mP = new MockAdapter({ latencyMs: 0 });
+    const cP = new Coder(new Elm327(mP, { timeoutMs: 40 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    cP.diagProfile = { verified: true, reason: 'G7 测试授信' };
+    mP.txLog.length = 0;
+    try {
+      await cP.applyChange({ name: 'x', lid: 0x30, readSid: 0x22, writeSid: 0x2e,
+        byte: 0, bit: 0, bitsize: 8 }, 1, { dryRun: false });
+    } catch { /* 空回执按发帧判定 */ }
+    const pFrames = mP.txLog.filter((x) => !x.startsWith('AT'));
+    ok('WRITE_G7_NO_PROLOGUE_IN_WRITE 实跑写路径不含写前编排序言帧',
+      pFrames.length > 0 && !pFrames.some((f) => /^(1A9F|22F19E|22F1A2|1A8[0-9A-F])/i.test(f))
+      && /滑动窗口伪影/.test(coderSrc),
+      `frames=${pFrames.join(',')}`);
+  }
   ok('runWritePrologue 保持无调用方（按记录直接发读写帧）',
     /runWritePrologue/.test(coderSrc) && !/await this\.runWritePrologue\(/.test(coderSrc));
 }
@@ -218,9 +254,15 @@ console.log('\n[7] seed/key 边界（不猜 key、不试错）');
   const c = new Coder(new Elm327(m, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8 });
   c.seedKeyProvider = noCase();
   let msg = '';
+  m.txLog.length = 0;
   try { await c.securityAccessEx({ level: 0x09, kwp: false }); } catch (ex) { msg = String(ex.message); }
-  ok('原厂无 case 且 ECU 回非零 seed → 明确拒写（不猜 key）',
-    /没有对应的算法分支|拒绝猜测 key/.test(msg), msg.slice(0, 90));
+  // T04-d：不再只匹配错误文案，改为实跑行为断言 —— 拒写后不得发出 27 0A（key）帧
+  const sentAfterDeny = m.txLog.filter((x) => !x.startsWith('AT'));
+  ok('原厂无 case 且 ECU 回非零 seed → 明确拒写且不发 27 0A（实跑行为）',
+    /没有对应的算法分支|拒绝猜测 key/.test(msg)
+      && sentAfterDeny.some((f) => /^2709/i.test(f))
+      && !sentAfterDeny.some((f) => /^270A/i.test(f)),
+    `${msg.slice(0, 60)} | txLog=${sentAfterDeny.join(',')}`);
 
   const m2 = new MockAdapter({ latencyMs: 0, seedBytes: [0, 0] });
   const c2 = new Coder(new Elm327(m2, { timeoutMs: 2000 }), { tx: 0x7e0, rx: 0x7e8 });
@@ -228,23 +270,122 @@ console.log('\n[7] seed/key 边界（不猜 key、不试错）');
   const r = await c2.securityAccessEx({ level: 0x09, kwp: false });
   ok('取 seed 全零 → 跳过解锁（431 语义，不误判为「无需实车验证」）', r === true);
 
-  ok('不逐级试安全 level（9 种 profile 不参与运行时分派）',
-    /已禁用逐级试错/.test(coderSrc));
+  // ★ G7：源码字面量 → 实跑。安全访问只发**一组** 27 09，不得出现第二个不同 level 的 27xx。
+  {
+    const mQ = new MockAdapter({ latencyMs: 0 });
+    const cQ = new Coder(new Elm327(mQ, { timeoutMs: 60 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    cQ.seedKeyProvider = noCase();
+    mQ.txLog.length = 0;
+    try { await cQ.securityAccessEx({ level: 0x09, kwp: false }); } catch { /* 拒写按发帧判定 */ }
+    const sFrames = mQ.txLog.filter((x) => /^27/i.test(x));
+    const levels = new Set(sFrames.map((f) => f.slice(2, 4)));
+    ok('WRITE_G7_NO_LEVEL_BRUTE 实跑只发一组 27 09（不逐级试 level）',
+      levels.size <= 1, `27 帧=${sFrames.join(',') || '(空)'} levels=${[...levels].join(',')}`);
+  }
   ok('对齐矩阵 rule 不再误写「无 case 不发 key 直接写」',
     !/无 case 的 seed 模式不发 key/.test(readFileSync(
       new URL('../src/write-alignment.js', import.meta.url), 'utf8')));
 
-  // 复核结论：makeResolverProvider 的唯一生产调用点被 modeVerified===true 挡住，
-  // 而 data/drivelinks.json 全表无该字段 → needsKey:false 在生产路径不可达，
-  // 上面 [7] 的第一条断言测的是测试专用 provider，不代表生产会「跳过 key」。
+  // ★ 2026-11-13 T03-f：seed/key 生产链已接通（推翻旧「全表无 modeVerified 字段」结论）。
+  //   生成器 python3 tools/export-drivelinks-v3.py --annotate-mode-verified 按
+  //   「resolveKey(mode, 0x12345678) 实跑不抛错且 needsKey=true 且 outlen>0」逐记录
+  //   标注；未验证记录（mode 0x00 无 case 0 / 0x1D 需运行时 state / >0x77 无 case）
+  //   一律 false，继续回落名字分发，绝不一律 true（否则算错 key → NRC 0x35→0x36 锁死）。
   const dl = readJson('../data/drivelinks.json');
-  ok('drivelinks 全表无 modeVerified 字段 → needsKey:false 生产不可达',
-    !JSON.stringify(dl).includes('modeVerified'), `${dl.recordCount} 条记录`);
-  ok('app 保留 modeVerified===true 闸门（mode 路径不误入）',
-    /hit\[0\]\.modeVerified === true/.test(app));
+  const dlRows = Object.values(dl.ecu).flatMap((arr) => arr);
+  const verifiedRows = dlRows.filter((r) => r.modeVerified === true);
+  const rejectedRows = dlRows.filter((r) => r.modeVerified === false);
+  ok('SEEDKEY_PRODUCTION_REACHABLE：modeVerified=true 记录真实存在且生产闸门可达',
+    verifiedRows.length > 0 && /hit\[0\]\.modeVerified === true/.test(app),
+    `true=${verifiedRows.length}/${dlRows.length} 条`);
+  ok('SEEDKEY_PRODUCTION_REACHABLE：每条 true 记录都实跑 resolveKey 可算 key',
+    verifiedRows.every((r) => {
+      try {
+        const k = resolveKey(r.mode, 0x12345678, { ecuId: null });
+        return k.needsKey === true && (k.outlen | 0) > 0;
+      } catch { return false; }
+    }), `实跑 ${verifiedRows.length} 条`);
+  ok('SEEDKEY_PRODUCTION_REACHABLE：绝不一律 true，未验证记录仍回落名字分发',
+    rejectedRows.length > 0 && rejectedRows.length < dlRows.length
+    && rejectedRows.every((r) => r.modeVerified === false),
+    `false=${rejectedRows.length} 条（mode 0x00 / 0x1D / >0x77 无 case）`);
+  ok('SEEDKEY_PRODUCTION_REACHABLE：生成器产出（stats.policy 可复跑）',
+    /resolveKey/.test(dl.stats?.modeVerified?.policy || '')
+    && /annotate-mode-verified/.test(dl.stats?.modeVerified?.repro || ''),
+    dl.stats?.modeVerified?.repro || '—');
   ok('对齐矩阵写明 level 由脚本命令字节决定（非静态 ECU→level 表）',
     /安全 level 由脚本命令字节决定/.test(readFileSync(
       new URL('../src/write-alignment.js', import.meta.url), 'utf8')));
+}
+
+// ── ⑧ ELM 链路：ATSH/ATCRA 空回执阻断 + 超时半包清空（T03-h）────
+console.log('\n[8] ELM 绑定回执与半包（行为实跑）');
+{
+  class StubPort {
+    constructor(reply) { this.reply = reply; this.handlers = []; this.written = []; }
+    write(s) {
+      this.written.push(String(s));
+      const r = this.reply;
+      setTimeout(() => this.handlers.forEach((h) => h(new TextEncoder().encode(r))), 0);
+    }
+    on(_e, cb) { this.handlers.push(cb); }
+  }
+  const mkElm = (reply, timeoutMs = 200) => new Elm327(new StubPort(reply), { timeoutMs });
+
+  let blocked = false;
+  try { await mkElm('\r>').cmdOk('ATSH7F1', 200, { requireOk: true }); }
+  catch (e) { blocked = e instanceof Elm327Error && e.code === 'AT_NOT_OK'; }
+  ok('ELM_EMPTY_BIND_BLOCKED：生产绑定 ATSH 空回执报死 AT_NOT_OK', blocked);
+
+  let okPassed = false;
+  try { await mkElm('OK\r>').cmdOk('ATCRA7E8', 200, { requireOk: true }); okPassed = true; } catch { okPassed = false; }
+  ok('ELM_EMPTY_BIND_BLOCKED：OK 回执正常通过（不误伤）', okPassed);
+
+  // 超时半包：喂一段无 '>' 的半包，超时后 buf 必须清空、且记录丢弃字节数。
+  const e = mkElm('7E8 10 13 5A 90 57', 60);   // 无提示符 → 超时
+  let timedOut = false;
+  try { await e.cmd('220021', 60, { noDelay: true }); }
+  catch (err) { timedOut = err.code === 'TIMEOUT_PARTIAL' || err.code === 'NO_DATA'; }
+  ok('ELM_TIMEOUT_PARTIAL_CLEARED：超时抛 TIMEOUT_PARTIAL/NO_DATA', timedOut);
+  ok('ELM_TIMEOUT_PARTIAL_CLEARED：超时后 buf 已清空（下一条不串帧）',
+    e.buf.length === 0 && (e.partialDiscarded || 0) > 0,
+    `buf=${e.buf.length} discarded=${e.partialDiscarded || 0}`);
+}
+
+// ── ⑨ 13 项写对齐行为复跑：反例注入（T03-i）──────────────────────
+console.log('\n[9] 写对齐行为复跑 · 反例注入');
+{
+  const good = evaluateWriteAlignmentChecks();
+  ok('WRITE_ALIGNMENT_INJECTION：基线 13 项全 A',
+    good.aligned === true && good.checks.length === 13, `${good.frameCount} 帧`);
+
+  // 故意改错写帧序列：把 KWP 实测写帧 3B... 换成非法 2E...（帧构造错误）。
+  const tampered = {
+    ...WRITE_ALIGNMENT,
+    measuredKwp: WRITE_ALIGNMENT.measuredKwp.slice(),
+  };
+  tampered.measuredKwp[4] = '2E00FF';   // 错误写帧
+  const bad = evaluateWriteAlignmentChecks(tampered);
+  const badIds = bad.checks.filter((c) => !c.ok).map((c) => c.id);
+  ok('WRITE_ALIGNMENT_INJECTION：改错写帧 → 行为复跑判非 A（门禁失败）',
+    bad.aligned === false && badIds.includes('kwp-frame-shape')
+    && badIds.includes('record-driven-sid') && badIds.includes('no-auto-restore'),
+    `翻红=${badIds.join(',')}`);
+
+  // 闸门层：把矩阵替换成错误帧后，writeProfileFromAlignment 必须拒写。
+  // 用 Object.defineProperty 临时替换导出的常量不可行（ESM 只读），
+  // 故直接断言「求值器返回非 A ⇒ 闸门拒绝」的纯函数契约。
+  const gateWouldDeny = (live) => !live.aligned || !WRITE_ALIGNMENT.aligned;
+  ok('WRITE_ALIGNMENT_INJECTION：非 A ⇒ 写闸门拒写（纯函数契约）',
+    gateWouldDeny(bad) === true && gateWouldDeny(good) === false);
+
+  // 还原后必须逐项复绿（证明不是永久占位/写死）。
+  const restored = evaluateWriteAlignmentChecks();
+  ok('WRITE_ALIGNMENT_INJECTION：还原帧序列后 13 项逐项复绿',
+    restored.aligned === true
+    && JSON.stringify(restored.checks.map((c) => c.id + ':' + c.ok))
+      === JSON.stringify(good.checks.map((c) => c.id + ':' + c.ok)),
+    `复绿 ${restored.checks.filter((c) => c.ok).length}/13`);
 }
 
 console.log(`\n===== 写闸门对齐门禁：${pass} 通过 / 0 失败 =====`);

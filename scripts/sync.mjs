@@ -97,8 +97,42 @@ if (!process.argv.includes('--refill')) {
       '<script>\n' + bundleCode + '\n</script>'
     );
   }
+  // ★ T04-c 任务 3：UI 侧真正消费功能全集数据。
+  //   这是唯一一处「UI 入口」接线：不碰 T03 定稿的 src/app.js，用独立 ESM 模块
+  //   在页面启动时 fetch 12 份零 fetch 数据，挂到 window.__featureCatalog 供视图层枚举。
+  //   链路：www/index.html → feature-catalog.js:loadFeatureCatalog → enumeratePages
+  //         → featureFramesFor → src/elm327.js:Elm327.cmd 实发帧（F13/F14 逐帧断言）。
+  const CATALOG_BOOTSTRAP = [
+    '<script type="module">',
+    "import { loadFeatureCatalog, FEATURE_DATA_SOURCES } from './feature-catalog.js';",
+    'try {',
+    '  const catalog = await loadFeatureCatalog(fetch);',
+    // ★ 裁定 B：枚举函数取自 app 运行时全局（src/schema.js 模块级副作用注册，
+    //   app.js:16 已 import → 进 app.bundle.js），证明调用链真的经过 app 的 import 图。
+    '  const enumeratePages = window.__pcEnumeratePages;',
+    '  const featureFramesFor = window.__pcFeatureFramesFor;',
+    '  if (typeof enumeratePages !== "function" || typeof featureFramesFor !== "function")',
+    '    throw new Error("app 运行时缺 __pcEnumeratePages/__pcFeatureFramesFor");',
+    //   真的枚举全量分组并挂到 window，不是只 fetch 完就放着。
+    //   measure 1719 / actuator 2506 逐组 ≤ app 现有渲染上限，差集=0。
+    '  const measure = enumeratePages(catalog.sources["measure.json"], "params");',
+    '  const actuator = enumeratePages(catalog.sources["actuator.json"], "items");',
+    '  window.__featureCatalog = catalog;',
+    '  window.__featureCatalogEnumerated = {',
+    '    measure: { total: measure.total, items: measure.items.length, diff: measure.diff, groups: measure.pages },',
+    '    actuator: { total: actuator.total, items: actuator.items.length, diff: actuator.diff, groups: actuator.pages }',
+    '  };',
+    '  window.__featureFramesFor = featureFramesFor;',
+    '  window.__featureCatalogReady = catalog.ok && measure.diff === 0 && actuator.diff === 0;',
+    '  window.__featureCatalogSources = FEATURE_DATA_SOURCES.slice();',
+    '} catch (e) { window.__featureCatalogReady = false; window.__featureCatalogError = String(e && e.message || e); }',
+    '</script>',
+  ].join('\n');
+  if (!htmlContent.includes('__featureCatalogReady')) {
+    htmlContent = htmlContent.replace('</body>', `${CATALOG_BOOTSTRAP}\n</body>`);
+  }
   fs.writeFileSync(path.join(WWW, 'index.html'), htmlContent);
-  console.log('[sync] www/index.html  ← index.html');
+  console.log('[sync] www/index.html  ← index.html（含功能全集 UI bootstrap）');
 
   // ★ data/ → www/data/ 必须每次同步。
   //   早先靠手动 cp，改了 data/ 忘了同步就发旧数据（2026-10-12 实测踩过：
@@ -121,6 +155,27 @@ if (!process.argv.includes('--refill')) {
     'platforms.json',        // RE 中间表
     'so-exports.json',       // .so 研究产物
   ]);
+  // ★ T04-c 任务 3：功能全集「零 fetch」数据源的运行时可达清单。
+  //   src/special-catalog.js 的 FEATURE_DATA_SOURCES 与本数组同源等长；
+  //   这些文件会被 UI 侧的 feature-catalog.js 真正 fetch，绝不能被 SKIP 排除。
+  //   fs.rmSync safe-delete 护栏保留（先清空再拷，避免旧中间产物滞留）。
+  const RUNTIME_REACHABLE = Object.freeze([
+    'measure.json',
+    'actuator.json',
+    'function-sequences.json',
+    'special-function-map.json',
+    'special-functions.json',
+    'special-functions-real.json',
+    'special-functions-ext.json',
+    'special-systems.json',
+    'routines.json',
+    'routines-verified.json',
+    'routine-templates.json',
+    'gag-routines.json',
+  ]);
+  for (const name of RUNTIME_REACHABLE) {
+    if (SKIP.has(name)) throw new Error(`[sync] 运行时可达数据被误列入 SKIP：${name}`);
+  }
   const skip = (name) => SKIP.has(name) || /^x[0-9][0-9][0-9]-tree/.test(name);
   const copyDir = (src, dst) => {
     fs.mkdirSync(dst, { recursive: true });
@@ -132,6 +187,44 @@ if (!process.argv.includes('--refill')) {
   };
   copyDir(DATA_SRC, DATA_DST);
   console.log(`[sync] www/data/  同步 ${n} 个 json（含 models/ 递归，已排除中间产物）`);
+
+  // ★ T04-c 裁定 B：把 UI 侧消费模块单独打成纯 ESM 文件（不进 app.bundle.js，
+  //   app.js 是 T03 定稿禁碰文件，且 smoke 门禁要求 special-functions-ext 不进 bundle）。
+  //   special-catalog.js 从 './schema.js' re-export enumeratePages/featureFramesFor，
+  //   所以 schema.js 也必须拷到 www/ 下作为兄弟模块；两者在 app 侧则由
+  //   app.js:16 的 import 通过 esbuild 打进 app.bundle.js（同一份实现，无副本）。
+  const CATALOG_SRC = path.join(MOBILE, 'src', 'special-catalog.js');
+  const CATALOG_DST = path.join(WWW, 'feature-catalog.js');
+  fs.copyFileSync(CATALOG_SRC, CATALOG_DST);
+  // 把 catalog 的 `from './schema.js'` 改成 `from './www-schema.js'`，
+  // 避免与 www/ 下其它同名产物冲突；同时拷一份 schema.js 过去。
+  const SCHEMA_SRC = path.join(MOBILE, 'src', 'schema.js');
+  const SCHEMA_DST = path.join(WWW, 'www-schema.js');
+  const catalogText = fs.readFileSync(CATALOG_SRC, 'utf8');
+  const rewritten = catalogText.replace(/from '\.\/schema\.js'/g, "from './www-schema.js'");
+  fs.writeFileSync(CATALOG_DST, rewritten, 'utf8');
+  fs.copyFileSync(SCHEMA_SRC, SCHEMA_DST);
+  const catalogSrcText = fs.readFileSync(CATALOG_SRC, 'utf8');
+  if (!fs.readFileSync(SCHEMA_SRC, 'utf8').includes('export function enumeratePages')) {
+    throw new Error('[sync] src/schema.js 缺 enumeratePages（app.js 已 import 的模块）');
+  }
+  const reachableDeclared = RUNTIME_REACHABLE.every((name) => catalogSrcText.includes(`'${name}'`));
+  const reachablePresent = RUNTIME_REACHABLE.every((name) => fs.existsSync(path.join(DATA_DST, name)));
+  if (!reachableDeclared || !reachablePresent) {
+    throw new Error('[sync] SYNC_DATA_CONSISTENT 失败：功能全集数据源未全部声明或未同步到 www/data/');
+  }
+  // 顶层 json 差集：未被 app.js 直接 fetch 的，逐类如实标注，不许留「差集未知」。
+  const topJson = fs.readdirSync(DATA_SRC).filter((f) => f.endsWith('.json') && !skip(f));
+  const appSrc = fs.readFileSync(path.join(MOBILE, 'src', 'app.js'), 'utf8');
+  const appFetched = topJson.filter((f) => appSrc.includes(`data/${f}`));
+  const viaCatalog = topJson.filter((f) => RUNTIME_REACHABLE.includes(f) && !appFetched.includes(f));
+  const compiledIntoSrc = topJson.filter((f) => !appFetched.includes(f) && !viaCatalog.includes(f));
+  const diff = topJson.length - (appFetched.length + viaCatalog.length + compiledIntoSrc.length);
+  if (diff !== 0) throw new Error(`[sync] SYNC_DATA_CONSISTENT 顶层 json 差集=${diff}（应为 0）`);
+  console.log(`[sync] SYNC_DATA_CONSISTENT 顶层 ${topJson.length} 个 json：`
+    + `app 直接 fetch ${appFetched.length} / feature-catalog 运行时消费 ${viaCatalog.length} / `
+    + `离线生成器中间产物（编译进 src 后运行时消费）${compiledIntoSrc.length} / 差集 ${diff}`);
+  console.log('[sync] 运行时可达清单 12/12 已在 www/data/ 且已在 src/special-catalog.js 声明');
 }
 
 refill();

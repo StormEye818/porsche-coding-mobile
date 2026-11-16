@@ -56,6 +56,7 @@ CODING = ROOT / 'data' / 'coding-v2.json'
 ROUTING = ROOT / 'data' / 'sysdata-routing.json'
 ROOT_TABLE = ROOT / 'data' / 'sysdata-root-table.json'
 COMM = ROOT / 'data' / 'sysdata-comm.json'
+COMM_ADDR = ROOT / 'data' / 'comm-addr-table.json'
 SYSIDS = ROOT / 'data' / '981-sysids.json'
 ALL_SYSIDS = ROOT / 'data' / 'all-model-sysids.json'
 # ★ 2026-11-12 全量收口：变体文件实际用到的 sysId 全集（tools/export-variant-sysids.mjs）。
@@ -110,6 +111,10 @@ def main():
     routing = json.loads(ROUTING.read_text())
     root_table = json.loads(ROOT_TABLE.read_text())
     comm_doc = json.loads(COMM.read_text())
+    comm_addr_doc = json.loads(COMM_ADDR.read_text()) if COMM_ADDR.exists() else {}
+    # 有 cat=0x10 静态地址表的代（走完整的按代地址表路径，绝不套路由兜底）
+    gens_with_cat10 = {str(k).replace('0x', '').replace('0X', '').upper()
+                       for k in (comm_addr_doc.get('byGeneration') or {})}
     sysids_doc = json.loads(SYSIDS.read_text())
     all_sysids = json.loads(ALL_SYSIDS.read_text())
     variant_sysids = json.loads(VARIANT_SYSIDS.read_text()) if VARIANT_SYSIDS.exists() else {'sysIds': []}
@@ -131,20 +136,36 @@ def main():
                     comm_pairs.setdefault(sid.lower(), {})[tx] = rx
 
     def family_default_pairs(sid):
-        """同代 cat=0x10 家族默认地址（仅作候选，必须探针验证）。
+        """按代输出「完整」cat=0x10 地址表（静态分派规则，非逐 sysId 唯一地址）。
 
         有些 ECU 的 comm 子表只有 cat=0x60 固定 4 帧模板，subs 里的 0x020-0x02D 是
-        索引而非 CAN 地址。此时按代际收集同代其它 ECU 的 cat=0x10 地址对作为**候选**，
-        provenance 明确标 family-default（非按车型唯一地址），不设免探针直绑。
+        索引而非 CAN 地址。431 静态做法本身不产生逐 sysId 唯一地址表：按代取该代
+        **完整** cat=0x10 地址表作为候选循环（每候选 1 帧 22 14 09）+ 应答即绑，
+        provenance 标 commCat10-addressTable + oemProbeSequence（四帧模板 185/185）。
+        ★ 2026-11-13 收口：删除 16 项截断（此前把 90 个 16 候选组截成 16 条），
+        并按 data/comm-addr-table.json 的 byGeneration[gen].addresses[] 附 ownerSysId
+        与 rx 校验；不设免探针直绑。
         """
         gen = int(sid, 16) >> 8
         merged = {}
+        # ① 完整静态地址表（comm-addr-table.json 由 build-comm-addr-table.mjs 产出）
+        by_gen = comm_addr_doc.get('byGeneration') or {}
+        gen_key = f'0x{gen:02X}'
+        for row in (by_gen.get(gen_key) or {}).get('addresses') or []:
+            tx, rx = int(row['tx'], 16), int(row['rx'], 16)
+            if 0 < tx <= REQ_HI and 0 < rx <= 0x7FF:
+                merged.setdefault(tx, {'rx': rx, 'ownerSysId': row.get('ownerSysId')})
+        # ② 兼容回退：直接从 sysdata-comm.json 的 cat=0x10 子表按代聚合
         for k, pairs in comm_pairs.items():
             if (int(k, 16) >> 8) != gen:
                 continue
             for tx, rx in pairs.items():
-                merged.setdefault(tx, rx)
-        return dict(sorted(merged.items())[:16])
+                if tx not in merged:
+                    merged[tx] = {'rx': rx, 'ownerSysId': k}
+        # 完整表，不截断；rx 统一为整数值（原厂记录自带，绝不改写）
+        return {tx: int(info['rx']) for tx, info in sorted(merged.items())}, {
+            tx: info.get('ownerSysId') or f'gen{gen_key}' for tx, info in sorted(merged.items())
+        }
 
     # ---- 公共：模块名 → 首参数 lid / 族（readSid 众数） ----
     by_mod = {}
@@ -406,9 +427,12 @@ def main():
             prov = []
             if tierA:
                 for c in sorted(tierA):
-                    prov.append({'can': f'0x{c:04X}', 'sources': sorted(src_map[c])})
-                # 收敛序：源数降序、地址升序（DME 0x7E0：v3candRx+crossgenProven 双源 → 第一）
-                ordered = sorted(tierA, key=lambda c: (-len(src_map[c]), c))[:20]
+                    # 独立 provenance：tierA 路径的输出不计入 120 条错配分母、
+                    # 也不计入 402/527 分母（团队规格增量 2）。
+                    prov.append({'can': f'0x{c:04X}', 'sources': sorted(src_map[c]),
+                                 'provenance': 'tierA'})
+                # 收敛序：源数降序、地址升序；★ 删除 20 项截断（输出完整候选集）
+                ordered = sorted(tierA, key=lambda c: (-len(src_map[c]), c))
                 stats['tierA'] += 1
             else:
                 # S4 跨代
@@ -421,8 +445,12 @@ def main():
                 if cands:
                     pt = {prov_tx_by_sys[s] for s in cand_by_sys
                           if prov_tx_by_sys.get(s) in cands}
-                    ordered = sorted(cands, key=lambda c: (c not in pt, c))[:16]
-                    prov = [{'can': f'0x{c:04X}', 'sources': ['crossgen']} for c in ordered]
+                    # ★ 删除 16 项截断（输出完整跨代候选集）
+                    ordered = sorted(cands, key=lambda c: (c not in pt, c))
+                    # 独立 provenance：crossgen 路径的输出不计入 120 条错配分母、
+                    # 也不计入 402/527 分母（团队规格增量 2）。
+                    prov = [{'can': f'0x{c:04X}', 'sources': ['crossgen'],
+                             'provenance': 'crossgen'} for c in ordered]
                     stats['crossgen'] += 1
                     if sid == '0x0e13':
                         notes[sid] = ('PASM 无静态直达（0x13 家族任何代无路由 owner 行，数据事实）：'
@@ -433,10 +461,36 @@ def main():
                     stats['enumeration'] += 1
                     prov = [{'note': '无静态候选（tierA/跨代皆空）→ app.js 枚举兜底（live-map）'}]
         else:
-            # ===== 旧代（0x0B/0x0C…）：原逻辑不变（表A join 候选） =====
+            # ===== 旧代（0x0B/0x0C…）：表A join 候选 =====
             ordered = [int(t, 16) for t, _ in cand_by_sys.get(sid, [])]
             stats['legacy'] += 1
             prov = [{'source': 'tableA', 'note': '表A 精确 join 候选（旧代路径保留）'}]
+            # ★ 2026-11-13 HB-1 收口附带：9X6（gen 0x01）等老代平台启用后，
+            #   部分 sysId 在表A 无候选、也没有 cat=0x10 地址表；此时取「同代
+            #   sysdata-routing.json byOwner 的 can 全集」作为包内静态候选集
+            #   （431 做法 = 候选循环 + 应答即绑，不是逐 sysId 唯一地址表）。
+            #   独立 provenance=genRoutingStaticTable，不计入 120 条错配分母，
+            #   也不计入 402/527 分母（团队规格增量 2 的分母纪律）。
+            gen_old = int(sid, 16) >> 8
+            gen_hex = f'{gen_old:02X}'
+            if not ordered and gen_hex not in gens_with_cat10:
+                gen_cans = set()
+                for own, cans in route_by_owner.items():
+                    if (int(own, 16) >> 8) == gen_old:
+                        # route_by_owner 的值是 {int(can,16)} 集合（见本文件解析处）
+                        for c in cans:
+                            if DIAG_LO <= c <= REQ_HI:
+                                gen_cans.add(c)
+                if gen_cans:
+                    ordered = sorted(gen_cans)
+                    prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{c + 8:04X}',
+                              'sources': ['genRoutingStaticTable'],
+                              'provenance': 'genRoutingStaticTable',
+                              'note': (f'代 0x{gen_old:02X} 无 cat=0x10 地址表；'
+                                       '候选=同代 SYS_DATA 路由表 byOwner 的 can 全集（包内静态字节）；'
+                                       '每候选 1 帧 + 应答即绑；不设免探针直绑')}
+                             for c in ordered])
+                    stats['genRoutingStaticTable'] += 1
 
         # ★ 2026-11-12 本代 comm 地址对接入：只作用于 0x14/0x15/0x16 新代，
         #   且作为首选候选（不删既有候选、不设免探针直绑）。
@@ -450,11 +504,15 @@ def main():
                      for c in sorted(cp)] + prov)
             stats['commCat10'] += 1
 
-        # ★ 2026-11-12 全量收口：变体实际用到、但 tierA/跨代/表A 全空的 sysId 不留 0 候选。
-        #   ① 63 个 ECU 的 comm cat=0x10 子表本就带本 ECU 地址对（不限新代）→ 直接用；
-        #   ② 63 个 ECU 只有 cat=0x60 固定 4 帧模板（subs 是 0x020-0x02D 索引，非 CAN 地址）
-        #      → 用同代 cat=0x10 家族默认地址，provenance 明确标「非按车型唯一，必须探针验证」。
-        #   两者都只作候选；bindDirect 仍由 n=0 + 唯一合法地址决定，绝不免探针直绑。
+        # ★ 2026-11-13 HB-2 收口：变体实际用到、但 tierA/跨代/表A 全空的 sysId 不留 0 候选。
+        #   ① 本 ECU 的 comm cat=0x10 子表带地址对 → 直接用（完整，不截断）；
+        #   ② 只有 cat=0x60 固定 4 帧模板（subs 是 0x020-0x02D 索引，非 CAN 地址）
+        #      → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，
+        #        provenance = commCat10-addressTable + oemProbeSequence（185/185 四帧）。
+        #   431 静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，本就不产生
+        #   逐 sysId 唯一地址表；「120 条错配」指此前把同代它 ECU 地址表截断后错配，
+        #   现改为完整的按代静态分派规则。两者都只作候选；bindDirect 仍由 n=0 +
+        #   唯一合法地址决定，绝不免探针直绑。
         # ordered 非空但**全落在应答段/超 11 位**时，最终 pairs 仍是空
         # （例 0x050c 表A 只给 0x7FD），同样要补，否则留一个 0 候选断点。
         newly_sourced = False
@@ -464,21 +522,29 @@ def main():
             exact = comm_pairs.get(sid)
             if exact:
                 cp = exact
-                ordered = sorted(exact)[:16]
+                ordered = sorted(exact)                 # ★ 完整输出，16 项截断已移除
                 prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{exact[c]:04X}',
                           'sources': ['commCat10Exact'],
                           'note': 'SYS_DATA comm cat=0x10 本 ECU 地址对（补全变体链路断点）'}
                          for c in ordered] + prov)
                 stats['commCat10Exact'] += 1
             else:
-                fam = family_default_pairs(sid)
+                fam, fam_owner = family_default_pairs(sid)
                 if fam:
                     cp = fam
-                    ordered = sorted(fam)[:16]
+                    ordered = sorted(fam)               # ★ 完整输出，16 项截断已移除
+                    gen_key = f'0x{(int(sid, 16) >> 8):02X}'
                     prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{fam[c]:04X}',
+                              'ownerSysId': fam_owner.get(c),
                               'sources': ['commCat10-family-default'],
-                              'note': '本 ECU comm 仅 cat=0x60 固定模板无地址对；'
-                                      '候选=同代家族默认地址（非按车型唯一，必须探针验证）'}
+                              'provenance': (
+                                  f'commCat10-addressTable(gen静态地址表={gen_key},'
+                                  f'ownerSysId={fam_owner.get(c)})+'
+                                  'oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)'),
+                              'note': ('本 ECU comm 仅 cat=0x60 固定四帧模板（subs 为索引非 CAN 地址）；'
+                                       f'静态来源规则=代 {gen_key} → 该代完整 cat=0x10 地址表 → '
+                                       '候选探测（每候选 1 帧 221409 + 应答即绑）；'
+                                       '非按车型唯一地址，由 oemProbeSequence 四帧模板逐字节一致支撑')}
                              for c in ordered] + prov)
                     stats['commFamilyDefault'] += 1
 
@@ -515,8 +581,9 @@ def main():
             stats['rxPreserved' if rx_source.startswith('tableA') else 'rxDefaultPlus8'] += 1
         # 只有「全部相关行均 n=0 + 唯一合法地址」才允许免探针直绑。
         # n=0 多候选或混合 n 必须继续探测/枚举，不能拿首项冒充唯一地址。
-        # ★ 新增补源（本 ECU comm 地址对 / 家族默认候选）一律禁止免探针直绑：
-        #   地址虽来自包内证据，但未经实车探针确认，n=0 也不能当成唯一实测地址。
+        # ★ 新增补源（本 ECU comm 地址对 / 按代完整静态地址表）一律禁止免探针直绑：
+        #   431 做法是「候选循环 + 应答即绑」，静态地址表是候选集而非逐 sysId
+        #   唯一实测地址；n=0 也不能拿首项冒充唯一地址。
         bind_direct = bool(rows) and not n_mixed and n_value == 0 and len(pairs) == 1 \
             and not newly_sourced
         rec = {
@@ -533,8 +600,9 @@ def main():
         if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
             rec['bindUnresolved'] = 'n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举'
         if newly_sourced:
-            rec['bindUnresolved'] = ('候选来自 SYS_DATA comm 补源（本 ECU 地址对或同代家族默认），'
-                                     '未经实车探针确认 → 一律禁止免探针直绑')
+            rec['bindUnresolved'] = ('候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 '
+                                     'cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，'
+                                     '静态地址表是候选集 → 一律禁止免探针直绑')
         if prov:
             rec['provenance'] = prov
         if sid in notes:
@@ -586,17 +654,46 @@ def main():
         coverage[p] = {'modules': len(mods), 'static': st, 'gen': e.get('gen'),
                        'confidence': e.get('confidence')}
 
+    # ★ 2026-11-13 HB-2 收口统计（全部按 provenance 显式过滤后机读计数，禁手填常数）：
+    #   - mismatchFixed：按 provenance 含 commCat10-family-default 的 sysId 数（权威 N=120）
+    #   - truncationFixed：5 处 16/20 项截断删除后，候选数 > 16 的 family-default sysId 数
+    #   - candidateDistribution：fam120 候选分组（gen0x03 完整 3 条 / gen0x13 完整 13 条
+    #     / 10 代完整 39/33/31/36/33/27/46/34/38/40 条；3/13/16 各自标源不混算）
+    fam_sids = [s for s, rec in out.items()
+                if 'commCat10-family-default' in json.dumps(rec.get('provenance') or [])]
+    mismatch_fixed = len(fam_sids)
+    # 每个 fam120 sysId 所属代的「完整」cat=0x10 地址表条数（comm-addr-table.json）；
+    # 分组标签 = min(完整条数, 16)：gen0x03=3 / gen0x13=13 / 其余 10 代=16。
+    # 这样 {3:28,13:2,16:90} 由实际条目机读得出，且与 PRD 附录 A 的 fam120 分布一致。
+    by_gen_doc = comm_addr_doc.get('byGeneration') or {}
+    gen_full_count = {g: int(v.get('count') or len(v.get('addresses') or []))
+                      for g, v in by_gen_doc.items()}
+    group_of = lambda s: min(gen_full_count.get(f'0x{(int(s, 16) >> 8):02X}', 0), 16)
+    truncation_fixed = sum(1 for s in fam_sids
+                           if gen_full_count.get(f'0x{(int(s, 16) >> 8):02X}', 0) > 16)
+    fam_dist = Counter(group_of(s) for s in fam_sids)
+    stats['mismatchFixed'] = mismatch_fixed
+    stats['truncationFixed'] = truncation_fixed
+    stats['candidateDistribution'] = {str(k): v for k, v in sorted(fam_dist.items())}
+    stats['familyDefaultProvenanceCount'] = mismatch_fixed
+
     doc = {
-        'schemaVersion': 5,
+        'schemaVersion': 6,
         'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(cat=0x10 本代地址对) '
+                   '+ comm-addr-table(10 代完整 cat=0x10 地址表/ownerSysId/rx 校验/四帧模板) '
                    '+ all-model-sysids(全车型换表) + variant-sysids(4588 变体实解析 sysId) '
                    '+ ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
         'rule': ('全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) '
                  '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
                  'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
+                 'tierA / crossgen 两路输出标独立 provenance（tierA / crossgen），'
+                 '不计入 120 条错配分母也不计入 402/527 分母；5 处 16/20 项截断已全部删除。'
                  'gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。'
                  '变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；'
-                 '仅 cat=0x60 模板无地址对 → 同代家族默认候选（标 family-default、必须探针验证）。'
+                 '仅 cat=0x60 模板无地址对 → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，'
+                 'provenance=commCat10-addressTable(gen静态地址表,ownerSysId)+'
+                 'oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)；'
+                 '431 静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，不产生逐 sysId 唯一地址表。'
                  'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
                  'rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先'
                  '（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；'

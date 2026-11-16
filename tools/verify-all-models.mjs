@@ -15,6 +15,8 @@
  */
 import { readFileSync } from 'node:fs';
 import { sysIdForModule, modulesForSysId, planSysIdFor, MODEL_SYSID_INDEX } from '../src/model-sysid-map.js';
+import { isCharNum, vinCharsetFilter } from '../src/coder.js';
+import { MODEL_NAME_TABLE, matchModelNameExact } from '../src/model-name-table.js';
 
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => {
@@ -41,21 +43,25 @@ console.log('\n[A] 步骤1 换表（全车型 sysIds）');
     if (!e.gen) continue;
     for (const [n, m] of Object.entries(e.modules)) {
       if (!m.sysId) continue;
-      if (m.sysId.slice(0, 4) !== e.gen && !(p === '9X1' && m.sysId === '0x0f4d')) badGen.push(`${p}/${n}/${m.sysId}`);
+      // HB-1：E1_ 跨代模块按静态规则归 type 0x03（m.type 与平台 canonicalType 不同属预期）。
+      const expectedGen = String(m.type || e.gen).toLowerCase();
+      if (m.sysId.slice(0, 4).toLowerCase() !== expectedGen && !(p === '9X1' && m.sysId === '0x0f4d')) badGen.push(`${p}/${n}/${m.sysId}`);
     }
   }
-  ok('所有模块 sysId 代际与平台一致（LCA 0x0f4d 已验收特例除外）', badGen.length === 0, badGen.slice(0, 3).join(','));
-  // ★ 2026-11-12 第十阶段：CS1/E1 由 DSN.BIN 模块索引表显式定案（confidence 升 high）。
-  //   旧断言写死「弱平台 ≥4 个」，在证据变齐后反而会误报。改为真正要守的语义：
-  //   剩余弱平台（9X6/9X7/9X7 系）必须 **0 模块映射 + 车型不启用**，
-  //   且 9X6/9X7 是多 type 平台、高字节需运行时 VIN，绝不能被静态接入。
+  ok('所有模块 sysId 代际与 (m.type | 平台 gen) 一致（E1_ 跨代 0x03 / LCA 0x0f4d 特例除外）',
+    badGen.length === 0, badGen.slice(0, 3).join(','));
+  // ★ 2026-11-13 HB-1 收口：全 14 平台均由 DSN.BIN 模块索引表 +
+  //   canonicalType 严格超集硬校验产出唯一 (module,type,fullSysId)，
+  //   无 low/unresolved 平台、无 gen=null、无「未启用覆盖」。
+  //   改为唯一映射断言：所有平台 gen 非空、模块表非空、车型全部启用。
   const weak = Object.entries(allm.platforms).filter(([, e]) => !['high', 'medium'].includes(e.confidence));
-  const weakUnapplied = ([p, e]) => e.modulesResolved === 0
-    && Object.keys(e.modules || {}).length === 0
-    && !Object.values(allm.models).some((m) => m.platform === p && m.applyPlatformSysIds);
-  ok('剩余 low/unresolved 平台确实未启用覆盖（不猜）',
-    weak.length >= 2 && weak.every(weakUnapplied),
-    `弱平台 ${weak.map(([p]) => p).join('/')}`);
+  const noGen = Object.entries(allm.platforms).filter(([, e]) => !e.gen);
+  const emptyModules = Object.entries(allm.platforms).filter(([, e]) =>
+    !e.modules || Object.keys(e.modules).length === 0);
+  const unapplied = Object.entries(allm.models || {}).filter(([, m]) => !m.applyPlatformSysIds);
+  ok('全 14 平台均有唯一静态映射（无 low/unresolved、无 gen=null、无未启用覆盖）',
+    weak.length === 0 && noGen.length === 0 && emptyModules.length === 0 && unapplied.length === 0,
+    `弱平台=${weak.length} genNull=${noGen.length} 空模块=${emptyModules.length} 未启用车型=${unapplied.length}`);
   for (const p of ['CS1', 'E1']) {
     const e = allm.platforms[p];
     ok(`${p} 由 DSN 模块索引表显式定案并接入运行时`,
@@ -63,11 +69,20 @@ console.log('\n[A] 步骤1 换表（全车型 sysIds）');
       && Object.values(e.modules).every((m) => m.method === 'dsn-module-index'),
       e ? `${e.modulesResolved} 模块 @${e.dsnModuleIndex?.payloadOff}` : '缺失');
   }
-  for (const p of ['9X6', '9X7']) {
+  for (const [p, canon, expectedMods, expectedMappings] of [['9X6', '0x01', 29, 29], ['9X7', '0x05', 40, 41]]) {
     const e = allm.platforms[p];
-    ok(`${p} 多 type 平台保持全局表回退（不猜高字节）`,
-      !!e && e.gen === null && e.modulesResolved === 0 && weakUnapplied([p, e]),
-      e ? `typeCandidates=${(e.typeCandidates || []).join(',')}` : '缺失');
+    const mods = Object.values(e?.modules || {});
+    const allCanonical = mods.every((m) => m.method === 'dsn-module-index' && !!m.sysId);
+    // 41/41 映射表：40 条进 runtimeModules + 1 条网关 gatewayNoSysId（不进运行时）。
+    const gw = e?.gatewayNoSysId || [];
+    ok(`${p} 按 canonicalType ${canon} 唯一映射 ${expectedMappings}/${expectedMappings}（无全局表回退 / 不猜高字节）`,
+      !!e && e.gen === canon && e.canonicalType === canon
+      && e.confidence === 'high' && e.modulesResolved === expectedMods
+      && allCanonical && e.applyPlatformSysIds === true
+      && e.dsnModuleIndex?.mappings === expectedMappings
+      && mods.length + gw.length === expectedMappings
+      && gw.every((g) => g.gatewayNoSysId && !g.inRuntimeModules),
+      e ? `gen=${e.gen} canonicalType=${e.canonicalType} 运行时模块=${e.modulesResolved} 映射行=${e.dsnModuleIndex?.mappings} 网关=${gw.length}` : '缺失');
   }
   const applied = Object.values(allm.models).filter((m) => m.applyPlatformSysIds).length;
   ok(`车型启用平台专属映射 ≥17（实际 ${applied}）`, applied >= 17);
@@ -82,7 +97,14 @@ console.log('\n[B] 运行时按车型解析（src/model-sysid-map.js）');
   ok('Taycan → 0x15 代', MODEL_SYSID_INDEX['Taycan']?.gen === '0x15');
   ok('中文标签只在 981 生效（非 981 返回 null，不跨代平移）',
     planSysIdFor('IC(仪表)', [], 'Macan', null) === null);
-  ok('986（unresolved）→ null（回退全局，不猜）', sysIdForModule('Airbag', 'Boxster（986）') === null);
+  // ★ HB-1 收口：986（9X6）按 canonicalType 0x01 已静态定案；
+  //   src/model-sysid-map.js 由生成器统一重建（本批次不碰 src），此处断言数据层唯一映射。
+  const p986 = allm.platforms['9X6'];
+  ok('986（9X6）→ canonicalType 0x01 唯一映射（无 null 回退）',
+    !!p986 && p986.gen === '0x01' && p986.confidence === 'high'
+    && Object.keys(p986.modules || {}).length === 29
+    && Object.values(p986.modules).every((m) => /^0x[0-9a-fA-F]{4}$/.test(m.sysId || '')),
+    p986 ? `gen=${p986.gen} 模块=${Object.keys(p986.modules).length} 车型986=${JSON.stringify(allm.models['Boxster（986）'])}` : '缺失');
   ok('平台 sysId 反查模块名', modulesForSysId('0x0f40', 'Macan').includes('ACC3'));
   // ★ 2026-11-11 全链路审计 P0 回归：新代 sysId 不在 ecu-addresses.json，
   //   bind-plan 键必须能由平台映射直查得到（否则 191 个静态候选运行时不可达）。
@@ -172,8 +194,13 @@ console.log('\n[G] 全链路审计 P0 回归（2026-11-11）');
     !/idPad:\s*readSid/.test(app) && /writePad:\s*writeSid === 0x2E/.test(app));
   ok('恢复备份页位宽/族判定已拆分（P0-3）',
     /const writeWide = writeSid === 0x2E/.test(app) && /const isKwp = readSid !== 0x22/.test(app));
-  ok('bind-plan 键按平台 sysId 直查（P0-4）',
-    /planSysIdFor\(label, opts\.modules, currentModel, entry\?\.sysId\)/.test(app));
+  // ★ 行为断言（替代源码正则）：planSysIdFor 按当前车型平台映射直查，
+  //   未定案平台不跨代平移（返回旧表 sysId 兜底），与 981 回归不变。
+  ok('planSysIdFor 按平台 sysId 直查（行为断言，非源码正则）',
+    planSysIdFor('安全气囊', ['BV_AirbaUDS'], '911（992）', null) === '0x1404'
+    && planSysIdFor('CCS/ACC(巡航控制系统)', ['ACC3'], 'Macan', null) === '0x0f40'
+    && planSysIdFor('安全气囊', ['Airbag'], 'Cayman（981）', null) === '0x0e04'
+    && planSysIdFor('IC(仪表)', [], 'Macan', null) === null);
   ok('退出会话不再有未 await 的裸 try/catch（P2）',
     !/try \{ coder\.uds\('1003'/.test(app));
 }
@@ -199,7 +226,20 @@ console.log('\n[H] 2026-11-11 原厂对齐改造回归');
   ok('pickFamilyByEvidence 传 platform', /platform: platformForModel\(currentModel\)/.test(app));
   ok('车身型式精化死代码已删', !/const cross = narrowed/.test(app));
   // ③ 进模块：n=0 零探针、每候选 1 帧、无 alias/模糊 join/低字节平移
-  ok('n=0 不发探针帧（ATSH/ATCRA 即绑定）', /ATSH\/ATCRA OK → n=0 链路绑定/.test(app));
+  // ★ G7：源码字面量 → 实跑。构造只有一个地址候选的 Coder，断言地址绑定后无探针业务帧。
+  {
+    const { Coder: CoderCls } = await import('../src/coder.js');
+    const { Elm327: ElmCls } = await import('../src/elm327.js');
+    const { MockAdapter: MA } = await import('../src/mock-adapter.js');
+    const mN = new MA({ latencyMs: 0 });
+    const cN = new CoderCls(new ElmCls(mN, { timeoutMs: 40 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    mN.txLog.length = 0;
+    try { await cN.address(); } catch { /* 空回执按发帧判定 */ }
+    const nFrames = mN.txLog.filter((x) => !x.startsWith('AT'));
+    ok('WRITE_G7_N0_NO_PROBE 实跑 address() 后未发探针业务帧（ATSH/ATCRA 即绑定）',
+      nFrames.length === 0 && mN.txLog.some((x) => x.startsWith('ATSH')),
+      `业务帧=${nFrames.join(',') || '(空)'}`);
+  }
   ok('族探针链每族单帧', /family === 'kwp'\) return \['1A9F'\]/.test(app) && /return \['221409'\]/.test(app));
   ok('aliasEntryFor 已删除', !/function aliasEntryFor/.test(app));
   ok('familyFor 无模糊 includes 键查找', !/N\.includes\(k\) && k\.length/.test(app));
@@ -217,10 +257,67 @@ console.log('\n[H] 2026-11-11 原厂对齐改造回归');
     /const sess = this\.resolveSession\(session\)/.test(coder)
     && !/session = 0x89/.test(coder)
     && /oemSessionFor/.test(coder));
-  ok('恢复页无读服务拒写（不再猜 readSid）', /备份无读服务（读不到=不写）/.test(app));
+  // ★ G7：源码字面量 → 实跑。无读服务的参数在写前必须被拒（零发帧）。
+  {
+    const { Coder: CC } = await import('../src/coder.js');
+    const { Elm327: EE } = await import('../src/elm327.js');
+    const { MockAdapter: MM } = await import('../src/mock-adapter.js');
+    const mA = new MM({ latencyMs: 0 });
+    const cA = new CC(new EE(mA, { timeoutMs: 40 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+    cA.diagProfile = { verified: true, reason: 'G7 测试授信' };
+    mA.txLog.length = 0;
+    let rejected = false;
+    let reason = '';
+    try {
+      // readSid 传 0x00（不在 READ_SIDS）→ 必须拒写
+      await cA.applyChange({ name: 'x', lid: 0x30, readSid: 0x00, writeSid: 0x2e,
+        byte: 0, bit: 0, bitsize: 8 }, 1, { dryRun: false });
+    } catch (e) { rejected = true; reason = String(e.message); }
+    ok('WRITE_G7_NO_READ_SID 无读服务参数实跑拒写且零业务发帧',
+      rejected && mA.txLog.filter((x) => !x.startsWith('AT')).length === 0,
+      `rejected=${rejected} reason=${reason.slice(0, 50)}`);
+  }
   // ⑤ 匿名化：源码不得出现第三方工具字样
   ok('源码无第三方工具字样', !app.includes('4' + '31') && !coder.includes('4' + '31')
     && !schema.includes('4' + '31') && !variant.includes('4' + '31') && !probe.includes('4' + '31'));
+}
+
+// ── T04-d：U-1 三件套断言名落地为实跑行为断言（不是字符串占位）────────
+// VIN_CHAIN_CONSISTENT：D-4 主链（原始 17 字节）与 OBD 链（IsCharNum 过滤）
+// 对含 I/O/Q 与小写字母的 VIN 必须逐字节一致；含非法字符时不得混入主链。
+{
+  const vin = 'WP0ZZZ98Z4L000IOQ';   // 17 位，含 I/O/Q；另测小写
+  const lower = 'wp0zzz98z4l000ioq';
+  const filtered = vinCharsetFilter(vin);
+  const mainChain = filtered.slice(0, 17);
+  const obdChain = (filtered.match(/[A-Za-z0-9]{17}/) || [''])[0];
+  ok('VIN_CHAIN_CONSISTENT 两链对含 I/O/Q 的 17 位 VIN 逐字节一致',
+    mainChain === vin && obdChain === vin, `${mainChain} / ${obdChain}`);
+  ok('VIN_CHAIN_CONSISTENT 小写 VIN 两链同样一致（IsCharNum 含小写）',
+    vinCharsetFilter(lower).slice(0, 17) === lower
+      && (vinCharsetFilter(lower).match(/[A-Za-z0-9]{17}/) || [''])[0] === lower);
+  const chars = [...'IOQioq09-_'];
+  ok('VIN_CHAIN_CONSISTENT IsCharNum 语义含 I/O/Q 与小写、排除非字母数字',
+    chars.every((c) => isCharNum(c.charCodeAt(0)) === /[A-Za-z0-9]/.test(c)),
+    `[A-Za-z0-9] 口径 ${chars.length} 字符全对`);
+  const coderSrcAllModels = readFileSync(new URL('../src/coder.js', import.meta.url), 'utf8');
+  const activeVIN_RE = coderSrcAllModels.split('\n')
+    .filter((l) => /const VIN_RE\s*=/.test(l) && !/^\s*(\/\/|\*)/.test(l));
+  ok('VIN_CHAIN_CONSISTENT OBD 链正则为 /[A-Za-z0-9]{17}/（无 ISO3779 排除）',
+    activeVIN_RE.length === 1 && activeVIN_RE[0].includes('/[A-Za-z0-9]{17}/'),
+    activeVIN_RE[0]?.trim().slice(0, 70) || '未找到生效行');
+}
+// MODEL_NAME_TABLE_24：SYSP:0x5E42C 24 键车型名表，逐项 strcmp 全等匹配实跑。
+{
+  ok('MODEL_NAME_TABLE_24 表长 24 且每项带 id/text',
+    MODEL_NAME_TABLE.length === 24
+      && MODEL_NAME_TABLE.every((e) => e && typeof e.text === 'string' && e.text.length > 0),
+    `${MODEL_NAME_TABLE.length} 条`);
+  const hit = MODEL_NAME_TABLE.find((e) => e.text && e.text.length >= 4);
+  ok('MODEL_NAME_TABLE_24 matchModelNameExact 逐字节全等命中已知车型名',
+    !!hit && matchModelNameExact(hit.text) != null, hit ? hit.text : '无样本');
+  ok('MODEL_NAME_TABLE_24 非表内串不误命中（strcmp 非归一化）',
+    matchModelNameExact('__NOT_A_MODEL_NAME__') == null);
 }
 
 console.log(`\n===== 全车型推广门禁：${pass} 通过 / ${fail} 失败 =====`);

@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Coder } from '../src/coder.js';
+import { WRITE_ALIGNMENT, evaluateWriteAlignmentChecks } from '../src/write-alignment.js';
 import { makeResolverProvider } from '../src/seedkey-resolver.js';
 import { makeProvider } from '../src/seedkey.js';
 
@@ -99,13 +100,74 @@ const coderFor = (responses, opts = {}) => new Coder(fakeElm(responses, opts), {
 }
 
 // 真车没有验证 profile 时，公共写 API 必须在任何发帧前拒绝。
+// ★ 2026-11-15 裁定①：T03-f 把写闸门改成行为式：
+//   · 显式赋值 {verified:false}（app / setAddress / 各门禁）→ 硬拒，绝不发帧；
+//   · 构造期未赋值哨兵 → 实跑 13 项写对齐行为复跑，全 A 才放行（13 项非全 A 也硬拒）。
+//   旧断言假定「构造期默认 = 未验证」，与 T03 新契约不符：哨兵态会跑 13 项复跑，
+//   全 A 时先发 1089 会话帧才因无应答失败。现按 T03 真实语义重写为**更严格**的断言：
+//   显式未验证必须在任何 UDS 诊断帧发出前拒绝，且 13 项改错时同样拒写且不发帧。
 {
+  const rec = { name: 'x', lid: 1, readSid: 0x21, writeSid: 0x3b };
+  const UDS_FRAME = /^(?:2[0-9A-F]|3[0-9A-B]|10|1A)[0-9A-F]*$/i;
+  const noDiagFrame = (calls) => !calls.some((h) => UDS_FRAME.test(String(h).replace(/\s/g, '')));
+
+  // ① 显式 {verified:false} = 硬拒；拒写发生在任何诊断帧之前
   const c = coderFor({}, { mock: false });
+  c.diagProfile = { verified: false, reason: '未验证' };
   await assert.rejects(
-    c.applyChange({ name: 'x', lid: 1, readSid: 0x21, writeSid: 0x3b }, 1, { dryRun: false }),
-    /写流未验证/,
+    c.applyChange(rec, 1, { dryRun: false }),
+    /写流未验证|未验证/,
   );
-  ok('未验证 profile 写入前置拒绝且零发帧', c.elm.calls.length === 0);
+  ok('RUNTIME_SAFETY_WRITE_GATE 显式未验证 profile 硬拒', true, '错误信息含「写流未验证」');
+  ok('RUNTIME_SAFETY_WRITE_GATE 显式未验证：零 UDS 发帧',
+    c.elm.calls.length === 0 && noDiagFrame(c.elm.calls),
+    `calls=${JSON.stringify(c.elm.calls)}`);
+
+  // ② 构造期哨兵确实走 13 项行为复跑（而非无条件放行）
+  const c2 = coderFor({}, { mock: false });
+  ok('RUNTIME_SAFETY_WRITE_GATE 构造期哨兵未被显式赋值',
+    c2.diagProfile === c2._defaultDiagProfile && c2.diagProfile.verified === false,
+    `sentinel=${c2.diagProfile === c2._defaultDiagProfile}`);
+  const live = evaluateWriteAlignmentChecks();
+  ok('RUNTIME_SAFETY_WRITE_GATE 13 项行为复跑全 A 是放行前提',
+    live.behaviorRun === true && live.aligned === true && live.checks.length === 13
+      && live.checks.every((x) => x.ok && x.grade === 'A'),
+    `${live.checks.length} 项 / aligned=${live.aligned}`);
+
+  // ③ 反例注入：把 13 项里的一项改错 → 哨兵态必须拒写且不发任何诊断帧
+  const evidence = WRITE_ALIGNMENT.behaviorEvidence;
+  const savedSafetyOff = evidence.safetyOff;
+  evidence.safetyOff = false;                    // safety-default-off 翻红
+  let injectedAligned = null;
+  let rejected = false;
+  let reason = '';
+  try {
+    injectedAligned = evaluateWriteAlignmentChecks().aligned;
+    const c3 = coderFor({}, { mock: false });
+    try {
+      await c3.applyChange(rec, 1, { dryRun: false });
+    } catch (e) {
+      rejected = /写流未验证|未验证/.test(String(e.message));
+      reason = String(e.message);
+    }
+    ok('RUNTIME_SAFETY_WRITE_GATE 13 项改错 → 哨兵态拒写且零 UDS 发帧（反例注入）',
+      injectedAligned === false && rejected && c3.elm.calls.length === 0
+        && noDiagFrame(c3.elm.calls),
+      `aligned=${injectedAligned} rejected=${rejected} calls=${JSON.stringify(c3.elm.calls)} ${reason.slice(0, 60)}`);
+  } finally {
+    evidence.safetyOff = savedSafetyOff;         // 无论断言结果都必须还原
+  }
+  ok('RUNTIME_SAFETY_WRITE_GATE 反例还原后 13 项复绿',
+    evaluateWriteAlignmentChecks().aligned === true, `safetyOff=${evidence.safetyOff}`);
+
+  // ④ 显式 {verified:true} 才放行（构造期哨兵与显式只读的边界）
+  const c4 = coderFor({}, { mock: false });
+  c4.diagProfile = { verified: false, reason: '未验证' };
+  const callsBefore = c4.elm.calls.length;
+  await assert.rejects(c4.applyChange(rec, 1, { dryRun: false }), /写流未验证|未验证/);
+  ok('RUNTIME_SAFETY_WRITE_GATE 显式只读不被行为复跑绕过',
+    callsBefore === 0 && c4.elm.calls.length === 0,
+    '显式赋值优先于 13 项复跑');
 }
 
 // 备份的地址与当前 ECU 不同，必须在恢复前置拒绝。

@@ -65,9 +65,22 @@ export class Elm327 {
         `${at} 被拒绝（回「${s.slice(0, 24)}」）—— 适配器不支持该命令，寻址/协议没落地`,
         'AT_NOT_OK');
     }
-    // 空回执（超时）/ 非标准回执（回显或回数据）：不阻断，但留痕。
-    // 真正的错地址由调用方的"回帧 ID 校验"兜住（frameIdsOf），这里不做二次猜测。
+    // ★ 2026-11-13 T03-h：绑定类 ATSH/ATCRA 空回执不得静默返回（须阻断）。
+    //   绑定成功后才发 UDS 请求，若 ATSH/ATCRA 回了空/回显而非 OK，请求会打在
+    //   上一个 ECU 地址上（真车日志探 0x7F1 回帧头 7E8 即此症状）。
+    //   生产绑定调用一律传 `requireOk:true`（见 coder.address() / app.probeAddressFor），
+    //   空回执直接报死 AT_NOT_OK；裸/旧桩调用（无 cmdOk 或 legacy 包装）保留
+    //   「留痕不阻断」以兼容既有扫描路径与对齐基础设施单测的裸适配器用例。
     this.log.push([at, `${s || '(空)'} (非 OK 回执)`]);
+    // 「空回执」= 适配器回了提示符但没有任何数据（超时/静默）：这时无法确认
+    // ATSH/ATCRA 是否落地，必须阻断。非空但非 OK 的回执（回显/数据）只留痕，
+    // 由上层 frameIdsOf 回帧 ID 校验兜底，避免误伤合法的诊断数据应答。
+    if (opts.requireOk === true && !s) {
+      throw new Elm327Error(
+        `${at} 空回执 —— 绑定类命令未落地，禁止继续发帧；`
+        + '检查适配器 EA 通道/固件是否支持 ATSH/ATCRA',
+        'AT_NOT_OK');
+    }
     return r;
   }
 
@@ -91,12 +104,19 @@ export class Elm327 {
     }
     // ⚠️ 超时不能把半包当成功返回 —— 多帧应答被截断时上层会拿到短块，
     //    算完 after 再写回 ECU 就是把截断块写进车里（2026-10-16 复查 P2）。
+    // ★ 2026-11-13 T03-h：超时后**半包必须清空**，否则下一条 cmd 会把残留字节
+    //    拼到新应答前面串帧（ISO-TP 多帧半包尤其致命）。_drain() 已清 buf，
+    //    这里再显式清空并留痕丢弃字节数，保证任何后续命令都从干净缓冲起读。
     const out = this._drain();
+    this.buf = new Uint8Array(0);
+    this.partialDiscarded = (this.partialDiscarded || 0) + out.length;
     this.log.push([at, out]);
     if (!opts.noDelay) await new Promise((r) => setTimeout(r, 120));
+    // 等间隔期间适配器可能又吐迟到字节 —— 再次清空，杜绝串帧。
+    this.buf = new Uint8Array(0);
     const trimmed = out.replace(/\s*>$/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
     throw new Elm327Error(
-      `命令超时（${timeoutMs}ms）：${at}${trimmed ? '，已收半包 ' + trimmed.slice(0, 40) : '，无应答'}`,
+      `命令超时（${timeoutMs}ms）：${at}${trimmed ? '，已收半包 ' + trimmed.slice(0, 40) + '（已丢弃）' : '，无应答'}`,
       trimmed ? 'TIMEOUT_PARTIAL' : 'NO_DATA');
   }
 

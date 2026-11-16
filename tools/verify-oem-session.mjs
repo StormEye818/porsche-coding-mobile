@@ -218,4 +218,28 @@ console.log('\n[5] 写流程卡点与显式只读闸');
     c.resolveSession() === 0x89 && c.oemSessionStrict === true);
 }
 
+// ── T04-d：OEM_SESSION_EVIDENCE 断言名落地为实跑行为断言 ──────────────
+{
+  // 逐 ECU 会话证据表与 Coder 运行时解析一致（不靠源码正则）
+  const ids = Object.keys(OEM_SESSION_BY_SYSID).sort();
+  ok('OEM_SESSION_EVIDENCE 静态表非空且 oemSessionFor 与表逐项一致',
+    ids.length > 0 && ids.every((k) => {
+      const row = OEM_SESSION_BY_SYSID[k];
+      const fn = oemSessionFor(k);
+      return fn && fn.session === row[0] && fn.requireResponse === row[1];
+    }), `${ids.length} 个 sysId`);
+  const m = new MockAdapter({ latencyMs: 0 });
+  const c = new Coder(new Elm327(m, { timeoutMs: 30 }), { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  c.setOemContext('0x0101', 0x7e0);
+  m.txLog.length = 0;
+  const r = await c.enterSessionFor('routine', { skipIdent: true });
+  ok('OEM_SESSION_EVIDENCE sessionless 0x0101 实跑不发 10xx（68 键静态证据落地）',
+    r === true && oemIsSessionless('0x0101') === true
+      && !m.txLog.some((x) => /^10[0-9A-F]{2}$/i.test(x)),
+    `txLog=${m.txLog.join(',')}`);
+  const nonSessionless = ids.find((k) => !oemIsSessionless(k));
+  ok('OEM_SESSION_EVIDENCE 非 sessionless sysId 有原厂进模块序列',
+    !!nonSessionless && oemEnterSequences(nonSessionless).length > 0, String(nonSessionless));
+}
+
 console.log(`\n===== 逐 ECU 原厂会话门禁：${pass} 通过 / 0 失败 =====`);

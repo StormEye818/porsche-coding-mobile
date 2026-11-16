@@ -1,6 +1,6 @@
 // ⚠️ 自动生成，勿手改。源：data/all-model-sysids.json（tools/export-all-model-sysids.py）
 // 编译：node tools/build-model-sysid-map.mjs
-// RE-CODINGADDR-20261110 §6 步骤1-3 在全量车型的落地：25 车型 / 12 平台定案。
+// RE-CODINGADDR-20261110 §6 步骤1-3 在全量车型的落地：25 车型 / 14 平台定案。
 export const MODEL_SYSID_INDEX = {
  "Boxster（981）": {
   "platform": "9X1",
@@ -16,15 +16,15 @@ export const MODEL_SYSID_INDEX = {
  },
  "Boxster（986）": {
   "platform": "9X6",
-  "gen": null,
-  "confidence": "unresolved",
-  "apply": false
+  "gen": "0x01",
+  "confidence": "high",
+  "apply": true
  },
  "Boxster（987）": {
   "platform": "9X7",
-  "gen": null,
-  "confidence": "low",
-  "apply": false
+  "gen": "0x05",
+  "confidence": "high",
+  "apply": true
  },
  "Cayman（981）": {
   "platform": "9X1",
@@ -40,9 +40,9 @@ export const MODEL_SYSID_INDEX = {
  },
  "Cayman（987）": {
   "platform": "9X7",
-  "gen": null,
-  "confidence": "low",
-  "apply": false
+  "gen": "0x05",
+  "confidence": "high",
+  "apply": true
  },
  "Cayman GT4 Clubsport": {
   "platform": "9X1",
@@ -64,15 +64,15 @@ export const MODEL_SYSID_INDEX = {
  },
  "911（997）": {
   "platform": "9X7",
-  "gen": null,
-  "confidence": "low",
-  "apply": false
+  "gen": "0x05",
+  "confidence": "high",
+  "apply": true
  },
  "911（996）": {
   "platform": "9X6",
-  "gen": null,
-  "confidence": "unresolved",
-  "apply": false
+  "gen": "0x01",
+  "confidence": "high",
+  "apply": true
  },
  "GT2（996）": {
   "platform": "9X1",
@@ -88,9 +88,9 @@ export const MODEL_SYSID_INDEX = {
  },
  "911（964/993）": {
   "platform": "9X6",
-  "gen": null,
-  "confidence": "unresolved",
-  "apply": false
+  "gen": "0x01",
+  "confidence": "high",
+  "apply": true
  },
  "Macan": {
   "platform": "CAJUN",
@@ -306,6 +306,87 @@ export const PLATFORM_MODULES = {
    "Zusatzinstrument": "0x0e1d"
   }
  },
+ "9X6": {
+  "gen": "0x01",
+  "confidence": "high",
+  "modules": {
+   "9x6_ABS": "0x0103",
+   "9x6_Airbag": "0x0104",
+   "9x6_Alarmanlage": "0x0116",
+   "9x6_DME_ME7_11_M": "0x0101",
+   "9x6_DME_ME7_11_S": "0x0101",
+   "9x6_DME_ME7_2": "0x0101",
+   "9x6_DME_ME7_8": "0x0101",
+   "9x6_DME_M_5_2_2": "0x0101",
+   "9x6_Klimaanlage": "0x0107",
+   "9x6_Klima_GT": "0x0107",
+   "9x6_Kombi": "0x0108",
+   "9x6_PCM1": "0x0346",
+   "9x6_PSM": "0x0103",
+   "9x6_RDK": "0x0319",
+   "9x6_SitzMemo": "0x0126",
+   "9x6_TargaDach": "0x0127",
+   "9x6_Tiptronic_G40G50": "0x0102",
+   "9x6_Tiptronic_GTOP": "0x0102",
+   "9x6_UEB": "0x0124",
+   "9x6_Verdeck": "0x0127",
+   "9x6_lwr": "0x0129",
+   "9x6_pdc": "0x0112",
+   "E1_pcm2_bose": "0x0346",
+   "E1_pcm2_cd_navi": "0x0346",
+   "E1_pcm2_cdc": "0x0346",
+   "E1_pcm2_gw": "0x0346",
+   "E1_pcm2_mmi": "0x0346",
+   "E1_pcm2_sbs": "0x0346",
+   "E1_pcm2_telefon": "0x0346"
+  }
+ },
+ "9X7": {
+  "gen": "0x05",
+  "confidence": "high",
+  "modules": {
+   "Dynamische_Aggregatelagerung": "0x05C0",
+   "Getriebesteuerung_PDK": "0x0502",
+   "Head_Unit": "0x050A",
+   "TVTuner": "0x05BB",
+   "Waehlhebel": "0x0544",
+   "_9x7_CDR24": "0x050A",
+   "_9x7_airbag": "0x0511",
+   "_9x7_aws": "0x051B",
+   "_9x7_bde": "0x0501",
+   "_9x7_bsg": "0x050B",
+   "_9x7_bug": "0x0520",
+   "_9x7_dme_me78": "0x0501",
+   "_9x7_dme_me781": "0x0501",
+   "_9x7_gateway": "0x0509",
+   "_9x7_heck": "0x0523",
+   "_9x7_klima": "0x0507",
+   "_9x7_kombi": "0x0508",
+   "_9x7_kurve": "0x0529",
+   "_9x7_lenk": "0x050C",
+   "_9x7_park": "0x0512",
+   "_9x7_pas": "0x0521",
+   "_9x7_pasm": "0x0522",
+   "_9x7_pcm2_amp": "0x0541",
+   "_9x7_pcm2_cdc": "0x05BC",
+   "_9x7_pcm2_mmi": "0x05BD",
+   "_9x7_pcm2_navi": "0x05BE",
+   "_9x7_pcm2_tel": "0x05BF",
+   "_9x7_pdc": "0x0512",
+   "_9x7_psm": "0x0505",
+   "_9x7_ptm": "0x0525",
+   "_9x7_rdk": "0x0519",
+   "_9x7_sitz": "0x0526",
+   "_9x7_targa": "0x0528",
+   "_9x7_tiptrnc_987": "0x0502",
+   "_9x7_tiptrnc_C7": "0x0502",
+   "_9x7_tiptrnc_997": "0x0502",
+   "_9x7_tuerb": "0x051F",
+   "_9x7_tuerf": "0x051E",
+   "_9x7_uhr": "0x051D",
+   "_9x7_vdst": "0x0527"
+  }
+ },
  "CAJUN": {
   "gen": "0x0f",
   "confidence": "high",
@@ -392,40 +473,40 @@ export const PLATFORM_MODULES = {
   "confidence": "high",
   "modules": {
    "E1_EDC17": "0x0301",
-   "E1_ahsg": "0x032c",
+   "E1_ahsg": "0x032C",
    "E1_airbag": "0x0304",
-   "E1_aws": "0x031b",
-   "E1_bsg": "0x030b",
+   "E1_aws": "0x031B",
+   "E1_bsg": "0x030B",
    "E1_gateway_can": "0x0309",
    "E1_gateway_kline": "0x0309",
-   "E1_grda": "0x032d",
+   "E1_grda": "0x032D",
    "E1_heck": "0x0318",
-   "E1_heck_kl": "0x031c",
+   "E1_heck_kl": "0x031C",
    "E1_kessy": "0x0306",
    "E1_klima": "0x0307",
    "E1_kombi": "0x0308",
-   "E1_komp": "0x031a",
-   "E1_lenk": "0x030c",
+   "E1_komp": "0x031A",
+   "E1_lenk": "0x030C",
    "E1_lssg": "0x0317",
-   "E1_lwr_links": "0x032f",
+   "E1_lwr_links": "0x032F",
    "E1_lwr_rechts": "0x0330",
    "E1_med91_me711": "0x0301",
    "E1_niveau": "0x0313",
    "E1_pcm2_gw": "0x0346",
    "E1_pcm2_mmi": "0x0346",
    "E1_pdc": "0x0312",
-   "E1_pdcc_ors": "0x032b",
+   "E1_pdcc_ors": "0x032B",
    "E1_psm": "0x0305",
-   "E1_qssg": "0x032a",
+   "E1_qssg": "0x032A",
    "E1_rdk": "0x0319",
    "E1_sdi41": "0x0301",
    "E1_sitzb": "0x0315",
    "E1_sitzf": "0x0314",
-   "E1_swsg_links": "0x030e",
-   "E1_swsg_rechts": "0x030f",
+   "E1_swsg_links": "0x030E",
+   "E1_swsg_rechts": "0x030F",
    "E1_tiptrnc": "0x0302",
-   "E1_wisch": "0x030d",
-   "E1_wzh": "0x032e"
+   "E1_wisch": "0x030D",
+   "E1_wzh": "0x032E"
   }
  },
  "E2": {

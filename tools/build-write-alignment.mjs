@@ -103,28 +103,56 @@ const sessByte = (hexFrame) => Number.parseInt(hexFrame.slice(2, 4), 16);
 const oemKwpSessionOk = kwpOemMatch.ok && sessByte(kwpOem.frames[0]) === 0x86;
 const oemUdsSessionOk = udsOemMatch.ok && sessByte(udsOem.frames[1]) === 0x03;
 
-// 静态行为对齐：431 无而项目曾自创的增强必须默认不参与。
+// ★ 2026-11-13 T03-i：构建期**真跑 Coder 行为断言**（不再只用源码正则判 grade A）。
+// 下面 4 次 capture() 都是真实 Coder + MockAdapter 写事务，frames 来自 m.txLog 实发帧；
+// 行为证据全部由这些实发帧逐条复算，而不是「源码里有没有这句注释」。
 const schema = (await import('node:fs')).readFileSync(path.join(ROOT, 'src', 'schema.js'), 'utf8');
-const coderSrc = (await import('node:fs')).readFileSync(path.join(ROOT, 'src', 'coder.js'), 'utf8');
-const safetyOff = Object.values(SAFETY).every((v) => v === false);
-const skipIdent = /enterSession\(sess, \{ skipIdent: true, strictSession: true \}\)/.test(coderSrc);
-const noAutoRestore = /回读不一致.*不自动回滚|记录失败，不自动回滚/.test(coderSrc);
-const noBrute = /已禁用逐级试错|绝不自己试/.test(coderSrc);
+const safetyOff = Object.values(SAFETY).every((v) => v === false) && /默认全关|默认不参与/.test(schema);
+const IDENT_FRAME = /^(1A[0-9A-F]{2}|22F1A2|22F19E)$/i;
+const allCaptured = [
+  ...kwp.frames, ...uds.frames, ...kwpOem.frames, ...udsOem.frames,
+].map((f) => String(f).toUpperCase());
+const noIdentInWriteFrames = !allCaptured.some((f) => IDENT_FRAME.test(f));
+const writeSidOk = /WRITE_SIDS\.includes\(writeSid\)/.test(
+  (await import('node:fs')).readFileSync(path.join(ROOT, 'src', 'coder.js'), 'utf8'))
+  && kwp.frames.some((f) => /^3B[0-9A-F]+$/i.test(f))
+  && uds.frames.some((f) => /^2E[0-9A-F]+$/i.test(f));
+// 回读不一致不自动回滚：实发帧里只有一条写帧，回读帧与备份读帧同形。
+const noAutoRestore = kwp.frames.filter((f) => /^3B/i.test(f)).length === 1
+  && uds.frames.filter((f) => /^2E/i.test(f)).length === 1
+  && kwp.readBackOk && uds.readBackOk;
+// 不逐级试 level：UDS 恰一组 27 09/27 0A，KWP 恰一条 17 00 00。
+const noSecurityBrute = uds.frames.filter((f) => /^27/i.test(f)).length === 2
+  && kwp.frames.filter((f) => /^17/i.test(f)).length === 1;
+
+// 构建期行为证据（写进矩阵，供运行时 evaluateWriteAlignmentChecks 逐条复跑）
+const behaviorEvidence = {
+  capture: 'tools/build-write-alignment.mjs capture() 真跑 Coder + MockAdapter（4 次写事务：kwp/uds/oemKwp/oemUds）',
+  safetyOff,
+  noIdentInWriteFrames,
+  skipIdent: noIdentInWriteFrames,
+  noAutoRestore,
+  noSecurityBrute,
+  recordDrivenSid: writeSidOk,
+  sessionEvidence: oemKwpSessionOk && oemUdsSessionOk,
+  addressProbe: kwpMatch.ok && udsMatch.ok,
+  runs: 4,
+};
 
 const checks = [
   { id: 'kwp-frame-shape', grade: 'A', ok: kwpMatch.ok, detail: kwpMatch.reason || '6 帧逐帧形态对齐 原厂主写模板' },
   { id: 'uds-frame-shape', grade: 'A', ok: udsMatch.ok, detail: udsMatch.reason || '8 帧逐帧形态对齐 UDS 族流 + 记录 SID' },
   { id: 'readback-verify', grade: 'A', ok: kwp.readBackOk && uds.readBackOk, detail: '写入后回读一致才判成功' },
-  { id: 'safety-default-off', grade: 'A', ok: safetyOff && /默认全关|默认不参与/.test(schema), detail: '值域/level/地址态/自动回滚/跨度闸默认全关 = 原厂行为' },
-  { id: 'no-ident-chain-in-write', grade: 'A', ok: skipIdent, detail: '写序列 skipIdent:true，不重跑识别链（原厂写序列无识别链）' },
-  { id: 'skip-ident-on-write', grade: 'A', ok: skipIdent, detail: '写路径不重跑整套识别链' },
-  { id: 'no-auto-restore', grade: 'A', ok: noAutoRestore, detail: '回读不一致记录失败，不自动回滚（原厂语义）' },
-  { id: 'no-security-brute', grade: 'A', ok: noBrute, detail: '不逐级试 level，避免 0x35→0x36 锁死' },
-  { id: 'record-driven-sid', grade: 'A', ok: /WRITE_SIDS\.includes\(writeSid\)/.test(coderSrc),
-    detail: '读写帧 SID 全部来自编码记录，公共 API 不替记录发明默认值' },
-  { id: 'session-evidence', grade: 'A', ok: /oemSequence|_enterByOemFrames|resolveSession/.test(coderSrc),
-    detail: '进模块会话/序列来自 SYS_DATA comm 逐 ECU 证据' },
-  { id: 'address-probe', grade: 'A', ok: true,
+  { id: 'safety-default-off', grade: 'A', ok: safetyOff, detail: '值域/level/地址态/自动回滚/跨度闸默认全关 = 原厂行为（SAFETY 实读 + schema）' },
+  { id: 'no-ident-chain-in-write', grade: 'A', ok: noIdentInWriteFrames, detail: '写序列实发帧无识别链帧（构建期真跑复算）' },
+  { id: 'skip-ident-on-write', grade: 'A', ok: noIdentInWriteFrames, detail: '写路径不重跑整套识别链（构建期真跑复算）' },
+  { id: 'no-auto-restore', grade: 'A', ok: noAutoRestore, detail: '回读不一致记录失败，不自动回滚（构建期实发帧：写帧各 1 条 + 回读同形）' },
+  { id: 'no-security-brute', grade: 'A', ok: noSecurityBrute, detail: '不逐级试 level（构建期实发帧：UDS 27×2 / KWP 17×1）' },
+  { id: 'record-driven-sid', grade: 'A', ok: writeSidOk,
+    detail: '读写帧 SID 全部来自编码记录（构建期实发帧含 3B/2E 且 coder 有 WRITE_SIDS 闸）' },
+  { id: 'session-evidence', grade: 'A', ok: behaviorEvidence.sessionEvidence,
+    detail: '进模块会话/序列来自 SYS_DATA comm 逐 ECU 证据（构建期 setOemContext 实跑）' },
+  { id: 'address-probe', grade: 'A', ok: behaviorEvidence.addressProbe,
     detail: '地址由 bind-plan 候选 + 探针收敛（原厂同款 n>0 逐候选一帧探测）；'
       + '闸门只校验 11 位地址合法，原厂无地址态闸——风险由 coder.checkRx 回帧 ID 硬校验与回读校验兜底' },
   { id: 'oem-context-kwp', grade: 'A', ok: oemKwpSessionOk,
@@ -141,6 +169,21 @@ const aligned = checks.every((c) => c.ok);
 if (!aligned) {
   console.error('写流程对齐判定失败：');
   for (const c of checks.filter((x) => !x.ok)) console.error(`  ✗ ${c.id}: ${c.detail}`);
+  process.exit(1);
+}
+
+// ★ T03-i：把运行时「13 项行为复跑求值器」原样从现有产物里取出并写回，
+//   避免重建把行为化函数覆盖掉。首次生成（文件不存在）时用内置最小实现兜底。
+const BEHAVIOR_BEGIN = '/* === WRITE_BEHAVIOR_EVAL_BEGIN';
+const BEHAVIOR_END = '/* === WRITE_BEHAVIOR_EVAL_END === */';
+const prevSrc = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
+const bi = prevSrc.indexOf(BEHAVIOR_BEGIN);
+const ei = prevSrc.indexOf(BEHAVIOR_END);
+const behaviorBlock = (bi >= 0 && ei > bi)
+  ? prevSrc.slice(bi, ei + BEHAVIOR_END.length)
+  : '';
+if (!behaviorBlock) {
+  console.error('缺少 WRITE_BEHAVIOR_EVAL 行为求值块：请先落盘 src/write-alignment.js 再重建');
   process.exit(1);
 }
 
@@ -174,11 +217,14 @@ export const WRITE_ALIGNMENT = Object.freeze(${JSON.stringify({
   },
   sessionNote: '会话帧按 SYS_DATA comm 逐 ECU 证据驱动；对齐的是写帧构造/序列结构/回读，不是会话号字面值',
   checks,
+  behaviorEvidence,
   rule: '记录驱动的读写帧 + 会话/序列证据 + 地址候选探针 + 回读校验；'
     + '原厂无的自创增强默认全关；seed/key 按 drivelinks mode 表算 key，'
     + '安全 level 由脚本命令字节决定（编码写默认 0x09，COMMAND.GAG 的 27 09 01 00 实证；KWP 归一 0x00）；'
     + '取 seed 全零才跳过解锁；原厂无 case 且 ECU 回非零 seed 时明确拒写（不猜 key、不试错、不穷举 level）',
 }, null, 2)});
+
+${behaviorBlock}
 
 /** 闸门模式：'aligned'（默认，按对齐矩阵）｜ 'whitelist-only'（保守回退，仅 981 DME）。 */
 export const WRITE_GATE = { mode: 'aligned' };
@@ -202,18 +248,36 @@ function legacyWhitelist(sys, model, addr, family) {
  * 写闸门：按「与原厂写流程对齐」判定，而不是「该 ECU 是否单独做过实车测试」。
  *
  * 原厂的写流程本身是实车验证过的；只要本次链路的每一环都由包内证据/记录驱动、
- * 且 WRITE_ALIGNMENT.aligned 为真，就继承该验证。仍逐项检查运行时证据：
+ * 且 13 项写对齐行为复跑全 A，就继承该验证。仍逐项检查运行时证据：
  *   模块记录（sys.modules）、车型、11 位合法地址、会话家族 —— 缺任一项就不写。
  * 记录级的只读项/非法 SID/越界值由 coder.applyChange 与 schema.canWrite 再拦一次。
+ *
+ * ★ 2026-11-13 T03-i：不再只读静态 aligned===true + 4 参数，
+ *   **每次调用都实跑 evaluateWriteAlignmentChecks() 重算 13 项**（帧序列逐帧复跑）。
+ *   反例注入改错任一写帧 → 对应检查翻红 → aligned=false → 立即拒写。
  */
 export function writeProfileFromAlignment(sys, model, addr, family) {
+  // ★ QA R1 / G9：删除休眠免检分支。此前 mode==='whitelist-only' 时
+  //   白名单命中即直接 verified:true，**完全不跑 13 项**；而 setWriteGateMode()
+  //   运行时可切回该模式 → 存在「休眠免检」后门。
+  //   现改为：保守模式同样先实跑 evaluateWriteAlignmentChecks()，13 项非全 A 一律拒写，
+  //   只有「13 项全 A ∧ 命中 981 DME 白名单」才放行（比原逻辑更严，且无免检路径）。
   if (WRITE_GATE.mode === 'whitelist-only') {
+    const conservative = evaluateWriteAlignmentChecks();
+    if (!conservative.aligned) {
+      const cbad = conservative.checks.filter((c) => !c.ok).map((c) => c.id).join(', ');
+      return { verified: false, reason: '保守模式：13 项写对齐未通过（' + (cbad || '矩阵未对齐') + '）',
+        profile: null, behaviorRun: conservative.behaviorRun, alignmentChecks: conservative.checks.length };
+    }
     return legacyWhitelist(sys, model, addr, family)
-      ? { verified: true, reason: '保守模式：981 Cayman DME 完整实车写序列', profile: '981-cayman-dme-kwp-21-3b' }
-      : { verified: false, reason: '保守模式：该 ECU 不在白名单', profile: null };
+      ? { verified: true, reason: '保守模式：981 Cayman DME 完整实车写序列（13 项行为复跑全 A）', profile: '981-cayman-dme-kwp-21-3b' }
+      : { verified: false, reason: '保守模式：该 ECU 不在白名单（13 项已复跑）', profile: null };
   }
-  if (!WRITE_ALIGNMENT.aligned) {
-    return { verified: false, reason: '写流程与原厂对齐判定未通过', profile: null };
+  const live = evaluateWriteAlignmentChecks();
+  if (!WRITE_ALIGNMENT.aligned || !live.aligned) {
+    const bad = live.checks.filter((c) => !c.ok).map((c) => c.id).join(', ');
+    return { verified: false, reason: '写流程与原厂对齐判定未通过（13 项行为复跑：' + (bad || '矩阵未对齐') + '）',
+      profile: null, behaviorRun: live.behaviorRun, alignmentChecks: live.checks.length };
   }
   const gaps = [];
   if (!model) gaps.push('车型未定');

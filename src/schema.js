@@ -282,3 +282,97 @@ export function canWrite(p) {
 export function riskLabel(r) {
   return { low: '低', medium: '中', high: '高' }[r] || r || '未知';
 }
+
+/* ──────────────────────────────────────────────────────────────────
+ * ★ 2026-11-15 T04-c 裁定 B：功能全集分页枚举（放在 app.js 已 import 的模块里）
+ *
+ * src/app.js:16 `import { ... } from './schema.js'` —— 本模块确实在 app 的
+ * import 图里（esbuild 入口 src/app.js 会把它打进 www/app.bundle.js），
+ * 所以 enumeratePages() 不是「只在测试里 import」的死代码。
+ *
+ * 数据层 data/measure.json / data/actuator.json 的 view.pages[] 按 app.js
+ * 现有分组键切组，每组 ≤ app.js 现有渲染上限（30 / 40），不自创新上限；
+ * 767 只是 MENU.BIN:0x4C 的条目计数证据，不是分页规则。
+ * 运行时消费者 = www/index.html 的 feature-catalog bootstrap（scripts/sync.mjs 注入）。
+ * ────────────────────────────────────────────────────────────────── */
+
+/**
+ * 按数据层 view.pages 枚举全量条目（差集=0）。
+ * 支持两种页码描述：新版 `itemIdx[]`（原数组下标，可跨模块分组、不改动数组顺序）
+ * 与旧版 `start/end` 连续区间（向后兼容）。
+ * @param {object} doc measure.json / actuator.json
+ * @param {string} arrayKey 'params' | 'items'
+ * @returns {{total:number,items:object[],diff:number,pages:number,groupsWithinCap:number}}
+ */
+export function enumeratePages(doc, arrayKey) {
+  const arr = Array.isArray(doc?.[arrayKey]) ? doc[arrayKey] : [];
+  const pages = Array.isArray(doc?.view?.pages) ? doc.view.pages : [];
+  const cap = Number(doc?.view?.groupCap) || Infinity;
+  if (!pages.length) return { total: arr.length, items: arr.slice(), diff: 0, pages: 0, groupsWithinCap: 0 };
+  const items = [];
+  const seen = new Set();
+  let groupsWithinCap = 0;
+  for (const p of pages) {
+    if (Number(p.count) <= cap) groupsWithinCap += 1;
+    const idxs = Array.isArray(p.itemIdx)
+      ? p.itemIdx
+      : Array.from({ length: Math.max(0, Number(p.end) - Number(p.start)) }, (_, k) => Number(p.start) + k);
+    for (const i of idxs) {
+      if (!Number.isInteger(i) || i < 0 || i >= arr.length || seen.has(i)) continue;
+      seen.add(i);
+      items.push(arr[i]);
+    }
+  }
+  return { total: arr.length, items, diff: Math.abs(items.length - arr.length),
+    pages: pages.length, groupsWithinCap };
+}
+
+/**
+ * 由静态记录生成 elm.cmd 帧（记录驱动，不替记录发明默认值）。
+ * @param {'measure'|'actuator'|'routine'} kind
+ * @param {object} entry
+ * @returns {string[]} 大写无空格 hex 帧
+ */
+export function featureFramesFor(kind, entry) {
+  const e = entry || {};
+  if (kind === 'measure') {
+    const sid = Number(e.readSid ?? 0x22);
+    const pid = Number(e.pid ?? e.lid);
+    if (!Number.isInteger(sid) || !Number.isInteger(pid)) return [];
+    const width = sid === 0x22 ? 4 : 2;
+    return [`${sid.toString(16).toUpperCase().padStart(2, '0')}`
+      + `${pid.toString(16).toUpperCase().padStart(width, '0')}`];
+  }
+  if (kind === 'actuator') {
+    if (e.form === '2f' && Number.isInteger(Number(e.did))) {
+      const did = Number(e.did).toString(16).toUpperCase().padStart(4, '0');
+      const state = String((e.drive && e.drive.state) || 'FF 00 00 00')
+        .replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+      return [`2F${did}${state}`];
+    }
+    if (e.form === '31' && e.rid != null) {
+      return [`3101${Number(e.rid).toString(16).toUpperCase().padStart(4, '0')}`];
+    }
+    return [];
+  }
+  if (kind === 'routine') {
+    const rid = Number.parseInt(String(e.routineId || '').replace(/^0x/i, ''), 16);
+    const sub = Number.parseInt(String(e.sub || '0x01').replace(/^0x/i, ''), 16);
+    if (!Number.isFinite(rid) || !Number.isFinite(sub)) return [];
+    return [`31${sub.toString(16).toUpperCase().padStart(2, '0')}`
+      + `${rid.toString(16).toUpperCase().padStart(4, '0')}`];
+  }
+  return [];
+}
+
+// ★ T04-c 裁定 B：把枚举/构帧能力挂到 app 运行时全局。
+//   app.js:16 已 import 本模块，这段模块级副作用会在 app 启动时执行，
+//   esbuild 不会把「未被 app.js 具名 import 的纯 export」tree-shake 掉，
+//   因此 enumeratePages/featureFramesFor 确实存在于 www/app.bundle.js 的
+//   运行时里，而不是只在测试里 import 的死代码。
+//   www/index.html 的 feature-catalog bootstrap 直接消费这两个全局函数。
+//   与 app.js:829 的 `globalThis.setWriteGateMode` 是同一种生产接线方式。
+if (typeof globalThis !== 'undefined') {
+  globalThis.__pcEnumeratePages = enumeratePages;
+  globalThis.__pcFeatureFramesFor = featureFramesFor;
+}

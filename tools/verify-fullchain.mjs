@@ -278,4 +278,69 @@ console.log('\n[5] 老代 KWP 写路径（原厂不建会话）');
     /this\.oemSessionless && session == null/.test(coderSrc));
 }
 
+// ─────────────────────────────────────────────────────────────────
+// T04-d：把 :196/:199/:252 的源码正则计数换成实跑 Coder 路径 / 发帧序列 /
+// 写事务覆盖的行为断言；并补齐 VARIANT_IDENT_MATCH / READ_FRAME_ID 两个断言名。
+// ─────────────────────────────────────────────────────────────────
+{
+  const { writeProfileFromAlignment } = await import('../src/write-alignment.js');
+  const { identMatch } = await import('../src/probe.js');
+  const { frameIdsOf, parseRespAuto } = await import('../src/coder.js');
+
+  // ① :196 源码正则 → 实跑 writeProfileFromAlignment（记录驱动写闸门）
+  const prof = writeProfileFromAlignment(
+    { modules: ['DME'], label: 'DME' }, 'Cayman（981）', { tx: 0x7e0, rx: 0x7e8 }, 'kwp');
+  ok('写闸门按「逐帧对齐原厂写流程」判定（实跑 writeProfileFromAlignment）',
+    prof.verified === true && /对齐|aligned/.test(prof.reason + (prof.profile || '')),
+    `profile=${prof.profile}`);
+  const denied = writeProfileFromAlignment(null, null, null, null);
+  ok('写闸门车型/模块/地址缺证据即拒写（实跑，不靠源码字符串）',
+    denied.verified === false, denied.reason?.slice(0, 50));
+
+  // ② :199 源码正则 → 实跑 enterSession(oemSequence:true) 的发帧序列
+  const mSeq = new MockAdapter({ latencyMs: 0 });
+  const cSeq = new Coder(new Elm327(mSeq, { timeoutMs: 60 }),
+    { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  mSeq.txLog.length = 0;
+  try { await cSeq.enterSession(undefined, { family: 'uds', oemSequence: true }); }
+  catch { /* 末尾会话无回执按发帧序列判定 */ }
+  const framesSeq = mSeq.txLog.filter((x) => !x.startsWith('AT'));
+  ok('进模块启用原厂序列模式（实跑发帧，非源码正则）',
+    framesSeq.length >= 3 && framesSeq.some((f) => /^10[0-9A-F]{2}$/i.test(f)),
+    framesSeq.join(','));
+
+  // ③ :252 源码正则 → 实跑写路径不含 runWritePrologue 编排帧
+  const mW = new MockAdapter({ latencyMs: 0 });
+  const cW = new Coder(new Elm327(mW, { timeoutMs: 60 }),
+    { tx: 0x7e0, rx: 0x7e8, verbose: false });
+  cW.diagProfile = { verified: true, reason: '测试显式授信' };
+  mW.txLog.length = 0;
+  const rec = { name: 'x', lid: 0x30, readSid: 0x22, writeSid: 0x2e, byte: 0, bit: 0, bitsize: 8 };
+  try { await cW.applyChange(rec, 1, { dryRun: false }); }
+  catch { /* 空回执按发帧判定 */ }
+  const wFrames = mW.txLog.filter((x) => !x.startsWith('AT'));
+  // 实跑契约：写序列首帧是会话帧、全程不含写前编排/识别链帧
+  // （runWritePrologue 若被硬挂进写路径，会插入 1A9F/22F19E/22F1A2 等识别帧）。
+  ok('无分派表时按原厂主写模板放行、不把写前编排硬挂进写路径（实跑发帧序列）',
+    wFrames.length > 0 && /^10[0-9A-F]{2}$/i.test(wFrames[0])
+      && !wFrames.some((f) => /^(1A9F|22F19E|22F1A2|1A8[0-9A-F])/i.test(f)),
+    wFrames.join(','));
+  ok('写路径确实发起读备份（记录驱动 readSid，非硬编码 21/22）',
+    wFrames.some((f) => /^220030$/i.test(f)), wFrames.join(','));
+
+  // ④ VARIANT_IDENT_MATCH：识别串 → 变体静态匹配实跑
+  ok('VARIANT_IDENT_MATCH identMatch 对模块名全等命中、异名不命中',
+    identMatch('DME_BDE_Continental', ['DME_BDE_Continental', 'DME']) === true
+      && identMatch('ZZZ_UNKNOWN', ['DME_BDE_Continental']) === false);
+
+  // ⑤ READ_FRAME_ID：回帧 ID 解析 + 正响应剥头实跑
+  ok('READ_FRAME_ID frameIdsOf 解出 0x7E8 且 ID 不符时校验可拒',
+    frameIdsOf('7E8 04 62 F1 90 11').includes(0x7e8)
+      && !frameIdsOf('7E9 04 62 F1 90 11').includes(0x7e8));
+  const pr = parseRespAuto('7E8 04 62 F1 90 11', '22F190', 0x22);
+  ok('READ_FRAME_ID 正响应剥 62+DID 回显（非可打印字符过滤）',
+    pr.kind === 'ok' && Array.isArray(pr.body) && pr.body[0] === 0x62,
+    `kind=${pr.kind} body=${JSON.stringify(pr.body).slice(0, 40)}`);
+}
+
 console.log(`\n===== 全链路打通验收：${pass} 通过 / 0 失败 =====`);

@@ -13,6 +13,10 @@ import { extractField, injectField, validateParam, canWrite } from './src/schema
 import { pickVariantByPart, pickModelByName, pickFamilyByEvidence, designationFrom } from './src/variant.js';
 import { familyOfItems, familyOfReadSid } from './src/coder.js';
 import { resolveKey } from './src/seedkey-resolver.js';
+import {
+  FEATURE_DATA_SOURCES, FEATURE_CALL_CHAIN, loadFeatureCatalog,
+  enumeratePages, featureFramesFor,
+} from './src/special-catalog.js';
 
 let pass = 0, fail = 0;
 const ok = (n, c, x = '') => {
@@ -618,6 +622,218 @@ console.log('\n[7x] 验收重放·多模块形态（PSM/BCM_vorne UDS 族 ——
       m8.replayMisses.length === 0 && m8b.replayMisses.length === 0,
       JSON.stringify([...m8.replayMisses, ...m8b.replayMisses]));
   }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// [F13] T04-c 任务 3：功能全集「UI 入口 → 调用链 → elm.cmd 实发帧」逐帧断言
+//   链路：www/index.html bootstrap → loadFeatureCatalog → enumeratePages
+//         → featureFramesFor → Elm327.cmd → MockAdapter.txLog
+//   证明零 fetch 的 12 份数据不是死文件：能加载、能枚举全集、能产出真实发帧。
+// ─────────────────────────────────────────────────────────────────
+console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → elm.cmd 实发帧）');
+{
+  const localFetch = async (url) => {
+    const file = String(url).replace(/^data\//, '');
+    try {
+      return { ok: true, json: async () => JSON.parse(readFileSync(`./data/${file}`, 'utf8')) };
+    } catch {
+      return { ok: false, json: async () => null };
+    }
+  };
+  const catalog = await loadFeatureCatalog(localFetch);
+  // 显式钉死 12 份：不能只跟 FEATURE_DATA_SOURCES.length 自比，
+  // 否则删掉一个数据源后两边一起变小仍「一致」——反例注入实测过这个漏洞。
+  ok('F13 UI 入口装载 12/12 份零 fetch 功能数据（差集=0）',
+    FEATURE_DATA_SOURCES.length === 12
+      && catalog.ok && catalog.missing.length === 0
+      && Object.keys(catalog.sources).length === 12,
+    `已装载 ${Object.keys(catalog.sources).length}/12（清单长度 ${FEATURE_DATA_SOURCES.length}）`
+    + (catalog.missing.length ? ` 缺 ${catalog.missing.join(',')}` : ''));
+
+  const measure = enumeratePages(catalog.sources['measure.json'], 'params');
+  const actuator = enumeratePages(catalog.sources['actuator.json'], 'items');
+  const sequences = catalog.sources['function-sequences.json'];
+  const coverage = catalog.sources['special-function-map.json']?.sequenceCoverage;
+  ok('F13 enumeratePages 枚举测量全集 1719/1719（差集=0，无截断）',
+    measure.total === 1719 && measure.items.length === 1719 && measure.diff === 0,
+    `${measure.items.length}/${measure.total} 条 / ${measure.pages} 组`);
+  ok('F13 enumeratePages 枚举执行器全集 2506/2506（差集=0，无截断）',
+    actuator.total === 2506 && actuator.items.length === 2506 && actuator.diff === 0,
+    `${actuator.items.length}/${actuator.total} 条 / ${actuator.pages} 组`);
+  // ★ 裁定 B：每组 ≤ app 现有渲染上限的 X/X 复跑数字（不自造新上限）
+  const mView = catalog.sources['measure.json']?.view;
+  const aView = catalog.sources['actuator.json']?.view;
+  ok('F13 任一 module 分组下条目数 ≤ app 现有渲染上限 30（measure X/X）',
+    mView?.groupCap === 30 && mView.groupCapSource.includes('.slice(0, 30)')
+      && mView.pages.every((p) => p.count <= 30)
+      && measure.groupsWithinCap === measure.pages,
+    `${measure.groupsWithinCap}/${measure.pages} 组 ≤ 30；cap 来自 ${mView?.groupCapSource}`);
+  ok('F13 任一分组下条目数 ≤ app 现有渲染上限 40（actuator X/X）',
+    aView?.groupCap === 40 && aView.groupCapSource.includes('sect(..., 40)')
+      && aView.pages.every((p) => p.count <= 40)
+      && actuator.groupsWithinCap === actuator.pages,
+    `${actuator.groupsWithinCap}/${actuator.pages} 组 ≤ 40；cap 来自 ${aView?.groupCapSource}`);
+  ok('F13 767 仅为 431 侧条目计数证据，不是分页规则/渲染上限',
+    mView?.count431?.u16LE === 767 && mView.count431.bytes === 'FF 02'
+      && /不是分页规则/.test(mView.count431.note)
+      && aView?.count431?.u16LE === 767,
+    `MENU.BIN:0x4C bytes=[${mView?.count431?.bytes}] u16LE=767`);
+  ok('F13 enumeratePages 枚举功能序列全集 687/687（差集=0）',
+    sequences?.functions?.length === 687 && coverage?.indexedTotal === 687
+      && coverage?.coverageDiff === 0 && coverage?.danglingRefsAfter === 0,
+    `${sequences?.functions?.length}/687 条，悬空引用 ${coverage?.danglingRefsAfter}`);
+
+  // 调用链（文件:符号序列）逐项落地检查
+  // ★ 裁定 B：enumeratePages/featureFramesFor 必须在 app.js **已 import** 的
+  //   src/schema.js 里，且真的被打进 www/app.bundle.js —— 不是测试专用副本。
+  const appImports = readFileSync('./src/app.js', 'utf8');
+  const schemaSrc = readFileSync('./src/schema.js', 'utf8');
+  const bundleSrc = readFileSync('./www/app.bundle.js', 'utf8');
+  const inAppImportGraph = /from '\.\/schema\.js'/.test(appImports)
+    && /export function enumeratePages\(/.test(schemaSrc)
+    && /export function featureFramesFor\(/.test(schemaSrc)
+    && bundleSrc.includes('function enumeratePages(')
+    && bundleSrc.includes('function featureFramesFor(');
+  const chainOk = FEATURE_CALL_CHAIN.length === 5 && FEATURE_DATA_SOURCES.length === 12
+    && inAppImportGraph
+    && /loadFeatureCatalog/.test(readFileSync('./src/special-catalog.js', 'utf8'))
+    && /from '\.\/schema\.js'/.test(readFileSync('./src/special-catalog.js', 'utf8'))
+    && /cmd\(at, timeoutMs/.test(readFileSync('./src/elm327.js', 'utf8'))
+    && /__featureCatalogReady/.test(readFileSync('./scripts/sync.mjs', 'utf8'));
+  ok('F13 调用链 5 个文件:符号全部实存（UI bootstrap → app.js import 图 → elm.cmd）',
+    chainOk, FEATURE_CALL_CHAIN.join(' → ') + ` | app.bundle.js 含 enumeratePages=${inAppImportGraph}`);
+
+  // 真发帧：从静态测量记录生成 22 <DID> 并送到 elm.cmd
+  const m13 = new MockAdapter({ latencyMs: 0 });
+  const e13 = new Elm327(m13, { timeoutMs: 120 });
+  const measureItem = measure.items.find((x) => x.readSid === 0x22 && Number.isInteger(x.pid));
+  const frame = featureFramesFor('measure', measureItem)[0] || '';
+  m13.txLog.length = 0;
+  try { await e13.cmd(frame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
+  const sent = m13.txLog.filter((c) => !c.startsWith('AT'));
+  ok('F13 测量记录 → elm.cmd 实发帧 22<DID16>（逐帧可达）',
+    /^22[0-9A-F]{4}$/.test(frame) && sent.includes(frame),
+    `frame=${frame} txLog=${sent.join(',')}`);
+
+  // 真发帧：从静态执行器记录生成 2F <DID><state>
+  const actItem = actuator.items.find((x) => x.form === '2f' && Number.isInteger(x.did));
+  const actFrame = featureFramesFor('actuator', actItem)[0] || '';
+  m13.txLog.length = 0;
+  try { await e13.cmd(actFrame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
+  const sent2 = m13.txLog.filter((c) => !c.startsWith('AT'));
+  ok('F13 执行器记录 → elm.cmd 实发帧 2F<DID><state>（逐帧可达）',
+    /^2F[0-9A-F]{4}[0-9A-F]+$/.test(actFrame) && sent2.includes(actFrame),
+    `frame=${actFrame} txLog=${sent2.join(',')}`);
+
+  // 真发帧：从静态例程模板生成 31<sub><RID16>
+  const routineTemplate = catalog.sources['routine-templates.json']?.items?.[0];
+  const routineFrame = featureFramesFor('routine', routineTemplate)[0] || '';
+  m13.txLog.length = 0;
+  try { await e13.cmd(routineFrame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
+  const sent3 = m13.txLog.filter((c) => !c.startsWith('AT'));
+  ok('F13 例程模板记录 → elm.cmd 实发帧 31<sub><RID16>（逐帧可达）',
+    /^31[0-9A-F]{6}$/.test(routineFrame) && sent3.includes(routineFrame),
+    `frame=${routineFrame} txLog=${sent3.join(',')}`);
+
+  // ★ 裁定 B：逐组抽 1 条静态测量记录 → elm.cmd 实发帧，证明「全量分组」都有
+  //   可达的实发帧（不是只测第一组）。每组都 ≤ 30，逐帧断言覆盖所有组。
+  const mParams = catalog.sources['measure.json'].params;
+  let perGroupFrames = 0;
+  let perGroupSent = 0;
+  for (const p of mView.pages) {
+    // 每组取首条静态记录；由 featureFramesFor 生成 22<DID16>/21<LID8> 并真发帧
+    const rec = mParams[p.itemIdx?.[0]];
+    const f = (featureFramesFor('measure', rec) || [])[0] || '';
+    if (!/^22[0-9A-F]{4}$/.test(f) && !/^21[0-9A-F]{2}$/.test(f)) continue;
+    perGroupFrames += 1;
+    m13.txLog.length = 0;
+    try { await e13.cmd(f, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }
+    if (m13.txLog.filter((c) => !c.startsWith('AT')).includes(f)) perGroupSent += 1;
+  }
+  ok('F13 每组抽 1 条 → elm.cmd 实发帧（全量分组逐帧可达 X/X）',
+    perGroupFrames === mView.pages.length && perGroupSent === perGroupFrames && perGroupSent > 0,
+    `${perGroupSent}/${perGroupFrames} 组实发帧命中 txLog，共 ${mView.pages.length} 组`);
+
+  // ★ 裁定 B 最强证据：把 sync 生成的 www/index.html bootstrap 原样取出来，
+  //   注入本地 fetch shim + app 运行时全局，然后**真的执行**这段 UI 入口脚本。
+  //   只有 view.pages 被真实枚举、1719/2506 全量可达，断言才过。
+  const html = readFileSync('./www/index.html', 'utf8');
+  const bm = html.match(/<script type="module">([\s\S]*?__featureCatalogReady[\s\S]*?)<\/script>/);
+  let bootOk = false;
+  let bootDetail = 'bootstrap 未找到';
+  if (bm) {
+    const { pathToFileURL } = await import('node:url');
+    const { writeFileSync: wf, unlinkSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join: pjoin } = await import('node:path');
+    const catalogUrl = pathToFileURL(`${process.cwd()}/www/feature-catalog.js`).href;
+    const src = bm[1].replace("'./feature-catalog.js'", JSON.stringify(catalogUrl));
+    const tmp = pjoin(tmpdir(), `pc-boot-${process.pid}.mjs`);
+    // ★ 关键：__pcEnumeratePages / __pcFeatureFramesFor 必须由 **真跑
+    //   www/app.bundle.js**（app.js:16 → src/schema.js 的模块级注册）产出，
+    //   绝不能在测试里自己塞一份同名函数 —— 否则「删掉 bundle 注册」不会被发现。
+    const vm = await import('node:vm');
+    const bundleCode = readFileSync('./www/app.bundle.js', 'utf8');
+    const el = () => new Proxy({
+      style: {}, dataset: {}, classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
+      children: [], value: '', textContent: '', innerHTML: '', disabled: false, checked: false,
+      appendChild() {}, removeChild() {}, addEventListener() {}, removeEventListener() {},
+      querySelector() { return el(); }, querySelectorAll() { return []; },
+      scrollIntoView() {}, focus() {}, blur() {}, click() {},
+      setAttribute() {}, getAttribute() { return null; }, insertAdjacentHTML() {},
+      closest() { return null; }, matches() { return false; },
+    }, {
+      get(t, k) { if (k in t) return t[k]; if (typeof k === 'string' && k.startsWith('on')) return null; return undefined; },
+      set(t, k, v) { t[k] = v; return true; },
+    });
+    const sandbox = {
+      console: { log() {}, warn() {}, error() {} },
+      setTimeout, clearTimeout, setInterval, clearInterval,
+      TextEncoder, TextDecoder, URL, fetch: localFetch,
+    };
+    sandbox.globalThis = sandbox;
+    sandbox.window = sandbox;
+    sandbox.document = {
+      getElementById: () => el(), createElement: () => el(), querySelector: () => el(),
+      querySelectorAll: () => [], body: el(), documentElement: el(), addEventListener() {},
+    };
+    sandbox.addEventListener = () => {};
+    sandbox.visualViewport = { offsetTop: 0 };
+    sandbox.matchMedia = () => ({ matches: false, addEventListener() {} });
+    sandbox.navigator = { userAgent: 'node', share: async () => {}, clipboard: { writeText: async () => {} } };
+    sandbox.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+    sandbox.confirm = () => false; sandbox.prompt = () => null; sandbox.alert = () => {};
+    sandbox.location = { href: '' };
+    try {
+      vm.runInNewContext(bundleCode, sandbox, { timeout: 10000 });
+      bootDetail = `app.bundle.js 注册 __pcEnumeratePages=${typeof sandbox.__pcEnumeratePages}`;
+      if (typeof sandbox.__pcEnumeratePages !== 'function'
+          || typeof sandbox.__pcFeatureFramesFor !== 'function') {
+        bootDetail += ' → 未注册（app import 图缺枚举能力）';
+      } else {
+        // UI bootstrap 在 Node realm 里 import 执行，把它的 window/fetch 桥到
+        // 「已跑过 app.bundle.js 的 sandbox」，枚举函数即来自 bundle 而非测试自造。
+        globalThis.window = sandbox;
+        globalThis.fetch = localFetch;
+        wf(tmp, src, 'utf8');
+        await import(pathToFileURL(tmp).href);
+        const en = sandbox.__featureCatalogEnumerated;
+        bootOk = sandbox.__featureCatalogReady === true
+          && en?.measure?.items === 1719 && en?.measure?.diff === 0
+          && en?.actuator?.items === 2506 && en?.actuator?.diff === 0;
+        bootDetail += ` | ready=${sandbox.__featureCatalogReady}`
+          + ` measure=${en?.measure?.items}/1719 actuator=${en?.actuator?.items}/2506`;
+      }
+    } catch (e) {
+      bootDetail = `执行异常 ${String(e?.message || e).slice(0, 90)}`;
+    } finally {
+      try { unlinkSync(tmp); } catch { /* 已清理 */ }
+      delete globalThis.window;
+      delete globalThis.fetch;
+    }
+  }
+  ok('F13 实跑 www/index.html 的 UI bootstrap → 全量枚举 1719/2506（差集=0）',
+    bootOk, bootDetail);
 }
 
 console.log(`\n===== 端到端结果：${pass} 通过 / ${fail} 失败 =====`);

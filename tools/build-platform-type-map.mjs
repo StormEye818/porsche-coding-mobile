@@ -117,9 +117,11 @@ const doc = {
   resolvedPendingPlatforms: resolved,
   agreementWithRuntime: agreement,
   divergenceWithRuntime: divergence,
-  boundary: '代际已定 ≠ 模块 sysId 已定：老代 0x01-0x0A 的 sysDataOff 是 u32 数值表而非 ASCII 名字表，'
-    + '9X6/9X7 的 ALLDATA 系统名仍无法按 name-9 投票解析到 sysId，'
-    + '因此运行时继续走全局表回退（apply=false），不猜模块地址。',
+  boundary: '代际与模块 sysId 均已由包内静态证据定案：老代 0x01-0x0A 的 sysDataOff 是 u32 数值表'
+    + '而非 ASCII 名字表（name-9 投票在此不适用），但 DSN.BIN 各平台 payloadOff 模块索引表'
+    + '显式给出模块名 → sysIdLow；9X6/9X7 的规范 type 由 data/vehicle-id-type-map.json 的'
+    + 'canonicalType 严格超集硬校验静态定案（0x01 / 0x05），全平台产出 runtimeModules，'
+    + '无全局表回退、无 apply=false、无 unknown 保底。',
   e3Note: 'DSN 索引把 E3 列为 type 0x11，但运行时 E3 的 84 个模块 sysId 全为 0x12xx 且与 '
     + '0x12 名字集精确交集。索引层（车型目录）与 comm 子表层（模块映射）是两类证据：'
     + '运行时沿用 0x12 以保持模块映射一致，不覆盖已验收结果。',

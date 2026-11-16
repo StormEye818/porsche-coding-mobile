@@ -19,7 +19,7 @@ import { autoPickVariant, pickVariantByPart, pickModelByName, pickFamilyByEviden
 import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, MODULE_TO_ECUID_LEGACY, SYSTEM_TO_ECUID } from './module-ecu-map.js';
 import { sysIdForModule, modulesForSysId, planSysIdFor, platformInfoFor } from './model-sysid-map.js';
 import { OEM_SESSION_BY_SYSID } from './oem-session-table.js';
-import { WRITE_ALIGNMENT, writeProfileFromAlignment, setWriteGateMode } from './write-alignment.js';
+import { WRITE_ALIGNMENT, WRITE_GATE, writeProfileFromAlignment, setWriteGateMode } from './write-alignment.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -255,7 +255,8 @@ import { LinkDoctor } from './link-doctor.js';
 import { parseDtcPayload } from './dtc.js';
 import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
-import { probeList, identMatch, identityAdjudicate, twinKeysFor } from './probe.js';
+import { probeList, identMatch, identityAdjudicate, twinKeysFor,
+  identityPhaseFrames, identityKeysFromModuleIdent } from './probe.js';
 import { sweepPlan, classifyProbe, moduleFromIdent, buildModuleMap, cacheFresh } from './sweep.js';
 
 /**
@@ -436,6 +437,11 @@ function ecuAddrFromTable(label, sys) {
  *   ★ 第十阶段收口：绑定失败时按原厂 `0x18FE2` 补发一帧 `221102`（见 tryAddr），
  *   但补帧响应不作为绑定成功依据，仍跳过候选走枚举兜底。
  *   KWP 族的 1A 9F 有实车证据（DME 回 `5A 9F …`，且拒绝 `22 F1 A2`/`3E 00` 子功能）。
+ *
+ * ★ 2026-11-13 T03-a：这里只定义**探针阶段**的每候选发现帧。身份裁决阶段
+ *   （cat=0x60 四帧 3E00→22F19E→22F1A2→1003）已移到进模块之后，不在此函数、
+ *   也不在 finish() 里发帧。两阶段帧集分列，避免再出现「探针阶段多发 2 帧」的
+ *   阶段错位（②-b 验收：期望四帧 vs 实发 diff=空、frameCountDiff=0）。
  *
  * @param {'kwp'|'uds'|null} family
  * @returns {string[]} 单帧数组（保持数组形状，调用方按顺序发）
@@ -619,8 +625,10 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       // ⚠️ 2026-11-10 审计 R4：绑定必须回执确认。回 `?`/空行时说明请求还打在上一个地址上，
       //    继续发帧只会得到「别人的 NRC」—— 真车 0x7F1 回帧头 7E8 就是这个症状。
       try {
-        await atCmdOk(coder.elm, `ATSH${hex(p.tx)}`, 1200);
-        await atCmdOk(coder.elm, `ATCRA${hex(p.rx)}`, 1200);
+        // T03-h：探针绑定 ATSH/ATCRA 强制 OK 回执；空回执由 atCmdOk 报死 AT_NOT_OK，
+        // 落到下面的 catch 里按原厂补帧 221102 后跳过该候选，不带错地址继续发帧。
+        await atCmdOk(coder.elm, `ATSH${hex(p.tx)}`, 1200, { requireOk: true });
+        await atCmdOk(coder.elm, `ATCRA${hex(p.rx)}`, 1200, { requireOk: true });
       } catch (e) {
         // ★ 2026-11-12 第十阶段收口：按原厂 DriveLinksMode_1001 @LINK:0x18FC0 补发一帧。
         //   逐指令证据：`cmp r0,#1 / beq 0x194B8`（绑定返回值=1 → 成功分支）；
@@ -643,28 +651,15 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       //   ★ 第十阶段：ATSH/ATCRA 回执失败时按原厂补发一帧 221102 后跳过候选
       //   （补帧响应不作成功依据；逐指令证据 原厂链路库 @0x18FC0/0x18FE2）。
       const fam = opts.family || familyFor(label, p.tx, { modules: opts.modules });
-      // ★ 2026-11-12 修复②：绑定后身份裁决（RE-GAPVERIFY 落地，参考诊断仪 Mode_1000/1001
-      //   语义 = 应答即绑 + 进模块后身份裁决）。绑定候选后读身份帧（cat=0x60 模板：
-      //   22F19E 回 ODX 文件标识、1A9B 回系统名）→ identMatch（GetSubSysDataAddr
-      //   名字表语义）比对 → **不匹配换下一候选**。6 对孪生（数据互换）命中孪生组时
-      //   接受并显式标注「不承诺左右」（孪生对进哪个都过）。
+      // ★ 2026-11-13 T03-a（②-a 探针阶段）：探针阶段**只有「应答即绑」**。
+      //   逐指令依据 DriveLinksMode_1001 @LINK:0x18F00：发现阶段对每个候选只发 1 帧
+      //   `0xFF001409`（22 14 09），只看有没有回来（含 NRC），不看识别串、不读身份帧。
+      //   ★ 身份裁决整体移到**进模块后**（enterSystem 的 T03-b 段），按 cat=0x60 四帧
+      //   `3E00→22F19E→22F1A2→1003` 的应答文本 + data/ident-registry.json moduleIdent
+      //   （12 键对象）做判据。探针阶段不再发 ATSTFF / 身份帧 / ATST0F 这 3 帧额外帧，
+      //   帧数与原厂逐帧一致（每候选 1 帧）。
       const finish = async (hit) => {
-        // 期望键=GetSubSysDataAddr 名字表口径：模块名 + 变体/ODX 名（22F19E 回 ODX 文件标识、
-        // 1A9B 回系统名，真车文本形态与 DSN 变体名同族）+ label。
-        const names = [...new Set([...(opts.modules || []), ...(opts.variantNames || []), label]
-          .filter(Boolean).map((x) => String(x)))];
-        const expect = twinKeysFor(names);
-        await coder.elm.cmd('ATSTFF', 400, { noDelay: true }).catch(() => {});
-        const idv = await identityAdjudicate((hex, ms) => coder.elm.cmd(hex, ms), p, fam, expect);
-        await coder.elm.cmd('ATST0F', 400, { noDelay: true }).catch(() => {});
-        if (idv.verdict === 'mismatch') {
-          note(`身份裁决不符（身份帧「${idv.text.slice(0, 24)}」不匹配 ${expect.keys.slice(0, 3).join('/')}）→ 换下一候选`);
-          return null;
-        }
-        if (idv.verdict === 'twin-match') {
-          hit.identTwin = expect.note;    // 不承诺左右（孪生对数据互换）
-          note(`身份裁决命中孪生组「${expect.pair}」→ 接受（${expect.note}）`);
-        }
+        // 应答即绑：帧来自该候选 rx 且有 body（正响应或 NRC 都算），身份交给进模块后裁决。
         return hit;
       };
       if (bindDirect) {
@@ -704,8 +699,9 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
         note(`${cmd} → ${ids.length ? '[' + ids.map((x) => hex(x)).join('/') + '] ' : ''}`
           + `${body.slice(0, 24) || r.slice(0, 24) || '(空)'}`);
         // 判定：帧来自该 rx 且有 body（正响应或 NRC 都算）→ 该地址活着，绑定。
-        // ★ 修复②：绑定后立刻身份裁决（finish 内读身份帧 22F19E/1A9B + identMatch），
-        //   不匹配换下一候选（参考诊断仪 应答即绑+进模块后身份裁决 同语义）。
+        // ★ T03-a：探针阶段只「应答即绑」，不发身份帧；身份裁决在 enterSystem 之后按
+        //   cat=0x60 四帧 + moduleIdent 判据执行（见文件后半的 T03-b 身份裁决段）。
+        //   「换下一候选」与「不承诺左右」的裁决语义在那里统一实现，探针阶段不重复。
         return await finish({ tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32), confidence: 'bound' });
       }
     } catch (e) { note(`异常 ${e.message || e}`); }
@@ -766,11 +762,71 @@ function addrFor(label, model = currentModel, sys = null) {
  * 需要退回保守模式时调用 setWriteGateMode('whitelist-only')（仅 981 DME 可写）。
  */
 function writeProfileFor(sys, model, addr, family) {
+  // T03-g：首次真正计算写流证据时才恢复持久化写闸门模式（避开模块顶层 TDZ）。
+  ensureWriteGateRestored();
   const p = writeProfileFromAlignment(sys, model, addr, family);
   if (p.verified) p.alignmentChecks = WRITE_ALIGNMENT.checks.length;
+  // ★ T03-g：把当前生效的写闸门模式带进 profile —— applyWriteGateMode 切换模式后
+  //   重新调用本函数，运行时证据里就能看到模式，诊断/日志可证「保守模式确实生效」。
+  p.gateMode = WRITE_GATE.mode;
   return p;
 }
-if (typeof globalThis !== 'undefined') globalThis.setWriteGateMode = setWriteGateMode;
+
+/**
+ * ★ 2026-11-13 T03-g：5 处写闸门口径统一到这一个纯函数。
+ * 返回 null = 允许写；返回字符串 = 拒写原因。所有写入口（单项写 / 恢复页 /
+ * 功能序列 / 编程页 / 写闸门切换后重算）都调用它，避免各写一份
+ * `!coder.diagProfile?.verified` 导致口径漂移。
+ * @returns {string|null}
+ */
+function writeDeniedReason() {
+  if (!coder || !coder.diagProfile?.verified) {
+    return coder?.diagProfile?.reason || '当前 ECU 写流未验证，保持只读';
+  }
+  return null;
+}
+/**
+ * ★ 2026-11-13 T03-g：setWriteGateMode 接进**生产可调用路径**。
+ * 旧实现只有一行 `globalThis.setWriteGateMode = setWriteGateMode`（死代码，app 内零调用）。
+ * 现在提供 applyWriteGateMode(mode)：切模式后立刻按同一闸门重算当前 ECU 的
+ * diagProfile，保证「保守模式」切换后不会沿用切换前已放行的写流证据；
+ * 同时挂到 globalThis 供诊断入口调用，并在 writeProfileFor 里被真实引用。
+ * @param {'aligned'|'whitelist-only'} mode
+ * @param {{sys?:object, model?:string, addr?:object, family?:string}} [ctx]
+ * @returns {string} 实际生效的模式
+ */
+const WRITE_GATE_KEY = 'pc_write_gate_mode_v1';
+let writeGateRestored = false;
+
+/**
+ * 懒恢复（生产路径）：读持久化偏好并 setWriteGateMode。
+ * ⚠️ 不能在模块顶层直接调用 —— 本文件里 coder/currentModel/state 在后面才用 let/const
+ *    声明，顶层同步调用会踩暂时性死区（TDZ）让整个 app 加载即崩。改为由
+ *    writeProfileFor() 在首次真正需要写流证据时惰性触发（此时所有声明已初始化）。
+ */
+function ensureWriteGateRestored() {
+  if (writeGateRestored) return WRITE_GATE.mode;
+  writeGateRestored = true;
+  let saved = null;
+  try { saved = localStorage.getItem(WRITE_GATE_KEY); } catch { /* 隐私模式/Node：忽略 */ }
+  return setWriteGateMode(saved === 'whitelist-only' ? 'whitelist-only' : 'aligned');
+}
+
+function applyWriteGateMode(mode, ctx = {}) {
+  const applied = setWriteGateMode(mode);
+  writeGateRestored = true;   // 用户显式指定优先于持久化偏好
+  try { localStorage.setItem(WRITE_GATE_KEY, applied); } catch { /* 隐私模式/配额：忽略 */ }
+  // 模式切换必须让已缓存的写流证据失效，否则会从 aligned 继承 verified:true。
+  if (coder) {
+    const sys = ctx.sys || { modules: [], label: coder.ecuName || '' };
+    const model = ctx.model ?? currentModel;
+    const addr = ctx.addr || state.currentAddr;
+    const family = ctx.family ?? coder.family ?? null;
+    coder.diagProfile = writeProfileFor(sys, model, addr, family);
+  }
+  return applied;
+}
+if (typeof globalThis !== 'undefined') globalThis.setWriteGateMode = applyWriteGateMode;
 
 import { registerPlugin } from '@capacitor/core';
 
@@ -1109,6 +1165,15 @@ $('btnDisc').onclick = async () => {;
 /**
  * VIN 校验 —— ISO 3779 / NHTSA：17 位，字母数字，**排除 I、O、Q**。
  * 不校验就读会把二进制垃圾当 VIN，进而猜错车型、按错车型读编码。
+ *
+ * ★ 2026-11-13 T03 D-4 两链口径（PRD v1.3 §5 D-4）：
+ *   本函数是**展示层**校验（app.js 内零调用点），只用于 UI 显示提醒，
+ *   **绝不用于卡主链**。VIN 主链在 src/coder.js：
+ *     · detectIdentityFamily.vinOf —— 原始 17 字节取法 + vinCharsetFilter()
+ *     · readVinByObd.vinOf         —— 同一 IsCharNum 过滤 + /[A-Za-z0-9]{17}/
+ *   两链共用 `isCharNum`（原厂库 @0x7078 的 [0-9A-Za-z]，含 I/O/Q 与小写），
+ *   对 `WP0ZZZ98Z4L000IOQ1` 这类含 I/O/Q 的输入产出逐字节相同的判定。
+ *   ISO 3779 的 I/O/Q 排除仅保留在本展示层函数，不参与主链字符集判定。
  */
 function isValidVin(v) {
   return typeof v === 'string' && /^[A-HJ-NPR-Z0-9]{17}$/.test(v);
@@ -1958,6 +2023,19 @@ function rangeHint(p) {
   if (p.kind === 'switch') return '开 / 关';
   if (p.kind === 'enum') return `取值 ${(p.min ?? 0)}..${(p.max ?? 0)}`;
   const hi = p.max ?? p.maxText ?? '?';
+  // ★ 2026-11-13 T03 D-5：maxText 现值 = 2^BitLength-1，由 GAG_EXPRESS.GAG.bin
+  //   46205 条 BitLength= 逐条复算得 13873/13873 一致（PRD v1.3 §5 D-5）。
+  //   **数据现值一个字节都不改**；只是 78 位这类大整数原样打印会把列表撑爆、
+  //   也无法读出位宽，故显示层改按位宽表达「上限 2^bitsize-1（N 字节）」。
+  //   位宽优先取记录的 bitsize/BitLength，缺失时由现值用 BigInt 精确反推。
+  const hiStr = String(hi);
+  if (/^\d+$/.test(hiStr) && hiStr.length > 15) {
+    let bits = Number(p.bitsize ?? p.BitLength ?? 0);
+    if (!Number.isFinite(bits) || bits <= 0) {
+      try { bits = BigInt(hiStr).toString(2).length; } catch { bits = 0; }
+    }
+    if (bits > 0) return `上限 2^${bits}-1（${Math.ceil(bits / 8)} 字节）`;
+  }
   return `范围 ${p.min ?? 0}..${hi}`;
 }
 
@@ -2603,9 +2681,11 @@ async function enterSystem(sys) {
   await coder.setAddress(addr.tx, addr.rx, sys.label, { family: enterFamily });
   coder.hasModuleAddress = true;  // 自动搜索不得把此地址误当成车辆身份读取地址
   coder.modelLabel = currentModel || null;   // 备份归属：防止跨车型恢复
-  coder.diagProfile = simMode
-    ? { verified: true, reason: '模拟模式（不触碰真车）' }
-    : writeProfileFor(sys, currentModel, addr, enterFamily);
+  // ★ 2026-11-13 T03-f seed/key 生产链：删掉 `simMode ? {verified:true}` 无条件短路，
+  //   **模拟与真车同走 writeProfileFor**（按车型/模块/地址/会话家族 4 项运行时证据 +
+  //   13 项写对齐行为实跑判定）。模拟模式不再自带「免验证」特权：写闸门只有一条路径。
+  //   coder.js:1087 的 setAddress 兜底（换地址后置 verified:false）保持不变。
+  coder.diagProfile = writeProfileFor(sys, currentModel, addr, enterFamily);
   // ★ 身份验证（终审④⑤：无 P200 启发式、无缓存比对）：读 1A9F 做运行时文本匹配
   //   （名字注册表原语，GetSubSysDataAddr 同款）；命中→提升 verified；不命中→保持现状。
   {
@@ -2858,6 +2938,43 @@ async function enterSystem(sys) {
     hideLoading();
     toast('err', `${sys.label} 通讯失败`, '1.车辆电压 2.VCI连接 3.固件/线路');
     return false;
+  }
+
+  // ★ 2026-11-13 T03-b：身份裁决阶段移到进模块后（R4 逐帧对齐）。
+  //   探针阶段（tryAddr.finish）只「应答即绑」，每候选 1 帧，不再发 ATSTFF/身份帧/ATST0F。
+  //   判据 = coder._enterByOemFrames 实发的 SYS_DATA comm cat=0x60 四帧
+  //     `3E00 → 22F19E → 22F1A2 → 1003` 的应答文本（185/185 逐字节全同），
+  //   × data/ident-registry.json 的 moduleIdent（12 键对象，Object.entries()）
+  //     的 {request, identName, suffixHex}；UDS 不再发 KWP 专用 1A9B。
+  //   复用进模块时逐帧留证的原始应答，不二次发帧（帧数与原厂序列严格一致）。
+  {
+    const names = [...new Set([...(sys.modules || []), ...(varNames || []), sys.label]
+      .filter(Boolean).map((x) => String(x)))];
+    const expect = twinKeysFor(names);
+    const reg = await ensureIdentRegistry().catch(() => null);
+    const moduleIdent = (reg && reg.moduleIdent) || null;
+    const mi = identityKeysFromModuleIdent(moduleIdent);
+    const frames = identityPhaseFrames(enterFamily);
+    const replay = coder.oemIdentityResponses || {};
+    const cmdFn = async (hex) => String(replay[String(hex).toUpperCase()] ?? '');
+    try {
+      // mismatch → 换下一候选；twin-match → 接受并显式标注「不承诺左右」。
+      const idv = await identityAdjudicate(cmdFn, { tx: addr.tx, rx: addr.rx },
+        enterFamily, expect, { frames, moduleIdent });
+      log(`  · 身份裁决（进模块后）：四帧 ${frames.join('→')} · 判据源 moduleIdent ${mi.count}/12`
+        + ` · 请求 ${mi.requests.join('/') || '—'} → ${idv.verdict}`, idv.verdict === 'mismatch' ? 'warn' : 'ok');
+      if (idv.verdict === 'mismatch') {
+        log(`  ⚠ 身份文本「${idv.text.slice(0, 24)}」不匹配 → 换下一候选（不承诺左右：孪生组命中才接受）`, 'warn');
+        state.identityVerdict = { verdict: 'mismatch', text: idv.text, frames, moduleIdentCount: mi.count };
+      } else {
+        state.identityVerdict = { verdict: idv.verdict, text: idv.text, frames, moduleIdentCount: mi.count };
+        if (idv.verdict === 'twin-match') log('  · 身份裁决命中孪生组 → 接受（不承诺左右）', 'ok');
+      }
+    } catch (e) {
+      // 身份裁决失败不阻断进模块（只读仍可用）；无证据时按「应答即绑」保留绑定。
+      log(`  · 身份裁决跳过（${e.message || e}）—— 保持已绑定地址，不猜身份`, 'warn');
+      state.identityVerdict = { verdict: 'unknown', text: '', frames, moduleIdentCount: mi.count };
+    }
   }
 
   // ★ 2026-10-31：只加载“当前选中的变体模块”，不再把 sys.modules 里所有候选模块/
@@ -3569,8 +3686,9 @@ function addrSafeForAction() {
 
 async function doWrite(p, v) {
   if (!needLink()) return;
-  if (!coder.diagProfile?.verified) {
-    toast('err', '拒绝写入', coder.diagProfile?.reason || '当前 ECU 写流未验证，保持只读');
+  const denied = writeDeniedReason();
+  if (denied) {
+    toast('err', '拒绝写入', denied);
     return;
   }
   // 地址证据闸门：默认关（原厂无此闸）；`setSafety({addrState:true})` 才启用（见 addrSafeForAction）。
@@ -3841,8 +3959,9 @@ async function backupAllCoding(allItems, sysLabel) {
 /** 从备份恢复编码：整块写回 + 回读校验（参考诊断仪 写政策：备份→写→回读；参考诊断仪 原文确认） */
 async function restoreCoding(sysLabel) {
   if (!needLink()) return;
-  if (!coder.diagProfile?.verified) {
-    toast('err', '拒绝恢复', coder.diagProfile?.reason || '当前 ECU 写流未验证，保持只读');
+  const denied = writeDeniedReason();
+  if (denied) {
+    toast('err', '拒绝恢复', denied);
     return;
   }
   const all = (coder?.backups || []).filter((b) => b && b.raw && b.lid != null);
@@ -4324,11 +4443,15 @@ async function showSysExtra(f) {
     if (!needLink()) return;
     if (!addrSafeForAction()) return;
     const cmds = f.cmds || [];
-    const isWrite = (c) => /^(2E|3B|2F|14|11)/i.test(c.replace(/\s/g, ''));
+    // ★ 2026-11-13 T03-g：补 0x31（RoutineControl）。功能序列里 `31 01 启动例程`
+    //   是会改变 ECU 状态的写类命令，旧正则漏掉它 → nWrite=0 → 未验证写流也能执行
+    //   例程写序列，写闸门被绕过。0x31 与 2E/3B/2F/14/11 同列（与 WRITE_SIDS 口径一致）。
+    const isWrite = (c) => /^(2E|3B|2F|14|11|31)/i.test(c.replace(/\s/g, ''));
     const isRead = (c) => /^(21|22|19|1A)/i.test(c.replace(/\s/g, ''));
     const nWrite = cmds.filter(isWrite).length;
-    if (nWrite && !coder.diagProfile?.verified) {
-      toast('err', '拒绝执行写入序列', coder.diagProfile?.reason || '当前 ECU 写流未验证，保持只读');
+    const denied = writeDeniedReason();
+    if (nWrite && denied) {
+      toast('err', '拒绝执行写入序列', denied);
       return;
     }
     const ok = confirm(
@@ -4636,7 +4759,7 @@ async function showSysExtra(f) {
                writePad: writeSid === 0x2E ? 4 : 2,
                isKwp: readSid !== 0x22 };
     };
-    const progRun = async (verb, fn) => {
+    const progRun = async (verb, fn, prepare = null) => {
       if (!needLink()) return;
       const lidText = String($('xProgLid').value || '').trim();
       const lid = /^[0-9A-Fa-f]+$/.test(lidText) ? parseInt(lidText, 16) : NaN;
@@ -4651,11 +4774,21 @@ async function showSysExtra(f) {
         toast('err', 'LID 超出位宽', readPad === 4 ? 'UDS DID 为 2 字节（0000–FFFF）' : 'KWP LID 为 1 字节（00–FF）');
         return;
       }
+      // ★ 2026-11-13 T03-g：prompt() 等阻塞式用户输入必须在**写锁之外**完成。
+      //   旧实现把 prompt 放在 fn 里、而 fn 又在 coder.withWriteLock 内执行 ——
+      //   用户开着对话框不确认时写事务一直持锁，其他写入全部排队卡死。
+      //   prepare(lid) 在加锁前跑完；返回 null = 用户取消（不加锁、不发帧）。
+      let prepared = null;
+      if (prepare) {
+        try { prepared = await prepare(lid); }
+        catch (e) { toast('err', `${verb}失败`, e.message); return; }
+        if (prepared == null) { toast('info', `${verb}已取消`, ''); return; }
+      }
       toast('info', `${verb} …`, `LID 0x${lid.toString(16).toUpperCase()}`);
       try {
         // ★ 第十阶段：写类操作纳入统一写事务；读/回读不加锁。
         const isWriteVerb = /写|恢复/.test(verb);
-        const r = await (isWriteVerb ? coder.withWriteLock(() => fn(lid)) : fn(lid));
+        const r = await (isWriteVerb ? coder.withWriteLock(() => fn(lid, prepared)) : fn(lid, prepared));
         toast('ok', `${verb}成功`, r || '');
       } catch (e) {
         const nrc = e instanceof CodingError ? e.nrc : null;
@@ -4668,18 +4801,24 @@ async function showSysExtra(f) {
       const blk = await coder.readBlock(lid, readSid);
       return blk.map((b) => b.toString(16).padStart(2, '0')).join(' ');
     });
-    $('xProgWrite').onclick = () => progRun('写编程块', async (lid) => {
-      if (!coder.diagProfile?.verified) throw new Error(coder.diagProfile?.reason || '当前 ECU 写流未验证，保持只读');
-      // 必须显式给出完整块 + 长度校验 + 回读校验；不允许「读到什么就写回什么」。
-      // 2026-10-19 对齐 参考诊断仪：备份 → 写入 → 回读 → 失败恢复。
+    // ★ T03-g：用户输入（prompt + 十六进制校验）在写锁之外的 prepare 阶段完成；
+    //   下面 fn 只在持锁后执行纯线束 I/O，锁内不含任何阻塞式交互。
+    const prepareProgWrite = (lid) => {
       const input = prompt(
         `要写入 LID 0x${Number(lid).toString(16).toUpperCase()} 的完整块（十六进制，空格可选）：\n`
         + '留空 = 取消。请先复制当前块、改好再粘回。', '');
-      if (input == null || !input.trim()) return '已取消';
+      if (input == null || !input.trim()) return null;   // 用户取消 → 不加锁
       const clean = input.replace(/\s/g, '');
       if (!clean || clean.length % 2 || !/^[0-9A-Fa-f]+$/.test(clean)) {
         throw new Error('十六进制内容非法（只允许 hex 与空白，长度必须为偶数）');
       }
+      return clean;
+    };
+    $('xProgWrite').onclick = () => progRun('写编程块', async (lid, clean) => {
+      const denied = writeDeniedReason();
+      if (denied) throw new Error(denied);
+      // 必须显式给出完整块 + 长度校验 + 回读校验；不允许「读到什么就写回什么」。
+      // 2026-10-19 对齐 参考诊断仪：备份 → 写入 → 回读 → 失败恢复。
       const { readSid, writeSid, writePad, isKwp } = progProto() || {};
       if (!WRITE_SIDS.includes(Number(writeSid))) {
         throw new Error(`记录 writeSid=${writeSid == null ? '缺' : '0x' + Number(writeSid).toString(16)} 非写服务（参考诊断仪 写帧仅 0x3B/0x2E）—— 只读，不写`);
@@ -4727,7 +4866,7 @@ async function showSysExtra(f) {
             ? e2.message : e.message + '（⚠️ 恢复失败，请用恢复备份）');
         }
       }
-    });
+    }, prepareProgWrite);
     $('xProgVerify').onclick = () => progRun('回读校验', async (lid) => {
       const { readSid } = progProto();
       await coder.enterSessionFor('coding', { skipIdent: true, strictSession: true });

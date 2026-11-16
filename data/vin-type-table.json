@@ -1,0 +1,484 @@
+{
+ "schemaVersion": 1,
+ "kind": "vin-type-table",
+ "source": "原厂库 @0x147C80 GetVehicleForVin（VA=文件偏移）17 槽 TBB @0x147CD6 逐指令静态解析 + data/vehicle-id-type-map.json 交叉校验",
+ "coordinate": "libPORSCHE_READWRITE.so:0x147C80 GetVehicleForVin",
+ "tbbVA": "0x147CD6",
+ "tbbHex": "8e09acac1eac263543acacacacacacac51",
+ "tbbBytes": [
+  142,
+  9,
+  172,
+  172,
+  30,
+  172,
+  38,
+  53,
+  67,
+  172,
+  172,
+  172,
+  172,
+  172,
+  172,
+  172,
+  81
+ ],
+ "tbbSlots": 17,
+ "slots": [
+  {
+   "k": 0,
+   "vin7": "1",
+   "tbbByte": "0x8E",
+   "caseTarget": "0x147DF2"
+  },
+  {
+   "k": 1,
+   "vin7": "2",
+   "tbbByte": "0x09",
+   "caseTarget": "0x147CE8"
+  },
+  {
+   "k": 2,
+   "vin7": "3",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 3,
+   "vin7": "4",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 4,
+   "vin7": "5",
+   "tbbByte": "0x1E",
+   "caseTarget": "0x147D12"
+  },
+  {
+   "k": 5,
+   "vin7": "6",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 6,
+   "vin7": "7",
+   "tbbByte": "0x26",
+   "caseTarget": "0x147D22"
+  },
+  {
+   "k": 7,
+   "vin7": "8",
+   "tbbByte": "0x35",
+   "caseTarget": "0x147D40"
+  },
+  {
+   "k": 8,
+   "vin7": "9",
+   "tbbByte": "0x43",
+   "caseTarget": "0x147D5C"
+  },
+  {
+   "k": 9,
+   "vin7": ":",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 10,
+   "vin7": ";",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 11,
+   "vin7": "<",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 12,
+   "vin7": "=",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 13,
+   "vin7": ">",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 14,
+   "vin7": "?",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 15,
+   "vin7": "@",
+   "tbbByte": "0xAC",
+   "caseTarget": "0x147E2E"
+  },
+  {
+   "k": 16,
+   "vin7": "A",
+   "tbbByte": "0x51",
+   "caseTarget": "0x147D78"
+  }
+ ],
+ "rule": "VIN[7] 一次键（subs r0,#1 / cmp r0,#0x10 / tbb [pc,r0]），VIN[11] 二次键（cmp r0,#imm8），movs r0,#imm 返回 vehicleId，统一输出点 0x147E2C strb r0,[r5]；返回值全集不含 1/2/4/5/6 → 9X6/9X7 老平台走平台级规范 type + 车型菜单，不由 VIN 位运算决定",
+ "method": "5 步静态解析：S1 ELF PT_LOAD VA=文件偏移；S2 17×u8 字节串硬校验；S3 caseTarget(k)=0x147CD6+2*tbb[k]；S4 逐指令扫到 0x147E2C 提取 PC-relative 平台名串 / VIN[11] 字符 / movs r0,#imm；S5 vehicleId∈1..22 且与 vehicle-id-type-map.map[] 一致",
+ "fnStart": "0x147C80",
+ "fnEnd": "0x147E2C",
+ "bhiTarget": "0x147CF8",
+ "rows": [
+  {
+   "vin7": "*",
+   "vin11": "P",
+   "vehicleId": 3,
+   "sysDataType": "0x03",
+   "platform": "E1",
+   "atVA": "0x147D94",
+   "vehicleIdPlatform": "E1",
+   "dsnIndexId": 3
+  },
+  {
+   "vin7": "*",
+   "vin11": "Y",
+   "vehicleId": 17,
+   "sysDataType": "0x11",
+   "platform": "E3",
+   "atVA": "0x147D0E",
+   "vehicleIdPlatform": "E3",
+   "dsnIndexId": 17
+  },
+  {
+   "vin7": "1",
+   "vin11": "8",
+   "vehicleId": 16,
+   "sysDataType": "0x10",
+   "platform": "918S",
+   "atVA": "0x147E0C",
+   "vehicleIdPlatform": "918S",
+   "dsnIndexId": 16
+  },
+  {
+   "vin7": "1",
+   "vin11": "A",
+   "vehicleId": 21,
+   "sysDataType": "0x15",
+   "platform": "J1",
+   "atVA": "0x147E2A",
+   "vehicleIdPlatform": "J1",
+   "dsnIndexId": 21
+  },
+  {
+   "vin7": "2",
+   "vin11": null,
+   "vehicleId": 11,
+   "sysDataType": "0x0B",
+   "platform": "E2",
+   "atVA": "0x147CF4",
+   "vehicleIdPlatform": "E2",
+   "dsnIndexId": 11
+  },
+  {
+   "vin7": "5",
+   "vin11": null,
+   "vehicleId": 15,
+   "sysDataType": "0x0F",
+   "platform": "CAJUN",
+   "atVA": "0x147D1E",
+   "vehicleIdPlatform": "CAJUN",
+   "dsnIndexId": 15
+  },
+  {
+   "vin7": "7",
+   "vin11": "0",
+   "vehicleId": 12,
+   "sysDataType": "0x0C",
+   "platform": "G1",
+   "atVA": "0x147D3C",
+   "vehicleIdPlatform": "G1",
+   "dsnIndexId": 12
+  },
+  {
+   "vin7": "7",
+   "vin11": "1",
+   "vehicleId": 18,
+   "sysDataType": "0x12",
+   "platform": "G2",
+   "atVA": "0x147DB2",
+   "vehicleIdPlatform": "G2",
+   "dsnIndexId": 18
+  },
+  {
+   "vin7": "8",
+   "vin11": "1",
+   "vehicleId": 13,
+   "sysDataType": "0x0D",
+   "platform": "9X1",
+   "atVA": "0x147DD0",
+   "vehicleIdPlatform": "9X1",
+   "dsnIndexId": 13
+  },
+  {
+   "vin7": "8",
+   "vin11": "2",
+   "vehicleId": 13,
+   "sysDataType": "0x0D",
+   "platform": "9X1",
+   "atVA": "0x147DD0",
+   "vehicleIdPlatform": "9X1",
+   "dsnIndexId": 13
+  },
+  {
+   "vin7": "9",
+   "vin11": "1",
+   "vehicleId": 13,
+   "sysDataType": "0x0D",
+   "platform": "9X1",
+   "atVA": "0x147DD0",
+   "vehicleIdPlatform": "9X1",
+   "dsnIndexId": 13
+  },
+  {
+   "vin7": "9",
+   "vin11": "2",
+   "vehicleId": 20,
+   "sysDataType": "0x14",
+   "platform": "992",
+   "atVA": "0x147DEE",
+   "vehicleIdPlatform": "992",
+   "dsnIndexId": 20
+  },
+  {
+   "vin7": "9",
+   "vin11": "8",
+   "vehicleId": 16,
+   "sysDataType": "0x10",
+   "platform": "918S",
+   "atVA": "0x147E0C",
+   "vehicleIdPlatform": "918S",
+   "dsnIndexId": 16
+  },
+  {
+   "vin7": "9",
+   "vin11": "A",
+   "vehicleId": 21,
+   "sysDataType": "0x15",
+   "platform": "J1",
+   "atVA": "0x147E2A",
+   "vehicleIdPlatform": "J1",
+   "dsnIndexId": 21
+  },
+  {
+   "vin7": "A",
+   "vin11": null,
+   "vehicleId": 22,
+   "sysDataType": "0x16",
+   "platform": "G3",
+   "atVA": "0x147D84",
+   "vehicleIdPlatform": "G3",
+   "dsnIndexId": 22
+  }
+ ],
+ "cases": [
+  {
+   "vin7": "*",
+   "vin11": "P",
+   "vehicleId": 3,
+   "sysDataType": "0x03",
+   "platform": "E1",
+   "atVA": "0x147D94",
+   "vehicleIdPlatform": "E1",
+   "dsnIndexId": 3
+  },
+  {
+   "vin7": "*",
+   "vin11": "Y",
+   "vehicleId": 17,
+   "sysDataType": "0x11",
+   "platform": "E3",
+   "atVA": "0x147D0E",
+   "vehicleIdPlatform": "E3",
+   "dsnIndexId": 17
+  },
+  {
+   "vin7": "1",
+   "vin11": "8",
+   "vehicleId": 16,
+   "sysDataType": "0x10",
+   "platform": "918S",
+   "atVA": "0x147E0C",
+   "vehicleIdPlatform": "918S",
+   "dsnIndexId": 16
+  },
+  {
+   "vin7": "1",
+   "vin11": "A",
+   "vehicleId": 21,
+   "sysDataType": "0x15",
+   "platform": "J1",
+   "atVA": "0x147E2A",
+   "vehicleIdPlatform": "J1",
+   "dsnIndexId": 21
+  },
+  {
+   "vin7": "2",
+   "vin11": null,
+   "vehicleId": 11,
+   "sysDataType": "0x0B",
+   "platform": "E2",
+   "atVA": "0x147CF4",
+   "vehicleIdPlatform": "E2",
+   "dsnIndexId": 11
+  },
+  {
+   "vin7": "5",
+   "vin11": null,
+   "vehicleId": 15,
+   "sysDataType": "0x0F",
+   "platform": "CAJUN",
+   "atVA": "0x147D1E",
+   "vehicleIdPlatform": "CAJUN",
+   "dsnIndexId": 15
+  },
+  {
+   "vin7": "7",
+   "vin11": "0",
+   "vehicleId": 12,
+   "sysDataType": "0x0C",
+   "platform": "G1",
+   "atVA": "0x147D3C",
+   "vehicleIdPlatform": "G1",
+   "dsnIndexId": 12
+  },
+  {
+   "vin7": "7",
+   "vin11": "1",
+   "vehicleId": 18,
+   "sysDataType": "0x12",
+   "platform": "G2",
+   "atVA": "0x147DB2",
+   "vehicleIdPlatform": "G2",
+   "dsnIndexId": 18
+  },
+  {
+   "vin7": "8",
+   "vin11": "1",
+   "vehicleId": 13,
+   "sysDataType": "0x0D",
+   "platform": "9X1",
+   "atVA": "0x147DD0",
+   "vehicleIdPlatform": "9X1",
+   "dsnIndexId": 13
+  },
+  {
+   "vin7": "8",
+   "vin11": "2",
+   "vehicleId": 13,
+   "sysDataType": "0x0D",
+   "platform": "9X1",
+   "atVA": "0x147DD0",
+   "vehicleIdPlatform": "9X1",
+   "dsnIndexId": 13
+  },
+  {
+   "vin7": "9",
+   "vin11": "1",
+   "vehicleId": 13,
+   "sysDataType": "0x0D",
+   "platform": "9X1",
+   "atVA": "0x147DD0",
+   "vehicleIdPlatform": "9X1",
+   "dsnIndexId": 13
+  },
+  {
+   "vin7": "9",
+   "vin11": "2",
+   "vehicleId": 20,
+   "sysDataType": "0x14",
+   "platform": "992",
+   "atVA": "0x147DEE",
+   "vehicleIdPlatform": "992",
+   "dsnIndexId": 20
+  },
+  {
+   "vin7": "9",
+   "vin11": "8",
+   "vehicleId": 16,
+   "sysDataType": "0x10",
+   "platform": "918S",
+   "atVA": "0x147E0C",
+   "vehicleIdPlatform": "918S",
+   "dsnIndexId": 16
+  },
+  {
+   "vin7": "9",
+   "vin11": "A",
+   "vehicleId": 21,
+   "sysDataType": "0x15",
+   "platform": "J1",
+   "atVA": "0x147E2A",
+   "vehicleIdPlatform": "J1",
+   "dsnIndexId": 21
+  },
+  {
+   "vin7": "A",
+   "vin11": null,
+   "vehicleId": 22,
+   "sysDataType": "0x16",
+   "platform": "G3",
+   "atVA": "0x147D84",
+   "vehicleIdPlatform": "G3",
+   "dsnIndexId": 22
+  }
+ ],
+ "returnValueSet": [
+  3,
+  11,
+  12,
+  13,
+  15,
+  16,
+  17,
+  18,
+  20,
+  21,
+  22
+ ],
+ "returnIdSet": [
+  "0x03",
+  "0x0B",
+  "0x0C",
+  "0x0D",
+  "0x0F",
+  "0x10",
+  "0x11",
+  "0x12",
+  "0x14",
+  "0x15",
+  "0x16"
+ ],
+ "excludedVehicleIds": [
+  1,
+  2,
+  4,
+  5,
+  6
+ ],
+ "identity": "vehicleId ≡ DSN 索引 id ≡ SYS_DATA type ≡ sysId 高字节 ≡ BV 域",
+ "replayCommand": "node tools/build-vin-type-table.mjs && python3 tools/disasm-elf.py <原厂库>/libPORSCHE_READWRITE.so 0x147C80 0x180",
+ "stats": {
+  "slotCount": 17,
+  "caseCount": 15,
+  "returnValueCount": 11,
+  "tbbByteStringVerified": true,
+  "vaEqualsFileOffset": true,
+  "vehicleIdDomain": "1..22"
+ }
+}
