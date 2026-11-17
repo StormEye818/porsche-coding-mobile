@@ -311,7 +311,7 @@ const ARCHIVED_REPORTS = Object.freeze([
 //    更新纪律：只从 `node <gate>.mjs` 的输出里抄数字，**不许**从文档抄
 //    —— 从文档抄就变成「拿文档验证文档」，这条断言立刻失去意义。
 const METRICS = Object.freeze([
-  { name: 'smoke-fixes', value: 375 },
+  { name: 'smoke-fixes', value: 376 },
   { name: 'e2e-flow', value: 127 },
   { name: 'verify-all-models', value: 79 },
   { name: 'verify-oem-session', value: 32 },

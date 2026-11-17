@@ -15,7 +15,7 @@
 >
 > 当前 `npm test` **33 步** 全绿（实测 8m32s，退出码 0）：
 ```
-test-align431 38 · smoke-fixes 375 · e2e-flow 127 · walkthrough 84 · verify-all-models 79
+test-align431 38 · smoke-fixes 376 · e2e-flow 127 · walkthrough 84 · verify-all-models 79
 verify-runtime-safety 30 · verify-sysdata-comm 16 · verify-oem-session 32 · verify-oem-frames 37
 verify-fullchain 38 · verify-write-gate 60 · verify-fullchain-audit 95 · verify-hb1 10
 verify-oem-probe-diff 9 · verify-menu-tree-no-truncation 8 · D2 6 · verify-ui-text-gag 5
@@ -416,7 +416,7 @@ A: `xcrun devicectl list devices` 看状态。`available (paired)` 但装不上�
 
 - `tools/verify-pending.mjs` **69 通过 / 0 失败 / 0 刻意拒写**（32 点 oracle 真值）
 - `tools/sa2-registry-selfcheck.py`（Unicorn 真 .so）**135/135 变体 · 675/675 用例 · 0 失败**
-- `smoke-fixes.mjs` **375/0** · `name-map-coverage` **131 可算 + 1 空壳 + 0 拒写**
+- `smoke-fixes.mjs` **376/0** · `name-map-coverage` **131 可算 + 1 空壳 + 0 拒写**
 - **registry 生成物重生成（v2）**：`tools/gen-seedkey-registry.py` 重写 ——
   生成段（SA2 50 = verify 46 + oracle 补跑 4 / ADD 44 / 特殊 3 / INLINE_VM 4 = rodata 重提取）
   + 维护段 `analysis/seedkey-registry-extra.js`（RC/循环/CRC/MULADD 族，32 点对拍冻结）。
