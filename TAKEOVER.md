@@ -129,9 +129,10 @@ verify-keepalive-78 6 · verify-comm-timeouts 20
 
 ```bash
 cd ~/porsche-coder
-node smoke-fixes.mjs        # 回归，当前 150/150（2026-10-18 第二~六轮）
+npm ci --prefer-offline     # 干净 clone 必做：sync.mjs import esbuild，没装依赖第一步就 ERR_MODULE_NOT_FOUND
+node smoke-fixes.mjs        # 回归，当前 376/0/0（2026-11-17 复测；含 vectors 白名单可见断言）
 node e2e-flow.mjs           # 端到端，当前 33/33
-node tools/verify-pending.mjs  # 待逆项，当前 通过 65 / 失败 1（只剩刻意拒写的 mode 0x1d）
+node tools/verify-pending.mjs  # 待逆项，当前 通过 69 / 失败 0 / 刻意拒写 0；0x1d 由 drivelinks.state 静态装载后已可验
 # 注：下面这行此前写作「38/38」，那是**第五轮口径的历史值**，实测早已是 84 项；
 #     历史上这 84 项里有 24 项依赖 seed/key 真值表，而真值表当时未入库，干净 clone
 #     只能跑 60 通过 / 24 跳过 —— 「本机可证」换不成「仓库可证」。

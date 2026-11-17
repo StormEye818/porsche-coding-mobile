@@ -78,6 +78,24 @@ const skipped = (name, why, n = 1) => {
   console.log(`  SKIP ${name} -- ${why}` + (n > 1 ? `（本组 ${n} 条断言未跑）` : ''));
 };
 
+// ── vectors 白名单的可见断言（2026-11-17）─────────────────────────────
+// `.gitignore` 现在用 `tools/vectors/*` + `!tools/vectors/*.json` 放行真值表，
+// 于是**新丢进目录的 `.tsv`/`.bin`/`.py` 会被静默忽略、测试照绿** —— 注释不是断言，
+// 这里对**实际存在**的条目逐个验形态：白名单外的文件一律 FAIL 并报名字。
+// 注意判的是「存在的条目」，不是「必须有 decompiled.txt」：它只在本地有，clone 上没有。
+{
+  const dir = './tools/vectors';
+  const entries = existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name).sort()
+    : [];
+  const unexpected = entries.filter((n) => !n.endsWith('.json') && n !== 'decompiled.txt');
+  const extra = `实存 ${entries.length} 项 [${entries.join(', ') || '目录不存在（交给缺表 SKIP/FAIL 处理）'}]`
+    + (unexpected.length
+      ? ` ｜ 越界 ${unexpected.join(', ')} —— 新资产被 .gitignore 白名单挡住，请显式登记`
+      : '');
+  ok('tools/vectors/ 实际条目全部落在白名单内（*.json / decompiled.txt）', unexpected.length === 0, extra);
+}
+
 class FakePort {
   constructor() { this.sent = []; this.handlers = []; }
   write(s) { this.sent.push(String(s)); }
