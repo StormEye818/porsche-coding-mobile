@@ -89,13 +89,17 @@
 > （`src/routine-gate.js` + `src/coder.js:2075 assertDrivableRoutine()`），
 > 绕过 DOM 的 `disabled` 也不会发帧；stop(0x02)/查结果(0x03) 显式放行，
 > 否则已启动的例程无法停止。
+> **来源例外**：原厂功能序列整条回放时显式带 `oemSequence:true`（`app.js:4514`），
+> 逐字节回放不受本闸约束——那种调用没有猜参数，命令形态由原厂序列定型；
+> 687 条序列 / 8047 个 31 帧零拒绝。菜单 / `execRoutine` / `.actRun` 不带该标记，
+> 空参触发禁用 RID 仍 4/4 红且 `txLog` 为空（反向断言 `unmarkedAllowed=0`）。
 > **这不是从 431 抄来的行为**：至少 24 条有 ① 级证据表明 431 会发。
 > 按 PRD 铁律，本节只记录当前状态与下一载体，**不得作为结案理由**。
 
 | 桶 | 条数 | 当前策略 | 431 侧证据（分级） | 补证方向（可复跑） |
 |---|---|---|---|---|
-| 无 31 模板 | 94（92 纯 + 2 兼地址歧义） | `driveDisabled=true`，执行层拦 | ①：GAG 3139 条 / SEQ 687 功能 / 主模板表均 0 命中；②：由表内缺席外推「431 不发」；③：431 UI 是「不提供 / 发空参 / 手填」——静态资料不足以判定。反例候选 `0x051A`：第三张表有 `sub=01 params='06 40 01 F4 00 00 00'` 孤证（②级），当前仍拒 | 找第二源交叉印证；`grep -n '051A' data/*.json` |
-| 参数多候选 | 39 | 一律拒；`params` 留空，候选只在 `paramsCandidates` | ①：39/39 在 SEQ 同一 `(sub,rid)` 有 ≥2 种载荷，其中 24 条另有 4 字节空参变体；431 把多载荷**写死在同一功能序列里顺序跑完**（`ICM_Set_Total_Mileage`），不是按上下文选一个 | 把功能级多载荷序列接进 app；`grep -n 'ICM_Set_Total_Mileage' data/function-sequences.json` |
+| 无 31 模板 | 94（92 纯 + 2 兼地址歧义） | `driveDisabled=true`；UI/菜单/execRoutine 拦，原厂序列回放按来源例外放行 | ①：GAG 3139 条 / SEQ 687 功能 / 主模板表均 0 命中；②：由表内缺席外推「431 不发」；③：431 UI 是「不提供 / 发空参 / 手填」——静态资料不足以判定。反例候选 `0x051A`：第三张表有 `sub=01 params='06 40 01 F4 00 00 00'` 孤证（②级），当前仍拒 | 找第二源交叉印证；`grep -n '051A' data/*.json` |
+| 参数多候选 | 39 | 非序列路径拒；`params` 留空，候选只在 `paramsCandidates`；原厂序列回放逐字节放行 | ①：39/39 在 SEQ 同一 `(sub,rid)` 有 ≥2 种载荷，其中 24 条另有 4 字节空参变体；431 把多载荷**写死在同一功能序列里顺序跑完**（`ICM_Set_Total_Mileage`），不是按上下文选一个 | 把功能级多载荷序列接进 app；`grep -n 'ICM_Set_Total_Mileage' data/function-sequences.json` |
 | 模块内地址歧义 | 7（5 纯 + 2 兼无模板） | 按钮灰 + 执行层拦 | ①：BIN 同模块同 group0 并列两条同名记录，11B 块无禁用位，`driveDisabled` 是我方字段；②：`ECU-ADDRESSING-20261019.md:110` 把「复刻探测」标为「对齐 431」 | 探测细化到非模块粒度 / 逆 `DAT_0017df17`、`DAT_00182af0` 报文格式 |
 | 记录布局冲突 | 8 | **不是拒绝**：4 条灰是因为「无 31 模板」，另 4 条按 11B 规范值照发；27B 值只进 `rawLayoutCandidates` | ①：27B 的 `+6` 值实测为 5–103、7/8 出现次数 30；②：语义推断为索引而非地址 | 解 27B 尾部重复字段语义；`grep -n 'layoutConflictItems' data/actuator.json` |
 
