@@ -79,8 +79,8 @@ assert.ok(sample, 'data/actuator.json 里必须有 form=31 的 driveDisabled 条
   const beforeSession = [0, 1, 3].every((ci, i) => sessions.some((s) => guards[i] < s && s < calls[ci]));
   ok('3 处早置闸都在 enterSessionFor 之前（禁用项连会话帧也不发）', beforeSession,
     `sessions=[${sessions}]`);
-  ok('coder 层闸把 params 传进策略（序列逐帧判断，不做整序列预扫）',
-    /assertDrivableRoutine\(subFunc, routineId, params\)/.test(coder));
+  ok('coder 层闸把 params 与来源标记一起传进策略（序列逐帧判断）',
+    /assertDrivableRoutine\(subFunc, routineId, params, \{ oemSequence: opts\.oemSequence === true \}\)/.test(coder));
   ok('.actRun 带 data-drive-disabled / data-disable-reason',
     /data-drive-disabled=/.test(app) && /data-disable-reason=/.test(app));
   ok('coder.runRoutine 发帧前调用执行侧闸',
@@ -136,7 +136,7 @@ for (const site of callSites) {
   let guardErr = null;
   try {
     // app.js 在 enterSessionFor 之前调用的同一个函数
-    assertDrivableRoutine(1, sample.rid, '', (msg) => toasts.push(msg));
+    assertDrivableRoutine(1, sample.rid, '', { onDeny: (msg) => toasts.push(msg) });
   } catch (e) {
     guardErr = e;
   }
@@ -158,42 +158,64 @@ for (const site of callSites) {
     `txLog ${calls.length} 条`);
 }
 
-// ③-b 回归：431 功能序列自带参数的 31 帧不能被误伤（2026-11-17）
+// ③-b 回归：全部 431 功能序列零误伤（2026-11-17）
 {
   const seq = JSON.parse(read('../data/function-sequences.json'));
   const fns = Array.isArray(seq) ? seq : (seq.functions || []);
   const disabled = new Set(disabled31.map((e) => e.rid));
-  let hit = 0;
-  let hitWithParams = 0;
-  let example = null;
+  let frames31 = 0;
+  let framesWithParams = 0;
+  let candidateSeq = 0;
+  let candidateWithParams = 0;
+  let unmarkedAllowed = 0;
+  const rejected = [];
+  const examples = new Map();
   for (const f of fns) {
-    let blocked = false;
-    let blockedWithParams = false;
+    let candidate = false;
+    let candidateParams = false;
     for (const c of (f.cmds || [])) {
       const raw = String(c).replace(/\s/g, '').toUpperCase();
       if (!/^31/.test(raw)) continue;
       const sub = parseInt(raw.slice(2, 4), 16);
       const rid = parseInt(raw.slice(4, 8), 16);
       const params = raw.slice(8);
+      frames31 += 1;
+      if (params) framesWithParams += 1;
+      // 逐帧问闸——与生产序列调用点一样显式标 oemSequence（整条命令逐字节回放）
+      const why = getRoutineGateReason(sub, rid, params, { oemSequence: true });
+      if (why) rejected.push(`${f.name}:${raw} → ${why}`);
+      // 反证：不带来源标记时，原厂序列里那些「禁用 rid + 空 params」帧仍必须红
+      if (!params && disabled.has(rid) && sub !== 0x02 && sub !== 0x03) {
+        if (getRoutineGateReason(sub, rid, params) === null) unmarkedAllowed += 1;
+      }
       if ((sub === 0x02 || sub === 0x03) || !disabled.has(rid)) continue;
-      blocked = true;
-      if (params && getRoutineGateReason(sub, rid, params) === null) {
-        blockedWithParams = true;
-        if (!example) example = { sub, rid, params, fn: f.name };
+      candidate = true;
+      if (params) {
+        candidateParams = true;
+        if (!examples.has(rid)) examples.set(rid, { fn: f.name, sub, rid, params, raw });
       }
     }
-    if (blocked) hit += 1;
-    if (blockedWithParams) hitWithParams += 1;
+    if (candidate) candidateSeq += 1;
+    if (candidateParams) candidateWithParams += 1;
   }
-  ok('参数敏感闸不再误伤带显式参数的 431 序列帧',
-    hit === 186 && hitWithParams === 158 && example !== null,
-    `波及序列 ${hit}、其中带参数 ${hitWithParams}；样例 ${example?.fn} 31 ${example?.sub.toString(16).padStart(2, '0')} ${example?.rid.toString(16).padStart(4, '0')} ${example?.params}`);
-  if (example) {
-    const { calls, coder } = coderFor(example.rid);
-    assert.equal(getRoutineGateReason(example.sub, example.rid, example.params), null);
-    await coder.runRoutine(example.sub, example.rid, example.params, { poll: false });
-    ok('序列样例真的发出 31 帧（整序列预扫已移除）',
-      calls.some((c) => /^31/i.test(String(c))), `txLog ${calls.length} 条`);
+  ok('回放场景规模与取证一致：186 条序列涉及禁用 rid / 158 条自带参数',
+    fns.length === 687 && candidateSeq === 186 && candidateWithParams === 158,
+    `函数 ${fns.length} · 涉及 ${candidateSeq} · 带参 ${candidateWithParams}`);
+  ok(`全部 687 条序列逐帧过闸：31 帧 ${frames31} 条（带参 ${framesWithParams}）零拒绝`,
+    rejected.length === 0, rejected.slice(0, 3).join(' | '));
+  ok('去掉来源标记后，原厂序列中的空参禁用帧仍被拦（闸没有被整体放宽）',
+    unmarkedAllowed === 0, ` mistakenly allowed ${unmarkedAllowed}`);
+
+  // 反例正向：从 186 里挑两条带参帧，发出的 payload 必须与 431 命令逐字节相同
+  const wants = [0x0402, 0x0406].map((r) => examples.get(r)).filter(Boolean);
+  ok('两条指定反例（0x0402 / 0x0406）都在带参禁用场景中', wants.length === 2,
+    `找到 ${wants.length} 条`);
+  for (const ex of wants) {
+    const { calls, coder } = coderFor(ex.rid);
+    assert.equal(getRoutineGateReason(ex.sub, ex.rid, ex.params, { oemSequence: true }), null);
+    await coder.runRoutine(ex.sub, ex.rid, ex.params, { poll: false, oemSequence: true });
+    ok(`${ex.fn}：真发出与 431 逐字节相同的 ${ex.raw}`,
+      calls.includes(ex.raw), `txLog [${calls.join(', ')}]`);
   }
 }
 

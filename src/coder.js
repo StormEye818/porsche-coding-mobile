@@ -2072,7 +2072,7 @@ async function runRoutine(subFunc, routineId, params = '', opts = {}) {
   // ★ 2026-11-17 执行侧驱动闸：必须在任何 `31` 帧之前问策略。
   //   UI 的 disabled 只是提示，挡不住脚本绕过；catalog 侧 featureFramesFor 的闸
   //   也管不到这条路径。这里抛错时 routineControl 根本不会被调用（txLog 保持空）。
-  assertDrivableRoutine(subFunc, routineId, params);
+  assertDrivableRoutine(subFunc, routineId, params, { oemSequence: opts.oemSequence === true });
   const { poll = true, ...pollOpts } = opts;
   try {
     const r = await this.routineControl(subFunc, routineId, params);

@@ -3801,7 +3801,7 @@ function showSub(s) {
     }
     const id = parseInt(String(rid).replace(/^0x/i, ''), 16);
     // 执行侧闸：先于 enterSessionFor，禁用条目连会话帧都不发（同一策略，不是第四份判断）
-    assertDrivableRoutine(sf, id, '', (msg) => toast('err', '已禁用驱动', msg));
+    assertDrivableRoutine(sf, id, '', { onDeny: (msg) => toast('err', '已禁用驱动', msg) });
     const risk = s.risk === 'high' ? '高风险功能，请确认车辆状态安全' : '';
     toast('info', `${verb}「${s.label || s.id}」`, risk || '已进入例程会话');
     try {
@@ -4412,7 +4412,7 @@ async function showSysExtra(f) {
       toast('err', '参数无效', '参数须为偶数位十六进制（如 0100），不要带空格'); return;
     }
     // 执行侧闸：manual RID 也可能命中 driveDisabled 条目，不许绕过（用户没给参数时）
-    assertDrivableRoutine(sub, rid, params, (msg) => toast('err', '已禁用驱动', msg));
+    assertDrivableRoutine(sub, rid, params, { onDeny: (msg) => toast('err', '已禁用驱动', msg) });
     if (confirmText && typeof confirm === 'function' && !confirm(confirmText)) return;
     const verb = sub === 0x01 ? '执行' : sub === 0x02 ? '停止' : sub === 0x03 ? '查结果' : `子功能 0x${sub.toString(16)}`;
     const ridHex = rid.toString(16).toUpperCase().padStart(4, '0');
@@ -4510,7 +4510,8 @@ async function showSysExtra(f) {
             const rid = parseInt(raw.slice(4, 8), 16);
             const params = raw.slice(8);
             if (sub === 0x01 || sub === 0x03) {
-              await coder.runRoutine(sub, rid, params, { maxMs: 15000, intervalMs: 1200, poll: false });
+              // 原厂序列整条命令（含空 params）逐字节回放，调用方没猜参数 —— 显式标来源
+              await coder.runRoutine(sub, rid, params, { maxMs: 15000, intervalMs: 1200, poll: false, oemSequence: true });
             } else {
               await coder.routineControl(sub, rid, params);
             }
@@ -4687,7 +4688,7 @@ async function showSysExtra(f) {
         const sub = parseInt(b.dataset.sub, 10) || 1;
         const params = (b.dataset.params || '').replace(/ /g, '');
         // 执行侧闸：DOM 的 disabled 可被脚本绕过，这里在发任何帧之前独立拦一次（空参数才拦）
-        assertDrivableRoutine(sub, rid, params, (msg) => toast('err', '已禁用驱动', msg));
+        assertDrivableRoutine(sub, rid, params, { onDeny: (msg) => toast('err', '已禁用驱动', msg) });
         const ridHex = rid.toString(16).toUpperCase().padStart(4, '0');
         log(`  例程执行 31 0${sub} RID ${ridHex}${params ? ' 参数 ' + params : ''} —— 启动 → 轮询 31 03`, 'info');
         await coder.enterSessionFor('routine');

@@ -58,12 +58,20 @@ export function resetRoutineGateForTests() {
  *
  * @param {number} subFunc 子功能
  * @param {number} rid 例程 ID（十进制数）
+ * 第二个例外是**来源**：`oemSequence=true` 表示整条 `31 <sub><rid><params>`
+ * 是从原厂功能序列逐字节回放的命令（连空 params 也是原厂记录的原样形态），
+ * 调用方没有猜任何东西。真实数据里 46 条序列的 52 个 31 帧正是这种
+ * 「禁用 rid + 空 params」形态；若不认来源，零回归就做不到，而这 46 条
+ * 功能本来是原厂能做的。除这个显式标记外，空 params 一律按原策略拒绝。
+ *
  * @param {string} [params] 调用方给出的显式参数（十六进制串）
+ * @param {{oemSequence?:boolean}} [opts] 来源标记；只有原厂序列回放会置 true
  * @returns {string|null} null=允许；字符串=禁止理由（来自数据的 driveDisabledReason）
  */
-export function getRoutineGateReason(subFunc, rid, params = '') {
+export function getRoutineGateReason(subFunc, rid, params = '', opts = {}) {
   if (subFunc === 0x02 || subFunc === 0x03) return null;
   if (String(params || '').replace(/\s/g, '').length > 0) return null;
+  if (opts && opts.oemSequence === true) return null;
   // 空索引与未装载同等看待：app 启动时先 setRoutineGateItems([])，
   // fetch 回来之前必须拒绝，不能因为「索引是空 Map」就悄悄放行。
   if (!routineIndex || routineIndex.size === 0) {
@@ -77,14 +85,15 @@ export function getRoutineGateReason(subFunc, rid, params = '') {
  * @param {number} subFunc
  * @param {number} rid
  * @param {string} [params] 显式参数；非空即放行（见 getRoutineGateReason）
- * @param {(message:string, reason:string)=>void} [onDeny] 供 UI toast 的回调
+ * @param {{onDeny?:(message:string, reason:string)=>void, oemSequence?:boolean}} [opts]
  * @returns {null} 允许时返回 null
  * @throws {Error} 带数据里的理由
  */
-export function assertDrivableRoutine(subFunc, rid, params = '', onDeny = null) {
-  const reason = getRoutineGateReason(subFunc, rid, params);
+export function assertDrivableRoutine(subFunc, rid, params = '', opts = {}) {
+  const o = opts || {};
+  const reason = getRoutineGateReason(subFunc, rid, params, o);
   if (!reason) return null;
   const message = `已禁用驱动：${reason}`;
-  if (typeof onDeny === 'function') onDeny(message, reason);
+  if (typeof o.onDeny === 'function') o.onDeny(message, reason);
   throw new Error(message);
 }
