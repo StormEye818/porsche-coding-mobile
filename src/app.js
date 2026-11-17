@@ -3801,7 +3801,8 @@ function showSub(s) {
     }
     const id = parseInt(String(rid).replace(/^0x/i, ''), 16);
     // 执行侧闸：先于 enterSessionFor，禁用条目连会话帧都不发（同一策略，不是第四份判断）
-    assertDrivableRoutine(sf, id, '', { onDeny: (msg) => toast('err', '已禁用驱动', msg) });
+    // 特殊功能页的例程 ID 来自原厂菜单数据，命令形态由原厂给定（含刻意空参）
+    assertDrivableRoutine(sf, id, '', { fromSequence: true, onDeny: (msg) => toast('err', '已禁用驱动', msg) });
     const risk = s.risk === 'high' ? '高风险功能，请确认车辆状态安全' : '';
     toast('info', `${verb}「${s.label || s.id}」`, risk || '已进入例程会话');
     try {
@@ -3816,6 +3817,7 @@ function showSub(s) {
       //    实证定论：发跟随服务 `31 03` 轮询直到响应不是 21/23/24/78（REAUDIT-20261017）。
       routineAbort = false;
       const { result: r, polled } = await coder.runRoutine(sf, id, '', {
+        fromSequence: true,
         maxMs: 30000, intervalMs: 1500,
         shouldStop: () => routineAbort,
         onPoll: ({ polls, nrc }) => {
@@ -4511,7 +4513,7 @@ async function showSysExtra(f) {
             const params = raw.slice(8);
             if (sub === 0x01 || sub === 0x03) {
               // 原厂序列整条命令（含空 params）逐字节回放，调用方没猜参数 —— 显式标来源
-              await coder.runRoutine(sub, rid, params, { maxMs: 15000, intervalMs: 1200, poll: false, oemSequence: true });
+              await coder.runRoutine(sub, rid, params, { maxMs: 15000, intervalMs: 1200, poll: false, fromSequence: true });
             } else {
               await coder.routineControl(sub, rid, params);
             }

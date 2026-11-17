@@ -80,7 +80,10 @@ assert.ok(sample, 'data/actuator.json 里必须有 form=31 的 driveDisabled 条
   ok('3 处早置闸都在 enterSessionFor 之前（禁用项连会话帧也不发）', beforeSession,
     `sessions=[${sessions}]`);
   ok('coder 层闸把 params 与来源标记一起传进策略（序列逐帧判断）',
-    /assertDrivableRoutine\(subFunc, routineId, params, \{ oemSequence: opts\.oemSequence === true \}\)/.test(coder));
+    /assertDrivableRoutine\(subFunc, routineId, params, \{ fromSequence: opts\.fromSequence === true \}\)/.test(coder));
+  const flagged = [...app.matchAll(/fromSequence: true/g)].length;
+  ok('原厂菜单与序列回放都显式标 fromSequence，.actRun/execRoutine 不标',
+    flagged === 3, `实测 ${flagged} 处（菜单闸+菜单调用+序列调用）`);
   ok('.actRun 带 data-drive-disabled / data-disable-reason',
     /data-drive-disabled=/.test(app) && /data-disable-reason=/.test(app));
   ok('coder.runRoutine 发帧前调用执行侧闸',
@@ -158,6 +161,16 @@ for (const site of callSites) {
     `txLog ${calls.length} 条`);
 }
 
+// ③-a2 生产路径：菜单/序列回放显式带来源标记时必须能发（与上面无标记注入对照）
+{
+  const expected = `3101${sample.rid.toString(16).toUpperCase().padStart(4, '0')}`;
+  const { calls, coder } = coderFor(sample.rid);
+  assert.equal(getRoutineGateReason(1, sample.rid, '', { fromSequence: true }), null);
+  await coder.runRoutine(1, sample.rid, '', { poll: false, fromSequence: true });
+  ok(`生产路径 fromSequence=true：空参原样命令 ${expected} 真发出`,
+    calls.includes(expected), `txLog [${calls.join(', ')}]`);
+}
+
 // ③-b 回归：全部 431 功能序列零误伤（2026-11-17）
 {
   const seq = JSON.parse(read('../data/function-sequences.json'));
@@ -181,8 +194,8 @@ for (const site of callSites) {
       const params = raw.slice(8);
       frames31 += 1;
       if (params) framesWithParams += 1;
-      // 逐帧问闸——与生产序列调用点一样显式标 oemSequence（整条命令逐字节回放）
-      const why = getRoutineGateReason(sub, rid, params, { oemSequence: true });
+      // 逐帧问闸——与生产序列调用点一样显式标 fromSequence（整条命令逐字节回放）
+      const why = getRoutineGateReason(sub, rid, params, { fromSequence: true });
       if (why) rejected.push(`${f.name}:${raw} → ${why}`);
       // 反证：不带来源标记时，原厂序列里那些「禁用 rid + 空 params」帧仍必须红
       if (!params && disabled.has(rid) && sub !== 0x02 && sub !== 0x03) {
@@ -212,8 +225,8 @@ for (const site of callSites) {
     `找到 ${wants.length} 条`);
   for (const ex of wants) {
     const { calls, coder } = coderFor(ex.rid);
-    assert.equal(getRoutineGateReason(ex.sub, ex.rid, ex.params, { oemSequence: true }), null);
-    await coder.runRoutine(ex.sub, ex.rid, ex.params, { poll: false, oemSequence: true });
+    assert.equal(getRoutineGateReason(ex.sub, ex.rid, ex.params, { fromSequence: true }), null);
+    await coder.runRoutine(ex.sub, ex.rid, ex.params, { poll: false, fromSequence: true });
     ok(`${ex.fn}：真发出与 431 逐字节相同的 ${ex.raw}`,
       calls.includes(ex.raw), `txLog [${calls.join(', ')}]`);
   }
