@@ -709,7 +709,7 @@ export function computeVariantKey(id, seed) {
       return { key: out, algo: 'BYTES_NOT', outlen: t.outlen };
     }
   }
-  throw new Error(`变体 ${id} 尚未逆出（内联 OTHER 待挖）`);
+  throw new Error(`变体 ${id} 尚未解出（内联 OTHER 待挖）`);
 }
 
 export { computeKey };

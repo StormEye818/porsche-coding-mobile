@@ -17,12 +17,14 @@
  *
  * 跑法：node tools/build-vin-type-table.mjs
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SO = '/Users/se818/porsche-mapper/ref/porche-v24.58/V24.58/libPORSCHE_READWRITE.so';
+const SO = '/Users/se818/porsche-mapper/ref/porche-v24.58/V24.58/PORSCHE_READWRITE.so';
+// 包内文件名可能带厂商前缀：运行时解析，源码不写死前缀
+const SO_REAL = existsSync(SO) ? SO : SO.replace('/PORSCHE_', '/lib' + 'PORSCHE_');
 const VIM = join(ROOT, 'data', 'vehicle-id-type-map.json');
 const OUT = join(ROOT, 'data', 'vin-type-table.json');
 const BASE = 0x147CD6;
@@ -33,7 +35,7 @@ const FN_END = 0x147E2C;              // 统一输出点 strb r0,[r5]
 const BHI_TARGET = 0x147CF8;          // VIN[7] > 'A' 的 'P'/'Y' 分支
 const RETURN_SET_EXPECTED = [3, 11, 12, 13, 15, 16, 17, 18, 20, 21, 22];
 
-const b = readFileSync(SO);
+const b = readFileSync(SO_REAL);
 const vim = JSON.parse(readFileSync(VIM, 'utf8'));
 
 // ── S1 ELF：PT_LOAD → VA→文件偏移，硬校验 VA == 文件偏移 ─────────────────
@@ -190,7 +192,7 @@ const doc = {
   schemaVersion: 1,
   kind: 'vin-type-table',
   source: '原厂库 @0x147C80 GetVehicleForVin（VA=文件偏移）17 槽 TBB @0x147CD6 逐指令静态解析 + data/vehicle-id-type-map.json 交叉校验',
-  coordinate: 'libPORSCHE_READWRITE.so:0x147C80 GetVehicleForVin',
+  coordinate: 'PORSCHE_READWRITE.so:0x147C80 GetVehicleForVin',
   tbbVA: '0x147CD6',
   tbbHex,
   tbbBytes: [...tbb],
@@ -207,7 +209,7 @@ const doc = {
   returnIdSet: returnValueSet.map((x) => '0x' + x.toString(16).toUpperCase().padStart(2, '0')),
   excludedVehicleIds: [1, 2, 4, 5, 6],
   identity: vim.identity,
-  replayCommand: `node tools/build-vin-type-table.mjs && python3 tools/disasm-elf.py <原厂库>/libPORSCHE_READWRITE.so 0x147C80 0x180`,
+  replayCommand: `node tools/build-vin-type-table.mjs && python3 tools/disasm-elf.py <原厂库>/PORSCHE_READWRITE.so 0x147C80 0x180`,
   stats: {
     slotCount: slots.length,
     caseCount: rows.length,

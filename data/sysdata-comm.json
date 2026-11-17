@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "source": "decoded PORSCHE_SYS_DATA.BIN comm 子表 + GetCommData @FILE:0x15580 逐指令语义",
- "format": "blocks[i].cat=类别（token+0x63d 值域 1/2/3/4/0x10/0x20/0x30/0x4F/0x50/0x60）；subs[j].tx/rx=(A&0xFFFF>>5, C&0xFFFF>>5)（家族默认地址，实车对 DME/网关已证，PSM 等 981 不符 → 只作参考不作权威）；cmds=命令 ID（u32）；frames=COMMAND.GAG 帧字节 [flag][len][payload]",
+ "format": "blocks[i].cat=类别（token+0x63d 值域 1/2/3/4/0x10/0x20/0x30/0x4F/0x50/0x60）；subs[j].tx/rx=(A&0xFFFF>>5, C&0xFFFF>>5)（家族默认地址，实车对 DME/网关已证，PSM 等 981 不符 → 只作参考不作权威）；cmds=命令 ID（u32）；frames=参考诊断仪导出 帧字节 [flag][len][payload]",
  "stats": {
   "records": 874,
   "cmdHit": 3350,

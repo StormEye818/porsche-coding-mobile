@@ -139,7 +139,7 @@ def main():
         """按代输出「完整」cat=0x10 地址表（静态分派规则，非逐 sysId 唯一地址）。
 
         有些 ECU 的 comm 子表只有 cat=0x60 固定 4 帧模板，subs 里的 0x020-0x02D 是
-        索引而非 CAN 地址。431 静态做法本身不产生逐 sysId 唯一地址表：按代取该代
+        索引而非 CAN 地址。参考诊断仪静态做法本身不产生逐 sysId 唯一地址表：按代取该代
         **完整** cat=0x10 地址表作为候选循环（每候选 1 帧 22 14 09）+ 应答即绑，
         provenance 标 commCat10-addressTable + oemProbeSequence（四帧模板 185/185）。
         ★ 2026-11-13 收口：删除 16 项截断（此前把 90 个 16 候选组截成 16 条），
@@ -468,7 +468,7 @@ def main():
             # ★ 2026-11-13 HB-1 收口附带：9X6（gen 0x01）等老代平台启用后，
             #   部分 sysId 在表A 无候选、也没有 cat=0x10 地址表；此时取「同代
             #   sysdata-routing.json byOwner 的 can 全集」作为包内静态候选集
-            #   （431 做法 = 候选循环 + 应答即绑，不是逐 sysId 唯一地址表）。
+            #   （参考诊断仪做法 = 候选循环 + 应答即绑，不是逐 sysId 唯一地址表）。
             #   独立 provenance=genRoutingStaticTable，不计入 120 条错配分母，
             #   也不计入 402/527 分母（团队规格增量 2 的分母纪律）。
             gen_old = int(sid, 16) >> 8
@@ -509,7 +509,7 @@ def main():
         #   ② 只有 cat=0x60 固定 4 帧模板（subs 是 0x020-0x02D 索引，非 CAN 地址）
         #      → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，
         #        provenance = commCat10-addressTable + oemProbeSequence（185/185 四帧）。
-        #   431 静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，本就不产生
+        #   参考诊断仪静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，本就不产生
         #   逐 sysId 唯一地址表；「120 条错配」指此前把同代它 ECU 地址表截断后错配，
         #   现改为完整的按代静态分派规则。两者都只作候选；bindDirect 仍由 n=0 +
         #   唯一合法地址决定，绝不免探针直绑。
@@ -582,7 +582,7 @@ def main():
         # 只有「全部相关行均 n=0 + 唯一合法地址」才允许免探针直绑。
         # n=0 多候选或混合 n 必须继续探测/枚举，不能拿首项冒充唯一地址。
         # ★ 新增补源（本 ECU comm 地址对 / 按代完整静态地址表）一律禁止免探针直绑：
-        #   431 做法是「候选循环 + 应答即绑」，静态地址表是候选集而非逐 sysId
+        #   参考诊断仪做法是「候选循环 + 应答即绑」，静态地址表是候选集而非逐 sysId
         #   唯一实测地址；n=0 也不能拿首项冒充唯一地址。
         bind_direct = bool(rows) and not n_mixed and n_value == 0 and len(pairs) == 1 \
             and not newly_sourced
@@ -601,7 +601,7 @@ def main():
             rec['bindUnresolved'] = 'n=0 但合法地址不唯一，禁止首候选直绑；继续探测/枚举'
         if newly_sourced:
             rec['bindUnresolved'] = ('候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 '
-                                     'cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，'
+                                     'cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，'
                                      '静态地址表是候选集 → 一律禁止免探针直绑')
         if prov:
             rec['provenance'] = prov
@@ -693,7 +693,7 @@ def main():
                  '仅 cat=0x60 模板无地址对 → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，'
                  'provenance=commCat10-addressTable(gen静态地址表,ownerSysId)+'
                  'oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)；'
-                 '431 静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，不产生逐 sysId 唯一地址表。'
+                 '参考诊断仪静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，不产生逐 sysId 唯一地址表。'
                  'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
                  'rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先'
                  '（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；'

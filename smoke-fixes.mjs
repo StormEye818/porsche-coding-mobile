@@ -305,24 +305,24 @@ console.log('\n[5] ECU address table');
   ok('candidates do not clash with measured ids', clash.length === 0, clash.join(','));
 }
 
-// ===== 5b. 识别串原语（431 GetSubSysDataAddr 语义：strcmp/前缀≥4/strstr≥4）=====
-// ★ 2026-11-11 431 对齐：原 probeDecision（「NRC 不算候选」旧模型）已删除 ——
-//   431 DriveLinksMode_1001 只看「有没有回来」（含 NRC），身份在进模块后读帧裁决。
+// ===== 5b. 识别串原语（参考诊断仪 GetSubSysDataAddr 语义：strcmp/前缀≥4/strstr≥4）=====
+// ★ 2026-11-11 参考诊断仪对齐：原 probeDecision（「NRC 不算候选」旧模型）已删除 ——
+//   参考诊断仪 DriveLinksMode_1001 只看「有没有回来」（含 NRC），身份在进模块后读帧裁决。
 //   这里只保留仍被生产代码使用的 identMatch 原语断言。
-console.log('\n[5b] identMatch 识别串原语（431 语义）');
+console.log('\n[5b] identMatch 识别串原语（参考诊断仪语义）');
 {
   ok('全等命中（strcmp）', identMatch('Kombiinstrument_A2_2', ['Kombiinstrument']));
   ok('前缀 ≥4 命中（memcmp）', identMatch('Kombi_IC_9x1', ['Kombiinstrument']));
   ok('strstr ≥4 命中', identMatch('XX_Kombiinstrument_YY', ['Kombiinstrument']));
   ok('无公共前缀/包含 → 不命中', !identMatch('BCM_vorne_9x1_Basis', ['Kombiinstrument']));
   ok('短键（<4）只接受全等', !identMatch('TRAFIC_LIGHT', ['IC']) && identMatch('IC', ['IC']));
-  // ★ 候选族生成（通用 DRIVELINKS tx 表族规则）：app.js 已改传空 globalFamilies（431 无全库并集）
+  // ★ 候选族生成（通用 DRIVELINKS tx 表族规则）：app.js 已改传空 globalFamilies（参考诊断仪无全库并集）
   const entry = { joinState: 'unresolved', family: [{ tx: 0x722, rx: 0x72A, recOff: 'dec.bin:0xF2DA' }] };
   const fam = familyCandidates(entry, [{ tx: 0x371, rx: 0x379 }, { tx: 0x722, rx: 0x72A }, { tx: 0x50, rx: 0x58 }]);
   ok('未决模块族=自身族∪全库族并集（去重、过滤域外）',
     fam.map((f) => f.tx.toString(16)).join(',') === '722,371', fam.map((f) => f.tx.toString(16)).join(','));
   const fam0 = familyCandidates(entry, []);
-  ok('app.js 实际调用（globalFamilies=[]）→ 只用自身族（431 无全库并集）',
+  ok('app.js 实际调用（globalFamilies=[]）→ 只用自身族（参考诊断仪无全库并集）',
     fam0.map((f) => f.tx.toString(16)).join(',') === '722', fam0.map((f) => f.tx.toString(16)).join(','));
   const fam2 = familyCandidates({ family: [{ tx: 0x742 }] }, [{ tx: 0x371 }]);
   ok('join 无未决模块族=自身族（不扫全库，探测轻量）',
@@ -601,7 +601,7 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
       }
       ok(`mode 0x48 = ~seed 对拍 真值对拍（${okN} 点）`, badN === 0);
     }
-    // ★ 2026-11-12 第十阶段：mode 0x1D 已由反汇编逆出（key = seed + state），不再是待逆项。
+    // ★ 2026-11-12 第十阶段：mode 0x1D 已由静态分析解出（key = seed + state），不再是待逆项。
     //   红线：state 未装载时必须拒写，绝不把离线 identity 当正解发到真车。
     ok('mode 0x1d 已收编（不再 PENDING）', !(0x1d in PENDING_MODES));
     {
@@ -692,7 +692,7 @@ console.log('\n[9] 原语 mode 收编 / 解析器 / 空 seed');
     try { resolveKey(0x13, 0x12345678, {}); return true; } catch (e) { return false; }
   })());
 
-  // ASAM 变体全家族分发：0xB7 指向 MULADD 族（C3E76242），早先被误判「尚未逆出」
+  // ASAM 变体全家族分发：0xB7 指向 MULADD 族（C3E76242），早先被误判「尚未解出」
   ok('resolveKey(0xB7) 走 MULADD 变体不报错', (() => {
     try { return resolveKey(0xb7, 0x12345678, {}).key > 0; } catch (e) { return false; }
   })());
@@ -1088,7 +1088,7 @@ console.log('\n[12] mode 无 case → 拒发 key（不得发 00 00 00 00）');
 
 // ===== 15. 特殊功能（0x31 例程）可用性 =====
 // 背景：special-functions.json 那 67 个 routineId 是手工菜单索引（0x200–0x34E），
-// 与实测基准 RID（COMMAND.GAG，79 个）交集只有 1 个 —— 不能拿去发 31 01。
+// 与实测基准 RID（参考诊断仪导出，79 个）交集只有 1 个 —— 不能拿去发 31 01。
 // 这组断言锁死三件事：① 实测库在且合法 ② 假 ID 不许被标成已核实 ③ UI 不再有死按钮。
 console.log('\n[15] 特殊功能 / 例程 0x31');
 {

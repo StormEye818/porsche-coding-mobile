@@ -3,10 +3,10 @@
 
 背景：此前「逐 ECU 会话/进模块命令表被加密体挡住」的结论是错的——
 `~/porsche-mapper/ref/decoded/PORSCHE_SYS_DATA.BIN` 是**已解码副本**（加密壳在
-`ref/x431-porsche-v24.58/V24.58/PORSCHE_SYS_DATA.BIN`，YZJM 容器；解码器在
+`ref/porche-v24.58/V24.58/PORSCHE_SYS_DATA.BIN`，私有容器 容器；解码器在
 porsche-mapper）。路由表 / comm 子表 / 名字记录一直读的就是这份副本。
 
-本导出器按 `GetCommData @libPORSCHE_FILE.so:0x15580` 的逐指令语义解析每个 sysId 的
+本导出器按 `GetCommData @PORSCHE_FILE.so:0x15580` 的逐指令语义解析每个 sysId 的
 comm 记录（874 条，覆盖全部 22 个 type）：
 
   comm 子表（每 type 一张）：[u8 count][[u16 sysId][u8 nComm][nComm×[u32 commOff][u32 sysDataOff]]]
@@ -27,7 +27,7 @@ comm 记录（874 条，覆盖全部 22 个 type）：
     ⚠️ A/C 是**家族默认**（同低字节跨代相同；PSM=0x713 在 992 集合里、不在 981 集合里），
     不能直接当按车型地址用——按车型地址在 ALLDATA 的 16B CAN 行里（RE-CLOSURE §7）。
 
-  ★ 命令 ID → 帧字节：COMMAND.GAG（GGP 第 6 段，IdSearch 语义，键=命令 ID 大端）。
+  ★ 命令 ID → 帧字节：参考诊断仪导出（GGP 第 6 段，IdSearch 语义，键=命令 ID 大端）。
     例：0x00200007→`01 02 10 89`、0x00200006→`01 02 1A 9F`、0x0020000A→`00 02 10 03`、
     0x001003A7→`00 02 3E 00`、0x00200001→`01 03 22 F1 A2`。帧格式 [flag][len][payload]。
 
@@ -42,7 +42,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SYS = Path('/Users/se818/porsche-mapper/ref/decoded/PORSCHE_SYS_DATA.BIN')
-CMDGAG = Path('/Users/se818/porsche-mapper/ref/decoded/GAG_COMMAND.GAG.bin')
+CMDGAG = Path('/Users/se818/porsche-mapper/ref/decoded/例程导出.bin')
 OUT = ROOT / 'data' / 'sysdata-comm.json'
 
 sys.path.insert(0, str(Path('/Users/se818/porsche-mapper/ref')))
@@ -227,7 +227,7 @@ def main():
         'format': ('blocks[i].cat=类别（token+0x63d 值域 1/2/3/4/0x10/0x20/0x30/0x4F/0x50/0x60）；'
                    'subs[j].tx/rx=(A&0xFFFF>>5, C&0xFFFF>>5)（家族默认地址，实车对 DME/网关已证，'
                    'PSM 等 981 不符 → 只作参考不作权威）；cmds=命令 ID（u32）；'
-                   'frames=COMMAND.GAG 帧字节 [flag][len][payload]'),
+                   'frames=参考诊断仪导出 帧字节 [flag][len][payload]'),
         'stats': {
             'records': stats['records'],
             'cmdHit': stats['cmdHit'],

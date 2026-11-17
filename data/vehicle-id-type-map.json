@@ -8,7 +8,7 @@
   {
    "id": "EG-1",
    "name": "平台 TBB 22 槽",
-   "coordinate": "libPORSCHE_SYSP.so:0x26344 PorscheGetVehiclePlatform",
+   "coordinate": "PORSCHE_SYSP.so:0x26344 PorscheGetVehiclePlatform",
    "tbbVA": "0x2634E",
    "tbbHex": "0e0e140b0b0b171717171a1d1111202326292c2f3235",
    "slotCount": 22,
@@ -32,13 +32,13 @@
     "0x263B2": "J1",
     "0x263B8": "G3"
    },
-   "replayCommand": "python3 tools/disasm-elf.py <原厂库>/libPORSCHE_SYSP.so 0x26344 0x90",
+   "replayCommand": "python3 tools/disasm-elf.py <原厂库>/PORSCHE_SYSP.so 0x26344 0x90",
    "replayNote": "22 槽 TBB 字节与 15 个 caseTarget 的串池名均由该文件偏移逐字节复算；VA=文件偏移（PT_LOAD sh_offset==sh_addr）"
   },
   {
    "id": "EG-2",
    "name": "VIN TBB 17 槽",
-   "coordinate": "libPORSCHE_READWRITE.so:0x147C80 GetVehicleForVin",
+   "coordinate": "PORSCHE_READWRITE.so:0x147C80 GetVehicleForVin",
    "thumbEntry": "0x147C81",
    "tbbVA": "0x147CD6",
    "tbbHex": "8e09acac1eac263543acacacacacacac51",
@@ -48,19 +48,19 @@
    "returnValueSetHex": ["0x03", "0x0B", "0x0C", "0x0D", "0x0F", "0x10", "0x11", "0x12", "0x14", "0x15", "0x16"],
    "excludedVehicleIds": [1, 2, 4, 5, 6],
    "platformStringPoolVA": "0x21BAF2",
-   "replayCommand": "python3 tools/disasm-elf.py <原厂库>/libPORSCHE_READWRITE.so 0x147C80 0x180",
+   "replayCommand": "python3 tools/disasm-elf.py <原厂库>/PORSCHE_READWRITE.so 0x147C80 0x180",
    "replayNote": "17 个 u8 → 15 条 (VIN[7],VIN[11])→vehicleId 分支，逐条 movs r0,#imm 在 1..22 内；9X6/9X7 老平台不由 VIN 位运算决定，走平台级规范 type + 车型菜单"
   },
   {
    "id": "EG-3",
    "name": "手选车型菜单表 24 项",
-   "coordinate": "libPORSCHE_SYSP.so:0x2A958 PorscheGetVehicleIDByManualSelect",
+   "coordinate": "PORSCHE_SYSP.so:0x2A958 PorscheGetVehicleIDByManualSelect",
    "menuTableVA": "0x5E42C",
    "itemCount": 24,
    "keySpace": "0xFF0000NN / 0x0030xxxx / 0x000003FB",
    "textVA": "libSTD.so:0x255AC GetTextFromTextLib",
    "note": "u32 count=24 @0x5E42C + 24×u32 文本键；strcmp 逐字节全等命中返回 vehicleId。旧文档误当成「24 键语言表」已推翻。",
-   "replayCommand": "python3 tools/disasm-elf.py <原厂库>/libPORSCHE_SYSP.so 0x2A958 0x60"
+   "replayCommand": "python3 tools/disasm-elf.py <原厂库>/PORSCHE_SYSP.so 0x2A958 0x60"
   },
   {
    "id": "EG-4",

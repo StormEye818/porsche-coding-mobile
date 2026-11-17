@@ -60,7 +60,7 @@ function identityPhaseHardAssert() {
 
 /**
  * ②-b 实跑逐帧断言函数：从 src/ 只读提取我方实际帧集与调用阶段，
- * 与 comm-addr-table.probeSequence.frames 的 431 期望四帧做逐帧 diff。
+ * 与 comm-addr-table.probeSequence.frames 的参考诊断仪期望四帧做逐帧 diff。
  *
  * @returns {{verdict:'A'|'非A', expected:string[], actualUds:string[], actualKwp:string[],
  *            diff:string[], frameCountDiff:number, identityInProbePhase:boolean,

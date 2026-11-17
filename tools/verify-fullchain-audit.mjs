@@ -201,7 +201,7 @@ console.log('\n[2] BUG-2：68 个老代 KWP sysId 的所有写入口不建 UDS �
   //   sessionless 老代 KWP（0x0101）的 117 条原厂进模块序列里 10xx 会话帧 = 0，
   //   原厂序列原文 = [1:81, 1:1A9A]；向它发 10 40 是误发 UDS 会话帧的 bug。
   //   证据坐标：src/oem-enter-frames.js:OEM_SESSIONLESS_SYSIDS_SET（68 键对象）
-  //   / 117 条序列 10xx=0 / GAG_COMMAND.GAG.bin 的 1040×87 属新代 UDS 命令段。
+  //   / 117 条序列 10xx=0 / 例程导出.bin 的 1040×87 属新代 UDS 命令段。
   const m3 = new MockAdapter({ latencyMs: 0 });
   const c3 = mkCoder(m3, 'kwp');
   c3.setOemContext('0x0101', 0x7e0);
@@ -401,7 +401,7 @@ console.log('\n[4] 审计其余修复回归');
         && /cmd\('221102', 800\)/.test(app) && /补帧响应不作为成功依据/.test(app),
       `frames=${sentS.join(',')} rejected=${supplementRejected}`);
   }
-  ok('mode 0x1D 已按 seed+state 逆出且未装载 state 时拒写',
+  ok('mode 0x1D 已按 seed+state 解出且未装载 state 时拒写',
     /ADD_TOKEN_STATE\/0x1d/.test(R('../src/seedkey-pswcalc.js'))
     && /未装载时拒绝计算/.test(R('../src/seedkey-pswcalc.js')));
   // ★ G7：源码计数 → 实跑并发互斥（同一 Coder 并发 3 次只有 1 次进入写事务）
@@ -713,7 +713,7 @@ console.log('\n[7] 修复②：绑定后身份裁决（22F19E/1A9B + identMatch�
   let pswReason = '';
   try { pswCalc(0x1d, 0x12345678, {}); }
   catch (err) { pswRejected = /未装载时拒绝计算|需要装载.*state/.test(err.message); pswReason = err.message; }
-  ok('mode 0x1D 已按 seed+state 逆出且未装载 state 时拒写（实跑 pswCalc）',
+  ok('mode 0x1D 已按 seed+state 解出且未装载 state 时拒写（实跑 pswCalc）',
     pswRejected, pswReason.slice(0, 70));
 
   // ④ :219 源码正则 → 实跑 selectOemSequence 按逐 ECU 证据选会话序列

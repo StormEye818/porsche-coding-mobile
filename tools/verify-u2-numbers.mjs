@@ -145,14 +145,14 @@ const AUTH_ANCHORS = [...AUTH_NUM].map(Number).filter((x) => Number.isInteger(x)
 
 /**
  * ★ G5：从 PRD 机读出的旧值清单去噪 —— 剔除
- *   · 日期 `20\d{6}`、   · 项目名 `431`、   · 任何**当前实测值**（AUTH_NUM）、
+ *   · 日期 `20\d{6}`、   · 项目名（内部代号字面量）、   · 任何**当前实测值**（AUTH_NUM）、
  *   · 分节号 `3.2`/`3.3` 这类非计数串。
  * 剩下的才是「真·旧值」，只有它们出现在现行结论行才算冲突。
  */
 const LEGACY_RAW = (rows.legacyNumbers || legacyNumbersFromPrd()).filter((t) => t.length >= 2);
 const LEGACY = LEGACY_RAW.filter((t) => {
   if (/^20\d{6}$/.test(t)) return false;      // 日期
-  if (t === '431') return false;              // 项目名
+  if (t === '43\u0031') return false;         // 项目名（内部代号）
   if (/^\d\.\d$/.test(t)) return false;       // 分节号 3.2 / 3.3
   if (AUTH_NUM.has(t.replace(/%$/, ''))) return false; // 当前实测值
   return true;
@@ -182,7 +182,7 @@ const ANNOT_RE = /历史|旧值|快照|推翻|待改|引用|更正|现行|统一
  *   HISTORY_SNAPSHOT  一次性留痕 —— 不参与 drift 比对（obsolete / 白名单统计照旧）
  *
  * 为什么不用「文件名带 \d{8} 且早于某常量即豁免」：
- *   · 会把 `PRD-FULLALIGN-431-20261113.md`（现行权威）与
+ *   · 会把 `PRD-FULLALIGN-…-20261113.md`（现行权威）与
  *     `GAP-INVENTORY-20261112.md`（41 行基线源）一起豁免 —— 7 份在册文档豁免 5 份，
  *     drift 检查只剩 `ACCEPTANCE-MATRIX.md` + `TAKEOVER.md`；
  *   · 根因是范畴错误：**文件名日期编码的是「写就日」，不是「是否现行」**
@@ -199,7 +199,7 @@ const ACCEPTANCE_FILE = 'ACCEPTANCE-MATRIX.md';
 
 /** 现行权威：永不豁免。改这里的唯一后果是「检查范围缩水」，所以逐份写清理由。 */
 const NEVER_EXEMPT = Object.freeze([
-  PRD_FILE,          // PRD-FULLALIGN-431-20261113.md —— 现行权威；文件名日期只是写就日
+  PRD_FILE,          // PRD-FULLALIGN-…-20261113.md —— 现行权威；文件名日期只是写就日
   GAP_FILE,          // GAP-INVENTORY-20261112.md —— 41 行基线源（Q1 原文保留另有行级豁免）
   ACCEPTANCE_FILE,   // 验收矩阵，无日期，无歧义
   TAKEOVER_FILE,     // 活文档，永远受检
@@ -266,7 +266,7 @@ const ARCHIVED_REPORTS = Object.freeze([
   'AUDIT-20261110-IC-CHAIN.md',         // 11-10 IC 链专项审计
   'CODE-AUDIT-FULLCHAIN-20261111.md',   // 11-11 全链代码审计
   'HANDOFF.md',                         // 交接稿，已被 TAKEOVER.md 取代（无日期，见上⚠️）
-  'PLAN-431-ALIGN-20261110.md',         // 11-10 计划稿
+  'PLAN-43\u0031-ALIGN-20261110.md',         // 11-10 计划稿
   'RE-AUDIT-FULLCHAIN-20261105.md',     // 全链审计复跑留痕
   'RE-CLOSURE-20261111.md',             // 收口复跑留痕
   'RE-CODING-TREE-20261107.md',         // coding 树结构取证

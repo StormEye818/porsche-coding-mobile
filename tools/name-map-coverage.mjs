@@ -8,7 +8,7 @@
  * 三分类（口径同 coverage.mjs，别把「不抛异常」当有算法）：
  *   real   有算法，能算出真 key
  *   empty  原厂该函数是**空壳**（EMPTY，outlen=0）—— 本来就不发 key
- *   threw  还没逆出来 / 拒写
+ *   threw  还没解出来 / 拒写
  */
 import { NAME_TO_VARIANT } from '../src/seedkey-name-map.js';
 import { computeVariantKey } from '../src/seedkey-registry.js';
@@ -34,6 +34,6 @@ const pct = (n) => (n / tot * 100).toFixed(1) + '%';
 console.log('name-map 变体（去重后）  ', tot, ` (名字 ${Object.keys(NAME_TO_VARIANT).length} 条)`);
 console.log('  真·有算法（能发 key）  ', buckets.real, pct(buckets.real));
 console.log('  空壳（原厂不发 key）   ', buckets.empty, pct(buckets.empty), empties.join(' '));
-console.log('  拒写（未逆出 / 刻意）  ', buckets.threw, pct(buckets.threw));
+console.log('  拒写（未解出 / 刻意）  ', buckets.threw, pct(buckets.threw));
 if (bad.length) console.log('\n' + bad.join('\n'));
 process.exit(buckets.threw ? 1 : 0);

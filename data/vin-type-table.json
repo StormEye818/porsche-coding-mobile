@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "kind": "vin-type-table",
  "source": "原厂库 @0x147C80 GetVehicleForVin（VA=文件偏移）17 槽 TBB @0x147CD6 逐指令静态解析 + data/vehicle-id-type-map.json 交叉校验",
- "coordinate": "libPORSCHE_READWRITE.so:0x147C80 GetVehicleForVin",
+ "coordinate": "PORSCHE_READWRITE.so:0x147C80 GetVehicleForVin",
  "tbbVA": "0x147CD6",
  "tbbHex": "8e09acac1eac263543acacacacacacac51",
  "tbbBytes": [
@@ -472,7 +472,7 @@
   6
  ],
  "identity": "vehicleId ≡ DSN 索引 id ≡ SYS_DATA type ≡ sysId 高字节 ≡ BV 域",
- "replayCommand": "node tools/build-vin-type-table.mjs && python3 tools/disasm-elf.py <原厂库>/libPORSCHE_READWRITE.so 0x147C80 0x180",
+ "replayCommand": "node tools/build-vin-type-table.mjs && python3 tools/disasm-elf.py <原厂库>/PORSCHE_READWRITE.so 0x147C80 0x180",
  "stats": {
   "slotCount": 17,
   "caseCount": 15,

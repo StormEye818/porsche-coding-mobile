@@ -388,7 +388,7 @@ export async function atCmdOk(elm, at, timeoutMs, opts = {}) {
 }
 
 /**
- * IsCharNum —— 原厂 libPORSCHE_READWRITE.so @0x7078 的字符判定原语：
+ * IsCharNum —— 原厂 PORSCHE_READWRITE.so @0x7078 的字符判定原语：
  *   `[0-9A-Za-z]`，**含 I / O / Q 与小写**（ISO 3779 排除 I/O/Q 只是展示层约定）。
  * 证据坐标：PRD v1.3 §5 D-4；两链共用本原语，保证字符集判定逐字节相同。
  * @param {number} c 字节值（0..255）
@@ -634,7 +634,7 @@ export class Coder {
   /**
    * 绑定当前 ECU 的原厂会话上下文（sysId → SYS_DATA comm 子表证据）。
    *
-   * ★ 2026-11-12：上一阶段把「逐 ECU 会话」逆出来了（874 条 comm 记录 / 805 sysId /
+   * ★ 2026-11-12：上一阶段把「逐 ECU 会话」解出来了（874 条 comm 记录 / 805 sysId /
    *   981 的 48 模块全可查），但运行时仍一律发 10 89，只在日志里提示「未对齐」。
    *   这里把它真正接进协议层：enterSession / enterSessionFor('coding'|'ident') /
    *   applyChange 未显式给 session 时都取证据值。
@@ -1194,7 +1194,7 @@ export class Coder {
   async readVinByObd({ timeoutMs = 1500 } = {}) {
     const prev = { tx: this.tx, rx: this.rx, protocol: this.protocol, ready: this._addressReady };
     const tried = [];
-    // ★ 2026-11-13 T03 D-4：字符集判定对齐原厂 IsCharNum @libPORSCHE_READWRITE.so:0x7078
+    // ★ 2026-11-13 T03 D-4：字符集判定对齐原厂 IsCharNum @PORSCHE_READWRITE.so:0x7078
     //   = [0-9A-Za-z]，**含 I/O/Q 与小写**。ISO 3779 的 I/O/Q 排除只是展示层约定，
     //   不是原厂取 VIN 的规则；旧 VIN_RE /[A-HJ-NPR-Z0-9]{17}/ 会把
     //   `WP0ZZZ98Z4L000IOQ1` 这类含 I/O/Q 的合法串整条拒掉，与主链
@@ -2333,7 +2333,7 @@ export const SESSION_FOR_SERVICE = {
  *     cat=32 / flag=3 的**复合脚本帧**里 `…610106F400…` 这类长 hex 的子串，
  *     不是会话帧，且 `_enterByOemFrames` 本就按 flag=3 跳过，不进模块发送。
  *   0x0101 原厂序列原文 = `[{cat:2,frames:[1:81, 1:1A9A]}]`（KWP 快初始化 +
- *   识别），**没有 10 40**。GAG_COMMAND.GAG.bin 里 1040×87 / 1003×9 / 1085×1
+ *   识别），**没有 10 40**。例程导出.bin 里 1040×87 / 1003×9 / 1085×1
  *   属新代 UDS 命令段；JOB.BIN 12 个 DBUSER 中 9X6/9X7/E1 出现 0 次，
  *   老代 27 个 impls 首帧全是 22/31/27/21/14/1A 服务帧。
  *

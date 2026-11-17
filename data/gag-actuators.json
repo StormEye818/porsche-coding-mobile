@@ -1,5 +1,5 @@
 {
- "note": "431 COMMAND.GAG 实测的 2F IOControl DID 全集（3139 条请求里 154 条 2F）。drive=ctrl 0x03 + 状态；release=ctrl 0x00 + 空。⚠️ name 目前是占位（chain↔DID 映射在 ODX 里，未解），需按模块人工对应。",
+ "note": "参考诊断仪导出 实测的 2F IOControl DID 全集（3139 条请求里 154 条 2F）。drive=ctrl 0x03 + 状态；release=ctrl 0x00 + 空。⚠️ name 目前是占位（chain↔DID 映射在 ODX 里，未解），需按模块人工对应。",
  "count": 71,
  "items": [
   {

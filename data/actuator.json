@@ -6,7 +6,7 @@
  "note": "执行器测试项：名称=参考诊断仪 DSTREAM 正式名。did/rid=命令块 +6 处 u16 小端，按 SID 分组后取值（0x2F→DID / 0x31→RID；0x30 的 +6 是 KWP localId，单列 lid、不出帧）。didCandidates/ridCandidates = 「**规范 11 字节记录形态**下的全部候选地址」（同链多址＝多个 ECU 各有一份同名功能）。didResolve/ridResolve 词表：single-address（同 (block,chain,sid) 下所有规范记录给同一 id） / multi-resolved-by-module（多址但两候选的模块集不相交，配 resolvedModuleNames 可唯一定位） / ambiguous-in-module（多址且模块集相交，模块级无法消歧 → driveDisabled） / multi-address（多址但判不了：某候选在该 chain 下无模块记录）。多址另带 multiAddressBasis（只有 high-byte-differs / high-byte-same 两个取值，只描述\"候选高字节是否相同\"这个数值事实，不声称分属不同功能域） 与 moduleResolution（separable/ambiguous/not-applicable）。rawLayoutConflict=true 的条目：同一 chain 还存在**另一种记录形态**（27 字节块）在 +6 给出不同地址，两种形态并列在 rawLayoutCandidates（含 cmdRaw 原始字节），**取值未改动**；另一形态的读数**不进入候选地址列表** —— 它不是另一个 ECU 的拷贝，所以 single-address 与 rawLayoutConflict=true 可以并存。stateSrc 只有 measured（did 命中 GAG 71 实测集，state 取自 observedStates）/ default（无实测，记录默认 FF 00 00 00），两者不可混标。0x31 的 params 取两个源：gag-lib（GAG 实测例程库）/ specf-seq（包内 function-sequences 的 31 模板）；paramsSrc ∈ {gag-lib, specf-seq, specf-seq-empty, no-template} 四值，paramsResolved ∈ {unique, multi, none} 三值。paramsResolved=multi 的条目 params 留空但 paramsCandidates 列出全部候选（不挑）；no-template 表示两表都没有模板 —— 两者都不等于\"不需要参数\"，未解决条数见 source.paramsUnresolved，六桶分解见 source.paramsStats。",
  "view": {
   "schemaVersion": 2,
-  "groupRule": "按 app.js 现有分组键逐字复刻分组，每组上限 = app.js 现有渲染上限，不自创任何新上限；767 仅作 431 侧真实条目数的字节证据。",
+  "groupRule": "按 app.js 现有分组键逐字复刻分组，每组上限 = app.js 现有渲染上限，不自创任何新上限；767 仅作 参考诊断仪侧真实条目数的字节证据。",
   "groupCap": 40,
   "groupCapSource": "src/app.js:4326 sect(..., 40)",
   "count431": {
@@ -14,7 +14,7 @@
    "offset": "0x4C",
    "bytes": "FF 02",
    "u16LE": 767,
-   "note": "431 侧真实条目数证据（MENU.BIN:0x4C u16LE）：只用于证明 431 侧确有该量级条目，不是分页规则，也不是渲染上限。",
+   "note": "参考诊断仪侧真实条目数证据（MENU.BIN:0x4C u16LE）：只用于证明 参考诊断仪侧确有该量级条目，不是分页规则，也不是渲染上限。",
    "fileNote": "包内证据坐标（相对仓库根；第三方机器请按此相对路径解析）"
   },
   "byteEvidence": [
@@ -20327,7 +20327,7 @@
   "paramsUnresolvedNote": "\"多候选\"与\"没模板\"是两件事，所以既给总数也给六桶：paramsResolved=multi 有模板但不敢挑，no-template 连模板都没有。两者都不能判定\"可安全无参执行\"。",
   "paramsSources": {
    "gagLib": "data/gag-routines.json（GAG 实测例程库，(RID,sub) → params）",
-   "specfSeq": "data/function-sequences.json（687 功能 / 7682 条 31 帧 / 677 个 (sub,rid) 模板；由 tools/build-function-sequences.py 从 libPORSCHE_SPECF.so 逐字节读出）",
+   "specfSeq": "data/function-sequences.json（687 功能 / 7682 条 31 帧 / 677 个 (sub,rid) 模板；由 tools/build-function-sequences.py 从 PORSCHE_SPECF.so 逐字节读出）",
    "lengthCrossCheck": {
     "rule": "同一 (sub,rid) 在两源都有**非空**载荷时，两源长度必须相等；不等即视为模板串错位（白名单见 paramLengthWhitelist）",
     "pairsBothPresent": 36,

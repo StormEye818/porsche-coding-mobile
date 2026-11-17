@@ -1,7 +1,7 @@
 {
  "schemaVersion": 6,
  "source": "drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(cat=0x10 本代地址对) + comm-addr-table(10 代完整 cat=0x10 地址表/ownerSysId/rx 校验/四帧模板) + all-model-sysids(全车型换表) + variant-sysids(4588 变体实解析 sysId) + ecu-addresses(表A/跨代) + coding-v2(首参数/族)",
- "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。tierA / crossgen 两路输出标独立 provenance（tierA / crossgen），不计入 120 条错配分母也不计入 402/527 分母；5 处 16/20 项截断已全部删除。gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；仅 cat=0x60 模板无地址对 → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，provenance=commCat10-addressTable(gen静态地址表,ownerSysId)+oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)；431 静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，不产生逐 sysId 唯一地址表。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；无记录 rx 时才按 11 位请求 tx≤0x7F7 → rx=tx+8 派生；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
+ "rule": "全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) ∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。tierA / crossgen 两路输出标独立 provenance（tierA / crossgen），不计入 120 条错配分母也不计入 402/527 分母；5 处 16/20 项截断已全部删除。gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；仅 cat=0x60 模板无地址对 → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，provenance=commCat10-addressTable(gen静态地址表,ownerSysId)+oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)；参考诊断仪静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，不产生逐 sysId 唯一地址表。n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；无记录 rx 时才按 11 位请求 tx≤0x7F7 → rx=tx+8 派生；tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。",
  "stats": {
   "legacy": 209,
   "rxPreserved": 2221,
@@ -1290,7 +1290,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1331,7 +1331,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1394,7 +1394,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1457,7 +1457,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1520,7 +1520,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1583,7 +1583,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1646,7 +1646,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1709,7 +1709,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1772,7 +1772,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1835,7 +1835,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1898,7 +1898,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -1951,7 +1951,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04E0",
@@ -1982,7 +1982,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04EE",
@@ -2023,7 +2023,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2086,7 +2086,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2149,7 +2149,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2212,7 +2212,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2275,7 +2275,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2338,7 +2338,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2401,7 +2401,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2464,7 +2464,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2527,7 +2527,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2590,7 +2590,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2653,7 +2653,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2716,7 +2716,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2779,7 +2779,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2842,7 +2842,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2905,7 +2905,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -2968,7 +2968,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -3031,7 +3031,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -3094,7 +3094,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0040",
@@ -3347,7 +3347,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05FF",
@@ -3378,7 +3378,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05FB",
@@ -3409,7 +3409,7 @@
     }
    ],
    "firstRead": "220030",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05E3",
@@ -3462,7 +3462,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05CA",
@@ -3493,7 +3493,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F3",
@@ -3524,7 +3524,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05FD",
@@ -3555,7 +3555,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05C9",
@@ -3586,7 +3586,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05D2",
@@ -3617,7 +3617,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05FE",
@@ -3648,7 +3648,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05C2",
@@ -3772,7 +3772,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05C7",
@@ -3803,7 +3803,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05D1",
@@ -3834,7 +3834,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F4",
@@ -3865,7 +3865,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05C8",
@@ -3896,7 +3896,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F5",
@@ -4105,7 +4105,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F6",
@@ -4136,7 +4136,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05EA",
@@ -4167,7 +4167,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F7",
@@ -4198,7 +4198,7 @@
     }
    ],
    "firstRead": "2111",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05E1",
@@ -4229,7 +4229,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05E8",
@@ -4260,7 +4260,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05E4",
@@ -4291,7 +4291,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05E5",
@@ -4322,7 +4322,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05EB",
@@ -4353,7 +4353,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F8",
@@ -4451,7 +4451,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F1",
@@ -4533,7 +4533,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05CC",
@@ -4564,7 +4564,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05FF",
@@ -4595,7 +4595,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05C0",
@@ -4664,7 +4664,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05F3",
@@ -4850,7 +4850,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x05C8",
@@ -6653,7 +6653,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x074E",
@@ -6901,7 +6901,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0769",
@@ -7122,7 +7122,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -7535,7 +7535,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0747",
@@ -7756,7 +7756,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -8174,7 +8174,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x071C",
@@ -8403,7 +8403,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -8816,7 +8816,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0744",
@@ -8847,7 +8847,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0770",
@@ -8878,7 +8878,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0764",
@@ -8909,7 +8909,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0767",
@@ -9052,7 +9052,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0715",
@@ -9083,7 +9083,7 @@
     }
    ],
    "firstRead": "2200F0",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0713",
@@ -9983,7 +9983,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -10014,7 +10014,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0757",
@@ -10045,7 +10045,7 @@
     }
    ],
    "firstRead": "2109",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x076F",
@@ -10230,7 +10230,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0753",
@@ -10611,7 +10611,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x074E",
@@ -10859,7 +10859,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0769",
@@ -11050,7 +11050,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -11563,7 +11563,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -12076,7 +12076,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -12589,7 +12589,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -12942,7 +12942,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0744",
@@ -13055,7 +13055,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0715",
@@ -13108,7 +13108,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0746",
@@ -13139,7 +13139,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0714",
@@ -13170,7 +13170,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0710",
@@ -13201,7 +13201,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070A",
@@ -13232,7 +13232,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0755",
@@ -13263,7 +13263,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0729",
@@ -13444,7 +13444,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -13819,7 +13819,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070E",
@@ -13850,7 +13850,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070D",
@@ -13881,7 +13881,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x072D",
@@ -13912,7 +13912,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0725",
@@ -14036,7 +14036,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0752",
@@ -14067,7 +14067,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070C",
@@ -14098,7 +14098,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -14129,7 +14129,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0757",
@@ -14160,7 +14160,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x076F",
@@ -14191,7 +14191,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0712",
@@ -14222,7 +14222,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0773",
@@ -14253,7 +14253,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x074F",
@@ -14284,7 +14284,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x076D",
@@ -14465,7 +14465,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -14948,7 +14948,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -15281,7 +15281,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0769",
@@ -18151,7 +18151,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x071C",
@@ -18364,7 +18364,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -18881,7 +18881,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0767",
@@ -20314,7 +20314,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0712",
@@ -21052,7 +21052,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -21514,7 +21514,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0769",
@@ -21704,7 +21704,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -22397,7 +22397,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -22749,7 +22749,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x072A",
@@ -22784,7 +22784,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x071C",
@@ -22884,7 +22884,7 @@
     }
    ],
    "firstRead": "2200FE",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -22914,7 +22914,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0770",
@@ -22944,7 +22944,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0767",
@@ -23134,7 +23134,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x04D2",
@@ -23657,7 +23657,7 @@
     }
    ],
    "firstRead": "2200F0",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0713",
@@ -24338,7 +24338,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -24887,7 +24887,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x07E6",
@@ -25398,7 +25398,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -25690,7 +25690,7 @@
     }
    ],
    "firstRead": "2200F0",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0760",
@@ -25720,7 +25720,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0761",
@@ -25750,7 +25750,7 @@
     }
    ],
    "firstRead": "2200F0",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0759",
@@ -25780,7 +25780,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0744",
@@ -25967,7 +25967,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x073B",
@@ -25997,7 +25997,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0773",
@@ -26027,7 +26027,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0736",
@@ -26057,7 +26057,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0724",
@@ -26655,7 +26655,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0713",
@@ -26710,7 +26710,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0714",
@@ -27038,7 +27038,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -27927,7 +27927,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -28434,7 +28434,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070C",
@@ -28816,7 +28816,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0753",
@@ -28846,7 +28846,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0712",
@@ -29270,7 +29270,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -29971,7 +29971,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0769",
@@ -30001,7 +30001,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x071E",
@@ -30031,7 +30031,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0747",
@@ -30061,7 +30061,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x076A",
@@ -30405,7 +30405,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x074E",
@@ -30660,7 +30660,7 @@
     }
    ],
    "firstRead": "2200FE",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -31705,7 +31705,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -32412,7 +32412,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -34006,7 +34006,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0744",
@@ -34616,7 +34616,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0741",
@@ -34646,7 +34646,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0770",
@@ -34676,7 +34676,7 @@
     }
    ],
    "firstRead": "220000",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x071C",
@@ -34706,7 +34706,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0764",
@@ -34961,7 +34961,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -35668,7 +35668,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -36375,7 +36375,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -36857,7 +36857,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x073B",
@@ -36887,7 +36887,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0742",
@@ -37142,7 +37142,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -37849,7 +37849,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -38331,7 +38331,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0731",
@@ -38482,7 +38482,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0727",
@@ -38573,7 +38573,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0760",
@@ -38828,7 +38828,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -39535,7 +39535,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -40017,7 +40017,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0724",
@@ -40047,7 +40047,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x072B",
@@ -41333,7 +41333,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x071B",
@@ -41745,7 +41745,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -42421,7 +42421,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0767",
@@ -42451,7 +42451,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x072A",
@@ -42481,7 +42481,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0767",
@@ -42736,7 +42736,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -43565,7 +43565,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -44441,7 +44441,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -45166,7 +45166,7 @@
     }
    ],
    "firstRead": "2200F0",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x0713",
@@ -45403,7 +45403,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -45615,7 +45615,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -47019,7 +47019,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -47873,7 +47873,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -49309,7 +49309,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -50022,7 +50022,7 @@
     }
    ],
    "firstRead": "2200FE",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -50549,7 +50549,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -51076,7 +51076,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -51603,7 +51603,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -53154,7 +53154,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -53739,7 +53739,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -54531,7 +54531,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -55058,7 +55058,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -55887,7 +55887,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -56472,7 +56472,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -56999,7 +56999,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -57526,7 +57526,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -58053,7 +58053,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -59153,7 +59153,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -60067,7 +60067,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -61413,7 +61413,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -62160,7 +62160,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -62933,7 +62933,7 @@
     }
    ],
    "firstRead": "2200FE",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -63520,7 +63520,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -64107,7 +64107,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -64694,7 +64694,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -65960,7 +65960,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -66547,7 +66547,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -67163,7 +67163,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -67750,7 +67750,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -68969,7 +68969,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -69556,7 +69556,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -70201,7 +70201,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -71140,7 +71140,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -71727,7 +71727,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -72401,7 +72401,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -73170,7 +73170,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -73757,7 +73757,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -74344,7 +74344,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -74931,7 +74931,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -75518,7 +75518,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -76105,7 +76105,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -77365,7 +77365,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -78309,7 +78309,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -79801,7 +79801,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -80447,7 +80447,7 @@
     }
    ],
    "firstRead": "2200FE",
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -81064,7 +81064,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -81681,7 +81681,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -82298,7 +82298,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -84376,7 +84376,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -84993,7 +84993,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -86180,7 +86180,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -86797,7 +86797,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -87596,7 +87596,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -88213,7 +88213,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -88830,7 +88830,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -89447,7 +89447,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",
@@ -90064,7 +90064,7 @@
     }
    ],
    "firstRead": null,
-   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；431 做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
+   "bindUnresolved": "候选来自 SYS_DATA comm 静态补源（本 ECU 地址对或按代完整 cat=0x10 地址表）；参考诊断仪做法为候选循环 + 应答即绑，静态地址表是候选集 → 一律禁止免探针直绑",
    "provenance": [
     {
      "can": "0x070B",

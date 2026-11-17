@@ -42,7 +42,7 @@ export class SeedKeyUnresolvedError extends Error {
   constructor(mode, ecuId, why) {
     super(`seed/key 未解析：mode=0x${(mode ?? 0).toString(16).padStart(2, '0')} ` +
           `ecu=${ecuId != null ? '0x' + ecuId.toString(16) : '?'} —— ${why}。` +
-          `按 原厂 该分支还没逆出来，**拒绝写入**（绝不猜 key，猜错 = NRC 0x35 → 0x36 锁死）。`);
+          `按 原厂 该分支还没解出来，**拒绝写入**（绝不猜 key，猜错 = NRC 0x35 → 0x36 锁死）。`);
     this.name = 'SeedKeyUnresolvedError';
     this.mode = mode;
     this.ecuId = ecuId;
@@ -105,7 +105,7 @@ function asamFinalize(rawKey, outlen) {
  * @param {number} seed   32 位无符号 seed
  * @param {object} [ctx]  { ecuId, session, len }
  * @returns {{key: number, algo: string, mode: number, outlen: number}}
- * @throws {SeedKeyUnresolvedError} 该 mode 的算法还没逆出来 —— 调用方必须拒写
+ * @throws {SeedKeyUnresolvedError} 该 mode 的算法还没解出来 —— 调用方必须拒写
  */
 export function resolveKey(mode, seed, ctx = {}) {
   const s = seed >>> 0;
@@ -140,11 +140,11 @@ export function resolveKey(mode, seed, ctx = {}) {
     let r;
     try {
       // ⚠️ 必须走 computeVariantKey 全家族分发（SA2 / ADD / MULADD / XOR_MULADD / RC32 / SPECIAL）。
-      //    早先只放行 SA2 与 ADD/SPECIAL，`0xB7`（C3E76242，MULADD 族）会被误判「尚未逆出」。
+      //    早先只放行 SA2 与 ADD/SPECIAL，`0xB7`（C3E76242，MULADD 族）会被误判「尚未解出」。
       r = computeVariantKey(vid, bytes);
     } catch (e) {
       throw new SeedKeyUnresolvedError(mode, ecuId,
-        `stdSeedKey 分发到变体 ${vid}，但该变体尚未逆出（${e.message}）`);
+        `stdSeedKey 分发到变体 ${vid}，但该变体尚未解出（${e.message}）`);
     }
     // stdSeedKey 的收尾（按实际 key 字节数归一，再走字节交换）
     // ⚠️ 早先写死取 4 字节：2 字节 key 时 keyBytes[2]/[3] 是 undefined，

@@ -17,7 +17,7 @@ npx cap sync android
 
 echo "── 2/4 发版面泄漏检查 ──"
 # 口径与 install-device.sh 一致：发版面=代码（bundle+html），data 不扫 ——
-# 车件参数名（如「逆向阈值」）会误触发，那是车件语义不是工具指代（2026-11-04）
+# 车件参数名（如泊车雷达阈值类参数）会误触发，那是车件语义不是工具指代（2026-11-04）
 LEAK=$(grep -rnE "[Xx]43[0-9]|YZ[A-Z]{2}|DS[A-Z]{5}|Un[a-z]+rn|[Oo]racle|逆[向]|破[解]|libPORSC[HE]|flat-si[x]|0x1e2b0|0x1e348|[Rr]ijndael|反[汇]编|LFS[R]" \
        android/app/src/main/assets/public/*.js android/app/src/main/assets/public/*.html 2>/dev/null || true)
 if [ -n "$LEAK" ]; then

@@ -307,7 +307,7 @@ console.log(`\n[${NAME}] ISO-TP 发送方向：PCI 自己拼、分段一条不�
 
 // ── ⑮ 数据驱动：71 个 2F 实测 DID 逐条按 state 真长构帧 ──
 // 为什么是 71 不是 150：150 是旧 data/actuator.json 里 form:'2f' 的**目录条目数**（且是塌缩版），
-// 实测侧是 COMMAND.GAG 里 154 条 2F 请求按线上 DID 去重后的 71 个。帧长 = 4 + state 字节数。
+// 实测侧是 参考诊断仪导出 里 154 条 2F 请求按线上 DID 去重后的 71 个。帧长 = 4 + state 字节数。
 {
   const gag = JSON.parse(readFileSync(new URL('../data/gag-actuators.json', import.meta.url), 'utf8'));
   const items = Array.isArray(gag.items) ? gag.items : [];

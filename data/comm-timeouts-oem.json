@@ -18,19 +18,19 @@
     "reproduceCommand": "sed -n '<line>p' ref/reverse/ghidra/libCOMM_ABSTRACT_LAYER.txt",
     "reproduceCountCommand": "grep -n 'SetCommunicationMaximumWaitTime(' ref/reverse/ghidra/libCOMM_ABSTRACT_LAYER.txt",
     "reproduceByteCommand": "node -e \"const b=require('fs').readFileSync('ref/*/V24.58/<lib>');console.log(b.subarray(<fileOffset>,<fileOffset>+<n>).toString('hex'))\"",
-    "addressNote": "ghidra 反编译里的函数地址 = objdump 反汇编地址 + 0x10000（例：ghidra FUNC Connector_Identify @ 0004a7d4 ↔ objdump 0x3a7d4）。本表只用行号 + 原文定位，不用 ghidra 地址，避免这个偏移引起误读",
+    "addressNote": "反编译视图里的函数地址 = 静态分析地址 + 0x10000（例：FUNC Connector_Identify @ 0004a7d4 ↔ 0x3a7d4）。本表只用行号 + 原文定位，不用反编译视图地址，避免这个偏移引起误读",
     "offsetNote": "**.text 段 p_offset == p_vaddr（偏移即地址）；.data 段不是** —— 全局初始化常量的 VA 0xC3024 对应**文件偏移 0xC2024**（差 0x1000，文件总长 0xC2900）。本表对 .data 只记 fileOffset，门禁只许用 fileOffset 读字节：按 VA 读会越界抛 ERR_OUT_OF_RANGE，若门禁 try/catch 吞掉就变成「永远绿」的假断言",
     "caveat": "ref/ 整个目录在 .gitignore 内（研究产物只留本地）。因此本表的坐标在干净克隆上不可复跑 —— 门禁 tools/verify-comm-timeouts.mjs 分三层：(a) 解码 JSON 里记录的 immBytes 做算术自证、(c) 与 src/comm-timeouts.js 双向相等，这两层**任何环境都必须真跑**；只有 (b) 回读 .so 现场字节与重定位表在 ref/ 缺失时打印 SKIP_REF 并跳过，而不是伪造通过"
   },
   "findings": [
-    "全仓 27 个 .so 里，只有 libCOMM_ABSTRACT_LAYER.so 把 SetCommunicationMaximumWaitTime 定义为**函数**（nm -D 类型 T）；其余 26 个（含 libPORSCHE.so / libPORSCHE_ACTF.so / libOBD2_SPEC_APP.so / libPORSCHE_READWRITE.so / libPORSCHE_LINK.so / libPORSCHE_SPEC_DME.so / libPORSCHE_SPEC_PAB.so）都是**未初始化的全局变量**（nm -D 类型 B）",
+    "全仓 27 个 .so 里，只有 libCOMM_ABSTRACT_LAYER.so 把 SetCommunicationMaximumWaitTime 定义为**函数**（nm -D 类型 T）；其余 26 个（含 PORSCHE.so / PORSCHE_ACTF.so / libOBD2_SPEC_APP.so / PORSCHE_READWRITE.so / PORSCHE_LINK.so / PORSCHE_SPEC_DME.so / PORSCHE_SPEC_PAB.so）都是**未初始化的全局变量**（nm -D 类型 B）",
     "COMM 层内部共 8 处写入：5000 ×1（TOPIV_SetIoLine）/ 8000 ×3（Connector_Identify ×2 + Super16ResetConnector）/ 16000 ×4（CanResetConnector + CANII_SetCanIOLine + CANII_SetCanVolvoKLine + Super16_SetIOLine）—— 这 8 处是**本表接线值（5000 / 8000 / 16000）的全部来源**",
-    "另有跨库 5 个候选调用点（libPORSCHE 18000、libPORSCHE_COMM 18000、libPORSCHE_ACTF 25000、libOBD2_SPEC_APP 3000 与 20000）：每个点的**字节层**（movw 立即数）与**重定位层**（该调用点算出的 GOT 槽 == .rel.dyn 的 r_offset，且该条 r_info&0xff = 21 = R_ARM_GLOB_DAT、符号名 = SetCommunicationMaximumWaitTime）都已逐字节复核通过",
+    "另有跨库 5 个候选调用点（PORSCHE 18000、PORSCHE_COMM 18000、PORSCHE_ACTF 25000、libOBD2_SPEC_APP 3000 与 20000）：每个点的**字节层**（movw 立即数）与**重定位层**（该调用点算出的 GOT 槽 == .rel.dyn 的 r_offset，且该条 r_info&0xff = 21 = R_ARM_GLOB_DAT、符号名 = SetCommunicationMaximumWaitTime）都已逐字节复核通过",
     "但这 5 个点的**语义/可达性层未证**：SetCommunicationMaximumWaitTime 在这些库里是**函数指针变量**，静态无法判定「指针是否被初始化 / 该初始化分支运行时是否可达」。未证的东西不接线 ⇒ 全部归入 unresolvedCandidates，只作留档证据，不参与 timeoutFor()",
     "因此本工具实际只用 5000 / 8000 / 16000 三档。18000 / 25000 / 3000 / 20000 **不**出现在 src 的任何档位里（门禁 ⑧b 断言这一点）",
     "COMM 层 8 处全部夹在 BeginCombination() / EndCombination() 之间，紧跟 SetEcuCommunicationVoltageLogic(0xff,0xff) + SetCommunicationParameter(1,8,1,0) + SetEcuCommTimeInterval(...) + SetEcuBaudRate(...) —— 即该值是**链路建立参数组**的一员，随连接器/IO 线组合整组下发",
     "因此它是「当前链路的单帧等待上限」，不是按 SID 分档的请求超时；原厂没有 24/27/2E 各自的超时",
-    "取值维度是**平台库 × 初始化分支**，不是按 ECU 模块：同一库里同一个值会在多条 Initialize 分支重复出现（libPORSCHE 3 处 18000、libPORSCHE_COMM 5 处 18000）。DME / PAB 自己不设该值（对 setter 的调用点为 0），它们继承 libPORSCHE / libPORSCHE_COMM 在开端口时写入的值 —— 该值见 unresolvedCandidates，语义未证",
+    "取值维度是**平台库 × 初始化分支**，不是按 ECU 模块：同一库里同一个值会在多条 Initialize 分支重复出现（PORSCHE 3 处 18000、PORSCHE_COMM 5 处 18000）。DME / PAB 自己不设该值（对 setter 的调用点为 0），它们继承 PORSCHE / PORSCHE_COMM 在开端口时写入的值 —— 该值见 unresolvedCandidates，语义未证",
     "我方采用 3 档中最接近真实请求-应答语义的 IDENTIFY(8000) 与链路基线 LINK_DEFAULT(5000)；RESET(16000) 是硬件复位/IO 线切换专用，本工具不做硬件复位，故不使用（档位保留以备将来）"
   ],
   "consumers": {
@@ -44,26 +44,26 @@
       "libDIAG.so": "0x449cf8",
       "libDIAGPROGFUN.so": "0x85b14",
       "libOBD2_SPEC_APP.so": "0x86a5c",
-      "libPORSCHE.so": "0x1ffd0",
-      "libPORSCHEReset.so": "0x42c5c4",
-      "libPORSCHE_ACTF.so": "0xfb4c0",
-      "libPORSCHE_CALC.so": "0x10b410",
-      "libPORSCHE_CDSF.so": "0x44ac0",
-      "libPORSCHE_CODING.so": "0x292cc",
-      "libPORSCHE_COMM.so": "0x343e0",
-      "libPORSCHE_DTCF.so": "0x60350",
-      "libPORSCHE_ENTERSYSPASSWORD.so": "0x913b4",
-      "libPORSCHE_FILE.so": "0x9d3c4",
-      "libPORSCHE_LINK.so": "0x1782bc",
-      "libPORSCHE_MAINTENANCEF.so": "0x3933c",
-      "libPORSCHE_PROGRAMMING.so": "0x6e398",
-      "libPORSCHE_READWRITE.so": "0x24e3cc",
-      "libPORSCHE_SPECF.so": "0x4fe1a4",
-      "libPORSCHE_SPEC_DME.so": "0x7a340",
-      "libPORSCHE_SPEC_PAB.so": "0x1f2a8",
-      "libPORSCHE_STDDUI.so": "0x6b348",
-      "libPORSCHE_SYSP.so": "0x48de14",
-      "libPORSCHE_VERF.so": "0x3a2c4",
+      "PORSCHE.so": "0x1ffd0",
+      "PORSCHEReset.so": "0x42c5c4",
+      "PORSCHE_ACTF.so": "0xfb4c0",
+      "PORSCHE_CALC.so": "0x10b410",
+      "PORSCHE_CDSF.so": "0x44ac0",
+      "PORSCHE_CODING.so": "0x292cc",
+      "PORSCHE_COMM.so": "0x343e0",
+      "PORSCHE_DTCF.so": "0x60350",
+      "PORSCHE_ENTERSYSPASSWORD.so": "0x913b4",
+      "PORSCHE_FILE.so": "0x9d3c4",
+      "PORSCHE_LINK.so": "0x1782bc",
+      "PORSCHE_MAINTENANCEF.so": "0x3933c",
+      "PORSCHE_PROGRAMMING.so": "0x6e398",
+      "PORSCHE_READWRITE.so": "0x24e3cc",
+      "PORSCHE_SPECF.so": "0x4fe1a4",
+      "PORSCHE_SPEC_DME.so": "0x7a340",
+      "PORSCHE_SPEC_PAB.so": "0x1f2a8",
+      "PORSCHE_STDDUI.so": "0x6b348",
+      "PORSCHE_SYSP.so": "0x48de14",
+      "PORSCHE_VERF.so": "0x3a2c4",
       "libReadOBDVIN.so": "0x13fc8"
     }
   },
@@ -101,7 +101,7 @@
           "line": 26661,
           "lineText": "SetCommunicationMaximumWaitTime(5000);",
           "enclosingFunction": "TOPIV_SetIoLine",
-          "ghidraFunctionAddress": "0004b19c"
+          "viewFunctionAddress": "0004b19c"
         }
       ]
     },
@@ -131,26 +131,26 @@
       "occurrences": {
         "bytePatternHits": ["0x3a97e", "0x3a9fa", "0x3c058", "0x4b3ba"],
         "status": "verified-count",
-        "note": "按 immBytes 字节搜索命中 4 处；前 3 处经反编译核对为 Connector_Identify ×2 + Super16ResetConnector，第 4 处 0x4b3ba 位于 .text 尾部，疑为字面量池同字节巧合，未逐个反汇编确认归属"
+        "note": "按 immBytes 字节搜索命中 4 处；前 3 处经反编译核对为 Connector_Identify ×2 + Super16ResetConnector，第 4 处 0x4b3ba 位于 .text 尾部，疑为字面量池同字节巧合，未逐个静态分析确认归属"
       },
       "evidence": [
         {
           "line": 25903,
           "lineText": "SetCommunicationMaximumWaitTime(8000);",
           "enclosingFunction": "Connector_Identify",
-          "ghidraFunctionAddress": "0004a7d4"
+          "viewFunctionAddress": "0004a7d4"
         },
         {
           "line": 25947,
           "lineText": "SetCommunicationMaximumWaitTime(8000);",
           "enclosingFunction": "Connector_Identify",
-          "ghidraFunctionAddress": "0004a7d4"
+          "viewFunctionAddress": "0004a7d4"
         },
         {
           "line": 27770,
           "lineText": "SetCommunicationMaximumWaitTime(8000);",
           "enclosingFunction": "Super16ResetConnector",
-          "ghidraFunctionAddress": "0004c044"
+          "viewFunctionAddress": "0004c044"
         }
       ]
     },
@@ -178,25 +178,25 @@
           "line": 26251,
           "lineText": "SetCommunicationMaximumWaitTime(16000);",
           "enclosingFunction": "CanResetConnector",
-          "ghidraFunctionAddress": "0004ae04"
+          "viewFunctionAddress": "0004ae04"
         },
         {
           "line": 26402,
           "lineText": "SetCommunicationMaximumWaitTime(16000);",
           "enclosingFunction": "CANII_SetCanIOLine",
-          "ghidraFunctionAddress": "0004af90"
+          "viewFunctionAddress": "0004af90"
         },
         {
           "line": 26472,
           "lineText": "SetCommunicationMaximumWaitTime(16000);",
           "enclosingFunction": "CANII_SetCanVolvoKLine",
-          "ghidraFunctionAddress": "0004b0ac"
+          "viewFunctionAddress": "0004b0ac"
         },
         {
           "line": 26769,
           "lineText": "SetCommunicationMaximumWaitTime(16000);",
           "enclosingFunction": "Super16_SetIOLine",
-          "ghidraFunctionAddress": "0004b454"
+          "viewFunctionAddress": "0004b454"
         }
       ]
     }
@@ -214,7 +214,7 @@
   },
   "unresolvedCandidates": [
     {
-      "lib": "libPORSCHE.so",
+      "lib": "PORSCHE.so",
       "offset": "0xD282",
       "immBytes": "44 F2 50 60",
       "encoding": "movw",
@@ -226,10 +226,10 @@
       "status": "unresolved",
       "why": "达到该符号的调用点已证（字节 + GOT 槽 == .rel.dyn r_offset + r_info&0xff=21 R_ARM_GLOB_DAT），但「函数指针是否被初始化 / 该分支是否可达」未证，故不接线",
       "siblingOffsets": ["0xD282", "0xD4E8", "0xD844"],
-      "attributedBy": "ghidra：PorscheCanInitialize_VIN / PorscheKwpInitialize_VIN / PorscheKwpComm_VIN"
+      "attributedBy": "静态视图：PorscheCanInitialize_VIN / PorscheKwpInitialize_VIN / PorscheKwpComm_VIN"
     },
     {
-      "lib": "libPORSCHE_COMM.so",
+      "lib": "PORSCHE_COMM.so",
       "offset": "0x122AE",
       "immBytes": "44 F2 50 60",
       "encoding": "movw",
@@ -239,12 +239,12 @@
       "relocType": 21,
       "relocSymbol": "SetCommunicationMaximumWaitTime",
       "status": "unresolved",
-      "why": "同 libPORSCHE：字节 + 重定位已证，语义/可达性未证，故不接线",
+      "why": "同 PORSCHE：字节 + 重定位已证，语义/可达性未证，故不接线",
       "siblingOffsets": ["0xFAF8", "0xFDFA", "0x11B98", "0x11D32", "0x122AE"],
-      "attributedBy": "ghidra：PorscheCommunicationPro ×2 / PorscheKwpInitialize / PorscheCanInitialize / PorscheBoschInitialize"
+      "attributedBy": "静态视图：PorscheCommunicationPro ×2 / PorscheKwpInitialize / PorscheCanInitialize / PorscheBoschInitialize"
     },
     {
-      "lib": "libPORSCHE_ACTF.so",
+      "lib": "PORSCHE_ACTF.so",
       "offset": "0x3DA92",
       "immBytes": "46 F2 A8 10",
       "encoding": "movw",
@@ -256,7 +256,7 @@
       "status": "unresolved",
       "why": "同上：执行器/功能测试链的候选值，语义未证，不接线",
       "siblingOffsets": ["0x3DA92"],
-      "attributedBy": "ghidra：FlashCanInit"
+      "attributedBy": "静态视图：FlashCanInit"
     },
     {
       "lib": "libOBD2_SPEC_APP.so",
@@ -271,7 +271,7 @@
       "status": "unresolved",
       "why": "同上：OBD2 CAN 初始化分支的候选值，语义未证，不接线",
       "siblingOffsets": ["0xF392"],
-      "attributedBy": "ghidra：OBD_CAN_Enter_NewInit"
+      "attributedBy": "静态视图：OBD_CAN_Enter_NewInit"
     },
     {
       "lib": "libOBD2_SPEC_APP.so",
@@ -286,7 +286,7 @@
       "status": "unresolved",
       "why": "另一初始化分支（InitCanCommParam_Base），与上一条 3000 共用同一个 GOT 槽；未能判定该分支的适用条件，不接线",
       "siblingOffsets": ["0x1C3B6", "0xF0AC"],
-      "attributedBy": "ghidra：InitCanCommParam_Base / InitialKwpMode"
+      "attributedBy": "静态视图：InitCanCommParam_Base / InitialKwpMode"
     }
   ],
   "usage": {
@@ -310,9 +310,9 @@
       "RESET"
     ],
     "unresolved": [
-      "libPORSCHE.so@0xD282 = 18000",
-      "libPORSCHE_COMM.so@0x122AE = 18000",
-      "libPORSCHE_ACTF.so@0x3DA92 = 25000",
+      "PORSCHE.so@0xD282 = 18000",
+      "PORSCHE_COMM.so@0x122AE = 18000",
+      "PORSCHE_ACTF.so@0x3DA92 = 25000",
       "libOBD2_SPEC_APP.so@0xF392 = 3000",
       "libOBD2_SPEC_APP.so@0x1C3B6 = 20000"
     ],

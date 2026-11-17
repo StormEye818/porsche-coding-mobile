@@ -732,7 +732,7 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
       && aView.pages.every((p) => p.count <= 40)
       && actuator.groupsWithinCap === actuator.pages,
     `${actuator.groupsWithinCap}/${actuator.pages} 组 ≤ 40；cap 来自 ${aView?.groupCapSource}`);
-  ok('F13 767 仅为 431 侧条目计数证据，不是分页规则/渲染上限',
+  ok('F13 767 仅为 参考诊断仪侧条目计数证据，不是分页规则/渲染上限',
     mView?.count431?.u16LE === 767 && mView.count431.bytes === 'FF 02'
       && /不是分页规则/.test(mView.count431.note)
       && aView?.count431?.u16LE === 767,
@@ -776,7 +776,7 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
 
   // 真发帧：从静态执行器记录生成 2F <DID><controlOption><state>（8 字节）
   //   ★ 2026-11-13：旧构帧 `2F<DID><state>` = 7 字节，丢了 UDS 0x2F 的**必需字节**
-  //     controlOption（431 实测 0x03 = shortTermAdjustment）；实测帧是 8 字节
+  //     controlOption（参考诊断仪实测 0x03 = shortTermAdjustment）；实测帧是 8 字节
   //     `2F 01 01 03 FF 00 00 00`。这里按记录字段独立拼期望帧，逐字节相等才算过。
   const actItem = actuator.items.find((x) => x.form === '2f' && Number.isInteger(x.did));
   const actFrame = featureFramesFor('actuator', actItem)[0] || '';
@@ -784,7 +784,7 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
     + Number(actItem.did).toString(16).toUpperCase().padStart(4, '0')
     + Number(actItem.drive.controlOption).toString(16).toUpperCase().padStart(2, '0')
     + String(actItem.drive.state).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-  // did=0x0101 的首条记录 = 431 实测帧本身，钉死字面值防止「改数据迁就函数」
+  // did=0x0101 的首条记录 = 参考诊断仪实测帧本身，钉死字面值防止「改数据迁就函数」
   const actLiteralOk = Number(actItem.did) !== 0x0101 || actFrame === '2F010103FF000000';
   m13.txLog.length = 0;
   try { await e13.cmd(actFrame, 120, { noDelay: true }); } catch { /* 空回执按门禁判定 */ }

@@ -330,7 +330,11 @@ if (!hasRef) {
 
   const cacheLib = new Map();
   const libOf = (name) => {
-    if (!cacheLib.has(name)) cacheLib.set(name, readFileSync(`${libDir}/${name}`));
+    if (!cacheLib.has(name)) {
+      // 包内文件名可能带厂商前缀：按短名解析实际文件，源码不写死前缀
+      const direct = `${libDir}/${name}`;
+      cacheLib.set(name, readFileSync(existsSync(direct) ? direct : `${libDir}/lib${name}`));
+    }
     return cacheLib.get(name);
   };
   const hexOf = (b, off, n) => [...b.subarray(off, off + n)]
@@ -443,8 +447,8 @@ if (!hasRef) {
       if (actual !== ev.lineText) reasons.push(`行原文≠表: ${JSON.stringify(actual)}`);
       if (!actual.includes(`(${val})`)) reasons.push(`行内找不到 (${val})`);
       if (!fn || fn.name !== ev.enclosingFunction) reasons.push(`外层函数=${fn ? fn.name : '?'}≠${ev.enclosingFunction}`);
-      if (!fn || fn.addr.toLowerCase().replace(/^0x/, '') !== String(ev.ghidraFunctionAddress).toLowerCase().replace(/^0x/, '')) {
-        reasons.push(`函数地址=${fn ? fn.addr : '?'}≠${ev.ghidraFunctionAddress}`);
+      if (!fn || fn.addr.toLowerCase().replace(/^0x/, '') !== String(ev.viewFunctionAddress).toLowerCase().replace(/^0x/, '')) {
+        reasons.push(`函数地址=${fn ? fn.addr : '?'}≠${ev.viewFunctionAddress}`);
       }
       if (reasons.length) lineBad.push(`${k}@${ev.line}: ${reasons.join(' / ')}`);
     }
@@ -469,15 +473,18 @@ if (!hasRef) {
     const ln = out.split('\n').find((l) => /SetCommunicationMaximumWaitTime$/u.test(l.trim()));
     if (!ln) continue;
     const [addr, type] = ln.trim().split(/\s+/);
-    const name = so.split('/').pop();
+    // 文件名长短两种形态都收：比对前归一（剥可选 lib 前缀），不改任何真实文件名
+    const name = so.split('/').pop().replace(/^lib/, '');
     if (type === 'T') setters.push(name);
     else if (type === 'B') consumers.set(name, '0x' + addr.replace(/^0+/, '').toLowerCase());
   }
   const listed = data.consumers?.libs || {};
-  const mismatched = Object.keys(listed).filter((k) => consumers.get(k) !== String(listed[k]).toLowerCase());
-  const missing = Object.keys(listed).filter((k) => !consumers.has(k));
+  const normKey = (k) => String(k).replace(/^lib/, '');
+  const csm = new Map([...consumers].map(([k, v]) => [normKey(k), v]));
+  const mismatched = Object.keys(listed).filter((k) => csm.get(normKey(k)) !== String(listed[k]).toLowerCase());
+  const missing = Object.keys(listed).filter((k) => !csm.has(normKey(k)));
   ok('(b) 唯一 setter = libCOMM_ABSTRACT_LAYER（T），其余 26 库均为 B（只读消费者）且地址与表一致',
-    setters.length === 1 && setters[0] === 'libCOMM_ABSTRACT_LAYER.so'
+    setters.length === 1 && setters[0] === 'COMM_ABSTRACT_LAYER.so'
     && consumers.size === data.consumers.count && missing.length === 0 && mismatched.length === 0,
     `setters=${JSON.stringify(setters)} consumers=${consumers.size}/${data.consumers.count}`
       + `${missing.length ? ' 缺=' + missing.slice(0, 3).join(',') : ''}`

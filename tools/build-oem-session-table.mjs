@@ -3,7 +3,7 @@
  * build-oem-session-table.mjs — 把 SYS_DATA comm 表编译成运行时静态表。
  *
  * 背景（2026-11-12）：上一阶段已证明「逐 ECU 会话被加密体挡住」是错的——
- * data/sysdata-comm.json 里 874 条 comm 记录经 COMMAND.GAG 解帧后，每个 sysId 都有
+ * data/sysdata-comm.json 里 874 条 comm 记录经 参考诊断仪导出 解帧后，每个 sysId 都有
  * 自己的进模块命令序列，其中 `10 xx` 帧给出原厂会话号。981 实测 48 模块 =
  * 32×`10 03` + 16×`10 89`，此前运行时一律发 `10 89` 是明确对齐缺口。
  *
@@ -13,7 +13,7 @@
  *   - src/coder.js  setOemContext(sysId) / enterSession 默认取证据会话
  *   - src/app.js    进模块设置上下文并打印原厂序列
  *
- * 帧格式（COMMAND.GAG）: [flag][len][payload...]
+ * 帧格式（参考诊断仪导出）: [flag][len][payload...]
  *   flag=1 → 原厂要求正响应（如 `01 02 10 89`）
  *   flag=0 → 原厂不要求正响应（如 `00 02 10 03`、`00 02 3E 00`）
  *   flag=3 → 复合脚本帧（22 条，约 31 字节宏序列，**不是可直接发的 UDS 帧**）。
@@ -77,7 +77,7 @@ const body = `/**
  * oem-session-table.js — 自动生成，勿手改。
  * 生成器：tools/build-oem-session-table.mjs（数据源 data/sysdata-comm.json）
  *
- * 每个 sysId 的原厂进模块会话与命令序列，来自 SYS_DATA comm 子表 + COMMAND.GAG 解帧。
+ * 每个 sysId 的原厂进模块会话与命令序列，来自 SYS_DATA comm 子表 + 参考诊断仪导出 解帧。
  * 会话帧 flag=1 → 原厂要求正响应；flag=0 → 尽力而为（与协议层容错分级一致）。
  * 查不到会话号的 sysId 保持「未证」，调用方回退主会话 10 89，绝不猜。
  */

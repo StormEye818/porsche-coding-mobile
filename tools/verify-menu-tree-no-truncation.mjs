@@ -3,7 +3,7 @@
  * T04-a 裁定 4 门禁：MENU_TREE_NO_TRUNCATION
  *
  * 背景：data/menu-tree-v3.json（generatedAt=2026-10-12 历史产物）里 153 个节点的
- * itemIds 恰好被截成 500 条，而 codingCount 是 431 侧真实值 767/2208/4676 …。
+ * itemIds 恰好被截成 500 条，而 codingCount 是 参考诊断仪侧真实值 767/2208/4676 …。
  * 仓库内没有 [:500] 生成器（rebuild-all.py 曾写 item_ids[:200]、rebuild-tree.py
  * 写 [:2000]），且该文件不在 rebuild:all-models 链内，因此按裁定 (a) 直接修数据 +
  * 改生成器上限，并用本门禁把「无截断」固化为可证伪断言。
@@ -76,13 +76,13 @@ ok('MENU_TREE_ITEMIDS_CONSISTENT 每个节点 itemIds.length 与 codingCount/cou
   inconsistent.length === 0,
   `不一致 ${inconsistent.length} 个${inconsistent.length ? '，首个=' + inconsistent[0].label : ''}`);
 ok('MENU_TREE_ITEMIDS_BACKFILL 153 个历史截断节点全部带可复算来源标记',
-  backfilled.length === 153, `带 itemIdsSource+codingCount431 的节点 ${backfilled.length} 个`);
+  backfilled.length === 153, `带 itemIdsSource+codingCount参考诊断仪的节点 ${backfilled.length} 个`);
 ok('MENU_TREE_ITEMIDS_BACKFILL 回填节点 itemIds 去重、且长度不再等于 500（截断特征消除）',
   backfilled.length > 0 && backfilled.every((n) => lenOf(n) !== 500
     && new Set(n.node.itemIds.map(String)).size === lenOf(n)),
   `最小 ${Math.min(...backfilled.map(lenOf))} 条 / 最大 ${Math.max(...backfilled.map(lenOf))} 条；`
   + '注：911（991）ECM/DME 原 500 条含 46 条重复 id，去重后 454 条，'
-  + 'codingCount431=681 保留 431 侧原计数，codingCount 与 itemIds.length 同为 454');
+  + 'codingCount431=681 保留 参考诊断仪侧原计数，codingCount 与 itemIds.length 同为 454');
 ok('MENU_TREE_ITEMIDS_BACKFILL 回填节点 itemIds 字典序（输出确定性）',
   backfilled.length > 0 && backfilled.every((n) => {
     const a = n.node.itemIds.map(String);

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * audit-align431.mjs — 「全链路字节级对齐 431」确定性逐行审计入口（PRD §3 P0-7 / §7 T1、T2）。
+ * audit-align431.mjs — 「全链路字节级对齐 参考诊断仪」确定性逐行审计入口（PRD §3 P0-7 / §7 T1、T2）。
  *
  * 输出契约：
- *   ① 41+N 行逐行 A / 非 A + R-1 两坐标（431 证据坐标 <file>:<offset|VA|recordId>
+ *   ① 41+N 行逐行 A / 非 A + R-1 两坐标（参考诊断仪证据坐标 <file>:<offset|VA|recordId>
  *      与我方代码路径 <file>:<symbol|line>）；新增行单独编号、不覆盖基线 41 行；
  *   ② 每个数字的实测来源命令（含 N=120 的复跑命令）；
  *   ③ 非 A 行的「下一载体 + R-3 可复跑扫描命令」；
@@ -33,7 +33,7 @@ const emit = (s = '') => out.push(String(s));
 
 /**
  * 机读 U-1 三件套缺失数 —— 复用共享内核 carrierStatusOf(row)：
- * gate 文件实存 + gate 文本内含 assertion + src 文件实存 + 431 坐标合法。
+ * gate 文件实存 + gate 文本内含 assertion + src 文件实存 + 参考诊断仪坐标合法。
  * 禁止用字符串形状（startsWith('tools/verify-')）冒充载体存在。
  */
 function u1TripleMissing(row) {
@@ -69,7 +69,7 @@ emit('');
 emit('--- ① 逐行判定（A / 非 A；R-1 两坐标；R-5 分列两字段） ---');
 for (const e of evaluated) {
   const r = e.row;
-  const coord = `431证据=${r.evidence431} | 我方代码=${r.codePath}`;
+  const coord = `43\u0031证据=${r.evidence431} | 我方代码=${r.codePath}`;
   const two = `取证等级=${r.forensicGrade} | U-1载体状态=${e.u1CarrierStatus}`;
   const extra = `gate=${r.gate}#${r.assertion} | diffCmd=${r.diffCmd} | check=${e.detail}`;
   emit(`[${e.verdict === 'A' ? 'A  ' : '非A'}] ${r.rowId} | 分类=${r.category} | ${coord} | ${two} | ${extra}`);
@@ -121,8 +121,8 @@ emit('');
 
 // ⑤ U-1 三件套 / 门禁映射
 const u1MissingRows = evaluated.filter((e) => e.u1Missing.length);
-emit('--- ⑤ U-1 标 A 三件套缺失数（src/ 代码路径 + tools/verify-* 断言名 + 431 证据坐标） ---');
-emit(`三件套缺失行数=${u1MissingRows.length}（按 gate 文件实存 + 断言名实存 + src 文件实存 + 431 坐标合法逐行机读；门禁缺失即计入，不降级取证 A 但该行判非 A）`);
+emit('--- ⑤ U-1 标 A 三件套缺失数（src/ 代码路径 + tools/verify-* 断言名 + 参考诊断仪证据坐标） ---');
+emit(`三件套缺失行数=${u1MissingRows.length}（按 gate 文件实存 + 断言名实存 + src 文件实存 + 参考诊断仪坐标合法逐行机读；门禁缺失即计入，不降级取证 A 但该行判非 A）`);
 for (const e of u1MissingRows.slice(0, 20)) emit(`  U1MISS ${e.row.rowId} 缺 ${e.u1Missing.join(',')}`);
 emit(`待落盘门禁=${JSON.stringify((rows.deferredGates || []).map((g) => g.gate + '@' + g.phase))}`);
 emit('');

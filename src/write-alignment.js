@@ -165,7 +165,7 @@ export const WRITE_ALIGNMENT = Object.freeze({
     "addressProbe": true,
     "runs": 4
   },
-  "rule": "记录驱动的读写帧 + 会话/序列证据 + 地址候选探针 + 回读校验；原厂无的自创增强默认全关；seed/key 按 drivelinks mode 表算 key，安全 level 由脚本命令字节决定（编码写默认 0x09，COMMAND.GAG 的 27 09 01 00 实证；KWP 归一 0x00）；取 seed 全零才跳过解锁；原厂无 case 且 ECU 回非零 seed 时明确拒写（不猜 key、不试错、不穷举 level）"
+  "rule": "记录驱动的读写帧 + 会话/序列证据 + 地址候选探针 + 回读校验；原厂无的自创增强默认全关；seed/key 按 drivelinks mode 表算 key，安全 level 由脚本命令字节决定（编码写默认 0x09，参考诊断仪导出 的 27 09 01 00 实证；KWP 归一 0x00）；取 seed 全零才跳过解锁；原厂无 case 且 ECU 回非零 seed 时明确拒写（不猜 key、不试错、不穷举 level）"
 });
 
 /* === WRITE_BEHAVIOR_EVAL_BEGIN（生成器 tools/build-write-alignment.mjs 原样保留本块）=== */

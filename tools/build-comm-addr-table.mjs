@@ -248,7 +248,7 @@ const doc = {
     flags: frameFlags,
     cat60BlockCount: cat60Blocks.length,
     byteIdentical: fourFrameByteIdentical,
-    oemRef: 'PORSCHE_SYS_DATA.BIN cat=0x60 记录（185/185 block 统一四帧）；GAG_COMMAND.GAG.bin 命令 ID 段 0x00200000-0x0020000A；L1 原厂包内静态',
+    oemRef: 'PORSCHE_SYS_DATA.BIN cat=0x60 记录（185/185 block 统一四帧）；例程导出.bin 命令 ID 段 0x00200000-0x0020000A；L1 原厂包内静态',
     note: '四帧 3E00→22F19E→22F1A2→1003 是进模块后序列；74/74 与 185/185 是同一帧序的两个统计口径，只证 L1/L2 自洽，不证明 L3 运行时实发帧已对齐',
   },
   probePhase: {
@@ -256,7 +256,7 @@ const doc = {
     uds: '221409',
     kwp: '1A9F',
     requestKey: '0xFF001409',
-    oemRef: 'libPORSCHE_LINK.so:0x18F00 DriveLinksMode_1001：候选循环 0x18F80-0x18F9C、movw/movt r10=0xFF001409、movs r2,#1（每候选 1 帧）、cbz r1,0x18F9E（n=0 直绑）、0x18FE2 movw r0,#0x1102 补帧 22 11 02、0x18FB2-0x18FBC send(0x100359,A,2) 绑定',
+    oemRef: 'PORSCHE_LINK.so:0x18F00 DriveLinksMode_1001：候选循环 0x18F80-0x18F9C、movw/movt r10=0xFF001409、movs r2,#1（每候选 1 帧）、cbz r1,0x18F9E（n=0 直绑）、0x18FE2 movw r0,#0x1102 补帧 22 11 02、0x18FB2-0x18FBC send(0x100359,A,2) 绑定',
     note: '「每候选 1 帧 / diff=空 / 帧数差=0」一律限定在探针阶段；身份裁决阶段另见 identityPhase 与 ②-b 断言',
   },
   identityPhase: {

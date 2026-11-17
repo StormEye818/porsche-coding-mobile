@@ -7,7 +7,7 @@
  *     ① src/ 代码路径 —— 必须是 src/ 路径且该 src 文件真实存在；
  *     ② tools/verify-* 门禁断言名 —— gate 文件必须真实存在（fs.existsSync），
  *        且文件文本内确实含 row.assertion 断言名（Node .includes()，不用 grep）；
- *     ③ 431 证据坐标 —— 必须是合法 <file>:<offset|VA|recordId>。
+ *     ③ 参考诊断仪证据坐标 —— 必须是合法 <file>:<offset|VA|recordId>。
  *   任一不满足即计入缺失；缺失数 > 0 时退出码非 0（这是正确信号，禁止为凑 0 放宽）。
  *
  * R-5：取证等级（forensicGrade）与 U-1 载体状态（u1CarrierStatus）分列两字段；
@@ -45,7 +45,7 @@ for (const x of missingRows) {
 const L = [];
 L.push('=== U-1 标 A 三件套门禁（按磁盘实况，禁止字符串形状自证） ===');
 L.push(`总行数=${all.length} 基线=${(rows.baselineRows || []).length} 新增=${(rows.addedRows || []).length}`);
-L.push('检查规则：gate 文件 fs.existsSync + gate 文本 .includes(assertion) + src 文件实存 + 431 坐标合法');
+L.push('检查规则：gate 文件 fs.existsSync + gate 文本 .includes(assertion) + src 文件实存 + 参考诊断仪坐标合法');
 L.push(`三件套缺失行数=${missingRows.length}`);
 L.push(`缺失原因分布=${JSON.stringify(Object.fromEntries(Object.entries(reasonCounts).sort()))}`);
 L.push(`缺失行分类分布=${JSON.stringify(Object.fromEntries(Object.entries(byCategory).sort()))}`);
@@ -61,7 +61,7 @@ L.push('说明：门禁未落盘 / 断言名不在门禁文件内 → 三件套�
 // 删任一 gate 断言名 → 缺失数立刻 > 0、退出码非 0（反例注入可证伪）。
 L.push(`U1_TRIPLE_ZERO_MISSING 断言：逐行 carrierStatusOf() 重算，缺失=${missingRows.length}`);
 L.push(`U1_TRIPLE_ZERO_MISSING 结论：${missingRows.length === 0
-  ? '三件套 0 缺失（src 路径 + tools/verify-* 断言名 + 431 坐标全部齐备）'
+  ? '三件套 0 缺失（src 路径 + tools/verify-* 断言名 + 参考诊断仪坐标全部齐备）'
   : `仍有 ${missingRows.length} 行缺件，禁止宣称收口`}`);
 L.push('复跑命令：node tools/verify-u1-triple.mjs ; node tools/build-align431-rows.mjs ; npm run audit:align431');
 const exit = missingRows.length === 0 ? 0 : 1;

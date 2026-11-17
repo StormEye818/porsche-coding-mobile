@@ -326,7 +326,7 @@ def load_seq_templates(path):
     """第二张 31 模板表：data/function-sequences.json（687 功能 / 8047 条 31 帧）。
 
     帧形如 `31 <sub 1B> <rid 2B BE> <params…>`，由 `tools/build-function-sequences.py`
-    从 `libPORSCHE_SPECF.so` 逐字节读出（不是合成）。返回 `{(sub, rid): {payload hex…}}`，
+    从 `PORSCHE_SPECF.so` 逐字节读出（不是合成）。返回 `{(sub, rid): {payload hex…}}`，
     payload 已去空格大写，`''` 表示该调用点是 4 字节无参形态。
     """
     doc = json.loads(path.read_text())
@@ -850,7 +850,7 @@ def main():
                  'paramsResolved ∈ {unique, multi, none} 三值。paramsResolved=multi 的条目 params 留空但 '
                  'paramsCandidates 列出全部候选（不挑）；no-template 表示两表都没有模板 —— 两者都不等于'
                  '"不需要参数"，未解决条数见 source.paramsUnresolved，六桶分解见 source.paramsStats。'),
-        # view（分组/分页/431 侧条目数证据）由原文档整体继承：
+        # view（分组/分页/参考诊断仪侧条目数证据）由原文档整体继承：
         # 条目集合与顺序未变，pages 的 itemIdx/start-end 索引依然成立，重算反而会丢证据坐标。
         'view': orig.get('view'),
         'source': {
@@ -874,7 +874,7 @@ def main():
             'paramsSources': {
                 'gagLib': 'data/gag-routines.json（GAG 实测例程库，(RID,sub) → params）',
                 'specfSeq': ('data/function-sequences.json（687 功能 / %d 条 31 帧 / %d 个 (sub,rid) 模板；'
-                             '由 tools/build-function-sequences.py 从 libPORSCHE_SPECF.so 逐字节读出）'
+                             '由 tools/build-function-sequences.py 从 PORSCHE_SPECF.so 逐字节读出）'
                              % (seq_frames, len(seq_tab))),
                 'lengthCrossCheck': {
                     'rule': ('同一 (sub,rid) 在两源都有**非空**载荷时，两源长度必须相等；'

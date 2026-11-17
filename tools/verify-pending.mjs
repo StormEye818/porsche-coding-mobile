@@ -52,7 +52,7 @@ const varSamples = JSON.parse(readFileSync(join(VECTORS, 'pend-samples.json'), '
 /**
  * **刻意保持拒写**的 mode —— 它们不算回归失败，但会在汇总里单独列出。
  *
- * ★ 2026-11-12 第十阶段收口：`0x1d` 已从本清单移除。反汇编逐指令证实
+ * ★ 2026-11-12 第十阶段收口：`0x1d` 已从本清单移除。静态分析逐指令证实
  *   `PORSCHESecurityModel case 0x1d: key = seed + *(TOKEN+0x408838)`，
  *   而该 TOKEN 态由 `Xml_GetDriveLinksAddress` 在解析地址记录 firstByte==0x1d
  *   时从 `rec+4` 的 u32 装载 —— 即 `drivelinks.json` 已导出的 `state` 字段。

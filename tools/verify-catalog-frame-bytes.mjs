@@ -435,7 +435,7 @@ function expect2f(it) {
 }
 
 console.log('\n(a1) 0x2F 构帧与实测/记录在 did 键下逐字节相等（内部一致性，不含逐项身份）'
-  + '\n(a2) 逐项身份下界（distinctJoinTargets ≥ 431 真实 2F DID 数，现读）');
+  + '\n(a2) 逐项身份下界（distinctJoinTargets ≥ 参考诊断仪真实 2F DID 数，现读）');
 {
   let pass2f = 0;
   const bad = [];
@@ -568,12 +568,12 @@ console.log('\n(a1) 0x2F 构帧与实测/记录在 did 键下逐字节相等（�
   const identityNeed = gagDids.size;
   const identityProven = joinTargets2f.size >= identityNeed;
   console.log(`    (a2) 逐项身份下界：distinctJoinTargets=${joinTargets2f.size}`
-    + ` vs 431 真实 2F DID 数=${identityNeed}（需 ≥）`);
-  check('[a2] 逐项身份下界成立（distinctJoinTargets ≥ 431 真实 2F DID 数）', identityProven,
+    + ` vs 参考诊断仪真实 2F DID 数=${identityNeed}（需 ≥）`);
+  check('[a2] 逐项身份下界成立（distinctJoinTargets ≥ 参考诊断仪真实 2F DID 数）', identityProven,
     `distinctJoinTargets=${joinTargets2f.size}（需 ≥ ${identityNeed}，GAG 真实 2F DID 全集）`);
   if (!identityProven) {
     console.log(`    NOT_PROVEN: 逐项寻址未解 —— distinctJoinTargets=${joinTargets2f.size}`
-      + ` < ${identityNeed}（431 真实 2F DID 数）`);
+      + ` < ${identityNeed}（参考诊断仪真实 2F DID 数）`);
   }
   sectionSummary('(a2) 逐项身份下界', identityProven ? 1 : 0, 1);
 

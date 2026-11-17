@@ -12,14 +12,14 @@
 --------------------------------------------------------------------------------------
   · menuId    67 条：data/special-functions.json 的菜单索引（0x200–0x34E），
                与 data/special-function-map.json 的 maps[].menuId 逐条相等；
-  · RID       79 个：GAG_COMMAND.GAG.bin 里 431 真机发过的 0x31 通信例程 ID（b[4:6]，大端）；
+  · RID       79 个：例程导出.bin 里 参考诊断仪真机发过的 0x31 通信例程 ID（b[4:6]，大端）；
   · 功能序列  687 条：data/function-sequences.json 的 functions[].name（实现函数名）。
   三者是**不同语义对象**，数值偶然重合没有工程含义；旧版「交集只有 1 个」的说法已删除。
 
 厂商扩展伪 RID：sub ∈ {0x10, 0xB8, 0xB9, 0xBA} 的 `31 xx` 记录里 b[4:6] 是**参数**，
 不是 RID16；由 body 字节静态判定性质，单列 vendorExtPseudoRids，不进 79 的通信 RID 语义。
 
-记录格式（GAG_COMMAND.GAG.bin 实测）
+记录格式（例程导出.bin 实测）
 ------------------------------------
   b[0]   = 未知（恒 0x01）
   b[1]   = 后续长度
@@ -36,12 +36,12 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-GAG = Path('/Users/se818/porsche-mapper/ref/decoded/GAG_COMMAND.GAG.bin')
+GAG = Path('/Users/se818/porsche-mapper/ref/decoded/例程导出.bin')
 REF = Path('/Users/se818/porsche-mapper/ref')
 DATA = Path(__file__).resolve().parent.parent / 'data'
 OUT = DATA / 'routines-verified.json'
 
-# 431 侧真实条目数口径：MENU.BIN @0x4C 的 u16(LE) = 767。不是人造上限。
+# 参考诊断仪侧真实条目数口径：MENU.BIN @0x4C 的 u16(LE) = 767。不是人造上限。
 MENU_BIN = REF / 'porche-v24.58' / 'V24.58' / 'MENU.BIN'
 MENU_U16_OFF = 0x4C
 
@@ -54,13 +54,13 @@ SUB_FUNC = {
 # 「b[4:6] 是参数、不是 RID16」的厂商扩展子功能（31 10 / 31 B8/B9/BA）。
 VENDOR_EXT_PARAM_SUBS = frozenset({0x10, 0xB8, 0xB9, 0xBA})
 KNOWN = {
-    0x0107: '实测出现 69 次（最高频），431 用作例程主力',
+    0x0107: '实测出现 69 次（最高频），参考诊断仪用作例程主力',
     0x0103: '实测出现 35 次',
 }
 
 
 def _page_size_from_431():
-    """从 MENU.BIN @0x4C 读 u16(LE)=767，给数据层分页用（431 侧真实条目数口径）。"""
+    """从 MENU.BIN @0x4C 读 u16(LE)=767，给数据层分页用（参考诊断仪侧真实条目数口径）。"""
     b = MENU_BIN.read_bytes()
     raw = b[MENU_U16_OFF:MENU_U16_OFF + 2]
     n = int.from_bytes(raw, 'little')
@@ -176,8 +176,8 @@ def build_routines_verified(dry_run=False):
     out = {
         'schemaVersion': 2,
         'kind': 'verified-routine-ids',
-        'source': 'GAG_COMMAND.GAG.bin（431 实测请求序列）0x31 全集',
-        'caveat': ('只保证这些 RID 在 431 真机通信中出现过（ID 合法），不保证「哪个 ID 对应哪个功能」。'
+        'source': '例程导出.bin（参考诊断仪实测请求序列）0x31 全集',
+        'caveat': ('只保证这些 RID 在 参考诊断仪真机通信中出现过（ID 合法），不保证「哪个 ID 对应哪个功能」。'
                    'D-2 三命名空间独立：67 个 menuId（菜单索引 0x200–0x34E）/ '
                    f'{len(items)} 个通信 RID / 687 条功能序列，互不混用；'
                    '禁止把菜单索引与通信 RID 两个命名空间硬相交后按交集大小下结论。'),
@@ -217,7 +217,7 @@ def build_routines_verified(dry_run=False):
 
 def rebuild_catalog():
     page_size, raw_hex, byte_ev = _page_size_from_431()
-    print(f'431 侧长度规则：{byte_ev} bytes=[{raw_hex}] u16(LE)={page_size}')
+    print(f'参考诊断仪侧长度规则：{byte_ev} bytes=[{raw_hex}] u16(LE)={page_size}')
 
     # ── 任务 1：687 条功能序列全量登记 + 修 E3_HUD_Shakedown_Test 悬空引用 ──
     seq = json.loads((DATA / 'function-sequences.json').read_text())
@@ -269,7 +269,7 @@ def rebuild_catalog():
             'menuId': str(m.get('menuId')), 'system': m.get('system'), 'sub': m.get('sub'),
             'name': 'E3_HUD_Shakedown_Test',
             'staticEvidence': flat_refs or list(HUD_STATIC_EVIDENCE),
-            'reason': '包内有菜单项与静态证据，但无 431 命令序列；登记为 static-only，不生成可执行按钮',
+            'reason': '包内有菜单项与静态证据，但无 参考诊断仪命令序列；登记为 static-only，不生成可执行按钮',
         })
     # 修正前确有 1 条悬空引用（HEAD 版 maps 的 impl 指向不存在的 E3_HUD_Shakedown_Test）
     dangling_before = max(1, prev_cov.get('danglingRefsBefore', 0) or 0, len(dangling))
@@ -288,7 +288,7 @@ def rebuild_catalog():
                     'menuId': str(m['menuId']), 'system': m.get('system'), 'sub': m.get('sub'),
                     'name': n,
                     'staticEvidence': list(HUD_STATIC_EVIDENCE),
-                    'reason': '包内有菜单项与静态证据，但无 431 命令序列；登记为 static-only，不生成可执行按钮',
+                    'reason': '包内有菜单项与静态证据，但无 参考诊断仪命令序列；登记为 static-only，不生成可执行按钮',
                 })
             else:
                 kept.append(im)
@@ -352,8 +352,8 @@ def rebuild_catalog():
           f'悬空 {len(dangling)}→0, staticOnly={len(static_only)}')
 
     # ── 任务 2：按 app.js 现有分组键重组，每组 ≤ app 现有渲染上限 ──
-    #  ★ 裁定 B：767 只是 MENU.BIN:0x4C 的「431 侧真实条目数」计数证据，
-    #    **不是 431 侧分页规则、也不是新造的渲染上限**。真正的分组上限原样复用
+    #  ★ 裁定 B：767 只是 MENU.BIN:0x4C 的「参考诊断仪侧真实条目数」计数证据，
+    #    **不是 参考诊断仪侧分页规则、也不是新造的渲染上限**。真正的分组上限原样复用
     #    src/app.js 现有的 .slice(0,30) / sect(...,40)，不自创任何数字。
     #    分组键也逐字复刻 app.js:426x/431x 的过滤/分组表达式，因此 app.js 现有
     #    .filter(module) → .slice(0,100) → .slice(0,30) 的每组结果都不再被截断。
@@ -394,14 +394,14 @@ def rebuild_catalog():
         j['view'] = {
             'schemaVersion': 2,
             'groupRule': ('按 app.js 现有分组键逐字复刻分组，每组上限 = app.js 现有渲染上限，'
-                          '不自创任何新上限；767 仅作 431 侧真实条目数的字节证据。'),
+                          '不自创任何新上限；767 仅作 参考诊断仪侧真实条目数的字节证据。'),
             'groupCap': cap,
             'groupCapSource': cap_source,
             'count431': {
                 'file': str(MENU_BIN), 'offset': f'0x{MENU_U16_OFF:02X}',
                 'bytes': raw_hex, 'u16LE': page_size,
-                'note': ('431 侧真实条目数证据（MENU.BIN:0x4C u16LE）：'
-                         '只用于证明 431 侧确有该量级条目，不是分页规则，也不是渲染上限。'),
+                'note': ('参考诊断仪侧真实条目数证据（MENU.BIN:0x4C u16LE）：'
+                         '只用于证明 参考诊断仪侧确有该量级条目，不是分页规则，也不是渲染上限。'),
             },
             'byteEvidence': [{'file': str(MENU_BIN), 'offset': f'0x{MENU_U16_OFF:02X}',
                               'bytes': raw_hex, 'u16LE': page_size}],

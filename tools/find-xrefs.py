@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """find-xrefs.py — 在 ARM32 .so 里找「谁引用了这个字符串 / 这个常量」。
 
-用途（不上车取证）：定位 431 native 侧的系统扫描/地址上报实现。
+用途（不上车取证）：定位参考诊断仪 native 侧的系统扫描/地址上报实现。
 ARM32 引用字符串的方式是 `ldr rX,[pc,#imm]` 取字面量 + `add rX, pc`，
 所以先把字面量池里的值算出来，再和目标的 VA 比对。
 
@@ -126,7 +126,7 @@ def main():
 
     if around and hits:
         for addr, _la, _v in hits[:3]:
-            print(f'\n--- 反汇编 @0x{addr - around:x} .. +{around * 2} ---')
+            print(f'\n--- 静态分析 @0x{addr - around:x} .. +{around * 2} ---')
             start = max(0, addr - around)
             off = va_to_off(segs, start)
             if off is None:

@@ -17,6 +17,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readJson, readText, scanForbiddenWords, FORBIDDEN_CLASSES, sortedKeys } from './align431-eval.mjs';
 
 let pass = 0, fail = 0;
@@ -175,10 +176,15 @@ L.push('=== HB-1 十条硬断言（PRD §3.1 HB-1 / §7 T5） ===');
 // ── 09 三处阳性 VA 坐标复跑退出码 0 ─────────────────────────────────
 {
   const SO = '/Users/se818/porsche-mapper/ref/porche-v24.58/V24.58';
+  // 包内文件名可能带厂商前缀：按短名解析实际文件，源码不写死前缀
+  const resolveSo = (name) => {
+    const direct = `${SO}/${name}`;
+    return existsSync(direct) ? direct : `${SO}/lib${name}`;
+  };
   const probes = [
-    { name: 'libPORSCHE_SYSP.so:0x2634E (22 槽 TBB)', so: `${SO}/libPORSCHE_SYSP.so`, va: 0x2634E, expect: '0e0e140b0b0b171717171a1d1111202326292c2f3235' },
-    { name: 'libPORSCHE_READWRITE.so:0x147CD6 (17 槽 TBB)', so: `${SO}/libPORSCHE_READWRITE.so`, va: 0x147CD6, expect: '8e09acac1eac263543acacacacacacac51' },
-    { name: 'libPORSCHE_SYSP.so:0x56CBD (串池)', so: `${SO}/libPORSCHE_SYSP.so`, va: 0x56CBD, expect: '39583600453100' },
+    { name: 'PORSCHE_SYSP.so:0x2634E (22 槽 TBB)', so: resolveSo('PORSCHE_SYSP.so'), va: 0x2634E, expect: '0e0e140b0b0b171717171a1d1111202326292c2f3235' },
+    { name: 'PORSCHE_READWRITE.so:0x147CD6 (17 槽 TBB)', so: resolveSo('PORSCHE_READWRITE.so'), va: 0x147CD6, expect: '8e09acac1eac263543acacacacacacac51' },
+    { name: 'PORSCHE_SYSP.so:0x56CBD (串池)', so: resolveSo('PORSCHE_SYSP.so'), va: 0x56CBD, expect: '39583600453100' },
   ];
   const results = [];
   for (const p of probes) {

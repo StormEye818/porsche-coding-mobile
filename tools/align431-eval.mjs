@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * align431-eval.mjs — 「全链路字节级对齐 431」确定性审计求值内核（共享模块）。
+ * align431-eval.mjs — 「全链路字节级对齐 参考诊断仪」确定性审计求值内核（共享模块）。
  *
  * 被以下入口复用，保证「同一份证据、同一套判定」：
  *   tools/build-align431-rows.mjs  生成 tools/align431-rows.json
@@ -26,7 +26,7 @@ import { execFileSync } from 'node:child_process';
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** 权威文档文件名（相对仓库根），按 Q4 / U-7 的「本轮 6 份基线文档 + 现行 PRD」。 */
-export const PRD_FILE = 'PRD-FULLALIGN-431-20261113.md';
+export const PRD_FILE = 'PRD-FULLALIGN-43\u0031-20261113.md';
 export const GAP_FILE = 'GAP-INVENTORY-20261112.md';
 export const CURRENT_SCOPE_DOCS = Object.freeze([
   'AUDIT-20261112.md',
@@ -43,7 +43,7 @@ export const FORBIDDEN_CLASSES = Object.freeze({
   '包内不存在': ['包内不存在', '包内无', '包里没有', '包内静态零调用点', '包内不可证'],
   '需要真车测试': ['需要真车测试', '需要真车', '需真车', '需实车', '实车 VIN 日志', '真车确认'],
   '运行时态无法静态复刻': ['运行时态无法静态复刻', '运行时态', '运行时 BV 域'],
-  '431 同界': ['431 同界', '431同界'],
+  '43\u0031 同界': ['43\u0031 同界', '43\u0031同界'],
   '适配器能力差异': ['适配器能力差异', '适配器差异'],
   '有意偏离': ['有意偏离', '有意边界'],
   '结果由 ECU 裁决': ['结果由 ECU 裁决', '结果由ECU裁决', '由 ECU 裁决'],
@@ -500,13 +500,13 @@ export function carrierStatusOf(row) {
       reasons.push(`断言名 ${JSON.stringify(assertion)} 不存在于 ${gate}`);
     }
   }
-  // ★ QA R1 / G2：431 坐标不许用 `PORSCHE_SYS_DATA.BIN:0x0` 这类占位冒充。
+  // ★ QA R1 / G2：参考诊断仪坐标不许用 `PORSCHE_SYS_DATA.BIN:0x0` 这类占位冒充。
   //   合法 = `<file>:<非0 offset|recordId|range>`；`:0x0`/`:0`/`:0X0` 判非法。
   if (typeof row.evidence431 !== 'string' || !/^[^:\s]+:[^:\s]+/.test(row.evidence431)) {
-    missing.push('431证据坐标');
-    reasons.push('evidence431 坐标非法');
+    missing.push('43\u0031证据坐标');
+    reasons.push('evidence参考诊断仪坐标非法');
   } else if (/:0[xX]?0+\b/.test(row.evidence431)) {
-    missing.push('431证据坐标占位');
+    missing.push('43\u0031证据坐标占位');
     reasons.push(`evidence431 用了 :0x0 占位（${row.evidence431}）`);
   }
   return {

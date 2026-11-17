@@ -2804,7 +2804,7 @@ async function enterSystem(sys) {
     //   （0x2A→ADD、0x26→NOT_MULADD…）→ 会算出**错 key** 并发送（NRC 0x35，重试可能吃 0x36）。
     //   因此只有显式标注 modeVerified 的条目才走 mode 路径，其余回落名字分发。
     if (mode != null && hit && hit[0] && hit[0].modeVerified === true) {
-      // 预检：mode 的算法在不在（不真算）。没逆出来的 mode 立刻降级成「只读」，
+      // 预检：mode 的算法在不在（不真算）。没解出来的 mode 立刻降级成「只读」，
       // 别等到用户按写入才报错（日志里也不该显示成 ok）。
       let modeOk = true, modeWhy = '';
       try { resolveKey(mode, 0x12345678, { ecuId: null }); } catch (e) { modeOk = false; modeWhy = e.message; }
@@ -2886,7 +2886,7 @@ async function enterSystem(sys) {
           },
         } : null;
         if (naOk) log(`  seed/key：名字「${hitName}」→ 变体 ${String(variant).slice(0, 16)}（原厂权威表）`, 'ok');
-        else log(`  ⚠ 「${hitName}」的变体 ${String(variant).slice(0, 16)} 尚未逆出：${naWhy} —— 只读`, 'warn');
+        else log(`  ⚠ 「${hitName}」的变体 ${String(variant).slice(0, 16)} 尚未解出：${naWhy} —— 只读`, 'warn');
       } else {
         const v = pickVariant(sys.label) || (sys.modules || []).map((m) => pickVariant(m)).find(Boolean) || null;
         coder.seedKeyProvider = v ? makeProvider(v) : null;

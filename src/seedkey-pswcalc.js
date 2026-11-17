@@ -662,7 +662,7 @@ export function pswCalc(mode, seed, ctx = {}) {
   const m = INLINE_MODES[mode];
   if (!m) {
     const name = PENDING_MODES[mode] || (mode > 0x77 ? 'stdSeedKey' : `未知 mode 0x${mode.toString(16)}`);
-    throw new Error(`mode 0x${mode.toString(16)} 走外部例程 ${name}，尚未逆出（照 原厂 逐个来）`);
+    throw new Error(`mode 0x${mode.toString(16)} 走外部例程 ${name}，尚未解出（照 原厂 逐个来）`);
   }
   switch (m.kind) {
     case 'ADD':        return { key: u32(s + m.c), algo: 'ADD' };
@@ -805,7 +805,7 @@ export const MODE_F = {
   },
 };
 
-/** 已逆出的 rotate+combine mode → 布局 */
+/** 已解出的 rotate+combine mode → 布局 */
 /** algo-6 （照抄） */
 export const MODE_6 = {
   // n = (p>>3)&2 | (p&4) | (p&0x7fff)>>14 | (p>>2)&8
@@ -1011,7 +1011,7 @@ export const MODE_1 = {
 
 /** algo-F （照抄） */
 
-/** 已逆出的 rotate+combine mode → 布局 */
+/** 已解出的 rotate+combine mode → 布局 */
 /** algo-6 （照抄） */
 
 /** algo-37 （照抄） */
@@ -1126,7 +1126,7 @@ export const MODE_60 = {
   modeMap: RC32_MAP,
 };
 
-/** 32 位 rotate+combine 已逆出的（0x12/0x41 与 0x08 同布局） */
+/** 32 位 rotate+combine 已解出的（0x12/0x41 与 0x08 同布局） */
 export const ROTATE_COMBINE32_MODES = {
   0x08: MODE_8, 0x11: MODE_11, 0x12: MODE_8, 0x1E: MODE_1E,
   0x41: MODE_8, 0x60: MODE_60,

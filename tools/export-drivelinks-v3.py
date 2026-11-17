@@ -337,7 +337,7 @@ def main():
     doc = {
         'schemaVersion': 3,
         'source': 'PORSCHE_DRIVELINKS.BIN (decoded) — row→record 全量，含 0x1010/0x1005/0x1000',
-        'note': 'bindKey = 431 绑定入参 A（flags<<16|internal）；candidates = SpecArray；'
+        'note': 'bindKey = 参考诊断仪绑定入参 A（flags<<16|internal）；candidates = SpecArray；'
                 'decoded=false 表示载荷形态未解（0x1010 描述符待做），只留原始字节',
         'stats': {
             'rows': len(all_rows), 'uniqueRows': len(urows), 'records': len(rec_cache),

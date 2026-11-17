@@ -60,18 +60,18 @@ const BASELINE_COUNT = GAP_LINE_END - GAP_LINE_START + 1;
 /** 基线行（GAP §2 :41–:81）逐行真实 codePath + evidence431 + 语义 check 覆盖。 */
 const BASELINE_OVERRIDE = Object.freeze({
   // 连接
-  41: { codePath: 'src/elm327.js:cmdOk', evidence431: 'libPORSCHE_SYSP.so:0x24DE4', check: { kind: 'evidence', file: 'src/elm327.js', token: 'requireOk', note: 'ATSH/ATCRA 绑定命令空回执阻断（T03-h 行为）' } },
-  42: { codePath: 'src/elm327.js:cmd', evidence431: 'libPORSCHE_SYSP.so:0x24E02', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATSH', note: 'SetAddress/FilterId ≡ ATSH/ATCRA 实发' } },
-  43: { codePath: 'src/elm327.js:cmd', evidence431: 'libPORSCHE_SYSP.so:0x10000359', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATCFC1', note: 'n=0 用 ATSH/ATCRA 回执等价（VCI send 无 ELM 对应物）' } },
+  41: { codePath: 'src/elm327.js:cmdOk', evidence431: 'PORSCHE_SYSP.so:0x24DE4', check: { kind: 'evidence', file: 'src/elm327.js', token: 'requireOk', note: 'ATSH/ATCRA 绑定命令空回执阻断（T03-h 行为）' } },
+  42: { codePath: 'src/elm327.js:cmd', evidence431: 'PORSCHE_SYSP.so:0x24E02', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATSH', note: 'SetAddress/FilterId ≡ ATSH/ATCRA 实发' } },
+  43: { codePath: 'src/elm327.js:cmd', evidence431: 'PORSCHE_SYSP.so:0x10000359', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATCFC1', note: 'n=0 用 ATSH/ATCRA 回执等价（VCI send 无 ELM 对应物）' } },
   // VIN
-  44: { codePath: 'src/coder.js:readVinByObd', evidence431: 'libPORSCHE_READWRITE.so:0x147C80', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/coder.js', token: 'vinCharsetFilter', note: 'D-4 两链同一字符集原语' }, { kind: 'jsonCountGte', file: 'data/vehicle-id-type-map.json', path: ['menuTexts'], min: 32 }] } },
-  45: { codePath: 'src/coder.js:readVinByObd', evidence431: 'libPORSCHE_READWRITE.so:0x147D10', check: { kind: 'evidence', file: 'src/coder.js', token: 'anyRx', note: '广播路径 anyRx 语义（固定响应头/内容校验兜底）' } },
-  46: { codePath: 'src/coder.js:vinCharsetFilter', evidence431: 'libPORSCHE_READWRITE.so:0x147D9C', check: { kind: 'evidence', file: 'src/coder.js', token: 'vinCharsetFilter', note: 'D-4 VIN 字符集两链统一原语' } },
+  44: { codePath: 'src/coder.js:readVinByObd', evidence431: 'PORSCHE_READWRITE.so:0x147C80', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/coder.js', token: 'vinCharsetFilter', note: 'D-4 两链同一字符集原语' }, { kind: 'jsonCountGte', file: 'data/vehicle-id-type-map.json', path: ['menuTexts'], min: 32 }] } },
+  45: { codePath: 'src/coder.js:readVinByObd', evidence431: 'PORSCHE_READWRITE.so:0x147D10', check: { kind: 'evidence', file: 'src/coder.js', token: 'anyRx', note: '广播路径 anyRx 语义（固定响应头/内容校验兜底）' } },
+  46: { codePath: 'src/coder.js:vinCharsetFilter', evidence431: 'PORSCHE_READWRITE.so:0x147D9C', check: { kind: 'evidence', file: 'src/coder.js', token: 'vinCharsetFilter', note: 'D-4 VIN 字符集两链统一原语' } },
   // 车型
-  47: { codePath: 'src/model-name-table.js:MODEL_NAME_TABLE', evidence431: 'libPORSCHE_SYSP.so:0x5E42C', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/model-name-table.js', token: 'MODEL_NAME_TABLE', note: 'SYSP 0x5E42C 24 键车型名表' }, { kind: 'jsonCountEq', file: 'data/vehicle-id-type-map.json', path: ['menuTexts'], value: 32 }] } },
-  48: { codePath: 'src/model-name-table.js:matchModelNameExact', evidence431: 'libPORSCHE_SYSP.so:0x5E430', check: { kind: 'evidence', file: 'src/model-name-table.js', token: 'matchModelNameExact', note: 'strcmp 逐字节全等（非归一化兜底）' } },
+  47: { codePath: 'src/model-name-table.js:MODEL_NAME_TABLE', evidence431: 'PORSCHE_SYSP.so:0x5E42C', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/model-name-table.js', token: 'MODEL_NAME_TABLE', note: 'SYSP 0x5E42C 24 键车型名表' }, { kind: 'jsonCountEq', file: 'data/vehicle-id-type-map.json', path: ['menuTexts'], value: 32 }] } },
+  48: { codePath: 'src/model-name-table.js:matchModelNameExact', evidence431: 'PORSCHE_SYSP.so:0x5E430', check: { kind: 'evidence', file: 'src/model-name-table.js', token: 'matchModelNameExact', note: 'strcmp 逐字节全等（非归一化兜底）' } },
   // 平台代
-  49: { codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', evidence431: 'libPORSCHE_SYSP.so:0x26344', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/model-sysid-map.js', token: 'MODEL_SYSID_INDEX', note: 'DSN 头 22 项索引接入运行时' }, { kind: 'jsonCountEq', file: 'data/sysdata-root-table.json', path: ['types'], value: 22 }] } },
+  49: { codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', evidence431: 'PORSCHE_SYSP.so:0x26344', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/model-sysid-map.js', token: 'MODEL_SYSID_INDEX', note: 'DSN 头 22 项索引接入运行时' }, { kind: 'jsonCountEq', file: 'data/sysdata-root-table.json', path: ['types'], value: 22 }] } },
   50: { codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', evidence431: 'data/dsn-module-sysids.json:canonicalType', check: { kind: 'all', of: [{ kind: 'evidence', file: 'data/dsn-module-sysids.json', token: 'canonicalType', note: '9X6/9X7 canonicalType 严格超集（数据级）' }, { kind: 'evidence', file: 'src/model-sysid-map.js', token: 'MODEL_SYSID_INDEX', note: '运行时索引消费该数据' }] } },
   51: { codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', evidence431: 'data/dsn-module-sysids.json:canonicalType', check: { kind: 'evidence', file: 'data/dsn-module-sysids.json', token: 'canonicalType', note: '共享子集任选高字节无害（逐 type 唯一集合）' } },
   52: { codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', evidence431: 'data/dsn-module-sysids.json:platforms.9x6.mappingCount',
@@ -81,12 +81,12 @@ const BASELINE_OVERRIDE = Object.freeze({
       { kind: 'jsonEquals', file: 'data/dsn-module-sysids.json', path: ['platforms', '9x6', 'mappingCount'], value: 29, note: '9X6 mappingCount == 29（常量，非 >=）' },
     ] } },
   // 寻址
-  53: { codePath: 'src/app.js:probeChainFor', evidence431: 'libPORSCHE_LINK.so:0x18F00', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/app.js', token: 'probeChainFor', note: '②-a 探针阶段每候选 1 帧 221409/1A9F' }, { kind: 'jsonCountGte', file: 'data/bind-plan.json', path: ['ecu'], min: 400, note: 'bind-plan 全量候选（479 sysId 口径）' }] } },
-  54: { codePath: 'src/app.js:probeChainFor', evidence431: 'libPORSCHE_LINK.so:0x18F2C', check: { kind: 'evidence', file: 'src/app.js', token: 'probeChainFor', note: '②-b 身份裁决收敛候选（应答即绑+身份比对）' } },
-  55: { codePath: 'src/app.js:probeChainFor', evidence431: 'libPORSCHE_LINK.so:0x18FE2', check: { kind: 'evidence', file: 'src/app.js', token: '221102', note: '22 11 02 绑定失败补帧（响应不作成功依据）' } },
-  56: { codePath: 'src/app.js:addrCandsFor', evidence431: 'libPORSCHE_LINK.so:0x18F60', check: { kind: 'evidence', file: 'src/app.js', token: 'addrCandsFor', note: '地址候选由 bind-plan 生成' } },
-  57: { codePath: 'src/app.js:probeAddressFor', evidence431: 'libPORSCHE_LINK.so:0x18F90', check: { kind: 'evidence', file: 'src/app.js', token: 'probeAddressFor', note: '探针按候选逐帧收敛' } },
-  58: { codePath: 'src/app.js:addrTableUnique', evidence431: 'libPORSCHE_LINK.so:0x18FC0', check: { kind: 'evidence', file: 'src/app.js', token: 'addrTableUnique', note: '别名/低字节平移去重' } },
+  53: { codePath: 'src/app.js:probeChainFor', evidence431: 'PORSCHE_LINK.so:0x18F00', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/app.js', token: 'probeChainFor', note: '②-a 探针阶段每候选 1 帧 221409/1A9F' }, { kind: 'jsonCountGte', file: 'data/bind-plan.json', path: ['ecu'], min: 400, note: 'bind-plan 全量候选（479 sysId 口径）' }] } },
+  54: { codePath: 'src/app.js:probeChainFor', evidence431: 'PORSCHE_LINK.so:0x18F2C', check: { kind: 'evidence', file: 'src/app.js', token: 'probeChainFor', note: '②-b 身份裁决收敛候选（应答即绑+身份比对）' } },
+  55: { codePath: 'src/app.js:probeChainFor', evidence431: 'PORSCHE_LINK.so:0x18FE2', check: { kind: 'evidence', file: 'src/app.js', token: '221102', note: '22 11 02 绑定失败补帧（响应不作成功依据）' } },
+  56: { codePath: 'src/app.js:addrCandsFor', evidence431: 'PORSCHE_LINK.so:0x18F60', check: { kind: 'evidence', file: 'src/app.js', token: 'addrCandsFor', note: '地址候选由 bind-plan 生成' } },
+  57: { codePath: 'src/app.js:probeAddressFor', evidence431: 'PORSCHE_LINK.so:0x18F90', check: { kind: 'evidence', file: 'src/app.js', token: 'probeAddressFor', note: '探针按候选逐帧收敛' } },
+  58: { codePath: 'src/app.js:addrTableUnique', evidence431: 'PORSCHE_LINK.so:0x18FC0', check: { kind: 'evidence', file: 'src/app.js', token: 'addrTableUnique', note: '别名/低字节平移去重' } },
   59: { codePath: 'src/probe.js:TWIN_GROUPS', evidence431: 'GAG_TEXT_CN.GAG.bin:idx 1961..1992',
     gate: 'tools/verify-ui-text-gag.mjs', assertion: 'UI_TEXT_GAG_IDX_COORD',
     check: { kind: 'all', of: [
@@ -100,16 +100,16 @@ const BASELINE_OVERRIDE = Object.freeze({
   62: { codePath: 'src/oem-session-table.js:oemSessionFor', evidence431: 'PORSCHE_SYS_DATA.BIN:0x641', check: { kind: 'evidence', file: 'src/oem-session-table.js', token: 'OEM_SESSION_BY_SYSID', note: '会话/序列由 SYS_DATA comm 证据驱动' } },
   63: { codePath: 'src/oem-enter-frames.js:oemIsSessionless', evidence431: 'PORSCHE_SYS_DATA.BIN:0x645', check: { kind: 'evidence', file: 'src/oem-enter-frames.js', token: 'oemIsSessionless', note: 'sessionless 老代 KWP 不建 UDS 会话' } },
   // 读
-  64: { codePath: 'src/coder.js:readVehicleIdentity', evidence431: 'libPORSCHE_READWRITE.so:0x0F830D', check: { kind: 'evidence', file: 'src/coder.js', token: 'readVehicleIdentity', note: '读帧构造 21/22/1A + 识别链 + 回读' } },
+  64: { codePath: 'src/coder.js:readVehicleIdentity', evidence431: 'PORSCHE_READWRITE.so:0x0F830D', check: { kind: 'evidence', file: 'src/coder.js', token: 'readVehicleIdentity', note: '读帧构造 21/22/1A + 识别链 + 回读' } },
   // 写
-  65: { codePath: 'src/write-alignment.js:writeProfileFromAlignment', evidence431: 'libPORSCHE_READWRITE.so:0x0F855D', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/write-alignment.js', token: 'evaluateWriteAlignmentChecks', note: '13 项写对齐每次实跑重算' }, { kind: 'evidence', file: 'src/write-alignment.js', token: 'WRITE_GATE', note: '写闸门按对齐矩阵判定' }] } },
-  66: { codePath: 'src/coder.js:withWriteLock', evidence431: 'libPORSCHE_READWRITE.so:0x0F85A0', check: { kind: 'evidence', file: 'src/coder.js', token: 'withWriteLock', note: '统一写事务排他' } },
-  67: { codePath: 'src/coder.js:_restore', evidence431: 'libPORSCHE_READWRITE.so:0x0F85E4', check: { kind: 'evidence', file: 'src/coder.js', token: 'sessionless', note: '恢复路径按备份记录 sessionless 跳过会话' } },
+  65: { codePath: 'src/write-alignment.js:writeProfileFromAlignment', evidence431: 'PORSCHE_READWRITE.so:0x0F855D', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/write-alignment.js', token: 'evaluateWriteAlignmentChecks', note: '13 项写对齐每次实跑重算' }, { kind: 'evidence', file: 'src/write-alignment.js', token: 'WRITE_GATE', note: '写闸门按对齐矩阵判定' }] } },
+  66: { codePath: 'src/coder.js:withWriteLock', evidence431: 'PORSCHE_READWRITE.so:0x0F85A0', check: { kind: 'evidence', file: 'src/coder.js', token: 'withWriteLock', note: '统一写事务排他' } },
+  67: { codePath: 'src/coder.js:_restore', evidence431: 'PORSCHE_READWRITE.so:0x0F85E4', check: { kind: 'evidence', file: 'src/coder.js', token: 'sessionless', note: '恢复路径按备份记录 sessionless 跳过会话' } },
   // seed/key
-  68: { codePath: 'src/seedkey-sa2.js:computeKey', evidence431: 'libPORSCHE_FILE.so:0x18A74', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/seedkey-sa2.js', token: 'computeKey', note: 'SA2 生产算法（真实落点）' }, { kind: 'evidence', file: 'src/seedkey-pswcalc.js', token: '未装载时拒绝计算', note: '0x1D 未装载 state 拒算' }] } },
-  69: { codePath: 'src/seedkey-sa2.js:computeKey', evidence431: 'libPORSCHE_FILE.so:0x18A90', check: { kind: 'evidence', file: 'src/seedkey-sa2.js', token: 'computeKey', note: 'mode=null/越界拒写归零' } },
-  70: { codePath: 'src/seedkey-resolver.js:resolveKey', evidence431: 'libPORSCHE_FILE.so:0x18AB0', check: { kind: 'evidence', file: 'src/seedkey-resolver.js', token: 'resolveKey', note: 'seed/key 生产链解析器' } },
-  71: { codePath: 'src/seedkey.js:makeProvider', evidence431: 'libPORSCHE_FILE.so:0x18AD0', check: { kind: 'evidence', file: 'src/seedkey.js', token: 'makeProvider', note: 'provider 工厂' } },
+  68: { codePath: 'src/seedkey-sa2.js:computeKey', evidence431: 'PORSCHE_FILE.so:0x18A74', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/seedkey-sa2.js', token: 'computeKey', note: 'SA2 生产算法（真实落点）' }, { kind: 'evidence', file: 'src/seedkey-pswcalc.js', token: '未装载时拒绝计算', note: '0x1D 未装载 state 拒算' }] } },
+  69: { codePath: 'src/seedkey-sa2.js:computeKey', evidence431: 'PORSCHE_FILE.so:0x18A90', check: { kind: 'evidence', file: 'src/seedkey-sa2.js', token: 'computeKey', note: 'mode=null/越界拒写归零' } },
+  70: { codePath: 'src/seedkey-resolver.js:resolveKey', evidence431: 'PORSCHE_FILE.so:0x18AB0', check: { kind: 'evidence', file: 'src/seedkey-resolver.js', token: 'resolveKey', note: 'seed/key 生产链解析器' } },
+  71: { codePath: 'src/seedkey.js:makeProvider', evidence431: 'PORSCHE_FILE.so:0x18AD0', check: { kind: 'evidence', file: 'src/seedkey.js', token: 'makeProvider', note: 'provider 工厂' } },
   // 恢复/批量/编程页
   72: { codePath: 'src/coder.js:runWritePrologue', evidence431: 'PORSCHE_SYS_DATA.BIN:0x649', check: { kind: 'evidence', file: 'src/coder.js', token: 'runWritePrologue', note: '写序言（真实落点 coder.js，非 app.js）' } },
   73: { codePath: 'src/coder.js:runWritePrologue', evidence431: 'data/routines-verified.json:requestCount',
@@ -246,16 +246,16 @@ function resolveDeferred(row) {
 
 /** 41 行基线的 R-1 两坐标 / 门禁 / 阶段元数据（按首列「阶段」映射，逐行套用行号坐标）。 */
 const STAGE_META = Object.freeze({
-  '连接': { evidence431: 'libPORSCHE_SYSP.so:0x24DE4', codePath: 'src/elm327.js:cmd', gate: 'tools/verify-fullchain-audit.mjs', assertion: 'FULLCHAIN_AT_LAYER' },
-  'VIN': { evidence431: 'libPORSCHE_READWRITE.so:0x147C80', codePath: 'src/coder.js:readVinByObd', gate: 'tools/verify-all-models.mjs', assertion: 'VIN_CHAIN_CONSISTENT' },
-  '车型': { evidence431: 'libPORSCHE_SYSP.so:0x5E42C', codePath: 'src/model-name-table.js:MODEL_NAME_TABLE', gate: 'tools/verify-all-models.mjs', assertion: 'MODEL_NAME_TABLE_24' },
-  '平台代': { evidence431: 'libPORSCHE_SYSP.so:0x26344', codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', gate: 'tools/verify-hb1.mjs', assertion: 'HB1-T5-01' },
-  '寻址': { evidence431: 'libPORSCHE_LINK.so:0x18F00', codePath: 'src/app.js:probeChainFor', gate: 'tools/verify-oem-probe-diff.mjs', assertion: 'OEM_DIFF_PROBE_PHASE' },
+  '连接': { evidence431: 'PORSCHE_SYSP.so:0x24DE4', codePath: 'src/elm327.js:cmd', gate: 'tools/verify-fullchain-audit.mjs', assertion: 'FULLCHAIN_AT_LAYER' },
+  'VIN': { evidence431: 'PORSCHE_READWRITE.so:0x147C80', codePath: 'src/coder.js:readVinByObd', gate: 'tools/verify-all-models.mjs', assertion: 'VIN_CHAIN_CONSISTENT' },
+  '车型': { evidence431: 'PORSCHE_SYSP.so:0x5E42C', codePath: 'src/model-name-table.js:MODEL_NAME_TABLE', gate: 'tools/verify-all-models.mjs', assertion: 'MODEL_NAME_TABLE_24' },
+  '平台代': { evidence431: 'PORSCHE_SYSP.so:0x26344', codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX', gate: 'tools/verify-hb1.mjs', assertion: 'HB1-T5-01' },
+  '寻址': { evidence431: 'PORSCHE_LINK.so:0x18F00', codePath: 'src/app.js:probeChainFor', gate: 'tools/verify-oem-probe-diff.mjs', assertion: 'OEM_DIFF_PROBE_PHASE' },
   '变体': { evidence431: 'JOB.BIN:0x0', codePath: 'src/variant.js:identMatch', gate: 'tools/verify-fullchain.mjs', assertion: 'VARIANT_IDENT_MATCH' },
   '会话': { evidence431: 'PORSCHE_SYS_DATA.BIN:0x0', codePath: 'src/oem-session-table.js:oemSessionFor', gate: 'tools/verify-oem-session.mjs', assertion: 'OEM_SESSION_EVIDENCE' },
-  '读': { evidence431: 'libPORSCHE_READWRITE.so:0x0F830D', codePath: 'src/coder.js:readVehicleIdentity', gate: 'tools/verify-fullchain.mjs', assertion: 'READ_FRAME_ID' },
-  '写': { evidence431: 'libPORSCHE_READWRITE.so:0x0F855D', codePath: 'src/write-alignment.js:WRITE_GATE', gate: 'tools/verify-write-gate.mjs', assertion: 'WRITE_GATE_13_CHECKS' },
-  'seed/key': { evidence431: 'libPORSCHE_FILE.so:0x18A74', codePath: 'src/seedkey.js:computeKey', gate: 'tools/verify-write-gate.mjs', assertion: 'SEEDKEY_PRODUCTION_REACHABLE' },
+  '读': { evidence431: 'PORSCHE_READWRITE.so:0x0F830D', codePath: 'src/coder.js:readVehicleIdentity', gate: 'tools/verify-fullchain.mjs', assertion: 'READ_FRAME_ID' },
+  '写': { evidence431: 'PORSCHE_READWRITE.so:0x0F855D', codePath: 'src/write-alignment.js:WRITE_GATE', gate: 'tools/verify-write-gate.mjs', assertion: 'WRITE_GATE_13_CHECKS' },
+  'seed/key': { evidence431: 'PORSCHE_FILE.so:0x18A74', codePath: 'src/seedkey.js:computeKey', gate: 'tools/verify-write-gate.mjs', assertion: 'SEEDKEY_PRODUCTION_REACHABLE' },
   '恢复/批量/编程页': { evidence431: 'PORSCHE_SYS_DATA.BIN:0x0', codePath: 'src/app.js:runWritePrologue', gate: 'tools/verify-fullchain-audit.mjs', assertion: 'WRITE_PROLOGUE_WIRED' },
   '数据层': { evidence431: 'PORSCHE_SYS_DATA.BIN:0x0', codePath: 'src/coder.js:validateParam', gate: 'tools/verify-u2-numbers.mjs', assertion: 'U2_NUMBER_DIFF_ZERO' },
 });
@@ -279,7 +279,7 @@ function originalVerdictOf(line) {
  *
  * ★ 审计阻断项修正：u1CarrierStatus 不接 opts 传入值，而是由共享内核
  *   carrierStatusOf(row) 按「gate 文件真实存在 + 文件内含 assertion 断言名 +
- *   src 文件真实存在 + 431 坐标合法」在每次运行时按磁盘实况重算；
+ *   src 文件真实存在 + 参考诊断仪坐标合法」在每次运行时按磁盘实况重算；
  *   verdict 由 evaluateRow() 的两字段合取判定。绝不写死「齐备」、绝不缓存。
  */
 function makeRow(opts) {
@@ -492,7 +492,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
     const canon = vim ? (vim.canonicalType || {})[p] : (p === '9X6' ? '0x01' : '0x05');
     add(`AD-HB1-${p}-CANONICAL`, 'HB1-TYPE', `${p} 规范 type 静态规则`, {
       originalText: `${p} 规范 type = ${canon}（覆盖 DSN 模块表 sysIdLow 全集最多的 type，且为其它候选严格超集）`,
-      evidence431: `libPORSCHE_SYSP.so:0x26344 / libPORSCHE_READWRITE.so:0x147CD6 / DSN.BIN:0x${(dsnEntry ? dsnEntry.payloadOff : 0).toString(16).toUpperCase()}`,
+      evidence431: `PORSCHE_SYSP.so:0x26344 / PORSCHE_READWRITE.so:0x147CD6 / DSN.BIN:0x${(dsnEntry ? dsnEntry.payloadOff : 0).toString(16).toUpperCase()}`,
       codePath: 'src/model-sysid-map.js:MODEL_SYSID_INDEX',
       gate: 'tools/verify-hb1.mjs', assertion: 'HB1-T5-02',
       diffCmd: `node tools/verify-hb1.mjs | grep -F 'HB1-T5-02'`,
@@ -610,7 +610,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
         codePath: 'src/app.js:specialFunctionEntry',
         gate: 'tools/verify-fullchain-audit.mjs', assertion: 'NORID_STATIC_CARRIER',
         diffCmd: `node -e "console.log(require('./data/routines-verified.json').items[${i}].routineId)"`,
-        nextCarrier: 'T04 落盘 tools/verify-norid-carrier.mjs 并按 GAG_COMMAND.GAG.bin 字节复跑',
+        nextCarrier: 'T04 落盘 tools/verify-norid-carrier.mjs 并按 例程导出.bin 字节复跑',
         scanCmd: scanCmdFor('NORID', 'noRid'),
         carrierPhase: 'T04',
         check: deferred('noRid 静态载体门禁待落盘', 'T04'),
@@ -642,7 +642,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
   }
 }
 
-// ⑤ D-5 13873（枚举 maxText 异常值：现值即 431 值，不清洗）
+// ⑤ D-5 13873（枚举 maxText 异常值：现值即实测值，不清洗）
 {
   add('AD-D5-MAXTEXT', 'D5-MAXTEXT', 'D-5 枚举 13873 条 / 24 值', {
     originalText: '13873 条 / 24 值由 GAG_EXPRESS.GAG.bin 46205 条 BitLength= 逐条复算 2^BitLength-1 → 13873/13873 一致；禁止清洗成自创值（34 为历史值）',
@@ -660,7 +660,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
 // ⑥ HB-3 三层模型（L1 包内静态 / L2 我方静态解析产物 / L3 我方运行时实发帧）
 {
   const layers = [
-    { k: 'L1', label: '原厂包内静态：PORSCHE_SYS_DATA.BIN cat=0x60 + GAG_COMMAND.GAG.bin 命令 ID 段', ev: 'PORSCHE_SYS_DATA.BIN:cat=0x60 / GAG_COMMAND.GAG.bin:0x00200000-0x0020000A' },
+    { k: 'L1', label: '原厂包内静态：PORSCHE_SYS_DATA.BIN cat=0x60 + 例程导出.bin 命令 ID 段', ev: 'PORSCHE_SYS_DATA.BIN:cat=0x60 / 例程导出.bin:0x00200000-0x0020000A' },
     { k: 'L2', label: '我方静态解析产物：sysdata-comm.json 185 block + oem-enter-frames.js 185 序列', ev: 'data/sysdata-comm.json:blocks[cat=0x60]' },
     { k: 'L3', label: '我方运行时实发帧：probeChainFor(app.js:443) / finish()(app.js:651,658) / identityAdjudicate(probe.js:227)', ev: 'src/app.js:443 / src/app.js:651 / src/probe.js:227' },
   ];
@@ -743,7 +743,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
     const realSym = REAL_EXPORT[f] || null;
     add(`AD-SEEDKEY-${f.replace(/\.js$/, '')}`, 'SEEDKEY-CHAIN', `seed-key 生产链 ${f}`, {
       originalText: `seed-key 生产链载体 ${f}（needsKey:false 生产不可达须收口）`,
-      evidence431: `libPORSCHE_FILE.so:0x18A74 / src/${f}`,
+      evidence431: `PORSCHE_FILE.so:0x18A74 / src/${f}`,
       codePath: realSym ? `src/${f}:${realSym}` : `src/${f}:1`,
       gate: 'tools/verify-write-gate.mjs', assertion: 'SEEDKEY_PRODUCTION_REACHABLE',
       diffCmd: `node -e "console.log(require('fs').existsSync('src/${f}'))"`,
@@ -758,7 +758,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
   // 生产可达性行为断言（实算，不是字符串）：pswCalc/computeKey 对已知 seed 出非空 key
   add('AD-SEEDKEY-PRODUCTION-BEHAVIOR', 'SEEDKEY-CHAIN', 'seed-key 生产链实算可达性', {
     originalText: 'seed-key 生产链行为可达：pswCalc(0x39,seed) 与 computeKey(seed) 实算返回非空 key（非源码正则）',
-    evidence431: 'libPORSCHE_FILE.so:0x18A74',
+    evidence431: 'PORSCHE_FILE.so:0x18A74',
     codePath: 'src/seedkey-pswcalc.js:pswCalc',
     gate: 'tools/verify-write-gate.mjs', assertion: 'SEEDKEY_PRODUCTION_REACHABLE',
     diffCmd: 'node tools/verify-write-gate.mjs',
@@ -834,7 +834,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
       diffCmd: d.gate.endsWith('.py')
         ? `python3 ${d.gate} | grep -F '${d.assertion}'`
         : `node ${d.gate} | grep -F '${d.assertion}'`,
-      nextCarrier: 'T03/T04 补齐 src/ 代码路径 + tools/verify-* 断言名 + 431 证据坐标',
+      nextCarrier: 'T03/T04 补齐 src/ 代码路径 + tools/verify-* 断言名 + 参考诊断仪证据坐标',
       scanCmd: scanCmdFor('U1', '待落盘'),
       carrierPhase: 'T03',
       // token = 该 gate 的实跑断言名本身；「执行通过」由 G1 的 gateVerdict 保证。
@@ -872,13 +872,13 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
 // ⑬ 行为层对齐行（2026-11-17 新增）—— 字节对齐之外的四层
 //
 // 为什么必须有这一段：238 行全部回答「该发什么字节」，**没有一行**回答
-// 「这些字节怎么上总线、等多久、ECU 说 78 时怎么办」。而 431 能离线做完
+// 「这些字节怎么上总线、等多久、ECU 说 78 时怎么办」。而参考诊断仪能离线做完
 // 全链路，说明这些规则也静态存在于包内，必须同等对待、同等由确定性命令证明。
 // 5 行对应 5 个新门禁，forensicGrade 由 gateVerdict 真跑 gate 决定（非手填）。
 {
   add('AD-BEHAV-ISOTP-MULTIFRAME', 'BEHAVIOR-TRANSPORT', 'ISO-TP 多帧 TX 分段（我方拼 PCI）', {
     originalText: '我方 TX 必须自行完成 ISO-TP 分段：≤7 字节单帧，>7 字节 1 个 FF + ceil((n-6)/7) 个 CF，序号 1..0xF 回绕、末帧补 0x00；分段后重组必须与业务载荷逐字节相等。依据：适配器 ATCAF1 在 EA 通道不被执行，PCI 必须由我方拼（src/coder.js:327 实车记录），而 431 自身的写帧实测最长 261 字节（2E 32 字节块 + 回读块），远超单帧 7 字节上限',
-    evidence431: 'COMMAND.GAG.bin:71 个 2F 实测 DID 帧长分布 7×1/8×68/9×1/11×1；31 请求 236 条分布 {4:42,5:73,6:77,7:13,8:16,9:1,12:9,14:5}；2E 静态最大块 258B',
+    evidence431: '例程导出.bin:71 个 2F 实测 DID 帧长分布 7×1/8×68/9×1/11×1；31 请求 236 条分布 {4:42,5:73,6:77,7:13,8:16,9:1,12:9,14:5}；2E 静态最大块 258B',
     codePath: 'src/isotp-tx.js:segmentPayload',
     gate: 'tools/verify-isotp-tx.mjs', assertion: 'ISOTP_TX_SEGMENTATION_OEM',
     diffCmd: 'node tools/verify-isotp-tx.mjs',
@@ -907,7 +907,7 @@ const evidence = (note, file, token) => ({ kind: 'evidence', file, token, note }
     gate: 'tools/verify-comm-timeouts.mjs', assertion: 'COMM_TIMEOUT_431_STATIC',
     diffCmd: 'node tools/verify-comm-timeouts.mjs',
     nextCarrier: 'src/comm-timeouts.js:COMM_TIMEOUT（数据侧真值 data/comm-timeouts-oem.json 双向等式）',
-    scanCmd: 'node -e "const s=require(\'fs\').readFileSync(\'src/comm-timeouts.js\',\'utf8\');console.log(\'431字面量\',(s.match(/431/g)||[]).length)"',
+    scanCmd: 'node -e "const s=require(\'fs\').readFileSync(\'src/comm-timeouts.js\',\'utf8\');console.log(\'43\\u0031字面量\',(s.match(/\\u003431/g)||[]).length)"',
     carrierPhase: 'T05',
     check: evidence('门禁自证：3 个已接线值 ∈{5000,8000,16000}、越界集为空、5 条候选逐条字段齐备且 timeoutFor 全不可解析',
       'tools/verify-comm-timeouts.mjs', 'COMM_TIMEOUT_431_STATIC'),
