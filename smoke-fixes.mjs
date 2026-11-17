@@ -34,8 +34,7 @@ const ok = (name, cond, extra = '') => {
 // 规矩（照 `tools/verify-comm-timeouts.mjs` 已建立的惯例，不新发明）：
 //   · 缺资产 ⇒ 打印 `SKIP` 并计入 skipped —— **禁止 try/catch 静默吞**，
 //     吞掉就成了「永远绿」的假断言（禁令见 verify-comm-timeouts.mjs:26）；
-//   · 汇总行必须带 `skipped` 计数，否则 `375 passed / 0 failed` 会被读成
-//     「全都验过了」，而实际有两项一次没跑；
+//   · 真实失败数请以 `N passed / M failed / K skipped` 汇总行为准，不要拿日志里的关键词行数反推。
 //   · `ALIGN431_REQUIRE_LOCAL_ASSETS=1` ⇒ 缺资产由 SKIP 升级为 FAIL（验收链用这个）。
 const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
 const VECTORS_PEND = './tools/vectors/pend-samples.json';

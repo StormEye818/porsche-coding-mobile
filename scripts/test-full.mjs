@@ -5,7 +5,8 @@
  * 为什么需要它
  * ────────────
  * `tools/vectors/` 里的三份 seed/key 真值表**随仓库提供**（2026-11-17 已入库），
- * 干净 clone 上本来就在，`npm test` 直接 375/69/84 全跑、零 SKIP。
+ * 真值表随仓库提供，三个消费方（smoke-fixes / verify-pending / walkthrough）
+ * 不再因缺资产而跳过；全链另有 sync 注册表与 ref/ 原始库缺失的 SKIP，与真值表无关。
  *
  * 那这个脚本现在干嘛用？——**抓坏 checkout**。表缺失只可能是 checkout 不完整
  * （稀疏检出 / 打包漏文件 / 有人手工删过），此时 smoke-fixes / verify-pending /
