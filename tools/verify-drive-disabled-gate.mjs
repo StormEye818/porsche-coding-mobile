@@ -97,7 +97,7 @@ ok('装载真实索引后，样例 rid 被拦且理由来自数据',
   getRoutineGateReason(1, sample.rid) === reason, `rid=${sample.rid}`);
 ok('stop(02)/查结果(03) 不受闸约束（正在跑的例程仍可停止/查询）',
   getRoutineGateReason(2, sample.rid) === null && getRoutineGateReason(3, sample.rid) === null);
-ok('参数敏感：同一禁用 rid，显式参数非空即放行（431 序列是独立 caller）',
+ok('参数敏感：同一禁用 rid，显式参数非空即放行（原厂序列是独立 caller）',
   getRoutineGateReason(1, sample.rid, '01') === null);
 
 const isoTp = (can, payloadHex) => {
@@ -171,7 +171,7 @@ for (const site of callSites) {
     calls.includes(expected), `txLog [${calls.join(', ')}]`);
 }
 
-// ③-b 回归：全部 431 功能序列零误伤（2026-11-17）
+// ③-b 回归：全部原厂功能序列零误伤（2026-11-17）
 {
   const seq = JSON.parse(read('../data/function-sequences.json'));
   const fns = Array.isArray(seq) ? seq : (seq.functions || []);
@@ -219,7 +219,7 @@ for (const site of callSites) {
   ok('去掉来源标记后，原厂序列中的空参禁用帧仍被拦（闸没有被整体放宽）',
     unmarkedAllowed === 0, ` mistakenly allowed ${unmarkedAllowed}`);
 
-  // 反例正向：从 186 里挑两条带参帧，发出的 payload 必须与 431 命令逐字节相同
+  // 反例正向：从 186 里挑两条带参帧，发出的 payload 必须与包内原厂命令逐字节相同
   const wants = [0x0402, 0x0406].map((r) => examples.get(r)).filter(Boolean);
   ok('两条指定反例（0x0402 / 0x0406）都在带参禁用场景中', wants.length === 2,
     `找到 ${wants.length} 条`);
@@ -227,7 +227,7 @@ for (const site of callSites) {
     const { calls, coder } = coderFor(ex.rid);
     assert.equal(getRoutineGateReason(ex.sub, ex.rid, ex.params, { fromSequence: true }), null);
     await coder.runRoutine(ex.sub, ex.rid, ex.params, { poll: false, fromSequence: true });
-    ok(`${ex.fn}：真发出与 431 逐字节相同的 ${ex.raw}`,
+    ok(`${ex.fn}：真发出与包内原厂命令逐字节相同的 ${ex.raw}`,
       calls.includes(ex.raw), `txLog [${calls.join(', ')}]`);
   }
 }
