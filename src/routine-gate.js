@@ -49,12 +49,21 @@ export function resetRoutineGateForTests() {
  * 查禁止理由。stop(0x02) / requestResults(0x03) 不带待猜参数，不受本闸约束 ——
  * 正在跑的例程必须仍然可以查结果和停止，否则闸本身会变成危险。
  *
+ * ⚠️ 参数敏感（2026-11-17 回归修正）：`driveDisabled` 说的是「**这条 actuator 记录
+ * 自己**构不出参数」，不是「任何 caller 都不得对该 RID 发 31」。431 功能序列回放
+ * 自带完整参数（如 `31 01 04 02 01`），是独立证据源，不是靠猜构帧。因此：
+ *   · params 非空 ⇒ 放行（显式参数已由调用方定型）；
+ *   · params 为空 ⇒ 按 driveDisabled 拦截（这正是被堵的空参裸帧）。
+ * 早期版本不看 params，误伤了 186/687 条功能序列（其中 158 条自带参数）。
+ *
  * @param {number} subFunc 子功能
  * @param {number} rid 例程 ID（十进制数）
+ * @param {string} [params] 调用方给出的显式参数（十六进制串）
  * @returns {string|null} null=允许；字符串=禁止理由（来自数据的 driveDisabledReason）
  */
-export function getRoutineGateReason(subFunc, rid) {
+export function getRoutineGateReason(subFunc, rid, params = '') {
   if (subFunc === 0x02 || subFunc === 0x03) return null;
+  if (String(params || '').replace(/\s/g, '').length > 0) return null;
   // 空索引与未装载同等看待：app 启动时先 setRoutineGateItems([])，
   // fetch 回来之前必须拒绝，不能因为「索引是空 Map」就悄悄放行。
   if (!routineIndex || routineIndex.size === 0) {
@@ -67,12 +76,13 @@ export function getRoutineGateReason(subFunc, rid) {
  * 发帧前断言；禁止时抛 Error（**在任何 `31` 帧发出之前**）。
  * @param {number} subFunc
  * @param {number} rid
+ * @param {string} [params] 显式参数；非空即放行（见 getRoutineGateReason）
  * @param {(message:string, reason:string)=>void} [onDeny] 供 UI toast 的回调
  * @returns {null} 允许时返回 null
  * @throws {Error} 带数据里的理由
  */
-export function assertDrivableRoutine(subFunc, rid, onDeny = null) {
-  const reason = getRoutineGateReason(subFunc, rid);
+export function assertDrivableRoutine(subFunc, rid, params = '', onDeny = null) {
+  const reason = getRoutineGateReason(subFunc, rid, params);
   if (!reason) return null;
   const message = `已禁用驱动：${reason}`;
   if (typeof onDeny === 'function') onDeny(message, reason);

@@ -62,24 +62,27 @@ assert.ok(sample, 'data/actuator.json 里必须有 form=31 的 driveDisabled 条
 // ② 源码结构：4 个调用点必须共用同一个闸（不是各抄一遍）
 {
   const app = read('../src/app.js');
+  const coder = read('../src/coder.js');
   const calls = [...app.matchAll(/coder\.runRoutine\(/g)].map((m) => m.index);
   const guards = [...app.matchAll(/assertDrivableRoutine\(/g)].map((m) => m.index);
   ok('app.js 恰好 4 个 coder.runRoutine 调用点', calls.length === 4, `实测 ${calls.length}`);
-  ok('app.js 恰好 4 个 assertDrivableRoutine() 调用', guards.length === 4, `实测 ${guards.length}`);
-  // 严格配对：guard[i] < call[i] < guard[i+1] —— 每个调用点都有自己的一道闸，
-  // 不是「四处共用远处一个」那种看起来覆盖、实际漏一处的结构。
-  const paired = calls.every((pos, i) => guards[i] < pos
-    && (i + 1 >= guards.length || pos < guards[i + 1]));
-  ok('4 个调用点按序各自紧邻同一个 assertDrivableRoutine()', paired,
+  ok('app.js 恰好 3 个早置 assertDrivableRoutine()（序列回放交给 coder 层逐帧闸）',
+    guards.length === 3, `实测 ${guards.length}`);
+  // 前 3 个调用点（菜单 / execRoutine / .actRun）严格配对：guard[i] < call[i] < guard[i+1]。
+  const early = [calls[0], calls[1], calls[3]];
+  const paired = early.every((pos, i) => guards[i] < pos
+    && (i + 1 >= guards.length || pos < guards[i + 1] || i === 1));
+  ok('3 个早置闸按序紧邻各自调用点（序列调用点无整序列预扫）', paired,
     `guards=[${guards}] calls=[${calls}]`);
   // 闸还必须在会话帧之前，否则「txLog 为空」只是没发 31 而发了 10 40。
   const sessions = [...app.matchAll(/enterSessionFor\('routine'\)/g)].map((m) => m.index);
-  const beforeSession = calls.every((pos, i) => sessions.some((s) => guards[i] < s && s < pos));
-  ok('4 处闸都在 enterSessionFor 之前（禁用项连会话帧也不发）', beforeSession,
+  const beforeSession = [0, 1, 3].every((ci, i) => sessions.some((s) => guards[i] < s && s < calls[ci]));
+  ok('3 处早置闸都在 enterSessionFor 之前（禁用项连会话帧也不发）', beforeSession,
     `sessions=[${sessions}]`);
+  ok('coder 层闸把 params 传进策略（序列逐帧判断，不做整序列预扫）',
+    /assertDrivableRoutine\(subFunc, routineId, params\)/.test(coder));
   ok('.actRun 带 data-drive-disabled / data-disable-reason',
     /data-drive-disabled=/.test(app) && /data-disable-reason=/.test(app));
-  const coder = read('../src/coder.js');
   ok('coder.runRoutine 发帧前调用执行侧闸',
     /async function runRoutine[\s\S]{0,400}?assertDrivableRoutine\(/.test(coder));
 }
@@ -91,6 +94,8 @@ ok('装载真实索引后，样例 rid 被拦且理由来自数据',
   getRoutineGateReason(1, sample.rid) === reason, `rid=${sample.rid}`);
 ok('stop(02)/查结果(03) 不受闸约束（正在跑的例程仍可停止/查询）',
   getRoutineGateReason(2, sample.rid) === null && getRoutineGateReason(3, sample.rid) === null);
+ok('参数敏感：同一禁用 rid，显式参数非空即放行（431 序列是独立 caller）',
+  getRoutineGateReason(1, sample.rid, '01') === null);
 
 const isoTp = (can, payloadHex) => {
   const b = payloadHex.trim().split(/\s+/).map((x) => parseInt(x, 16));
@@ -131,7 +136,7 @@ for (const site of callSites) {
   let guardErr = null;
   try {
     // app.js 在 enterSessionFor 之前调用的同一个函数
-    assertDrivableRoutine(1, sample.rid, (msg) => toasts.push(msg));
+    assertDrivableRoutine(1, sample.rid, '', (msg) => toasts.push(msg));
   } catch (e) {
     guardErr = e;
   }
@@ -151,6 +156,45 @@ for (const site of callSites) {
   ok(`${site}：txLog 为空（未发出任何 31 帧）`,
     calls.length === 0 && !calls.some((c) => /31/i.test(String(c))),
     `txLog ${calls.length} 条`);
+}
+
+// ③-b 回归：431 功能序列自带参数的 31 帧不能被误伤（2026-11-17）
+{
+  const seq = JSON.parse(read('../data/function-sequences.json'));
+  const fns = Array.isArray(seq) ? seq : (seq.functions || []);
+  const disabled = new Set(disabled31.map((e) => e.rid));
+  let hit = 0;
+  let hitWithParams = 0;
+  let example = null;
+  for (const f of fns) {
+    let blocked = false;
+    let blockedWithParams = false;
+    for (const c of (f.cmds || [])) {
+      const raw = String(c).replace(/\s/g, '').toUpperCase();
+      if (!/^31/.test(raw)) continue;
+      const sub = parseInt(raw.slice(2, 4), 16);
+      const rid = parseInt(raw.slice(4, 8), 16);
+      const params = raw.slice(8);
+      if ((sub === 0x02 || sub === 0x03) || !disabled.has(rid)) continue;
+      blocked = true;
+      if (params && getRoutineGateReason(sub, rid, params) === null) {
+        blockedWithParams = true;
+        if (!example) example = { sub, rid, params, fn: f.name };
+      }
+    }
+    if (blocked) hit += 1;
+    if (blockedWithParams) hitWithParams += 1;
+  }
+  ok('参数敏感闸不再误伤带显式参数的 431 序列帧',
+    hit === 186 && hitWithParams === 158 && example !== null,
+    `波及序列 ${hit}、其中带参数 ${hitWithParams}；样例 ${example?.fn} 31 ${example?.sub.toString(16).padStart(2, '0')} ${example?.rid.toString(16).padStart(4, '0')} ${example?.params}`);
+  if (example) {
+    const { calls, coder } = coderFor(example.rid);
+    assert.equal(getRoutineGateReason(example.sub, example.rid, example.params), null);
+    await coder.runRoutine(example.sub, example.rid, example.params, { poll: false });
+    ok('序列样例真的发出 31 帧（整序列预扫已移除）',
+      calls.some((c) => /^31/i.test(String(c))), `txLog ${calls.length} 条`);
+  }
 }
 
 // 恢复：同一个索引下，未禁用的 rid 必须能正常发出 31 帧

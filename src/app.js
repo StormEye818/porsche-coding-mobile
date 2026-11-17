@@ -3801,7 +3801,7 @@ function showSub(s) {
     }
     const id = parseInt(String(rid).replace(/^0x/i, ''), 16);
     // 执行侧闸：先于 enterSessionFor，禁用条目连会话帧都不发（同一策略，不是第四份判断）
-    assertDrivableRoutine(sf, id, (msg) => toast('err', '已禁用驱动', msg));
+    assertDrivableRoutine(sf, id, '', (msg) => toast('err', '已禁用驱动', msg));
     const risk = s.risk === 'high' ? '高风险功能，请确认车辆状态安全' : '';
     toast('info', `${verb}「${s.label || s.id}」`, risk || '已进入例程会话');
     try {
@@ -4411,8 +4411,8 @@ async function showSysExtra(f) {
     if (params && (params.length % 2 || !/^[0-9A-Fa-f]+$/.test(params))) {
       toast('err', '参数无效', '参数须为偶数位十六进制（如 0100），不要带空格'); return;
     }
-    // 执行侧闸：manual RID 也可能命中 driveDisabled 条目，不许绕过
-    assertDrivableRoutine(sub, rid, (msg) => toast('err', '已禁用驱动', msg));
+    // 执行侧闸：manual RID 也可能命中 driveDisabled 条目，不许绕过（用户没给参数时）
+    assertDrivableRoutine(sub, rid, params, (msg) => toast('err', '已禁用驱动', msg));
     if (confirmText && typeof confirm === 'function' && !confirm(confirmText)) return;
     const verb = sub === 0x01 ? '执行' : sub === 0x02 ? '停止' : sub === 0x03 ? '查结果' : `子功能 0x${sub.toString(16)}`;
     const ridHex = rid.toString(16).toUpperCase().padStart(4, '0');
@@ -4491,15 +4491,10 @@ async function showSysExtra(f) {
     try {
       // ★ 第十阶段：含写命令的功能序列纳入统一写事务（纯读序列不加锁）。
       const seqBody = async () => {
-      // 执行侧闸：序列里任何 31 启动命令命中 driveDisabled 条目时，连会话帧都不发。
-      // 必须在 enterSessionFor 之前一次性查完整条序列，不能等到循环里才查。
-      for (const c of cmds) {
-        const raw = String(c).replace(/\s/g, '').toUpperCase();
-        if (!/^31/i.test(raw)) continue;
-        const sub = parseInt(raw.slice(2, 4), 16);
-        const rid = parseInt(raw.slice(4, 8), 16);
-        assertDrivableRoutine(sub, rid, (msg) => toast('err', '已禁用驱动', msg));
-      }
+      // ★ 这里**故意不做整序列预扫**（2026-11-17 回归修正）：431 序列里的 31 帧
+      //   自带显式参数，是独立 caller，不是 actuator 记录「猜参数」的场景。
+      //   预扫曾误伤 186/687 条功能序列（158 条带参数）。判据统一交给
+      //   coder.runRoutine 发帧前的参数敏感闸，逐帧按 params 判断。
       await coder.enterSessionFor('routine');
       // ★ 2026-11-06 代码级对齐：**不再序列外无条件预解锁**——参考诊断仪 的脚本自带
       //   安全访问步（27 03×356 出现在 31 前），不带 27 的例程流（SpecFunctionByID 等
@@ -4691,8 +4686,8 @@ async function showSysExtra(f) {
         const rid = parseInt(b.dataset.rid, 10);
         const sub = parseInt(b.dataset.sub, 10) || 1;
         const params = (b.dataset.params || '').replace(/ /g, '');
-        // 执行侧闸：DOM 的 disabled 可被脚本绕过，这里在发任何帧之前独立拦一次
-        assertDrivableRoutine(sub, rid, (msg) => toast('err', '已禁用驱动', msg));
+        // 执行侧闸：DOM 的 disabled 可被脚本绕过，这里在发任何帧之前独立拦一次（空参数才拦）
+        assertDrivableRoutine(sub, rid, params, (msg) => toast('err', '已禁用驱动', msg));
         const ridHex = rid.toString(16).toUpperCase().padStart(4, '0');
         log(`  例程执行 31 0${sub} RID ${ridHex}${params ? ' 参数 ' + params : ''} —— 启动 → 轮询 31 03`, 'info');
         await coder.enterSessionFor('routine');
