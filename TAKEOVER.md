@@ -13,7 +13,7 @@
 > **以命令输出为准，不要把这个列表当硬编码依据**（这页历史上就因为写了 28 步 / smoke 373 /
 > fullchain-audit 89 而落后过一整轮）。
 >
-> 当前 `npm test` **33 步** 全绿（实测 8m32s，退出码 0）：
+> 当前 `npm test` **34 步** 全绿（实测 8m32s，退出码 0）：
 ```
 test-align431 38 · smoke-fixes 376 · e2e-flow 127 · walkthrough 84 · verify-all-models 79
 verify-runtime-safety 30 · verify-sysdata-comm 16 · verify-oem-session 32 · verify-oem-frames 37

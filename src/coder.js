@@ -37,6 +37,7 @@ import {
 import { evaluateWriteAlignmentChecks } from './write-alignment.js';
 import { timeoutFor, KEEPALIVE_MS, MAX_PENDING_MS } from './comm-timeouts.js';
 import { needsSegmentation } from './isotp-tx.js';
+import { assertDrivableRoutine } from './routine-gate.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  7F <sid> 78（responsePending）的续等参数
@@ -2068,6 +2069,10 @@ async function pollRoutineResults(routineId, {
  * @param {object} opts  { poll=false, maxMs, intervalMs, onPoll, shouldStop }
  */
 async function runRoutine(subFunc, routineId, params = '', opts = {}) {
+  // ★ 2026-11-17 执行侧驱动闸：必须在任何 `31` 帧之前问策略。
+  //   UI 的 disabled 只是提示，挡不住脚本绕过；catalog 侧 featureFramesFor 的闸
+  //   也管不到这条路径。这里抛错时 routineControl 根本不会被调用（txLog 保持空）。
+  assertDrivableRoutine(subFunc, routineId);
   const { poll = true, ...pollOpts } = opts;
   try {
     const r = await this.routineControl(subFunc, routineId, params);

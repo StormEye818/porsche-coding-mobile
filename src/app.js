@@ -21,6 +21,7 @@ import { MODULE_TO_ECUID as MODULE_TO_ECUID_MAP, MODULE_TO_ECUID_LEGACY, SYSTEM_
 import { sysIdForModule, modulesForSysId, planSysIdFor, platformInfoFor } from './model-sysid-map.js';
 import { OEM_SESSION_BY_SYSID } from './oem-session-table.js';
 import { WRITE_ALIGNMENT, WRITE_GATE, writeProfileFromAlignment, setWriteGateMode } from './write-alignment.js';
+import { setRoutineGateItems, assertDrivableRoutine } from './routine-gate.js';
 
 // 地址探测指令（已逆，见 ECU-ADDRESSING-20261019.md §8）
 // sel=blockKey → 探测命令，用响应 flags 消歧候选地址
@@ -28,6 +29,16 @@ import { WRITE_ALIGNMENT, WRITE_GATE, writeProfileFromAlignment, setWriteGateMod
 import { makeResolverProvider, SeedKeyUnresolvedError, resolveKeyByName, resolveKey } from './seedkey-resolver.js';
 import { nonAsapForName, nonAsapForModule, platformForModel } from './seedkey-nonasap.js';
 import { variantForName, NAME_TO_VARIANT } from './seedkey-name-map.js';
+
+// ── 0x31 执行侧驱动闸：启动时立即进入严格模式（2026-11-17）────────────
+// 先置空索引 = 在 fetch 回来之前**拒绝所有 start 例程**，绝不「没数据就放行」；
+// 索引装好后只挡 driveDisabled 的 rid，其余照常。stop/查结果不受闸约束。
+setRoutineGateItems([]);
+fetch('data/actuator.json')
+  .then((r) => (r && r.ok ? r.json() : null))
+  .then((j) => { if (j && Array.isArray(j.items)) setRoutineGateItems(j.items); })
+  .catch(() => { /* 索引留空 = 严格拒绝，理由由 assertDrivableRoutine 给出 */ });
+
 /** DRIVELINKS：ECU_ID → 条目数组（原厂权威）。
  *  ★ 2026-11-09 mode 收口：条目 = {t,bk,recOff,recOffsetLo,recOffsetHi,mode,family,session[,state]}；
  *    mode/family/session = 记录 u32 复合真值（mode=低字节=securityModel mode）；
@@ -3789,6 +3800,8 @@ function showSub(s) {
       return;
     }
     const id = parseInt(String(rid).replace(/^0x/i, ''), 16);
+    // 执行侧闸：先于 enterSessionFor，禁用条目连会话帧都不发（同一策略，不是第四份判断）
+    assertDrivableRoutine(sf, id, (msg) => toast('err', '已禁用驱动', msg));
     const risk = s.risk === 'high' ? '高风险功能，请确认车辆状态安全' : '';
     toast('info', `${verb}「${s.label || s.id}」`, risk || '已进入例程会话');
     try {
@@ -4314,7 +4327,7 @@ async function showSysExtra(f) {
           <button class="actOff" data-did="${a.did}"${dis}>回位</button>
         </div>` : ''}
         ${a.form === '31' && a.rid != null ? `<div class="siActs"${disStyle}>
-          <button class="actRun" data-rid="${a.rid}" data-sub="${a.sub || 1}" data-params="${esc(a.params || '')}"${dis}>执行</button>
+          <button class="actRun" data-rid="${a.rid}" data-sub="${a.sub || 1}" data-params="${esc(a.params || '')}" data-drive-disabled="${blocked ? '1' : '0'}" data-disable-reason="${esc(String(a.driveDisabledReason || '')).replace(/"/g, '&quot;')}"${dis}>执行</button>
         </div>` : ''}
       </div>`;
     };
@@ -4398,6 +4411,8 @@ async function showSysExtra(f) {
     if (params && (params.length % 2 || !/^[0-9A-Fa-f]+$/.test(params))) {
       toast('err', '参数无效', '参数须为偶数位十六进制（如 0100），不要带空格'); return;
     }
+    // 执行侧闸：manual RID 也可能命中 driveDisabled 条目，不许绕过
+    assertDrivableRoutine(sub, rid, (msg) => toast('err', '已禁用驱动', msg));
     if (confirmText && typeof confirm === 'function' && !confirm(confirmText)) return;
     const verb = sub === 0x01 ? '执行' : sub === 0x02 ? '停止' : sub === 0x03 ? '查结果' : `子功能 0x${sub.toString(16)}`;
     const ridHex = rid.toString(16).toUpperCase().padStart(4, '0');
@@ -4476,6 +4491,15 @@ async function showSysExtra(f) {
     try {
       // ★ 第十阶段：含写命令的功能序列纳入统一写事务（纯读序列不加锁）。
       const seqBody = async () => {
+      // 执行侧闸：序列里任何 31 启动命令命中 driveDisabled 条目时，连会话帧都不发。
+      // 必须在 enterSessionFor 之前一次性查完整条序列，不能等到循环里才查。
+      for (const c of cmds) {
+        const raw = String(c).replace(/\s/g, '').toUpperCase();
+        if (!/^31/i.test(raw)) continue;
+        const sub = parseInt(raw.slice(2, 4), 16);
+        const rid = parseInt(raw.slice(4, 8), 16);
+        assertDrivableRoutine(sub, rid, (msg) => toast('err', '已禁用驱动', msg));
+      }
       await coder.enterSessionFor('routine');
       // ★ 2026-11-06 代码级对齐：**不再序列外无条件预解锁**——参考诊断仪 的脚本自带
       //   安全访问步（27 03×356 出现在 31 前），不带 27 的例程流（SpecFunctionByID 等
@@ -4667,6 +4691,8 @@ async function showSysExtra(f) {
         const rid = parseInt(b.dataset.rid, 10);
         const sub = parseInt(b.dataset.sub, 10) || 1;
         const params = (b.dataset.params || '').replace(/ /g, '');
+        // 执行侧闸：DOM 的 disabled 可被脚本绕过，这里在发任何帧之前独立拦一次
+        assertDrivableRoutine(sub, rid, (msg) => toast('err', '已禁用驱动', msg));
         const ridHex = rid.toString(16).toUpperCase().padStart(4, '0');
         log(`  例程执行 31 0${sub} RID ${ridHex}${params ? ' 参数 ' + params : ''} —— 启动 → 轮询 31 03`, 'info');
         await coder.enterSessionFor('routine');

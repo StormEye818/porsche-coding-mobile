@@ -544,6 +544,49 @@ export function resolveRoutineFields(entry) {
 }
 
 /**
+ * 驱动闸的**唯一策略源**（DOM 与执行层共用，不许各抄一份）。
+ *
+ * `featureFramesFor('actuator')` 只挡 catalog/0x2F 路径；`.actRun → runRoutine`
+ * 根本不经过它。因此这里把「能不能驱动」抽成纯函数，执行层在发帧前必须问它。
+ *
+ * @param {'actuator'|'routine'} kind 策略类别，写错按拒绝处理（不许默认放行）
+ * @param {object|null} entry `data/actuator.json` 的条目；查不到时传 null
+ * @returns {string|null} null=允许；字符串=禁止理由（优先取数据里的 driveDisabledReason）
+ */
+export function drivableReason(kind, entry) {
+  const k = String(kind || '');
+  if (k !== 'actuator' && k !== 'routine') {
+    return `驱动策略类别无效（${k || '空'}）：按安全策略拒绝`;
+  }
+  const e = entry || {};
+  if (e.driveDisabled === true) {
+    const why = String(e.driveDisabledReason || '').trim();
+    return why || '数据标记 driveDisabled 但未写理由（数据缺陷，按禁用处理）';
+  }
+  return null;
+}
+
+/**
+ * 从 `data/actuator.json` 的 items 建 rid → 条目索引（执行层反查用）。
+ * 同一 rid 有多条时**保守合并**：只要有一条 driveDisabled=true 就禁用整个 rid ——
+ * 执行层没有模块上下文，无法在多条之间做选择，猜一条等于赌。
+ *
+ * @param {Array<object>} items actuator.json 的 items
+ * @returns {Map<number, object>} 十进制 rid → 条目
+ */
+export function buildActuatorRoutineIndex(items) {
+  const idx = new Map();
+  for (const e of (Array.isArray(items) ? items : [])) {
+    if (String(e.form || '').toLowerCase() !== '31') continue;
+    const rid = toIntStrict(e.rid);
+    if (!Number.isInteger(rid)) continue;
+    const prev = idx.get(rid);
+    if (!prev || (e.driveDisabled === true && prev.driveDisabled !== true)) idx.set(rid, e);
+  }
+  return idx;
+}
+
+/**
  * 执行器条目的构帧 + 调试痕迹（catalog 路径的**唯一**构帧入口）。
  * `featureFramesFor('actuator', …)` 内部只调本函数，返回值里的 trace 字段说明
  * controlOption/state/params 各自来自记录还是回落，**并原样带出地址确定性的结构标签**
