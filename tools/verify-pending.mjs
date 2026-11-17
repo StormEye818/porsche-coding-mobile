@@ -19,8 +19,9 @@ import { computeVariantKey } from '../src/seedkey-registry.js';
 const here = dirname(fileURLToPath(import.meta.url));
 
 // ── 本地资产缺失的降级（2026-11-17）─────────────────────────────────
-// `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库）：
-// 干净 clone 上**必然不存在**，而本脚本的全部输入就是这两份表。
+// `tools/vectors/` 里的三份 seed/key 真值表**随仓库提供**（2026-11-17 已入库），
+// 本脚本的全部输入就是其中两份。所以「表不在」只可能是 **checkout 不完整**
+// （稀疏检出、打包漏文件），不再是干净 clone 的正常状态。
 //
 // 规矩照 `tools/verify-comm-timeouts.mjs` 的既有惯例：
 //   · 缺资产 ⇒ 打印 `SKIP` 并计入 skipped，**禁止 try/catch 静默吞**
@@ -32,7 +33,7 @@ const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_
 const MISSING_VECTORS = ['mode-samples.json', 'pend-samples.json']
   .filter((f) => !existsSync(join(VECTORS, f)));
 if (MISSING_VECTORS.length) {
-  const why = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库'
+  const why = 'tools/vectors/ 真值表随仓库提供（已入库）；此处缺失 = checkout 不完整'
     + `（缺 ${MISSING_VECTORS.join(', ')}）`;
   if (REQUIRE_LOCAL_ASSETS) {
     console.log(`  FAIL 待逆清单离线对拍（mode + variant 全部） -- 严格模式 ALIGN431_REQUIRE_LOCAL_ASSETS=1：${why}`);

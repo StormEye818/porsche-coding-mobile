@@ -26,8 +26,10 @@ const ok = (name, cond, extra = '') => {
 };
 
 // ── 本地资产缺失的降级（2026-11-17）─────────────────────────────────
-// `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库）：
-// 干净 clone 上**必然不存在**，而这三个文件里有多处硬读它。
+// `tools/vectors/` 里的三份 seed/key 真值表**随仓库提供**（2026-11-17 已入库）。
+// 所以「表不在」不再等于「干净 clone 的正常状态」，而只可能是 **checkout 不完整**
+// （稀疏检出、打包漏文件、有人手工删过）—— 这条降级路径要留着，正是为了：
+// ① 让坏 checkout 跑出可见的 SKIP 而不是崩栈；② 严格模式把它升级成 FAIL 抓出来。
 //
 // 规矩（照 `tools/verify-comm-timeouts.mjs` 已建立的惯例，不新发明）：
 //   · 缺资产 ⇒ 打印 `SKIP` 并计入 skipped —— **禁止 try/catch 静默吞**，
@@ -38,7 +40,7 @@ const ok = (name, cond, extra = '') => {
 const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
 const VECTORS_PEND = './tools/vectors/pend-samples.json';
 const VECTORS_MODE = './tools/vectors/mode-samples.json';
-const LOCAL_ASSET_WHY = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库';
+const LOCAL_ASSET_WHY = 'tools/vectors/ 真值表随仓库提供（已入库）；此处缺失 = checkout 不完整';
 /**
  * 读本地向量表；不存在返回 null（**不抛错、不静默返回空表**）。
  * 返回空表会让 `for (const r of rows)` 一个点都不比、然后打出「0 点全过」的假绿，
@@ -1926,11 +1928,12 @@ console.log('\n[F14] 功能全集同步可达 / D-2 命名空间');
 //   只统计**因缺本地资产被升级**的失败，真实失败不在这一行的口径里（也不该混进来）。
 if (skippedAssertsFailed) {
   console.log(`  ↑ ${skippedAssertsFailed} 条断言失败，分布在 ${skippedGroupsFailed} 个断言组`
-    + '（缺 tools/vectors/，见 .gitignore:118）—— 组内条数见各 FAIL 行末的「本组 N 条断言」');
+    + '（缺 tools/vectors/ 真值表，随仓库提供；缺失 = checkout 不完整）'
+    + ' —— 组内条数见各 FAIL 行末的「本组 N 条断言」');
 }
 console.log('\n===== result: ' + pass + ' passed / ' + fail + ' failed / ' + skip + ' skipped =====');
 if (skip) {
-  console.log('  跳过 ' + skip + ' 项：缺本地资产（tools/vectors/，.gitignore:118 不入库）。'
+  console.log('  跳过 ' + skip + ' 项：缺 tools/vectors/ 真值表（随仓库提供，缺失 = checkout 不完整）。'
     + '这些断言本轮**一次都没跑**，不要读成「全都验过了」；'
     + '要连它们一起验：`npm run test:full`（严格模式，缺资产即失败）。');
 }

@@ -115,7 +115,12 @@ tools/inventory-package.py
 tools/probe-rc.mjs
 tools/sample-modes.py
 tools/step-a-status.py
-tools/vectors/
+# ★ 2026-11-17：三份 seed/key 真值表（mode/pend/wordvm-samples.json）已入库 —— 否则干净
+#   clone 上 smoke-fixes / verify-pending / walkthrough 只能整组 SKIP，「仓库可证」不成立。
+#   同目录的 decompiled.txt 是原厂二进制反编译原文，仍只留本地（不入库），故这里用
+#   「先全排、再白名单 .json」的写法：放行真值表，同时把非 .json 的新文件继续挡在外面。
+tools/vectors/*
+!tools/vectors/*.json
 
 # ── 2026-10-20：命令序列提取工具链（输入是 .so/.BIN 原生文件，只留本地）──
 tools/build-function-sequences.py

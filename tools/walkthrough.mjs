@@ -23,16 +23,18 @@ import { computeVariantKey } from '../src/seedkey-registry.js';
 import { extractField, injectField } from '../src/schema.js';
 
 // ── 按「依赖真值表与否」拆分（2026-11-17，两轮改判）──────────────────
-// `tools/vectors/` 整目录被 `.gitignore:118` 排除（本地真机对拍表，不入库），干净
-// clone 上必然不存在。本脚本 84 条断言里，真正**依赖那张表**的是 24 条：
+// `tools/vectors/` 里的真值表**随仓库提供**（2026-11-17 已入库），正常 clone 84 条全跑。
+// 这条拆分保留的是**降级路径**：表缺失只可能是 checkout 不完整（稀疏检出 / 打包漏文件），
+// 此时不许崩栈、也不许假装验过 —— 84 条里真正**依赖那张表**的是 24 条：
 //   · `[3]` 前半 3 条（`TRUTH.filter(...).slice(0,10)` 逐点校验 key）
 //   · `[9]` 完整上车序列 5 条（`TRUTH[5]` 做 seed/key）
 //   · ui-sim「读帧=记录 SID 形态」15 条（要 ECU 真跑 readBlock，ECU 的 keyVerifier 来自 `TRUTH[0]`）
 //   · ui-sim 汇总 1 条（`walked >= 15`，只有走完全链路才谈得上）
-// 其余 **60 条**照跑（本机 84 = 60 + 24；干净 clone 60 通过 / 24 跳过）。
+// 其余 **60 条**照跑（84 = 60 + 24；表缺失时 60 通过 / 24 跳过）。
 //
 // ★ 为什么 ui-sim 只跳 16 而不是整块 46：`写帧可按记录成帧` / `LID 位宽合法` 两条
-//   **只读 `data/models/*.json` 的记录字段**，那些文件在仓库里，干净 clone 完全有能力验。
+//   **只读 `data/models/*.json` 的记录字段**，那些文件随仓库提供，所以即使真值表缺失、
+//   走降级路径，这两条也照样真跑（不是「跳过 16 里的 2 条」）。
 //   整块跳过等于把验收分成「本机能证 / 仓库不能证」两档 —— 而本项目的整条主线正是
 //   把「本机可证」换成「仓库可证」。（第一版曾按块跳过 46，是错的，已改。）
 //
@@ -46,7 +48,7 @@ import { extractField, injectField } from '../src/schema.js';
 //     否则「60 通过」会被读成「60 条端到端」——比 0 通过更危险。
 const VECTORS_PEND = new URL('./vectors/pend-samples.json', import.meta.url);
 const REQUIRE_LOCAL_ASSETS = /^(1|true|yes)$/i.test(String(process.env.ALIGN431_REQUIRE_LOCAL_ASSETS || ''));
-const LOCAL_ASSET_WHY = 'tools/vectors/ 属 .gitignore:118 本地真机对拍表，不入库（缺 pend-samples.json）';
+const LOCAL_ASSET_WHY = 'tools/vectors/ 真值表随仓库提供（已入库）；此处缺失 = checkout 不完整（缺 pend-samples.json）';
 /** 本脚本**固定** 84 条断言：60 条不依赖真值表 + 24 条依赖。不许改成运行时推导。 */
 const TOTAL_EXPECTED = 84;
 
@@ -463,6 +465,6 @@ if (!TRUTH) {
   console.log(`  本轮通过 ${pass} 项**不含 key 正确性**：`
     + `其中 ${staticCnt} 项为纯记录字段静态检查（不涉及 ECU），`
     + `${pass - staticCnt} 项用宽容 ECU 跑会话/读写/轮询语义。`
-    + 'key 逐点对拍见 `npm run test:full`（需 tools/vectors/，.gitignore:118 不入库）。');
+    + 'key 逐点对拍见 `npm run test:full`（真值表随仓库提供；此处缺失 = checkout 不完整）。');
 }
 process.exit(fail ? 1 : 0);

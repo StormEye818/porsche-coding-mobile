@@ -1,0 +1,1172 @@
+{
+  "mode_0x6E": [
+    {
+      "seed": "00000000",
+      "key": "649B5612"
+    },
+    {
+      "seed": "00000001",
+      "key": "648F5612"
+    },
+    {
+      "seed": "00000002",
+      "key": "70ED9A2E"
+    },
+    {
+      "seed": "000000FF",
+      "key": "6896812E"
+    },
+    {
+      "seed": "00000100",
+      "key": "089B55ED"
+    },
+    {
+      "seed": "00008000",
+      "key": "D06A2621"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "A16BA280"
+    },
+    {
+      "seed": "00010000",
+      "key": "D04A2621"
+    },
+    {
+      "seed": "00800000",
+      "key": "3F1DE08F"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "6A8E7A68"
+    },
+    {
+      "seed": "01000000",
+      "key": "DA8E7A7E"
+    },
+    {
+      "seed": "01234567",
+      "key": "B124E4B0"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "CCA62A90"
+    },
+    {
+      "seed": "12345678",
+      "key": "1B188CBE"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "F08E2073"
+    },
+    {
+      "seed": "23456789",
+      "key": "7237D277"
+    },
+    {
+      "seed": "3456789A",
+      "key": "9F3E6BDE"
+    },
+    {
+      "seed": "456789AB",
+      "key": "7D8CF688"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "D1341C82"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "7B539889"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "16A915ED"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "69355612"
+    },
+    {
+      "seed": "80000000",
+      "key": "70EE38AE"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "695940D2"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "FD642073"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "52A74851"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "DB74161F"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "775D6BEE"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "22FF38CF"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "CC55E05F"
+    },
+    {
+      "seed": "FF000000",
+      "key": "7231A1E3"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "720E0EE3"
+    }
+  ],
+  "mode_0x6F": [
+    {
+      "seed": "00000000",
+      "key": "09F45F7E"
+    },
+    {
+      "seed": "00000001",
+      "key": "09F393FE"
+    },
+    {
+      "seed": "00000002",
+      "key": "09F4627E"
+    },
+    {
+      "seed": "000000FF",
+      "key": "09F440FE"
+    },
+    {
+      "seed": "00000100",
+      "key": "09DDDF7E"
+    },
+    {
+      "seed": "00008000",
+      "key": "0C345F7E"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "C6A90E56"
+    },
+    {
+      "seed": "00010000",
+      "key": "C67462D6"
+    },
+    {
+      "seed": "00800000",
+      "key": "49F462D7"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "84290E58"
+    },
+    {
+      "seed": "01000000",
+      "key": "89F462D8"
+    },
+    {
+      "seed": "01234567",
+      "key": "EE03BA17"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "4CC1E910"
+    },
+    {
+      "seed": "12345678",
+      "key": "36F70ED7"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "70BEF783"
+    },
+    {
+      "seed": "23456789",
+      "key": "AACDED5A"
+    },
+    {
+      "seed": "3456789A",
+      "key": "F87FEE83"
+    },
+    {
+      "seed": "456789AB",
+      "key": "5FB801C0"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "506ABA34"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "17FC7E02"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "EE879D34"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "0428C0DB"
+    },
+    {
+      "seed": "80000000",
+      "key": "09E60F3E"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "764582BB"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "70D7E743"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "5E3F6BBB"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "A728E1D1"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "75EF0627"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "7E9C9200"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "8E398BF7"
+    },
+    {
+      "seed": "FF000000",
+      "key": "89F44FF7"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "0428C09B"
+    }
+  ],
+  "mode_0x70": [
+    {
+      "seed": "00000000",
+      "key": "854AC50A"
+    },
+    {
+      "seed": "00000001",
+      "key": "FD9CBA37"
+    },
+    {
+      "seed": "00000002",
+      "key": "5C57386E"
+    },
+    {
+      "seed": "000000FF",
+      "key": "FD9D31AD"
+    },
+    {
+      "seed": "00000100",
+      "key": "854CA136"
+    },
+    {
+      "seed": "00008000",
+      "key": "854CA30A"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "FD597AAD"
+    },
+    {
+      "seed": "00010000",
+      "key": "854CF90A"
+    },
+    {
+      "seed": "00800000",
+      "key": "84E0C50A"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "19A27AAD"
+    },
+    {
+      "seed": "01000000",
+      "key": "842EC50A"
+    },
+    {
+      "seed": "01234567",
+      "key": "DC961155"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "0B113EA5"
+    },
+    {
+      "seed": "12345678",
+      "key": "5134B09F"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "CABE28F4"
+    },
+    {
+      "seed": "23456789",
+      "key": "0310953F"
+    },
+    {
+      "seed": "3456789A",
+      "key": "0F74C1CF"
+    },
+    {
+      "seed": "456789AB",
+      "key": "FFCA530B"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "57304807"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "ED1C0E9F"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "78203A25"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "E5F35C89"
+    },
+    {
+      "seed": "80000000",
+      "key": "9DE050F8"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "8DC3374A"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "9E75A659"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "5E7AB58E"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "9E672FFF"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "FF5D83E7"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "98DD9581"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "5BA59F4E"
+    },
+    {
+      "seed": "FF000000",
+      "key": "5CF26CE8"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "89FEB49C"
+    }
+  ],
+  "mode_0x71": [
+    {
+      "seed": "00000000",
+      "key": "D2A7F7C8"
+    },
+    {
+      "seed": "00000001",
+      "key": "D2A7F748"
+    },
+    {
+      "seed": "00000002",
+      "key": "D2A7F4C8"
+    },
+    {
+      "seed": "000000FF",
+      "key": "D2A77648"
+    },
+    {
+      "seed": "00000100",
+      "key": "D2A777C8"
+    },
+    {
+      "seed": "00008000",
+      "key": "D2E7F7C8"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "D327F648"
+    },
+    {
+      "seed": "00010000",
+      "key": "D327F7C8"
+    },
+    {
+      "seed": "00800000",
+      "key": "92A7F7C8"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "4FC009D0"
+    },
+    {
+      "seed": "01000000",
+      "key": "4FC00850"
+    },
+    {
+      "seed": "01234567",
+      "key": "5D62BDD0"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "B11F9288"
+    },
+    {
+      "seed": "12345678",
+      "key": "3ED4B890"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "561AD6B0"
+    },
+    {
+      "seed": "23456789",
+      "key": "D51BCED8"
+    },
+    {
+      "seed": "3456789A",
+      "key": "D9DC5210"
+    },
+    {
+      "seed": "456789AB",
+      "key": "2EBCDB68"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "4D0A9E28"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "E685E860"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "34A98FB8"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "0C480158"
+    },
+    {
+      "seed": "80000000",
+      "key": "0C4800D8"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "EB425CE0"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "88F521A0"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "D1698360"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "63BAD7E8"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "8DC870D8"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "F22A2B88"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "B7F80140"
+    },
+    {
+      "seed": "FF000000",
+      "key": "52A7F7C8"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "D2A7F648"
+    }
+  ],
+  "mode_0x72": [
+    {
+      "seed": "00000000",
+      "key": "B10AF268"
+    },
+    {
+      "seed": "00000001",
+      "key": "B10AFEE8"
+    },
+    {
+      "seed": "00000002",
+      "key": "B10AFF68"
+    },
+    {
+      "seed": "000000FF",
+      "key": "B10B5DE8"
+    },
+    {
+      "seed": "00000100",
+      "key": "B10B7268"
+    },
+    {
+      "seed": "00008000",
+      "key": "B0CAF268"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "B0C8DDE8"
+    },
+    {
+      "seed": "00010000",
+      "key": "B08AF268"
+    },
+    {
+      "seed": "00800000",
+      "key": "710AF268"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "6348DDE8"
+    },
+    {
+      "seed": "01000000",
+      "key": "F9B001D2"
+    },
+    {
+      "seed": "01234567",
+      "key": "C9DE9152"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "0CAAF014"
+    },
+    {
+      "seed": "12345678",
+      "key": "1F105D40"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "16AA3A24"
+    },
+    {
+      "seed": "23456789",
+      "key": "852F124A"
+    },
+    {
+      "seed": "3456789A",
+      "key": "E8842844"
+    },
+    {
+      "seed": "456789AB",
+      "key": "48ADE4DA"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "E733394E"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "34708CE2"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "F722304C"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "728B2A5E"
+    },
+    {
+      "seed": "80000000",
+      "key": "5EA83E80"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "D36DADE4"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "0A268E0A"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "C6765556"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "2864E098"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "7F552544"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "6147D026"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "085654BC"
+    },
+    {
+      "seed": "FF000000",
+      "key": "F8EF2826"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "793D89BE"
+    }
+  ],
+  "mode_0x73": [
+    {
+      "seed": "00000000",
+      "key": "97C72E35"
+    },
+    {
+      "seed": "00000001",
+      "key": "97C72E41"
+    },
+    {
+      "seed": "00000002",
+      "key": "97C72E2D"
+    },
+    {
+      "seed": "000000FF",
+      "key": "97DB4229"
+    },
+    {
+      "seed": "00000100",
+      "key": "97DB4235"
+    },
+    {
+      "seed": "00008000",
+      "key": "9270F3D3"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "EDE32E29"
+    },
+    {
+      "seed": "00010000",
+      "key": "EDE32E35"
+    },
+    {
+      "seed": "00800000",
+      "key": "EB7BF3D3"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "8C0CE439"
+    },
+    {
+      "seed": "01000000",
+      "key": "8C0CE44B"
+    },
+    {
+      "seed": "01234567",
+      "key": "1A9B3B98"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "F5686ED1"
+    },
+    {
+      "seed": "12345678",
+      "key": "EC35D93B"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "96F771D5"
+    },
+    {
+      "seed": "23456789",
+      "key": "185DFE9F"
+    },
+    {
+      "seed": "3456789A",
+      "key": "7F5C8864"
+    },
+    {
+      "seed": "456789AB",
+      "key": "1BBE8EAD"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "1D65F651"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "11FEA2D4"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "90EB42CD"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "FF40DF0D"
+    },
+    {
+      "seed": "80000000",
+      "key": "E02DB4D1"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "0D947BFF"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "FDCC58A1"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "8E0DAC8F"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "05457731"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "51A20C19"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "1AA489F6"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "8CBE0E79"
+    },
+    {
+      "seed": "FF000000",
+      "key": "9376EAD1"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "AA636BC5"
+    }
+  ],
+  "mode_0x75": [
+    {
+      "seed": "00000000",
+      "key": "58A96A58"
+    },
+    {
+      "seed": "00000001",
+      "key": "13635860"
+    },
+    {
+      "seed": "00000002",
+      "key": "9E76B504"
+    },
+    {
+      "seed": "000000FF",
+      "key": "DA831444"
+    },
+    {
+      "seed": "00000100",
+      "key": "58A91A58"
+    },
+    {
+      "seed": "00008000",
+      "key": "59016A58"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "DA7AE444"
+    },
+    {
+      "seed": "00010000",
+      "key": "58796A58"
+    },
+    {
+      "seed": "00800000",
+      "key": "60A96A58"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "DBAAE444"
+    },
+    {
+      "seed": "01000000",
+      "key": "68A96A58"
+    },
+    {
+      "seed": "01234567",
+      "key": "E95F3AC4"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "F4CF50C6"
+    },
+    {
+      "seed": "12345678",
+      "key": "4F32A85E"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "3265565C"
+    },
+    {
+      "seed": "23456789",
+      "key": "DB3CE6C0"
+    },
+    {
+      "seed": "3456789A",
+      "key": "08C12D88"
+    },
+    {
+      "seed": "456789AB",
+      "key": "F9AE163A"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "1AD84B10"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "F2F0FFA2"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "138A4E74"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "F1D168DA"
+    },
+    {
+      "seed": "80000000",
+      "key": "2685FDBA"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "751CF270"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "D5EBCE3C"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "D14A9F28"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "40A647F2"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "4C1BB6E6"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "DC7DFA2C"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "E63B8E2E"
+    },
+    {
+      "seed": "FF000000",
+      "key": "F5FE66AE"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "9FD5CB40"
+    }
+  ],
+  "mode_0x76": [
+    {
+      "seed": "00000000",
+      "key": "0002997F"
+    },
+    {
+      "seed": "00000001",
+      "key": "0002999F"
+    },
+    {
+      "seed": "00000002",
+      "key": "000299BF"
+    },
+    {
+      "seed": "000000FF",
+      "key": "0002B95F"
+    },
+    {
+      "seed": "00000100",
+      "key": "0002B97F"
+    },
+    {
+      "seed": "00008000",
+      "key": "0012997F"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "0022995F"
+    },
+    {
+      "seed": "00010000",
+      "key": "0022997F"
+    },
+    {
+      "seed": "00800000",
+      "key": "1002997F"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "2002995F"
+    },
+    {
+      "seed": "01000000",
+      "key": "2002997F"
+    },
+    {
+      "seed": "01234567",
+      "key": "246B465F"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "EBC68CE7"
+    },
+    {
+      "seed": "12345678",
+      "key": "52D1838F"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "4A008317"
+    },
+    {
+      "seed": "23456789",
+      "key": "4027547F"
+    },
+    {
+      "seed": "3456789A",
+      "key": "B60615EF"
+    },
+    {
+      "seed": "456789AB",
+      "key": "FDE43A9F"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "8A4A804F"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "88B0413F"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "74AC0BB7"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "9803AF97"
+    },
+    {
+      "seed": "80000000",
+      "key": "A223C1FF"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "9D7D2167"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "EBDF5A97"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "D7F58507"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "F9392987"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "38E2F037"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "D1E6676F"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "1E4B2BF7"
+    },
+    {
+      "seed": "FF000000",
+      "key": "25E25AF7"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "3A22D817"
+    }
+  ],
+  "mode_0x77": [
+    {
+      "seed": "00000000",
+      "key": "4F40FEFC"
+    },
+    {
+      "seed": "00000001",
+      "key": "4F40FE1C"
+    },
+    {
+      "seed": "00000002",
+      "key": "4F40FE3C"
+    },
+    {
+      "seed": "000000FF",
+      "key": "4F409EDC"
+    },
+    {
+      "seed": "00000100",
+      "key": "4F409EFC"
+    },
+    {
+      "seed": "00008000",
+      "key": "4FD0FEFC"
+    },
+    {
+      "seed": "0000FFFF",
+      "key": "4FE0FEDC"
+    },
+    {
+      "seed": "00010000",
+      "key": "4FE0FEFC"
+    },
+    {
+      "seed": "00800000",
+      "key": "B8B3AE9C"
+    },
+    {
+      "seed": "00FFFFFF",
+      "key": "A8B3AEBC"
+    },
+    {
+      "seed": "01000000",
+      "key": "A8B3AE9C"
+    },
+    {
+      "seed": "01234567",
+      "key": "33A82BDC"
+    },
+    {
+      "seed": "0F0F0F0F",
+      "key": "65B3D0FC"
+    },
+    {
+      "seed": "12345678",
+      "key": "0A789D9C"
+    },
+    {
+      "seed": "1ABCDEF0",
+      "key": "ADEF3DBC"
+    },
+    {
+      "seed": "23456789",
+      "key": "FCDC6E1C"
+    },
+    {
+      "seed": "3456789A",
+      "key": "E14D405C"
+    },
+    {
+      "seed": "456789AB",
+      "key": "2D47A2BC"
+    },
+    {
+      "seed": "56789ABC",
+      "key": "2C78B43C"
+    },
+    {
+      "seed": "6789ABCD",
+      "key": "03F6CBBC"
+    },
+    {
+      "seed": "789ABCDE",
+      "key": "03D86D1C"
+    },
+    {
+      "seed": "7FFFFFFF",
+      "key": "04A5D13C"
+    },
+    {
+      "seed": "80000000",
+      "key": "04A5D11C"
+    },
+    {
+      "seed": "89ABCDEF",
+      "key": "9EEC2B3C"
+    },
+    {
+      "seed": "9ABCDEF0",
+      "key": "16223BBC"
+    },
+    {
+      "seed": "AABBCCDD",
+      "key": "7455887C"
+    },
+    {
+      "seed": "ABCDEF01",
+      "key": "2D0B80DC"
+    },
+    {
+      "seed": "DEADBEEF",
+      "key": "A8E45BDC"
+    },
+    {
+      "seed": "F0F0F0F0",
+      "key": "4B9A5C7C"
+    },
+    {
+      "seed": "FEDCBA98",
+      "key": "DC6D31BC"
+    },
+    {
+      "seed": "FF000000",
+      "key": "E0229EBC"
+    },
+    {
+      "seed": "FFFFFFFF",
+      "key": "4F40FEDC"
+    }
+  ]
+}
