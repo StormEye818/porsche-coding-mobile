@@ -59,7 +59,9 @@ export const UDS_PROBES = [
 export class LinkDoctor {
   /**
    * opts: { adapterKind?: 'auto'|'vlinker'|'elm'|'obdkey', platform?: 'ios'|'android'|'web',
-   *         channel?: 'mfi'|'bt', adapters?: { mfi, bt } } —— adapters 是测试缝。
+   *         channel?: 'mfi'|'bt', adapters?: { mfi, bt },
+   *         pickDevice?: (devices)=>Promise<device|null> } —— adapters/pickDevice 是测试缝；
+   *         pickDevice 是「已配对设备列表手动点选」UI 钩子（app.js 实现弹窗）。
    */
   constructor(opts = {}) {
     this.steps = [];
@@ -71,6 +73,7 @@ export class LinkDoctor {
     this.platform = opts.platform || detectPlatform();
     this.channel = opts.channel || null;   // null = 按「平台 × 接头类型」自动分流
     this.adapters = opts.adapters || { mfi: MfiPort, bt: BtPort };
+    this.pickDevice = opts.pickDevice || null;   // 已配对设备手动点选 UI 钩子
   }
 
   _ok(id, title, detail) {
@@ -121,21 +124,47 @@ export class LinkDoctor {
         `${vlink.name} · SN ${vlink.serial} · 协议 ${JSON.stringify(vlink.protocolStrings)}`);
       return vlink;
     }
-    // bt 通道：蓝牙发现（SPP 扫描 / BLE 系统选择器）
+    // bt 通道：只从**已配对**设备里选（2026-11-18 安卓实测：禁用周边扫描）——
+    // 记住的设备直连 → 否则弹列表手动点选（pickDevice）→ 兜底唯一设备。
     try {
       const found = await this.adapters.bt.discover({
         platform: this.platform, adapterKind: this.adapterKind,
       });
-      const vlink = found.devices.find((d) => /vlink/i.test(d.name || '')) || found.devices[0];
-      if (!vlink) {
-        this._fail('L1', '蓝牙发现', `发现 ${found.devices.length} 个设备，无可用接头`,
-          fixHint('bt', this.platform, 'L1'));
+      if (!found.devices.length) {
+        this._fail('L1', '蓝牙发现', '没有已配对的蓝牙设备',
+          '先到系统蓝牙设置里配对接头（如 OBDLink），配对好再回来点「连接自检」。发现只列已配对设备，不扫周围。');
         return null;
       }
-      vlink.engine = vlink.engine || found.engine;
+      let chosen = null;
+      let how = '';
+      if (found.engine === 'ble') {
+        // BLE：记住的设备直连（getDevices）/ 系统选择器手动点选（与安卓同 UX，禁盲连第一个）
+        chosen = found.devices[0] || null;
+        how = found.how === 'remembered' ? '记住的设备直连' : '系统选择器（手动点选）';
+      } else {
+        const remembered = this.adapters.bt.getRememberedDevice?.() || null;
+        if (remembered && found.devices.some((d) => d.address === remembered.address)) {
+          chosen = found.devices.find((d) => d.address === remembered.address);
+          how = '记住的设备直连';
+        } else if (typeof this.pickDevice === 'function') {
+          chosen = (await this.pickDevice(found.devices)) || null;
+          how = '手动点选';
+        } else if (found.devices.length === 1) {
+          chosen = found.devices[0];
+          how = '唯一已配对设备';
+        }
+      }
+      if (!chosen) {
+        this._fail('L1', '蓝牙发现', `已配对 ${found.devices.length} 个设备，未选择接头`,
+          '请在已配对设备列表里点选接头（名称+MAC）；选过一次会记住，下次直连。');
+        return null;
+      }
+      this.adapters.bt.rememberDevice?.(chosen);
+      chosen.engine = chosen.engine || found.engine;
+      this.selectedDevice = chosen;
       this._ok('L1', '蓝牙发现',
-        `${vlink.name} · ${vlink.address} · 通道 ${found.engine === 'spp' ? '经典蓝牙 SPP' : 'BLE'}`);
-      return vlink;
+        `${chosen.name} · ${chosen.address} · ${how} · 通道 ${found.engine === 'spp' ? '经典蓝牙 SPP' : 'BLE'}`);
+      return chosen;
     } catch (e) {
       this._fail('L1', '蓝牙发现', String(e?.message || e),
         e?.fix || fixHint('bt', this.platform, 'L1'));
@@ -145,6 +174,10 @@ export class LinkDoctor {
 
   /** L2 —— 会话打开（mfi→EA session；bt→蓝牙连接） */
   async openSession(device) {
+    if (!device) {
+      this._fail('L2', '会话', '未选择设备', fixHint('bt', this.platform, 'L2'));
+      return false;
+    }
     const ch = this.channel || this._resolveChannel();
     if (ch === 'mfi') {
       const proto = (device.protocolStrings || [])[0] || null;

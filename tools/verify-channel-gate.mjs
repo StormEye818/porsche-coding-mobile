@@ -213,13 +213,18 @@ const mfiSpy = {
   setPlatform(null);
 }
 
-// ── ⑤ BtPort SPP 引擎（插件 spy：发现→连接→读写→关闭） ──
+// ── ⑤ BtPort SPP 引擎（插件 spy：bonded 发现→连接→读写→关闭） ──
 {
   const calls = [];
   let onReadCb = null;
   const pluginSpy = {
     isEnabled: async () => { calls.push('isEnabled'); return { enabled: true }; },
-    scan: async () => { calls.push('scan'); return { devices: [{ name: 'vLinker MS', address: 'AA:BB:CC:DD:EE:FF' }] }; },
+    // ★ 周边扫描 tripwire：discover 自检路径一旦调 scan 就会被下面断言抓到
+    scan: async () => { calls.push('scan'); return { devices: [{ name: 'FB0P-无关设备', address: 'FF:FF:FF:FF:FF:FF' }] }; },
+    getPairedDevices: async () => {
+      calls.push('getPairedDevices');
+      return { devices: [{ name: 'OBDLink MX+ 53935', address: 'AA:BB:CC:DD:EE:FF' }] };
+    },
     connect: async ({ address }) => { calls.push(`connect:${address}`); },
     addListener: async (evt, cb) => { calls.push(`addListener:${evt}`); onReadCb = cb; return { remove: async () => calls.push('listener.remove') }; },
     startNotifications: async () => { calls.push('startNotifications'); },
@@ -230,8 +235,11 @@ const mfiSpy = {
   BtPort._setPluginForTest(pluginSpy);
   setPlatform('android');
   const found = await BtPort.discover({});
-  ok('BtPort SPP：discover 扫描出设备（auto→spp 优先）',
-    found.engine === 'spp' && found.devices[0]?.address === 'AA:BB:CC:DD:EE:FF');
+  ok('BtPort SPP：discover 只列已配对（bonded）设备',
+    found.engine === 'spp' && found.devices[0]?.address === 'AA:BB:CC:DD:EE:FF'
+    && found.devices[0]?.name === 'OBDLink MX+ 53935');
+  ok('bonded-only 默认：discover 未触发周边扫描（scan 零调用）',
+    calls.includes('getPairedDevices') && !calls.includes('scan'), calls.join(' '));
   const port = new BtPort({ engine: 'spp', device: found.devices[0], platform: 'android' });
   const got = [];
   port.on('data', (b) => got.push(new TextDecoder().decode(b)));
@@ -258,12 +266,170 @@ const mfiSpy = {
   setPlatform(null);
 }
 
+// ── ⑤b 已配对列表回放 + 手动点选 + 记住→直连（用户 OBDLink MX+ 实测场景） ──
+{
+  setPlatform('android');
+  const mem = new Map();
+  BtPort._setStoreForTest({
+    getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+    setItem: (k, v) => mem.set(k, String(v)),
+    removeItem: (k) => mem.delete(k),
+  });
+  const fakeEngine = {
+    kind: 'spp', connected: 0,
+    async connect() { this.connected++; },
+    async write() { return 1; },
+    async close() {},
+  };
+  let bonded = [
+    { name: 'FB0P-Speaker', address: '11:11:11:11:11:11' },
+    { name: 'OBDLink MX+ 53935', address: 'AA:BB:CC:DD:EE:FF' },
+    { name: 'D20-Remote', address: '22:22:22:22:22:22' },
+  ];
+  class BondedBt extends BtPort {
+    static async discover() {
+      return { engine: 'spp', devices: bonded.map((d) => ({ ...d, engine: fakeEngine })) };
+    }
+  }
+  const pickCalls = [];
+  const pickOdblink = async (devices) => {
+    pickCalls.push(devices.map((d) => d.address).join(','));
+    return devices.find((d) => /OBDLink/i.test(d.name || '')) || null;
+  };
+  const doctor = new LinkDoctor({
+    platform: 'android', adapterKind: 'vlinker',
+    adapters: { mfi: MfiPort, bt: BondedBt }, pickDevice: pickOdblink,
+  });
+  const dev = await doctor.checkAccessory();
+  ok('手动点选：已配对列表弹出（名称+MAC），用户点中 OBDLink MX+ 53935',
+    dev?.address === 'AA:BB:CC:DD:EE:FF' && pickCalls.length === 1
+    && pickCalls[0] === '11:11:11:11:11:11,AA:BB:CC:DD:EE:FF,22:22:22:22:22:22', dev?.name);
+  ok('选择已持久化（记住设备）',
+    JSON.parse(mem.get('btDeviceChoice') || '{}').address === 'AA:BB:CC:DD:EE:FF');
+  ok('L2 直连所选设备', (await doctor.openSession(dev)) === true && fakeEngine.connected === 1);
+  await doctor.close();
+
+  // 第二次自检：记住的设备直连，不再弹列表
+  const d2 = new LinkDoctor({
+    platform: 'android', adapterKind: 'vlinker',
+    adapters: { mfi: MfiPort, bt: BondedBt }, pickDevice: pickOdblink,
+  });
+  const dev2 = await d2.checkAccessory();
+  ok('记住→直连：第二次自检不再弹选择（pickDevice 零调用）',
+    dev2?.address === 'AA:BB:CC:DD:EE:FF' && pickCalls.length === 1
+    && /记住的设备直连/.test(d2.steps[0]?.detail || ''), d2.steps[0]?.detail);
+  await d2.close();
+
+  // 记住的设备不在已配对列表（取消配对/换机）→ 重新弹列表
+  bonded = bonded.filter((d) => d.address !== 'AA:BB:CC:DD:EE:FF');
+  const d3 = new LinkDoctor({
+    platform: 'android', adapterKind: 'vlinker',
+    adapters: { mfi: MfiPort, bt: BondedBt }, pickDevice: pickOdblink,
+  });
+  const dev3 = await d3.checkAccessory();
+  ok('记住的设备消失（取消配对）→ 重新弹列表点选',
+    pickCalls.length === 2 && dev3 === null && /未选择接头/.test(d3.steps[0]?.detail || ''),
+    `pickCalls=${pickCalls.length} · ${d3.steps[0]?.detail}`);
+  await d3.close();
+
+  // 取消点选 → L1 明确失败，不连任何设备
+  const d4 = new LinkDoctor({
+    platform: 'android', adapterKind: 'vlinker',
+    adapters: { mfi: MfiPort, bt: BondedBt }, pickDevice: async () => null,
+  });
+  const dev4 = await d4.checkAccessory();
+  ok('取消点选 → L1 明确报「未选择接头」', dev4 === null && /未选择接头/.test(d4.steps[0]?.detail || ''),
+    d4.steps[0]?.detail);
+
+  // 空已配对列表 → 去系统蓝牙配对指引
+  bonded = [];
+  const d5 = new LinkDoctor({
+    platform: 'android', adapterKind: 'vlinker',
+    adapters: { mfi: MfiPort, bt: BondedBt }, pickDevice: pickOdblink,
+  });
+  const dev5 = await d5.checkAccessory();
+  ok('已配对列表为空 → 指引「去系统蓝牙配对」',
+    dev5 === null && /配对/.test(d5.steps[0]?.fix || '') && /没有已配对/.test(d5.steps[0]?.detail || ''),
+    d5.steps[0]?.fix);
+  BtPort._setStoreForTest(null);
+  setPlatform(null);
+}
+
+// ── ⑤c iOS/BLE 对齐：记住→直连、手动点选、禁盲扫盲连、暂不支持标注 ──
+{
+  const bleCalls = [];
+  const mkStore = () => {
+    const m = new Map();
+    return {
+      getItem: (k) => (m.has(k) ? m.get(k) : null),
+      setItem: (k, v) => m.set(k, String(v)),
+      removeItem: (k) => m.delete(k),
+    };
+  };
+  const fakeDev = { id: 'AA:BB:CC:DD:EE:01', name: 'ELM327-BLE' };
+  BtPort._setBleForTest({
+    getDevices: async () => { bleCalls.push('getDevices'); return [fakeDev]; },
+    requestDevice: async () => { bleCalls.push('requestDevice'); return fakeDev; },
+  });
+
+  // 记住→直连（getDevices 命中，不弹选择器）——与安卓 bonded 记住流同 UX
+  const st1 = mkStore();
+  st1.setItem('btDeviceChoice', JSON.stringify({ name: 'ELM327-BLE', address: 'AA:BB:CC:DD:EE:01' }));
+  BtPort._setStoreForTest(st1);
+  setPlatform('web');
+  const f1 = await BtPort.discover({});
+  ok('BLE 记住→直连（getDevices，不弹选择器）',
+    f1.engine === 'ble' && f1.how === 'remembered'
+    && f1.devices[0].address === 'AA:BB:CC:DD:EE:01' && !bleCalls.includes('requestDevice'),
+    bleCalls.join(','));
+
+  // 无记住 → 系统选择器手动点选；绝不盲连第一个
+  BtPort._setStoreForTest(mkStore());
+  const f2 = await BtPort.discover({});
+  ok('BLE 无记住 → 手动点选（系统选择器），禁盲连第一个',
+    f2.how === 'chooser' && bleCalls.filter((c) => c === 'requestDevice').length === 1,
+    bleCalls.join(','));
+
+  // 取消选择 → 明确失败，不连任何设备
+  BtPort._setBleForTest({
+    getDevices: async () => [],
+    requestDevice: async () => { const e = new Error('cancelled'); e.name = 'NotFoundError'; throw e; },
+  });
+  let err = null;
+  try { await BtPort.discover({}); } catch (e) { err = e; }
+  ok('BLE 取消选择 → 明确失败，绝不盲连', err instanceof PortError && err.code === 'BT_CANCELLED', err?.code);
+
+  // iOS 无 Web Bluetooth → 「iOS 非 MFi 暂不支持」明确标注（同类问题：无盲扫/无手选缺失/无裸插件错）
+  BtPort._setBleForTest(undefined);
+  setPlatform('ios');
+  let err2 = null;
+  try { await BtPort.discover({ platform: 'ios' }); } catch (e) { err2 = e; }
+  ok('iOS 非 MFi → 明确「暂不支持」标注（BT_IOS_NON_MFI_UNSUPPORTED）',
+    err2 instanceof PortError && err2.code === 'BT_IOS_NON_MFI_UNSUPPORTED'
+    && /暂不支持/.test(err2.message) && /MFi|安卓/.test(err2.fix)
+    && !/is not implemented/i.test(String(err2.message)),
+    `${err2?.code} · ${err2?.message}`);
+
+  // LinkDoctor iOS 非 MFi 全程：L1 带「暂不支持」人话，无盲扫/无裸插件错
+  const di = new LinkDoctor({ platform: 'ios', adapterKind: 'elm', adapters: { mfi: MfiPort, bt: BtPort } });
+  const ri = await di.run();
+  ok('iOS×ELM 自检 L1 =「暂不支持」人话，无盲扫/无裸插件错',
+    ri.steps[0] && !ri.steps[0].ok
+    && /暂不支持|MFi|安卓/.test(`${ri.steps[0].detail} ${ri.steps[0].fix}`)
+    && !/is not implemented/i.test(JSON.stringify(ri.steps)),
+    ri.steps[0]?.fix);
+  BtPort._setStoreForTest(null);
+  setPlatform(null);
+}
+
 // ── ⑥ 文案门禁：每条通道的失败提示可操作 ──
 {
   ok('fixHint 三通道都有可操作提示',
     [/蓝牙|配对/.test(fixHint('bt', 'android', 'L1')), /蓝牙|配对/.test(fixHint('bt', 'android', 'L2')),
       /MFi|设置/.test(fixHint('mfi', 'ios', 'L1')), /MFi|接头|安卓/.test(fixHint('bt', 'ios', 'L1'))]
       .every(Boolean));
+  ok('iOS 非 MFi 文案明确「暂不支持」（无死胡同/无歧义）',
+    /暂不支持/.test(fixHint('bt', 'ios', 'L1')) && /暂不支持/.test(fixHint('bt', 'ios', 'L2')));
 }
 
 // ── ⑦ 源码守卫静态断言（防回退） ──
@@ -280,6 +446,21 @@ const mfiSpy = {
   const bt = readFileSync(new URL('../src/bt-port.js', import.meta.url), 'utf8');
   ok('bt-port.js 双通路就位（SPP 插件契约 + BLE FFE0/FFE1）',
     bt.includes("registerPlugin('BluetoothSerial')") && bt.includes("'ffe0'") && bt.includes("'ffe1'"));
+  ok('bonded-only 源码钉死：discover 段只用 getPairedDevices、无 .scan(',
+    bt.includes('getPairedDevices')
+    && !bt.slice(bt.indexOf('static async discover'), bt.indexOf('static async scanNearby')).includes('.scan('));
+  ok('scanNearby 是显式次要动作且 link-doctor 不调用',
+    bt.includes('自检/连接流程不得调用') && !doctor.includes('scanNearby'));
+  ok('手动点选 + 记住选择已接入 link-doctor',
+    doctor.includes('pickDevice') && doctor.includes('getRememberedDevice') && doctor.includes('rememberDevice'));
+  const chSrc = readFileSync(new URL('../src/port-channel.js', import.meta.url), 'utf8');
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  ok('iOS 非 MFi「暂不支持」标注同源（bt-port + port-channel）',
+    bt.includes('BT_IOS_NON_MFI_UNSUPPORTED') && chSrc.includes('暂不支持'));
+  ok('README 通道矩阵如实：iOS 非 MFi 暂不支持 + 两平台发现语义一致（不盲扫）',
+    /暂不支持/.test(readme) && /不盲扫|不扫周围/.test(readme));
+  ok('BLE 发现无盲扫（discover 里无 startDiscovery/scan 调用）',
+    !bt.slice(bt.indexOf('static async discover'), bt.indexOf('static async scanNearby')).includes('scan('));
   const app = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
   ok('app.js 把「选择接头类型」接进通道分流', app.includes('adapterKind'));
   const pkg = readFileSync(new URL('../package.json', import.meta.url), 'utf8');

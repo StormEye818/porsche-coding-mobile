@@ -73,8 +73,8 @@ export function fixHint(channel, platform, level) {
   }
   if (platform === 'ios') {
     return level === 'L1'
-      ? '此接头是非 MFi 设备（通用 ELM327/OBDKey），需蓝牙 BLE 通道。iOS 未开放 Web Bluetooth 时请改用 MFi 版接头（vLinker 系列），或在安卓端使用。'
-      : 'BLE 会话开失败：确认接头在系统蓝牙里可发现；此接头需 BLE 通道，若为经典蓝牙接头请换 MFi 版接头或用安卓端。';
+      ? 'iOS 非 MFi（通用 ELM327/OBDKey，BLE）暂不支持：请改用 MFi 版接头（vLinker 系列），或在安卓端使用（安卓 SPP/BLE 都通）。'
+      : 'iOS 非 MFi（BLE）暂不支持：请改用 MFi 版接头或用安卓端；别在 iOS 上反复重试。';
   }
   return level === 'L1'
     ? '请打开系统蓝牙并在系统设置里配对接头（指示灯常亮）；点火 ON 给接头供电；再点「连接自检」。'

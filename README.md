@@ -46,12 +46,13 @@
 
 | 平台 \ 接头 | vLinker MS（MFi） | 通用 ELM327 / OBDKey（非 MFi） |
 |---|---|---|
-| **iOS** | ✅ MFi 外部配件通道（EA，系统持链路） | ⚠️ BLE 通道（需接头为 BLE 串口型）；不可用时给明确提示，不走 MFi |
+| **iOS** | ✅ MFi 外部配件通道（EA，系统持链路） | ❌ **暂不支持**（WKWebView 无 Web Bluetooth、本期未接 CoreBluetooth BLE 插件）——给「暂不支持」人话提示；请用 MFi 版接头或安卓端 |
 | **Android** | ✅ 经典蓝牙 SPP（主）/ BLE（备），双通路自动选择 | ✅ SPP / BLE 双通路自动选择 |
 
-- 通道由首页「选择接头类型」× 平台自动分流（iOS×vLinker→MFi；iOS×ELM327/OBDKey→BLE；安卓×任意→蓝牙）。
-- MFi 是苹果外部配件协议：**安卓任何路径不触达 MFi**；自检失败按通道给可操作提示（开蓝牙/配对、MFi 系统链路等）。
-- 传输依赖：iOS MFi 走 app 内 MfiSerial 插件；安卓 SPP 走 `@ascentio-it/capacitor-bluetooth-serial@8.0.1`（MIT）；BLE 走 Web Bluetooth（FFE0/FFE1 串口特征）。
+- 通道由首页「选择接头类型」× 平台自动分流（iOS×vLinker→MFi；iOS×ELM327/OBDKey→BLE（暂不支持，明确提示）；安卓×任意→蓝牙）。
+- MFi 是苹果外部配件协议：**安卓任何路径不触达 MFi**；自检失败按通道给可操作提示（开蓝牙/配对、MFi 系统链路、iOS 非 MFi 暂不支持等）。
+- 发现语义两平台一致：**只列已配对/已知设备，不盲扫周围**；手动点选（名称+MAC）→记住→之后直连；禁盲连第一个。
+- 传输依赖：iOS MFi 走 app 内 MfiSerial 插件；安卓 SPP 走 `@ascentio-it/capacitor-bluetooth-serial@8.0.1`（MIT）；BLE 走 Web Bluetooth（FFE0/FFE1）——iOS BLE 通路代码已备（记住→直连/选择器同 UX），待接 CoreBluetooth MIT 插件即启用。
 
 连接方式：OBD 适配器 → 手机蓝牙（iOS MFi 由系统持链路）→ 本 App
 
@@ -126,6 +127,7 @@
 | 现象 | 怎么办 |
 |---|---|
 | 扫不到适配器 | iOS MFi：系统蓝牙设置确认已连接（MFi 链路由 iOS 持）；安卓：开蓝牙并在系统设置配对接头 |
+| 自检发现不到设备 | 先到系统蓝牙设置里**配对**接头（如 OBDLink）再点连接自检；发现只列已配对设备、不扫周围；首次弹列表点选、选错点「换接头设备」 |
 | 卡在「配件发现」 | 换 USB 线/重插适配器；iOS 检查「隐私与安全→本地网络」权限；安卓确认蓝牙权限已授予 |
 | 协议锁定失败 | 确认点火 ON、电瓶电压 ≥12V；电压低会一切通讯异常 |
 | 模块探测无应答 | 车熄火了？电瓶亏电？先看自检日志里的 ATRV 实时电压 |

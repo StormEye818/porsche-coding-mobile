@@ -264,6 +264,7 @@ const modsForSysId = (sysId) => {
 };
 
 import { LinkDoctor } from './link-doctor.js';
+import { forgetBtDevice } from './bt-port.js';
 import { parseDtcPayload } from './dtc.js';
 import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
@@ -963,6 +964,47 @@ function hideLoading() {
 }
 
 /**
+ * 已配对蓝牙设备手动点选（名称+MAC）——2026-11-18 安卓平板实测需求：
+ * 自检发现只列**已配对**设备（不扫周围），用户点选正确接头 → 记住选择 → 之后直连。
+ * 返回 Promise<device|null>（null=取消）。
+ */
+function pickBtDevice(devices) {
+  return new Promise((resolve) => {
+    let el = document.getElementById('btPickMask');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'btPickMask';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);'
+      + 'display:flex;align-items:center;justify-content:center;z-index:99;';
+    const box = document.createElement('div');
+    box.style.cssText = 'width:min(86vw,380px);max-height:70vh;overflow:auto;'
+      + 'background:#161b22;border:1px solid #2a3140;border-radius:12px;padding:16px;';
+    const h = document.createElement('div');
+    h.textContent = `选择接头设备（已配对 ${devices.length} 个）`;
+    h.style.cssText = 'font-size:15px;color:#e6edf3;margin-bottom:10px;';
+    box.appendChild(h);
+    for (const d of devices) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.style.cssText = 'display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;'
+        + 'border-radius:8px;border:1px solid #2a3140;background:#21262d;color:#e6edf3;font-size:14px;';
+      b.textContent = `${d.name || '未命名设备'} · ${d.address || ''}`;
+      b.onclick = () => { el.remove(); resolve(d); };
+      box.appendChild(b);
+    }
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.style.cssText = 'margin-top:10px;padding:8px 20px;border-radius:10px;'
+      + 'border:1px solid #2a3140;background:#21262d;color:#e6edf3;font-size:14px;';
+    cancel.textContent = '取消';
+    cancel.onclick = () => { el.remove(); resolve(null); };
+    box.appendChild(cancel);
+    el.appendChild(box);
+    document.body.appendChild(el);
+  });
+}
+
+/**
  * 更新已有 loading 的文案（不重建 DOM），可同时挂取消回调。
  * ⚠️ 2026-10-29：这个函数在 5637dad 之后就被调用、却从未定义 ——
  *    enterSystem 一进模块就 ReferenceError（被 catch 吞掉后返回 false），
@@ -1034,7 +1076,11 @@ $('btnDoctor').onclick = async () => {;
     await new Promise((r) => setTimeout(r, 400));   // 给 EA 栈一点释放时间
     // ★ 2026-11-18 通道分流：首页「选择接头类型」直接决定传输通道
     //   （iOS×vLinker→MFi；iOS×ELM327/OBDKey→BLE；安卓×任意→蓝牙 SPP/BLE，永不碰 MfiSerial）。
-    doctor = new LinkDoctor({ adapterKind: ($('adapterType') && $('adapterType').value) || 'auto' });
+    //   蓝牙通道发现=已配对列表，pickDevice 弹列表手动点选（记住后直连）。
+    doctor = new LinkDoctor({
+      adapterKind: ($('adapterType') && $('adapterType').value) || 'auto',
+      pickDevice: pickBtDevice,
+    });
     doctor.onStep = (s) => {
       log(`${s.ok ? '✅' : '❌'} ${s.title}: ${s.detail || ''}`, s.ok ? 'ok' : 'err');
       if (!s.ok) toast('err', `${s.title} 失败`, s.detail || s.fix || '');
@@ -1174,6 +1220,12 @@ $('btnDisc').onclick = async () => {;
   $('btnSim').textContent = '模拟模式';
   $('btnSim').classList.remove('primary');
   log('已断开', 'info');
+};
+
+// 换接头设备：清除「记住的已配对设备」，下次自检重新弹列表点选（2026-11-18）
+$('btnForgetBt').onclick = () => {
+  forgetBtDevice();
+  toast('ok', '已清除记住的设备', '下次「连接自检」会重新弹出已配对设备列表');
 };
 
 /**

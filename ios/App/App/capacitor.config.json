@@ -1,25 +1,23 @@
 {
-  "appId": "cn.bigmiao.porschecoder",
-  "appName": "Porsche Coder",
-  "webDir": "www",
-  "server": {
-    "androidScheme": "https"
-  },
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 0
-    },
-    "StatusBar": {
-      "style": "DARK",
-      "backgroundColor": "#0e1116",
-      "overlaysWebView": true
-    }
-  },
-  "packageClassList": [
-    "BluetoothSerial",
-    "SharePlugin",
-    "StatusBarPlugin",
-    "MfiSerialPlugin",
-    "ShareSheetPlugin"
-  ]
+	"appId": "cn.bigmiao.porschecoder",
+	"appName": "Porsche Coder",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "https"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 0
+		},
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#0e1116",
+			"overlaysWebView": true
+		}
+	},
+	"packageClassList": [
+		"BluetoothSerial",
+		"SharePlugin",
+		"StatusBarPlugin"
+	]
 }

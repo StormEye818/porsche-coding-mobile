@@ -9,10 +9,15 @@
  *   ble — Web Bluetooth（BLE UART 服务 FFE0/FFE1，Android WebView/Chrome 可用；
  *         iOS WKWebView 不开放 Web Bluetooth → 上层给明确人话提示）。
  *
+ * ⚠️ 发现=**已配对列表**（2026-11-18 安卓平板实测：OBDLink MX+ 已在系统配对列表，
+ *   自检却去扫周边信号把 FB0P…/D20… 无关设备扫进来）。自检路径只走 getPairedDevices()
+ *   （bonded）——**禁止周边扫描**；scanNearby() 保留为显式次要动作，自检流程不得调用。
+ *   设备选择：手动点选（LinkDoctor.pickDevice）→ rememberBtDevice 持久化 → 之后直连。
+ *
  * 契约（PortLike）：write(bytes|string) + on('data', cb) + on('closed', cb)
  * 发现→配对/连接→串口读写全链在本文件；自检 L1/L2 只经 discover()/connect() 进来。
  *
- * 测试缝：BtPort._setPluginForTest(spy)（验「插件零触达」）、
+ * 测试缝：BtPort._setPluginForTest(spy)、BtPort._setStoreForTest(store)、
  *          new BtPort({ engine: fakeEngine })（BT 通道 mock 回归）。
  */
 import { registerPlugin } from '@capacitor/core';
@@ -103,6 +108,20 @@ function makeSppEngine({ address, name }, { onData, onClosed }) {
 }
 
 // ── 引擎：ble（Web Bluetooth FFE0/FFE1） ──
+let _bleOverride = undefined;
+/** Web Bluetooth 句柄（测试缝：_setBleForTest） */
+function bleApi() {
+  if (_bleOverride !== undefined) return _bleOverride;
+  return typeof globalThis.navigator !== 'undefined' ? globalThis.navigator.bluetooth : undefined;
+}
+/** iOS 非 MFi（BLE）不可用的人话标注 —— 三处（引擎/发现/文案）同源 */
+function iosNonMfiError() {
+  return new PortError(
+    'iOS 非 MFi（通用 ELM327/OBDKey，BLE）暂不支持',
+    'iOS 本版本只走 MFi 通道：请用 MFi 版接头（vLinker 系列），或在安卓端使用（安卓 SPP/BLE 都通）。',
+    'BT_IOS_NON_MFI_UNSUPPORTED');
+}
+
 function makeBleEngine(device, { onData, onClosed }) {
   let chr = null;
   let server = null;
@@ -112,13 +131,12 @@ function makeBleEngine(device, { onData, onClosed }) {
     address: device.id || device.address,
     name: device.name || 'BLE 设备',
     async connect() {
-      const ble = globalThis.navigator?.bluetooth;
+      const ble = bleApi();
       if (!ble) {
+        if (detectPlatform() === 'ios') throw iosNonMfiError();
         throw new PortError(
           'BLE 通道不可用（WebView 未开放 Web Bluetooth）',
-          detectPlatform() === 'ios'
-            ? '此接头是非 MFi 设备，iOS 未开放 Web Bluetooth：请改用 MFi 版接头（vLinker 系列）或在安卓端使用。'
-            : '此接头需 BLE 通道：请用系统 WebView 内核的完整构建，或换经典蓝牙（SPP）接头。',
+          '此接头需 BLE 通道：请用系统 WebView 内核的完整构建，或换经典蓝牙（SPP）接头。',
           'BT_BLE_UNAVAILABLE');
       }
       try {
@@ -177,7 +195,7 @@ function makeBleEngine(device, { onData, onClosed }) {
 }
 
 function bleAvailable() {
-  return typeof globalThis.navigator !== 'undefined' && !!globalThis.navigator.bluetooth;
+  return !!bleApi();
 }
 
 async function sppAvailable() {
@@ -187,6 +205,41 @@ async function sppAvailable() {
   } catch (e) {
     return !/not implemented/i.test(String(e?.message || e));
   }
+}
+
+// ── 已配对设备记忆（手动点选 → 持久化 → 自检直连） ──
+const REMEMBER_KEY = 'btDeviceChoice';
+let _storeOverride = null;
+function store() {
+  if (_storeOverride) return _storeOverride;
+  try {
+    if (globalThis.localStorage) return globalThis.localStorage;
+  } catch { /* 隐私模式/非浏览器 */ }
+  if (!globalThis.__btMemStore) {
+    const m = new Map();
+    globalThis.__btMemStore = {
+      getItem: (k) => (m.has(k) ? m.get(k) : null),
+      setItem: (k, v) => m.set(k, String(v)),
+      removeItem: (k) => m.delete(k),
+    };
+  }
+  return globalThis.__btMemStore;
+}
+
+/** 记住用户点选的接头设备（{name,address}），下次自检直连 */
+export function rememberBtDevice(device) {
+  try {
+    store().setItem(REMEMBER_KEY, JSON.stringify({ name: device?.name || '', address: device?.address || '' }));
+  } catch { /* 存储不可用不影响连接 */ }
+}
+export function getRememberedBtDevice() {
+  try {
+    const v = JSON.parse(store().getItem(REMEMBER_KEY) || 'null');
+    return v && v.address ? v : null;
+  } catch { return null; }
+}
+export function forgetBtDevice() {
+  try { store().removeItem(REMEMBER_KEY); } catch { /* 无 */ }
 }
 
 export class BtPort {
@@ -216,7 +269,7 @@ export class BtPort {
   }
 
   /**
-   * 发现设备（自检 L1）。
+   * 发现设备（自检 L1）——**只列已配对（bonded）设备**，不扫周边信号。
    * engine='auto'：安卓优先 SPP、BLE 兜底；iOS/web 只走 BLE（SPP 插件是安卓专用）。
    * @returns {Promise<{engine:'spp'|'ble', devices:Array<{name,address,engine,raw}>}>}
    */
@@ -232,23 +285,44 @@ export class BtPort {
             lastErr = new PortError('蓝牙串口插件不可用', '', 'BT_PLUGIN_MISSING');
             continue;
           }
-          const r = await sppPlugin().scan();
+          // ★ 2026-11-18：只走 getPairedDevices（bonded）—— scan/startDiscovery 是
+          //   周边扫描，会把无关设备扫进列表（用户实测 FB0P…/D20…），自检路径禁用。
+          const r = await sppPlugin().getPairedDevices();
           const devices = (r?.devices || []).map((d) => ({
             name: d.name || d.address, address: d.address, engine: 'spp', raw: d,
           }));
           return { engine: 'spp', devices };
         }
         if (!bleAvailable()) {
-          lastErr = new PortError('BLE 通道不可用', '', 'BT_BLE_UNAVAILABLE');
+          // ★ 2026-11-18 iOS 对齐：WKWebView 无 Web Bluetooth，本期 iOS 非 MFi 明确标注暂不支持
+          lastErr = detectPlatform() === 'ios'
+            ? iosNonMfiError()
+            : new PortError('BLE 通道不可用', '', 'BT_BLE_UNAVAILABLE');
           continue;
         }
-        // Web Bluetooth：系统选择器（用户手势内发起，自检按钮满足）
-        const dev = await globalThis.navigator.bluetooth.requestDevice({
+        // ★ 与安卓 bonded 同 UX：记住的设备直连（getDevices，不弹选择器）；
+        //   没记住所选才弹系统选择器手动点选 —— **禁止盲连第一个**。
+        const remembered = getRememberedBtDevice();
+        const getDevices = bleApi().getDevices;
+        if (remembered && typeof getDevices === 'function') {
+          const known = await getDevices.call(bleApi()).catch(() => []);
+          const hit = known.find((d) => (d.id || d.name) === remembered.address || (d.name && d.name === remembered.name));
+          if (hit) {
+            return {
+              engine: 'ble',
+              devices: [{ name: hit.name || remembered.name || hit.id, address: hit.id, engine: 'ble', raw: hit }],
+              how: 'remembered',
+            };
+          }
+        }
+        // Web Bluetooth 系统选择器 = 手动点选（用户手势内发起，自检按钮满足）
+        const dev = await bleApi().requestDevice({
           acceptAllDevices: true, optionalServices: [BLE_SERVICE],
         });
         return {
           engine: 'ble',
           devices: [{ name: dev.name || dev.id, address: dev.id, engine: 'ble', raw: dev }],
+          how: 'chooser',
         };
       } catch (e) {
         lastErr = e;
@@ -264,12 +338,28 @@ export class BtPort {
         : new PortError(`蓝牙发现失败：${String(lastErr?.message || lastErr)}`, '', 'BT_DISCOVER');
       if (!e.fix) {
         e.fix = detectPlatform() === 'ios'
-          ? '此接头需 BLE 通道：iOS 请改用 MFi 版接头（vLinker 系列）或在安卓端使用。'
+          ? 'iOS 非 MFi（BLE）暂不支持：请改用 MFi 版接头（vLinker 系列）或在安卓端使用。'
           : '请打开系统蓝牙、配对接头后重试；接头需 SPP 或 BLE 串口通道。';
       }
       return e;
     })();
   }
+
+  /**
+   * 周边扫描（显式次要动作）——**自检/连接流程不得调用**；仅供用户主动「搜新设备」时用。
+   * 发现的设备仍须先到系统蓝牙设置配对，才能被 discover()（bonded）选到。
+   */
+  static async scanNearby() {
+    const r = await sppPlugin().scan();
+    return (r?.devices || []).map((d) => ({
+      name: d.name || d.address, address: d.address, engine: 'spp', raw: d,
+    }));
+  }
+
+  /** 记住/读取/清除用户点选的接头设备（持久化，自检 L1/L2 直连） */
+  static rememberDevice(device) { rememberBtDevice(device); }
+  static getRememberedDevice() { return getRememberedBtDevice(); }
+  static forgetDevice() { forgetBtDevice(); }
 
   async connect() {
     const device = this.opts.device || {};
@@ -299,4 +389,8 @@ export class BtPort {
 
   /** 测试缝：注入插件替身（验「安卓零触达 / 插件缺失降级」） */
   static _setPluginForTest(p) { _pluginOverride = p; _pluginCache = null; }
+  /** 测试缝：注入设备记忆存储（验「记住→直连」流） */
+  static _setStoreForTest(s) { _storeOverride = s; }
+  /** 测试缝：注入 Web Bluetooth 句柄（验 BLE 记住→直连/选择器流；传 undefined 恢复） */
+  static _setBleForTest(b) { _bleOverride = b; }
 }
