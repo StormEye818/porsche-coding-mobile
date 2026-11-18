@@ -567,6 +567,14 @@ const archivedIntersectScope = ARCHIVED_REPORTS.filter((f) => scopeSet.has(f));
 //   —— 「覆盖面积零，报平安」。这是把「没检查」伪装成「检查通过」，与按文件名推断权威性同一族。
 const scopeMissing = CURRENT_SCOPE_DOCS.filter((f) => !markdownSet.has(f));
 
+// ★ U2_SCOPE_DOCS_TRACKED（防复发）：在册文档不仅要**磁盘实存**，还必须**入库**
+//   （`git ls-files --error-unmatch` 成功 ⇔ 干净 clone 上一定存在）。
+//   为什么必须分两层：`scopeMissing` 只证明「本机有」，而 2026-11-18 的 310f280 正是把
+//   17 份退出跟踪却留在本机磁盘 —— 本机全绿、clone 全缺、drift 检查整个空转。
+//   非 git 环境下 isTrackedInGit() 恒 false ⇒ 全部未入库 ⇒ 判红；绝不静默降级。
+const scopeNotTracked = CURRENT_SCOPE_DOCS.filter((f) => !isTrackedInGit(f));
+const scopeTrackedOk = GIT_AVAILABLE && scopeNotTracked.length === 0;
+
 // 归档集死条目：必须区分「入库却缺失」（真误删 → 红）与「本地留档」（.gitignore 政策，干净 clone 上本来就没有 → 只报数）。
 // 不区分的话，这条断言在「我这个工作区」绿、在干净 clone 上红 —— 「只在我这儿能过」的门禁
 // 与「静默变绿」是同一类病，只是方向反了。
@@ -614,6 +622,9 @@ for (const s of archivedStats) {
   L.push(`     ${s.f.padEnd(36)} ${shown}${tags.length ? `  ← ${tags.join('；')}` : ''}`);
 }
 L.push(`   U2_SCOPE_DOCS_PRESENT 在册 ${CURRENT_SCOPE_DOCS.length} 份必须全部实存：缺失=${JSON.stringify(scopeMissing)}（必须 []）`);
+L.push(`U2_SCOPE_DOCS_TRACKED 在册 ${CURRENT_SCOPE_DOCS.length} 份必须全部入库（git ls-files --error-unmatch 成功）`
+  + `：未入库=${JSON.stringify(scopeNotTracked)}（必须 []）｜git 可用=${GIT_AVAILABLE}（必须 true）`);
+if (!scopeTrackedOk) L.push('  FAIL U2_SCOPE_DOCS_TRACKED 在册文档未入库或 git 不可用 —— 干净 clone 上将缺失，数字断言全部空转');
 // git 不可用时的口径：**不打印**「入库 N 份 / 留档 M 份」。
 // 那两个数此刻是假的（`isTrackedInGit()` 恒 false ⇒ 必然退化成 0/22），而它长得像实测值 ——
 // 与其打一个自己知道是假的数再挂个 ⚠，不如直接写 n/a，把「git 不可用」这件事只留给下方
@@ -747,7 +758,7 @@ L.push(`③ 文档数字 diff=${conflicts.length}`);
   //   这一轮真的踩过：`&& GIT_AVAILABLE` 加进本行时，合计行里的 `gitOk` 一度没跟上。
   //   推论：新增 flag 一律先写进变量、再同时喂给本行与合计行，不许只喂一处。
   globalThis.__u2BehaviorOk = d5Ok && nsOk && diffOk && liveDocOk && partitionOk
-    && claimRegisteredOk && subdirOk && GIT_AVAILABLE;
+    && claimRegisteredOk && subdirOk && GIT_AVAILABLE && scopeTrackedOk;
   if (!d5Ok) L.push('  FAIL U2_D5_13873 maxText 实跑值与 13873 不符');
   if (!nsOk) L.push('  FAIL U2_NAMESPACE_SEPARATED 三命名空间计数与 67/79/687 不符');
   if (!diffOk) L.push('  FAIL U2_NUMBER_DIFF_ZERO 存在数字冲突');
@@ -756,7 +767,8 @@ L.push(`③ 文档数字 diff=${conflicts.length}`);
   // 行为断言直接并入退出码：任一翻红即非 0（反例注入可证伪）
   L.push(`U2 行为断言合计：d5Ok=${d5Ok} nsOk=${nsOk} diffOk=${diffOk}`
     + ` liveDocOk=${liveDocOk} partitionOk=${partitionOk}`
-    + ` claimRegisteredOk=${claimRegisteredOk} subdirOk=${subdirOk} gitOk=${GIT_AVAILABLE}`);
+    + ` claimRegisteredOk=${claimRegisteredOk} subdirOk=${subdirOk} gitOk=${GIT_AVAILABLE}`
+    + ` scopeTrackedOk=${scopeTrackedOk}`);
 }
 L.push('说明：分母各自标源——3/13/16（候选分组）、527/402/185（cat=0x10 / cat=0x60）、120/40（family-default / 共享 16 候选）、163/148/12（身份链）、74/111（帧序口径 / commCat10Exact）、67/79/687（menuId / 通信 RID / 功能序列）、13873/153/119657（D-5 / D-3 长度 / D-3 itemIds）互不替代。');
 L.push('复跑命令：node tools/verify-u2-numbers.mjs ; node tools/build-align431-rows.mjs ; npm run audit:align431');

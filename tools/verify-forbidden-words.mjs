@@ -18,12 +18,22 @@
 import { scanForbiddenWords, sortedKeys, FORBIDDEN_CLASSES } from './align431-eval.mjs';
 
 const r = scanForbiddenWords();
+
+// ★ 防复发扫描集下限（2026-11-18 事故）：
+//   冻结基线 965883d 的入库根 .md = 18（README + 17 份；出处见断言输出行）。
+//   310f280 把 17 份退出跟踪后扫描集塌成 1 份、原始命中 0 —— 「asClosingReason=0」
+//   只是因为几乎没扫文件，门禁实质空转。写死下限 18 并带出处，防止再次「塌成 1 份仍报 0」；
+//   非 git 环境降级同样判红，不静默。
+const SCANSET_MIN = 18;
+const scansetOk = !r.scanDegraded && r.files >= SCANSET_MIN;
+
 const lines = [];
 const emit = (s = '') => lines.push(String(s));
 
 emit('=== R-4 / U-3 禁用结案词扫描（Node includes，全库 .md） ===');
 emit(`扫描方式=fs.readFileSync(file,'utf8').includes(word) 逐文件逐行；禁用 Bash grep`);
 emit(`类别数=${Object.keys(FORBIDDEN_CLASSES).length} 文件数=${r.files} 原始命中=${r.raw}`);
+emit(`扫描集来源=入库 .md｜tracked=${r.scanTracked} 忽略未入库=${r.scanIgnoredCount} 非git降级=${r.scanDegraded}（必须 false）`);
 emit('--- 10 类原始命中 ---');
 for (const k of sortedKeys(r.byClass)) emit(`  ${k} = ${r.byClass[k]}`);
 emit('--- 分类桶（互斥，合计 = 原始命中） ---');
@@ -38,7 +48,11 @@ emit('node -e "import(\'./tools/align431-eval.mjs\').then(m=>console.log(m.scanF
 emit('npm run audit:align431  （输出第 ④ 段同源）');
 emit(`FORBIDDEN_WORDS_ZERO 作为结案理由命中=${r.asClosingReason}（应为 0）`);
 emit(`FORBIDDEN_WORDS_TOP_POINTER_ZERO 顶部指向缺失=${r.topPointerMissing.length}（应为 0）`);
-emit(`结论：禁用结案词作为「结案理由」命中=${r.asClosingReason}，退出码=${r.asClosingReason === 0 ? 0 : 1}`);
+emit(`FORBIDDEN_WORDS_SCANSET_MIN 入库 .md 数=${r.files} 下限=${SCANSET_MIN}`
+  + `（出处：git ls-tree -r --name-only 965883d | grep '\\.md$' 计 18 = README + 17 份恢复文档）`
+  + `｜非git降级=${r.scanDegraded}（必须 false）→ ${scansetOk ? 'OK' : 'FAIL'}`);
+const pass = r.asClosingReason === 0 && scansetOk;
+emit(`结论：禁用结案词作为「结案理由」命中=${r.asClosingReason}，扫描集下限满足=${scansetOk}，退出码=${pass ? 0 : 1}`);
 
 process.stdout.write(lines.join('\n') + '\n');
-process.exit(r.asClosingReason === 0 ? 0 : 1);
+process.exit(pass ? 0 : 1);
