@@ -29,6 +29,8 @@ const BLE_CHAR = 'ffe1';
 
 let _pluginOverride = null;
 let _pluginCache = null;
+// SPP 读轮询间隔（默认 20ms）。插件 read() 是「整缓冲取走并清空」，短轮询不丢字节。
+let _sppPollMs = 20;
 
 function toBytes(data) {
   if (typeof data === 'string') return new TextEncoder().encode(data);
@@ -54,9 +56,15 @@ function sppPlugin() {
   return _pluginCache;
 }
 
+/** 插件本身没实现 / 接口缺失（web 桩、旧构建）才归为插件缺失；其余是真实连接错误。 */
+function pluginMethodMissing(e) {
+  const msg = String(e?.message || e);
+  return /not implemented|is not a function/i.test(msg);
+}
+
 function wrapPluginError(e, what) {
   const msg = String(e?.message || e);
-  if (/not implemented/i.test(msg)) {
+  if (pluginMethodMissing(e)) {
     return new PortError(
       `蓝牙串口插件不可用（${what}）`,
       '此接头需安卓蓝牙 SPP 通道：请用完整构建安装（含蓝牙插件），或改用 BLE 接头重试。',
@@ -65,30 +73,83 @@ function wrapPluginError(e, what) {
   return new PortError(`${what}失败：${msg}`, '确认系统蓝牙已开、接头已配对且没被别的 App 占用。', 'BT_SPP');
 }
 
+/**
+ * 连接失败专用包装。★ 不再回退 connectInsecure（插件 Java 层没有该 @PluginMethod，
+ * web 桩直接抛 not implemented，旧代码把它误报成 BT_PLUGIN_MISSING，掩盖真实连接错误）。
+ * 这里保留**原始原因**，只有插件本身缺失才归 BT_PLUGIN_MISSING。
+ */
+function wrapSppConnectError(e) {
+  const msg = String(e?.message || e);
+  if (pluginMethodMissing(e)) return wrapPluginError(e, '蓝牙 SPP 连接');
+  return new PortError(
+    `蓝牙 SPP 连接失败：${msg}`,
+    '确认接头未被其它 App 占用、系统蓝牙里先断开该设备后再点「连接自检」重试。',
+    'BT_SPP');
+}
+
 // ── 引擎：spp（经典蓝牙串口插件） ──
+/**
+ * 数据通道用插件 read({address}) 短轮询，不用 onRead 通知 + startNotifications('\r')。
+ * 原因（2026-11-18 实车 bug）：插件 readUntil() 里 `readBuffer.delete(0,index+1)` 多删 1 字符，
+ * 走 startNotifications(delimiter:'\r') 内部即 readUntil → `ATI\rELM327 v1.4b\r\r>` 被读成
+ * `ATI\rLM327 v1.4b`（首字母 E 与提示符 > 被吞），Elm327._cmdLocked() 等 `>` 必超时。
+ * read() 原生是「整缓冲 substring 后 delete(0,len)」，原样交出、不丢字节。
+ */
 function makeSppEngine({ address, name }, { onData, onClosed }) {
-  let readHandle = null;
+  let pollTimer = null;
+  let stopped = false;
+
+  const stopPolling = () => {
+    stopped = true;
+    if (pollTimer !== null) { clearTimeout(pollTimer); pollTimer = null; }
+  };
+
+  const startPolling = () => {
+    stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const r = await sppPlugin().read({ address });
+        const value = r?.value;
+        if (!stopped && typeof value === 'string' && value.length) {
+          onData(latin1ToBytes(value));
+        }
+      } catch (e) {
+        // 读异常/断开：停轮询并上报关闭，绝不无限刷错
+        if (stopped) return;
+        stopPolling();
+        onClosed();
+        return;
+      }
+      if (!stopped) pollTimer = setTimeout(tick, _sppPollMs);
+    };
+    tick(); // 立即试探一次，随后按间隔续轮（不 await，避免阻塞 connect）
+  };
+
   return {
     kind: 'spp',
     address,
     name,
     async connect() {
       const p = sppPlugin();
+      // 先问连接状态：已连（上轮遗留/记住设备直连）则跳过 connect 直接进读轮询。
+      // isConnected 本身不可用（web 插件 not implemented / 接口缺失）→ 插件缺失。
+      let connected = false;
       try {
-        await p.connect({ address });
+        const r = await p.isConnected({ address });
+        connected = !!(r?.connected);
       } catch (e) {
-        // 有些接头只接受 insecure RFCOMM（配对码 1234/0000 的克隆头）
-        try { await p.connectInsecure({ address }); }
-        catch (e2) { throw wrapPluginError(e2 || e, '蓝牙 SPP 连接'); }
+        throw wrapPluginError(e, '蓝牙 SPP 连接状态查询');
       }
-      try {
-        readHandle = await p.addListener('onRead', (r) => {
-          if (r && typeof r.value === 'string') onData(latin1ToBytes(r.value));
-        });
-        await p.startNotifications({ address, delimiter: '\r' });
-      } catch (e) {
-        throw wrapPluginError(e, '蓝牙 SPP 读通道');
+      if (!connected) {
+        try {
+          await p.connect({ address });
+        } catch (e) {
+          // 包装**原始错误**为 BT_SPP，不再回退未实现的 connectInsecure 误报插件缺失
+          throw wrapSppConnectError(e);
+        }
       }
+      startPolling();
     },
     async write(bytes) {
       try {
@@ -100,8 +161,9 @@ function makeSppEngine({ address, name }, { onData, onClosed }) {
       }
     },
     async close() {
-      try { await sppPlugin().stopNotifications({ address, delimiter: '\r' }); } catch { /* 已断 */ }
-      try { if (readHandle?.remove) await readHandle.remove(); } catch { /* 已移除 */ }
+      stopPolling();
+      // 真释放端口：上一轮失败后 doctor.close() 会走这里，必须真的断开；
+      // 不再依赖 stopNotifications（数据通道已不用通知）。
       try { await sppPlugin().disconnect({ address }); } catch { /* 已断 */ }
     },
   };
@@ -393,4 +455,6 @@ export class BtPort {
   static _setStoreForTest(s) { _storeOverride = s; }
   /** 测试缝：注入 Web Bluetooth 句柄（验 BLE 记住→直连/选择器流；传 undefined 恢复） */
   static _setBleForTest(b) { _bleOverride = b; }
+  /** 测试缝：注入 SPP read() 轮询间隔（门禁设小值加速；默认 20ms） */
+  static _setSppPollMsForTest(ms) { _sppPollMs = Math.max(1, Number(ms) || 20); }
 }

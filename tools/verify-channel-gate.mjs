@@ -18,6 +18,7 @@ import { pickChannel, detectPlatform, fixHint, PortError } from '../src/port-cha
 import { MfiPort } from '../src/mfi-port.js';
 import { BtPort } from '../src/bt-port.js';
 import { LinkDoctor } from '../src/link-doctor.js';
+import { Elm327 } from '../src/elm327.js';
 
 let pass = 0, fail = 0;
 const ok = (name, condition, detail = '') => {
@@ -213,10 +214,13 @@ const mfiSpy = {
   setPlatform(null);
 }
 
-// ── ⑤ BtPort SPP 引擎（插件 spy：bonded 发现→连接→读写→关闭） ──
+// ── ⑤ BtPort SPP 引擎（插件 spy：bonded 发现→连接→read() 轮询读写→关闭） ──
 {
+  setPlatform('android');
+  BtPort._setSppPollMsForTest(2);
   const calls = [];
-  let onReadCb = null;
+  // read({address}) 数据队列：每元素是一次 read() 原样交出的整缓冲字符串（不丢字节）
+  const readQueue = [];
   const pluginSpy = {
     isEnabled: async () => { calls.push('isEnabled'); return { enabled: true }; },
     // ★ 周边扫描 tripwire：discover 自检路径一旦调 scan 就会被下面断言抓到
@@ -225,15 +229,22 @@ const mfiSpy = {
       calls.push('getPairedDevices');
       return { devices: [{ name: 'OBDLink MX+ 53935', address: 'AA:BB:CC:DD:EE:FF' }] };
     },
+    isConnected: async ({ address }) => { calls.push(`isConnected:${address}`); return { connected: false }; },
     connect: async ({ address }) => { calls.push(`connect:${address}`); },
-    addListener: async (evt, cb) => { calls.push(`addListener:${evt}`); onReadCb = cb; return { remove: async () => calls.push('listener.remove') }; },
+    // ★ 旧回退 tripwire：一旦恢复 connectInsecure 回退就会被下面断言抓到
+    connectInsecure: async () => { calls.push('connectInsecure'); },
+    // ★ 旧通知数据通道 tripwire：一旦改回 startNotifications/onRead 就会被下面断言抓到
     startNotifications: async () => { calls.push('startNotifications'); },
-    write: async ({ value }) => { calls.push(`write:${value}`); },
+    addListener: async (evt) => { calls.push(`addListener:${evt}`); return { remove: async () => {} }; },
     stopNotifications: async () => { calls.push('stopNotifications'); },
+    read: async ({ address }) => {
+      calls.push('read');
+      return { value: readQueue.length ? readQueue.shift() : '' };
+    },
+    write: async ({ value }) => { calls.push(`write:${value}`); },
     disconnect: async () => { calls.push('disconnect'); },
   };
   BtPort._setPluginForTest(pluginSpy);
-  setPlatform('android');
   const found = await BtPort.discover({});
   ok('BtPort SPP：discover 只列已配对（bonded）设备',
     found.engine === 'spp' && found.devices[0]?.address === 'AA:BB:CC:DD:EE:FF'
@@ -245,13 +256,18 @@ const mfiSpy = {
   port.on('data', (b) => got.push(new TextDecoder().decode(b)));
   await port.connect();
   await port.write('ATI\r');
-  onReadCb({ value: 'ELM327 v2.3\r>' });
+  readQueue.push('ELM327 v2.3\r>');
+  await new Promise((r) => setTimeout(r, 60));
   await port.close();
-  ok('BtPort SPP：写入出线 + onRead 进数据 + close 收尾',
+  ok('BtPort SPP：写入出线 + read() 轮询进数据 + close 真释放端口',
     calls.some((c) => c.startsWith('write:ATI')) && got.join('').includes('ELM327')
-    && calls.includes('stopNotifications') && calls.includes('disconnect'),
+    && calls.filter((c) => c === 'read').length > 0 && calls.includes('disconnect'),
     calls.join(' '));
+  ok('BtPort SPP：数据通道零 startNotifications / onRead / connectInsecure（旧路径全封死）',
+    !calls.includes('startNotifications') && !calls.some((c) => c.startsWith('addListener:onRead'))
+    && !calls.includes('connectInsecure'), calls.join(' '));
   BtPort._setPluginForTest(null);
+  BtPort._setSppPollMsForTest(20);
 
   // 插件缺失 → 人话降级（不裸抛）
   const missing = { isEnabled: async () => { throw new Error('BluetoothSerial plugin is not implemented on web'); } };
@@ -261,6 +277,114 @@ const mfiSpy = {
   try { await BtPort.discover({ engine: 'spp' }); } catch (e) { err = e; }
   ok('BtPort SPP 插件缺失 → PortError 人话，无裸 plugin 错误',
     err instanceof PortError && !/is not implemented/i.test(String(err.message)) && err.fix.length > 0,
+    `${err?.code} · ${err?.message}`);
+  BtPort._setPluginForTest(null);
+  setPlatform(null);
+}
+
+// ── ⑤d 真·半包分片防回归：read() 原样交出整缓冲，经真 Elm327 不丢字节、不超时 ──
+// 复刻实车日志：ATI\rELM327 v1.4b\r\r> 被分片塞进 read() 队列。
+// 旧路径（startNotifications + readUntil('\r') 的 delete(0,index+1) 多删 1 字符）
+// 会把首字母 E 与提示符 > 吞掉 → Elm327._cmdLocked() 等 > 必超时 → 本断言转 F。
+{
+  setPlatform('android');
+  BtPort._setSppPollMsForTest(2);
+  const calls = [];
+  const readQueue = [];
+  const pluginSpy = {
+    isEnabled: async () => ({ enabled: true }),
+    isConnected: async () => ({ connected: false }),
+    connect: async () => { calls.push('connect'); },
+    connectInsecure: async () => { calls.push('connectInsecure'); },
+    read: async () => { calls.push('read'); return { value: readQueue.length ? readQueue.shift() : '' }; },
+    write: async () => { calls.push('write'); },
+    disconnect: async () => { calls.push('disconnect'); },
+  };
+  BtPort._setPluginForTest(pluginSpy);
+  const port = new BtPort({ engine: 'spp', device: { name: 'OBDLink MX+', address: 'AA:BB:CC:DD:EE:FF' }, platform: 'android' });
+  await port.connect();
+  const elm = new Elm327(port, { timeoutMs: 1200 });
+  const frame = 'ATI\rELM327 v1.4b\r\r>';
+  readQueue.push(frame.slice(0, 5), frame.slice(5, 12), frame.slice(12)); // 任意分片
+  let result = null, err = null;
+  try { result = await elm.cmd('ATI', 1200); } catch (e) { err = e; }
+  ok('半包分片经真 Elm327：完整拿到 ELM327 v1.4b、> 被消费、不超时',
+    !err && /ELM327 v1.4b/.test(String(result)) && !/>/.test(String(result)) && elm.buf.length === 0,
+    `err=${err?.message || '无'} · result=${JSON.stringify(result)}`);
+  ok('半包场景 read() 轮询确实发生且零 connectInsecure',
+    calls.filter((c) => c === 'read').length > 0 && !calls.includes('connectInsecure'), calls.join(' '));
+  await port.close();
+  BtPort._setPluginForTest(null);
+  BtPort._setSppPollMsForTest(20);
+  setPlatform(null);
+}
+
+// ── ⑤e connect 失败不回退 connectInsecure、错误含原始原因（恢复旧回退必转 F） ──
+{
+  setPlatform('android');
+  const calls = [];
+  const originalReason = 'Connection rejected: device busy (bonded but busy)';
+  const pluginSpy = {
+    isEnabled: async () => ({ enabled: true }),
+    isConnected: async () => ({ connected: false }),
+    connect: async () => { calls.push('connect'); throw new Error(originalReason); },
+    connectInsecure: async () => { calls.push('connectInsecure'); }, // tripwire：一旦回退即被抓
+    read: async () => ({ value: '' }),
+    write: async () => {},
+    disconnect: async () => { calls.push('disconnect'); },
+  };
+  BtPort._setPluginForTest(pluginSpy);
+  const port = new BtPort({ engine: 'spp', device: { name: 'OBDLink MX+', address: 'AA:BB:CC:DD:EE:FF' }, platform: 'android' });
+  let err = null;
+  try { await port.connect(); } catch (e) { err = e; }
+  ok('connect 失败：零 connectInsecure 回退 + BT_SPP + 错误含原始原因（非「插件不可用」）',
+    err instanceof PortError && err.code === 'BT_SPP'
+    && !calls.includes('connectInsecure')
+    && String(err.message).includes(originalReason)
+    && !/插件不可用/.test(String(err.message))
+    && /断开|占用/.test(String(err.fix || '')),
+    `${err?.code} · ${err?.message} · fix=${err?.fix} · calls=${calls.join(',')}`);
+  BtPort._setPluginForTest(null);
+  setPlatform(null);
+}
+
+// ── ⑤f 连接状态分支：已连跳过 connect；isConnected 不可用报插件缺失 ──
+{
+  setPlatform('android');
+  BtPort._setSppPollMsForTest(2);
+  const calls = [];
+  BtPort._setPluginForTest({
+    isEnabled: async () => ({ enabled: true }),
+    isConnected: async () => ({ connected: true }), // 上轮遗留已连
+    connect: async () => { calls.push('connect'); },
+    read: async () => { calls.push('read'); return { value: '' }; },
+    write: async () => {},
+    disconnect: async () => { calls.push('disconnect'); },
+  });
+  const p1 = new BtPort({ engine: 'spp', device: { name: 'x', address: 'AA:BB:CC:DD:EE:FF' }, platform: 'android' });
+  await p1.connect();
+  await new Promise((r) => setTimeout(r, 30));
+  await p1.close();
+  ok('已连接：跳过 connect 直接进入 read() 轮询、close 仍真断开',
+    !calls.includes('connect') && calls.includes('read') && calls.includes('disconnect'), calls.join(','));
+  BtPort._setPluginForTest(null);
+  BtPort._setSppPollMsForTest(20);
+
+  // isConnected 本身不可用（web 插件 not implemented / 接口缺失）→ 插件缺失，不伪装成连接错误
+  BtPort._setPluginForTest({
+    isEnabled: async () => ({ enabled: true }),
+    isConnected: async () => { throw new Error('Method not implemented.'); },
+    connect: async () => { throw new Error('should not reach'); },
+  });
+  setPlatform('web');
+  let err = null;
+  try {
+    const p2 = new BtPort({ engine: 'spp', device: { name: 'x', address: 'AA:BB:CC:DD:EE:FF' }, platform: 'web' });
+    await p2.connect();
+  } catch (e) { err = e; }
+  ok('isConnected 不可用（web 插件）→ BT_PLUGIN_MISSING 人话',
+    err instanceof PortError && err.code === 'BT_PLUGIN_MISSING'
+    && /插件不可用|完整构建/.test(String(err.message || '') + String(err.fix || '')),
     `${err?.code} · ${err?.message}`);
   BtPort._setPluginForTest(null);
   setPlatform(null);
@@ -446,6 +570,15 @@ const mfiSpy = {
   const bt = readFileSync(new URL('../src/bt-port.js', import.meta.url), 'utf8');
   ok('bt-port.js 双通路就位（SPP 插件契约 + BLE FFE0/FFE1）',
     bt.includes("registerPlugin('BluetoothSerial')") && bt.includes("'ffe0'") && bt.includes("'ffe1'"));
+  // SPP 数据通道静态防回退：作用域限定在 makeSppEngine 段（BLE 的 chr.startNotifications 不算）
+  const sppSrc = bt.slice(bt.indexOf('function makeSppEngine'), bt.indexOf('function makeBleEngine'));
+  ok('SPP 读通道钉死 read() 轮询：无 .read 之外的数据 API、无 connectInsecure/通知/onRead 调用',
+    /\.read\(\{\s*address\s*\}\)/.test(sppSrc)
+    && !/\.startNotifications\s*\(/.test(sppSrc)
+    && !/\.addListener\s*\(/.test(sppSrc)
+    && !/\.connectInsecure\s*\(/.test(sppSrc)
+    && !/\.stopNotifications\s*\(/.test(sppSrc),
+    `sppSrc=${sppSrc.length}B`);
   ok('bonded-only 源码钉死：discover 段只用 getPairedDevices、无 .scan(',
     bt.includes('getPairedDevices')
     && !bt.slice(bt.indexOf('static async discover'), bt.indexOf('static async scanNearby')).includes('.scan('));
