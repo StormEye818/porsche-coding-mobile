@@ -5,7 +5,37 @@
 
 ---
 
-## ✅ 2026-11-11 19:30 · 第七阶段：SYS_DATA「加密体」推翻，逐 ECU 会话表全量导出（**当前有效状态**）
+## ✅ 2026-11-18 · 通道分流修复：安卓自检「MfiSerial not implemented」连环炸（**当前有效状态**）
+
+**安卓实测 bug**：自检 L1/L2 直连 `MfiPort`（`MfiSerial.list/open`），安卓必炸
+「"MfiSerial" plugin is not implemented on android」。MFi 是**苹果**外部配件协议，安卓走常规蓝牙；
+iOS 非 MFi（普通 ELM327/BLE）也要分流 —— 按「平台 × 接头类型」决定通道。
+
+- **通道分流**（新增 `src/port-channel.js`）：iOS×vLinker/自动→mfi（EA）；iOS×ELM327/OBDKey→bt（BLE，
+  不可用给明确人话提示，绝不裸抛插件错误）；安卓×任意→bt（SPP 主/BLE 备）。首页「选择接头类型」
+  `#adapterType` 已接入（app.js btnDoctor 传 adapterKind）。
+- **BT 通道**（新增 `src/bt-port.js`，PortLike 与 MfiPort 同契约）：发现→配对/连接→串口读写全链。
+  SPP 走 `@ascentio-it/capacitor-bluetooth-serial@8.0.1`（MIT；`registerPlugin('BluetoothSerial')`
+  契约调用、不 import 包体，插件缺失降级不炸）；BLE 走 Web Bluetooth FFE0/FFE1。
+  **vLinker MS 安卓侧 SPP/BLE 无实证 → 双通路都留**（运行时探测，SPP 优先）。
+- **平台守卫**（双保险）：`mfi-port.js` `guardMfi()` 先于一切插件调用（安卓抛 `MFI_ON_ANDROID`
+  人话 + 零触达 MfiSerial）；`link-doctor.js` L1/L2 按通道分流 + 安卓断言拦截；插件层错误统一转
+  `PortError`（message 说现象、fix 给可操作提示：安卓=开蓝牙/配对；iOS=MFi 系统链路 vs BLE）。
+- **测试**：新增 `tools/verify-channel-gate.mjs` **30/0**（分流矩阵 / 安卓零触达 spy / BT mock 回归
+  （真 BtPort+真 LinkDoctor L1-L4 全绿）/ iOS 非 MFi 分流 / 文案门禁 / 源码守卫），已进 `npm test` 链。
+  回归：`npm test` 全链 exit 0 · align431 **38** · smoke **376** · e2e **127** · walkthrough **84** ·
+  runtime-safety **30** · channel-gate **30** 全 0 失败；ui-sim 双形态 **21/1/0×2**（唯一失败是
+  **既有**问题：`.actRun` 驱动禁用按钮点击 30s 超时 —— `git stash` 基线复测同 21/1，与本轮无关）；
+  泄漏门禁干净（www+src+双端 public）；`npm run sync`+`npx cap copy` 后 bundle 双端时间戳已核
+  （BUNDLE_TIMESTAMP_FRESH=1 / BOTH_ENDS_COPIED_AFTER_BUILD=1）。
+- `android/AndroidManifest.xml` 补蓝牙权限（BLUETOOTH/ADMIN maxSdk 30、SCAN neverForLocation、CONNECT）；
+  README 适配器一节改**通道矩阵**（iOS-MFi / iOS-BLE / 安卓-SPP / 安卓-BLE）。
+- **未装机未推 git**；SPP/BLE 真机通路（Android WebView Web Bluetooth 可用性、SPP 插件行为）待主线实测。
+  顺带待修：ui-sim `.actRun` 点击应跳过 `disabled`（驱动禁用）按钮。
+
+---
+
+## ✅ 2026-11-11 19:30 · 第七阶段：SYS_DATA「加密体」推翻，逐 ECU 会话表全量导出（上一状态）
 
 **用户质疑「所有内容一定都在包内」——复核成立，两处上轮结论被推翻**（详见
 `RE-CLOSURE-20261111.md` 顶部复核更新块）：

@@ -42,15 +42,18 @@
 
 ---
 
-## 适配器支持
+## 适配器支持 · 通道矩阵
 
-| 适配器 | 状态 |
-|---|---|
-| **vLinker MS / V-LINK** | 主力，已验证（iOS 走系统外部配件通道，MFi） |
-| **通用 ELM327** | 已适配 |
-| **OBDKey** | 已适配 |
+| 平台 \ 接头 | vLinker MS（MFi） | 通用 ELM327 / OBDKey（非 MFi） |
+|---|---|---|
+| **iOS** | ✅ MFi 外部配件通道（EA，系统持链路） | ⚠️ BLE 通道（需接头为 BLE 串口型）；不可用时给明确提示，不走 MFi |
+| **Android** | ✅ 经典蓝牙 SPP（主）/ BLE（备），双通路自动选择 | ✅ SPP / BLE 双通路自动选择 |
 
-连接方式：OBD 适配器 → 手机蓝牙（iOS 由系统持链路）→ 本 App
+- 通道由首页「选择接头类型」× 平台自动分流（iOS×vLinker→MFi；iOS×ELM327/OBDKey→BLE；安卓×任意→蓝牙）。
+- MFi 是苹果外部配件协议：**安卓任何路径不触达 MFi**；自检失败按通道给可操作提示（开蓝牙/配对、MFi 系统链路等）。
+- 传输依赖：iOS MFi 走 app 内 MfiSerial 插件；安卓 SPP 走 `@ascentio-it/capacitor-bluetooth-serial@8.0.1`（MIT）；BLE 走 Web Bluetooth（FFE0/FFE1 串口特征）。
+
+连接方式：OBD 适配器 → 手机蓝牙（iOS MFi 由系统持链路）→ 本 App
 
 ---
 
@@ -122,8 +125,8 @@
 
 | 现象 | 怎么办 |
 |---|---|
-| 扫不到适配器 | 系统蓝牙设置确认已连接；MFi 设备由 iOS 持链路，App 要在系统连接后才能发现 |
-| 卡在「配件发现」 | 换 USB 线/重插适配器；iOS 检查「隐私与安全→本地网络」权限 |
+| 扫不到适配器 | iOS MFi：系统蓝牙设置确认已连接（MFi 链路由 iOS 持）；安卓：开蓝牙并在系统设置配对接头 |
+| 卡在「配件发现」 | 换 USB 线/重插适配器；iOS 检查「隐私与安全→本地网络」权限；安卓确认蓝牙权限已授予 |
 | 协议锁定失败 | 确认点火 ON、电瓶电压 ≥12V；电压低会一切通讯异常 |
 | 模块探测无应答 | 车熄火了？电瓶亏电？先看自检日志里的 ATRV 实时电压 |
 | iOS 提示不受信任 | 设置→通用→VPN与设备管理→信任开发者证书 |
@@ -216,6 +219,10 @@ porsche-coder/
 │   ├── write-alignment.js  # 写流程对齐数据
 │   ├── seedkey-*.js        # 安全访问算法（真值表可复验）
 │   ├── elm327.js           # ELM327 AT 命令层
+│   ├── port-channel.js     # 通道分流（平台 × 接头类型，安卓守卫）
+│   ├── mfi-port.js         # iOS MFi 外部配件通道（EA）
+│   ├── bt-port.js          # 蓝牙通道（安卓 SPP + BLE）
+│   ├── link-doctor.js      # 连接自检（L1/L2 按通道分流）
 │   ├── adapter.js          # 适配器识别
 │   └── mock-adapter.js     # 模拟适配器（重放断言）
 ├── ios/App/                # iOS 工程

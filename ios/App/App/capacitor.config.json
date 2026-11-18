@@ -16,6 +16,7 @@
     }
   },
   "packageClassList": [
+    "BluetoothSerial",
     "SharePlugin",
     "StatusBarPlugin",
     "MfiSerialPlugin",

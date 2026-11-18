@@ -1,15 +1,20 @@
 /**
- * link-doctor.js — 连接自检（VLinker MS 专用）。
+ * link-doctor.js — 连接自检（多通道：按「平台 × 接头类型」分流）。
  *
  * 目的：上车前把链路的**每一层**都验一遍，失败时明确指出卡在哪。
  *       不做任何写操作。
  *
- * 分层（任何一层断了都要能报出来）：
- *   L1  EA 配件可见     MfiSerial.list() 有 vLinker
- *   L2  EA 会话打开     MfiSerial.open() 成功
+ * 分层（任何一层断了都要能报出来；L1/L2 按通道分流，L3-L5 通道无关）：
+ *   L1  配件可见        mfi→EA 配件(MfiPort.list)；bt→蓝牙发现(BtPort.discover)
+ *   L2  会话打开        mfi→EA session(MfiPort.connect)；bt→蓝牙连接(BtPort.connect)
  *   L3  ELM327 活着     ATI 回 ELM327
  *   L4  协议锁定        ATSP6 + 0100/0902 有实质应答
  *   L5  模块可达        KWP 1A9F 对某个地址有响应
+ *
+ * 通道分流（2026-11-18，安卓实测 bug 修复）：
+ *   iOS × vLinker/自动   → MFi（EA，MfiSerial 只允许出现在这条路径）
+ *   iOS × ELM327/OBDKey → 蓝牙 BLE（非 MFi 分流；不可用给明确提示，不抛裸插件错误）
+ *   安卓 × 任意          → 蓝牙 SPP/BLE —— **安卓任何路径不得触达 MfiSerial**（守卫见 mfi-port.js）
  *
  * 2026-10 实测教训（全部在本文件里固化）：
  *   · ATSP0 自动探测必失败 → 用 ATSP6 显式锁定
@@ -21,6 +26,8 @@
  */
 
 import { MfiPort } from './mfi-port.js';
+import { BtPort } from './bt-port.js';
+import { detectPlatform, pickChannel, channelLabel, fixHint } from './port-channel.js';
 import { Elm327 } from './elm327.js';
 import { parseRespCaf1 } from './coder.js';
 
@@ -50,12 +57,20 @@ export const UDS_PROBES = [
 ];
 
 export class LinkDoctor {
-  constructor() {
+  /**
+   * opts: { adapterKind?: 'auto'|'vlinker'|'elm'|'obdkey', platform?: 'ios'|'android'|'web',
+   *         channel?: 'mfi'|'bt', adapters?: { mfi, bt } } —— adapters 是测试缝。
+   */
+  constructor(opts = {}) {
     this.steps = [];
     this.port = null;
     this.elm = null;
     this.onStep = null;
     this.identityBootstrap = null;
+    this.adapterKind = opts.adapterKind || 'auto';
+    this.platform = opts.platform || detectPlatform();
+    this.channel = opts.channel || null;   // null = 按「平台 × 接头类型」自动分流
+    this.adapters = opts.adapters || { mfi: MfiPort, bt: BtPort };
   }
 
   _ok(id, title, detail) {
@@ -71,38 +86,99 @@ export class LinkDoctor {
     return s;
   }
 
-  /** L1 —— EA 配件可见 */
-  async checkAccessory() {
-    const devices = await MfiPort.list();
-    const vlink = devices.find((d) =>
-      /vlink/i.test(d.name || '') || /vlink/i.test(d.model || '')) || devices[0];
-    if (!vlink) {
-      this._fail('L1', 'EA 配件', `发现 ${devices.length} 个配件，无 vLinker`,
-        '先到「设置 → 蓝牙」确认 vLinker 显示【已连接】。MFi 链路由 iOS 系统持，App 不能代替。');
-      return null;
-    }
-    this._ok('L1', 'EA 配件',
-      `${vlink.name} · SN ${vlink.serial} · 协议 ${JSON.stringify(vlink.protocolStrings)}`);
-    return vlink;
+  /** 通道分流：'mfi' | 'bt'（接头类型选择直接决定通道） */
+  _resolveChannel() {
+    return this.channel || pickChannel({ platform: this.platform, adapterKind: this.adapterKind });
   }
 
-  /** L2 —— EA 会话打开 */
+  /** L1 —— 配件可见（mfi→EA 配件；bt→蓝牙发现） */
+  async checkAccessory() {
+    const ch = this._resolveChannel();
+    this.channel = ch;
+    // ★ 平台守卫断言：安卓任何路径不得触达 MfiSerial（双保险，mfi-port.js 内另有 guardMfi）
+    if (this.platform === 'android' && ch === 'mfi') {
+      this._fail('L1', '通道分流', '安卓平台不走 MFi（MFi 是苹果外部配件协议）',
+        fixHint('bt', 'android', 'L1'));
+      return null;
+    }
+    if (ch === 'mfi') {
+      let devices = [];
+      try {
+        devices = await this.adapters.mfi.list();
+      } catch (e) {
+        this._fail('L1', 'EA 配件', String(e?.message || e),
+          e?.fix || fixHint('mfi', this.platform, 'L1'));
+        return null;
+      }
+      const vlink = devices.find((d) =>
+        /vlink/i.test(d.name || '') || /vlink/i.test(d.model || '')) || devices[0];
+      if (!vlink) {
+        this._fail('L1', 'EA 配件', `发现 ${devices.length} 个配件，无 vLinker`,
+          fixHint('mfi', this.platform, 'L1'));
+        return null;
+      }
+      this._ok('L1', 'EA 配件',
+        `${vlink.name} · SN ${vlink.serial} · 协议 ${JSON.stringify(vlink.protocolStrings)}`);
+      return vlink;
+    }
+    // bt 通道：蓝牙发现（SPP 扫描 / BLE 系统选择器）
+    try {
+      const found = await this.adapters.bt.discover({
+        platform: this.platform, adapterKind: this.adapterKind,
+      });
+      const vlink = found.devices.find((d) => /vlink/i.test(d.name || '')) || found.devices[0];
+      if (!vlink) {
+        this._fail('L1', '蓝牙发现', `发现 ${found.devices.length} 个设备，无可用接头`,
+          fixHint('bt', this.platform, 'L1'));
+        return null;
+      }
+      vlink.engine = vlink.engine || found.engine;
+      this._ok('L1', '蓝牙发现',
+        `${vlink.name} · ${vlink.address} · 通道 ${found.engine === 'spp' ? '经典蓝牙 SPP' : 'BLE'}`);
+      return vlink;
+    } catch (e) {
+      this._fail('L1', '蓝牙发现', String(e?.message || e),
+        e?.fix || fixHint('bt', this.platform, 'L1'));
+      return null;
+    }
+  }
+
+  /** L2 —— 会话打开（mfi→EA session；bt→蓝牙连接） */
   async openSession(device) {
-    const proto = (device.protocolStrings || [])[0] || null;
-    this.port = new MfiPort({
-      connectionId: device.connectionId,
-      protocol: proto,
-      name: device.name,
+    const ch = this.channel || this._resolveChannel();
+    if (ch === 'mfi') {
+      const proto = (device.protocolStrings || [])[0] || null;
+      this.port = new this.adapters.mfi({
+        connectionId: device.connectionId,
+        protocol: proto,
+        name: device.name,
+      });
+      try {
+        await this.port.connect();
+      } catch (e) {
+        this._fail('L2', 'EA 会话', String(e?.message || e),
+          e?.fix || fixHint('mfi', this.platform, 'L2'));
+        return false;
+      }
+      this.elm = new Elm327(this.port);
+      this._ok('L2', 'EA 会话', `已打开，协议串 ${proto}`);
+      return true;
+    }
+    this.port = new this.adapters.bt({
+      engine: device.engine || (this.platform === 'android' ? 'spp' : 'ble'),
+      device,
+      platform: this.platform,
     });
     try {
       await this.port.connect();
     } catch (e) {
-      this._fail('L2', 'EA 会话', String(e?.message || e),
-        'EA 会话开失败：拔插 vLinker → 回设置重连 → 再试。别在 App 里反复点，会形成僵尸会话。');
+      this._fail('L2', '蓝牙会话', String(e?.message || e),
+        e?.fix || fixHint('bt', this.platform, 'L2'));
       return false;
     }
     this.elm = new Elm327(this.port);
-    this._ok('L2', 'EA 会话', `已打开，协议串 ${proto}`);
+    this._ok('L2', '蓝牙会话',
+      `已打开（${this.port.engineKind === 'spp' ? '经典蓝牙 SPP' : 'BLE'}），${channelLabel(ch)}通道`);
     return true;
   }
 
@@ -111,7 +187,7 @@ export class LinkDoctor {
     const id = await this.elm.cmd('ATI', 4000);
     if (!/ELM327/i.test(id || '')) {
       this._fail('L3', 'ELM327', `ATI 返回 ${JSON.stringify(id)}`,
-        '适配器无响应：确认 vLinker 已上电（点火 ON）、手机没被别的 App 占用蓝牙。');
+        '适配器无响应：确认接头已上电（点火 ON）、手机没被别的 App 占用蓝牙。');
       return false;
     }
     const volt = await this.elm.cmd('ATRV', 3000);
@@ -268,6 +344,7 @@ export class LinkDoctor {
       steps: this.steps,
       port: this.port,
       elm: this.elm,
+      channel: this.channel,
     };
   }
 

@@ -1032,7 +1032,9 @@ $('btnDoctor').onclick = async () => {;
     coder = null;
     simMode = false;
     await new Promise((r) => setTimeout(r, 400));   // 给 EA 栈一点释放时间
-    doctor = new LinkDoctor();
+    // ★ 2026-11-18 通道分流：首页「选择接头类型」直接决定传输通道
+    //   （iOS×vLinker→MFi；iOS×ELM327/OBDKey→BLE；安卓×任意→蓝牙 SPP/BLE，永不碰 MfiSerial）。
+    doctor = new LinkDoctor({ adapterKind: ($('adapterType') && $('adapterType').value) || 'auto' });
     doctor.onStep = (s) => {
       log(`${s.ok ? '✅' : '❌'} ${s.title}: ${s.detail || ''}`, s.ok ? 'ok' : 'err');
       if (!s.ok) toast('err', `${s.title} 失败`, s.detail || s.fix || '');
