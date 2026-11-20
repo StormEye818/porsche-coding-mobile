@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "vectorId": "REPLAY_718",
+  "source": "合成重放 Boxster 982 UDS · 包内 §1.5④ 同构",
+  "grade": "R",
+  "provable": "runtime",
+  "sampleOnly": true,
+  "expected": [
+    "1003",
+    "3E00",
+    "1A9F",
+    "22F1A2",
+    "1A87",
+    "1A84",
+    "1089",
+    "221102",
+    "1003",
+    "22F190",
+    "220000"
+  ],
+  "replay": [
+    {
+      "req": "1003",
+      "resp": "7E8 02 50 03"
+    },
+    {
+      "req": "3E00",
+      "resp": "7E8 02 7E 00"
+    },
+    {
+      "req": "1A9F",
+      "resp": "7E8 06 5A 9F 50 32 30 30"
+    },
+    {
+      "req": "22F1A2",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A87",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A84",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A91",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1089",
+      "resp": "7E8 02 50 89"
+    },
+    {
+      "req": "221102",
+      "resp": "7E8 10 10 62 11 02 37 31 38\r7E8 21 20 42 6F 78 73 74 65\r7E8 22 72 20 54 AA AA AA AA"
+    },
+    {
+      "req": "1003",
+      "resp": "7E8 02 50 03"
+    },
+    {
+      "req": "22F190",
+      "resp": "7E8 10 14 62 F1 90 57 50 30\r7E8 21 5A 5A 5A 39 38 32 4A\r7E8 22 53 32 30 30 30 30 31"
+    },
+    {
+      "req": "220000",
+      "resp": "7E8 04 62 00 00 5A"
+    }
+  ],
+  "diffCmd": "node e2e-flow.mjs | grep -F 'VECTOR REPLAY_718 '",
+  "injection": {
+    "noData": "将 REPLAY_718.replay[].resp 全部改成 NO DATA → runtimeProbeVector 必须转红",
+    "wrongRx": "改 REPLAY_718.replay[].resp 回帧头 → e2e 帧 diff≠空",
+    "e1Generalized": "把 REPLAY_718.sampleOnly 改 false/grade S → provableTag 必须转红",
+    "e2eOutside": "把 REPLAY_718 从 e2e 执行面移除 → runtimeProbeVector 必须转红"
+  },
+  "sha256": "39d16ee5a41be5255ba6d555ddd87c60dcde5b5d93e17320e3ff4207e31839ae"
+}

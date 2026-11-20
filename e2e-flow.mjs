@@ -6,6 +6,7 @@
  * 跑法: node e2e-flow.mjs
  */
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { MockAdapter } from './src/mock-adapter.js';
 import { Elm327 } from './src/elm327.js';
 import { Coder, parseResp } from './src/coder.js';
@@ -23,6 +24,52 @@ const ok = (n, c, x = '') => {
   if (c) { pass++; console.log(`  ok   ${n}${x ? ' — ' + x : ''}`); }
   else { fail++; console.log(`  FAIL ${n}${x ? ' — ' + x : ''}`); }
 };
+
+// ─────────────────────────────────────────────────────────────────
+// T04 · e2e 重放向量纳管（ARCH §5.3）
+//   期望帧序 + 应答脚本统一从 tools/align431-vectors/*.json 读取；
+//   e2e 真执行后逐条打印 `VECTOR <id> frames=<n> diff=[]`，供 audit 的
+//   runtimeProbeVector 逐条比对。E1 单车样本一律 sampleOnly:true，禁止泛化。
+//   注意：这里只新增机器行，不新增/改写任何既有 127 条 ok() 断言语义。
+// ─────────────────────────────────────────────────────────────────
+const VECTOR_DIR = './tools/align431-vectors';
+const VECTOR_IDS = ['REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM'];
+let vectorFail = 0;
+
+function loadVector(vectorId) {
+  const v = JSON.parse(readFileSync(`${VECTOR_DIR}/${vectorId}.json`, 'utf8'));
+  if (v.vectorId !== vectorId || !Array.isArray(v.expected) || !Array.isArray(v.replay)
+      || v.sampleOnly !== true || v.grade !== 'R' || v.provable !== 'runtime') {
+    vectorFail++;
+    console.log(`VECTOR ${vectorId} frames=0 diff=[INVALID] reason=meta`);
+  }
+  const payload = JSON.stringify({ vectorId: v.vectorId, expected: v.expected, replay: v.replay });
+  const actual = createHash('sha256').update(payload, 'utf8').digest('hex');
+  if (v.sha256 !== actual) {
+    vectorFail++;
+    console.log(`VECTOR ${vectorId} frames=${v.expected.length} diff=[SHA]`);
+  }
+  return v;
+}
+
+function vectorDiff(vectorId, actualFrames) {
+  const expected = loadVector(vectorId).expected;
+  const diff = expected.filter((f, i) => actualFrames[i] !== f)
+    .concat(actualFrames.slice(expected.length));
+  const line = `VECTOR ${vectorId} frames=${actualFrames.length} diff=${JSON.stringify(diff)}`;
+  if (diff.length || actualFrames.length !== expected.length) {
+    vectorFail++;
+    console.log(`${line} expected=${JSON.stringify(expected)}`);
+    if (process.env.ALIGN431_VECTOR_DUMP === '1') {
+      console.log(`VECTOR_DUMP ${vectorId} actual=${JSON.stringify(actualFrames)}`);
+    }
+    return;
+  }
+  console.log(line);
+  if (process.env.ALIGN431_VECTOR_DUMP === '1') {
+    console.log(`VECTOR_DUMP ${vectorId} actual=${JSON.stringify(actualFrames)}`);
+  }
+}
 
 // ─────────────────────────────────────────────
 console.log('\n[1] 连接层');
@@ -207,28 +254,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   // ★ 2026-11-09 验收重放（🔴 从真日志建 fixture，常驻回归）：应答字节=用户日志原字节。
   //   标注：〔日志〕=真车日志字节；〔日志·车名链〕=车名键指认（RE-TRACEABILITY-20261109.md：
   //   SYSP:0x2a4b4 0x55 分支留存键=21 51，1A 9B/21 50 发后即清）。
-  const REPLAY_DME = [
-    { req: '1089', resp: '7E8 02 50 89' },                                   // 〔日志〕10 89 正响应
-    { req: '3E00', resp: '7E8 02 7E 00' },                                   // 保活 3E 00（会话后）
-    { req: '1A9F', resp: '7E8 06 5A 9F 50 32 30 30' },                       // 〔日志〕1A 9F "P200"
-    { req: '1A87', resp: '7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35' },  // 〔日志〕1A 87=98161864015
-    { req: '1A84', resp: 'NO DATA' },
-    { req: '1A91', resp: '7E8 10 0D 5A 91 39 39 31 36\r7E8 21 31 38 36 30 32 30 33' },  // 〔日志〕1A 91=99161860203（HW 件号）
-    { req: '1A92', resp: 'NO DATA' },
-    { req: '1A93', resp: '7E8 05 5A 93 48 30 34' },                          // 〔日志〕1A 93=H04（HW 版本）
-    { req: '1A94', resp: '7E8 10 0D 5A 94 39 38 31 36\r7E8 21 31 38 36 34 30 31 35' },  // 〔日志〕1A 94=98161864015
-    { req: '1A95', resp: 'NO DATA' },
-    { req: '1A97', resp: 'NO DATA' },
-    { req: '1A9A', resp: 'NO DATA' },
-    { req: '221102', resp: '7E8 03 7F 22 12' },                              // 〔日志〕22 11 02 → NRC 0x12（DME 拒 0x22）
-    { req: '221101', resp: '7E8 03 7F 22 12' },                              // 〔日志〕备链 22 11 01 同拒
-    { req: '1A90', resp: '7E810135A9057503041\r7E8214232393833454B\r7E822313930303833AA' }, // 〔日志〕1A 90 VIN 多帧
-    { req: '1A87', resp: '7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35' },  // 〔日志〕名链再发（确定性 ECU 同应答；fire-and-forget）
-    { req: '1A9B', resp: 'NO DATA' },                                        // 〔日志〕fire-and-forget（0x55 分支发后即清）
-    { req: '2150', resp: 'NO DATA' },                                        // 〔日志〕fire-and-forget（同上）
-    { req: '2151', resp: '7E8 08 61 51 43 61 79 6D 61 6E' },                 // 〔日志·车名链〕21 51="Cayman"（0x55 分支留存键，SYSP:0x2a4b4）
-    { req: '21A4', resp: '7E8 05 61 A4 11 22 33' },                          // 编码块读（KWP 21 <LID8>）
-  ];
+  const REPLAY_DME = loadVector('REPLAY_DME').replay;   // 〔E1 实车日志〕见 tools/align431-vectors/REPLAY_DME.json
   const m7 = new MockAdapter({ latencyMs: 0, replay: REPLAY_DME });
   const e7 = new Elm327(m7, { timeoutMs: 2000 });
   // 家族按通用规则从**记录 SID 字段**派生（familyOfItems）：981 DME 记录 21/3B 主导 → KWP 流
@@ -240,6 +266,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   const idn = await c7.readVehicleIdentity('kwp');
   await c7.readBlock(0xA4, 0x21).catch(() => null);
   const frames = m7.txLog.filter((c) => !c.startsWith('AT'));
+  vectorDiff('REPLAY_DME', frames);
 
   // ① 逐帧逐字节：与真日志帧序一致（KWP 流 10 89 直接建会话 → 3E 00 → 识别链 §2.1 →
   //    主/备 22 11 02/11 01（真日志双双 NRC 0x12）→ 名链 1A 90/1A 87/1A 9B/21 50/21 51
@@ -357,20 +384,14 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   }
 
   // ── 进 IC（KWP 家族）：KWP 只发 21 01/1A xx，永不对 KWP 发 0x22 ──
-  const REPLAY_IC = [
-    { req: '1089', resp: '7E8 02 50 89' },
-    { req: '3E00', resp: '7E8 02 7E 00' },
-    { req: '1A9F', resp: 'NO DATA' },       // KWP IC 识别静默（真车实证）
-    { req: '1A87', resp: 'NO DATA' },
-    { req: '1A84', resp: 'NO DATA' },
-    { req: '2101', resp: '7E8 04 61 01 00 00' },
-  ];
+  const REPLAY_IC = loadVector('REPLAY_IC').replay;     // 〔E1 实车日志〕KWP IC 静默识别
   const m7b = new MockAdapter({ latencyMs: 0, replay: REPLAY_IC });
   const e7b = new Elm327(m7b, { timeoutMs: 2000 });
   const c7b = new Coder(e7b, { tx: 0x721, rx: 0x729, ecuName: 'IC', family: 'kwp' });
   await c7b.enterSession(0x89, { family: 'kwp' });
   await c7b.readBlock(0x01, 0x21).catch(() => null);
   const fB = m7b.txLog.filter((c) => !c.startsWith('AT'));
+  vectorDiff('REPLAY_IC', fB);
   ok('IC 帧序逐帧一致（10 89→3E 00→识别链早停→21 01）',
     JSON.stringify(fB) === JSON.stringify(['1089', '3E00', '1A9F', '1A87', '1A84', '2101']), JSON.stringify(fB));
   ok('永不对 KWP 发 0x22（IC 全程无 22 xx）', !fB.some((f) => f.startsWith('22')));
@@ -521,20 +542,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   const fam718 = familyOfItems(rec718.items);
   ok('UDS 车家族由记录 SID 派生（BV_ECM_UDS 全 22/2E）', fam718 === 'uds', fam718);
   const it718 = rec718.items.find((x) => x && x.readSid === 0x22 && x.lid != null);
-  const REPLAY_718 = [
-    { req: '1003', resp: '7E8 02 50 03' },                                   // UDS 流=10 03（§1.3 另含）
-    { req: '3E00', resp: '7E8 02 7E 00' },
-    { req: '1A9F', resp: '7E8 06 5A 9F 50 32 30 30' },
-    { req: '22F1A2', resp: 'NO DATA' },                                    // 注册表识别请求（UDS 族插入 1A9F 后）
-    { req: '1A87', resp: 'NO DATA' },
-    { req: '1A84', resp: 'NO DATA' },
-    { req: '1A91', resp: 'NO DATA' },                                        // 3 miss 早停（§2.1）
-    { req: '1089', resp: '7E8 02 50 89' },                                   // 编码主会话（§7④ 挂 10 89）
-    { req: '221102', resp: '7E8 10 10 62 11 02 37 31 38\r7E8 21 20 42 6F 78 73 74 65\r7E8 22 72 20 54 AA AA AA AA' }, // 〔§1.5④同构〕22 11 02 直读 "718 Boxster T"
-    { req: '1003', resp: '7E8 02 50 03' },                                   // 备选链模板 10 03（SYSP:0x56a66）
-    { req: '22F190', resp: '7E8 10 14 62 F1 90 57 50 30\r7E8 21 5A 5A 5A 39 38 32 4A\r7E8 22 53 32 30 30 30 30 31' }, // 22 F1 90 直读 VIN
-    { req: '220000', resp: '7E8 04 62 00 00 5A' },                           // 记录读（BV_ECM_UDS 5 块集 {00,28,29,2B,FE} 之 00）
-  ];
+  const REPLAY_718 = loadVector('REPLAY_718').replay;   // 〔§1.5④同构〕UDS 718 流
   const m7d = new MockAdapter({ latencyMs: 0, replay: REPLAY_718 });
   const c7d = new Coder(new Elm327(m7d, { timeoutMs: 2000 }), { tx: 0x7E0, rx: 0x7E8, ecuName: 'DME', family: fam718 });
   await c7d.enterSession(0x89, { family: fam718 });
@@ -542,6 +550,7 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   const did718 = it718 ? (it718.lid & 0xffff) : 0;
   await c7d.readBlock(did718, 0x22).catch(() => null);
   const f718 = m7d.txLog.filter((c) => !c.startsWith('AT'));
+  vectorDiff('REPLAY_718', f718);
   const golden718 = ['1003', '3E00', '1A9F', '22F1A2', '1A87', '1A84', '1089', '221102', '1003', '22F190', '220000'];
   ok('UDS 车帧序逐帧逐字节一致（10 03 流）', JSON.stringify(f718) === JSON.stringify(golden718), JSON.stringify(f718));
   ok('UDS 流含 10 03（§1.3「UDS ECU 流另含」）', f718.includes('1003') && f718.includes('1089'));
@@ -604,37 +613,15 @@ console.log('\n[7x] 验收重放·多模块形态（PSM/BCM_vorne UDS 族 ——
     }
     return null;
   };
-  const hex2 = (b) => (b & 0xff).toString(16).padStart(2, '0').toUpperCase();
-  // 响应帧构造（CAF1 头 + ISO-TP）：header 前缀（如 [0x62,0xF1,0xA2] / [0x5A,0x84]）+ ASCII 文本；
-  // >7 数据字节走 FF/CF 多帧（与真日志 1A 87/91/94 多帧形态同款）。
-  const respFrames = (header, text) => {
-    const data = [...header, ...[...String(text)].map((c) => c.charCodeAt(0))];
-    const h = (arr) => arr.map(hex2).join(' ');
-    if (data.length <= 7) return `7E8 ${hex2(data.length)} ${h(data)}`;
-    const lines = [`7E8 ${hex2(0x10 | (data.length >> 8))} ${hex2(data.length)} ${h(data.slice(0, 6))}`];
-    for (let seq = 1, i = 6; i < data.length; i += 7, seq++) {
-      lines.push(`7E8 ${hex2(0x20 | (seq & 0x0f))} ${h(data.slice(i, i + 7))}`);
-    }
-    return lines.join('\r');
-  };
+  // 响应帧构造已抽出到 tools/align431-vectors/REPLAY_PSM.json / REPLAY_BCM.json
+  // （原 respFrames 逐字节结果冻结在 replay[].resp，e2e 只读消费，不再在脚本内重算）。
 
   // ── PSM（UDS 族，识别串 003000 + 件号 99135565589 → PSM_a2_1）──
   const identPsm = reg.variantToIdent['PSM_a2_1'][0];            // '003000'（DSN.BIN）
   const partPsm = Object.entries(pm.byPart).find(([, es]) => es.some((e) => e.module === 'PSM' && String(e.variant).includes('PSM_a2_1')))[0]; // 99135565589
   ok('PSM mock 来源=包内表（识别串 DSN.BIN + 件号 JOB.BIN）',
     identPsm === '003000' && partPsm === '99135565589', `${identPsm}/${partPsm}`);
-  const REPLAY_PSM = [
-    { req: '1003', resp: '7E8 02 50 03' },
-    { req: '1089', resp: '7E8 02 50 89' },
-    { req: '3E00', resp: '7E8 02 7E 00' },
-    { req: '1A9F', resp: 'NO DATA' },
-    { req: '22F1A2', resp: respFrames([0x62, 0xF1, 0xA2], identPsm) },   // 〔DSN.BIN 身份记录 22 F1 A2〕
-    { req: '1A87', resp: 'NO DATA' },
-    { req: '1A84', resp: respFrames([0x5A, 0x84], partPsm) },            // 〔JOB.BIN PARTNUMBER〕
-    { req: '1A91', resp: 'NO DATA' },
-    { req: '1A92', resp: 'NO DATA' },
-    { req: '1A93', resp: 'NO DATA' },
-  ];
+  const REPLAY_PSM = loadVector('REPLAY_PSM').replay;   // 〔包内表生成〕DSN.BIN + JOB.BIN
   const m8 = new MockAdapter({ latencyMs: 0, replay: REPLAY_PSM });
   const e8 = new Elm327(m8, { timeoutMs: 2000 });
   const c8 = new Coder(e8, { tx: 0x7E0, rx: 0x7E8, ecuName: 'PSM', family: 'uds' });
@@ -666,22 +653,14 @@ console.log('\n[7x] 验收重放·多模块形态（PSM/BCM_vorne UDS 族 ——
     m8.replay.push({ req: `22${did}`, resp: `7E8 04 62 ${did.slice(0, 2)} ${did.slice(2)} 11` });
     await c8.readBlock(lid, 0x22).catch(() => null);
     const frames = m8.txLog.filter((c) => !c.startsWith('AT'));
+    vectorDiff('REPLAY_PSM', frames);
     ok('PSM 读帧=22 <DID16>（UDS 形态）', frames.includes(`22${did}`) && !frames.some((f) => /^21/.test(f)), frames.join(','));
   }
 
   // ── BCM_vorne（UDS 纯族，识别串 050018 → BCM_vorne_9x1_Basis_GT4，无件号回落注册表）──
   const identBcm = reg.variantToIdent['BCM_vorne_9x1_Basis_GT4'][0];   // '050018'（DSN.BIN）
   ok('BCM mock 来源=包内识别串表（DSN.BIN）', identBcm === '050018', identBcm);
-  const REPLAY_BCM = [
-    { req: '1003', resp: '7E8 02 50 03' },
-    { req: '1089', resp: '7E8 02 50 89' },
-    { req: '3E00', resp: '7E8 02 7E 00' },
-    { req: '1A9F', resp: 'NO DATA' },
-    { req: '22F1A2', resp: respFrames([0x62, 0xF1, 0xA2], identBcm) },
-    { req: '1A87', resp: 'NO DATA' },
-    { req: '1A84', resp: 'NO DATA' },
-    { req: '1A91', resp: 'NO DATA' },
-  ];
+  const REPLAY_BCM = loadVector('REPLAY_BCM').replay;   // 〔包内表生成〕DSN.BIN 识别串
   const m8b = new MockAdapter({ latencyMs: 0, replay: REPLAY_BCM });
   const e8b = new Elm327(m8b, { timeoutMs: 2000 });
   const c8b = new Coder(e8b, { tx: 0x7E0, rx: 0x7E8, ecuName: 'BCM_vorne', family: 'uds' });
@@ -709,6 +688,7 @@ console.log('\n[7x] 验收重放·多模块形态（PSM/BCM_vorne UDS 族 ——
     m8b.replay.push({ req: `22${did}`, resp: `7E8 04 62 ${did.slice(0, 2)} ${did.slice(2)} 11` });
     await c8b.readBlock(lid, 0x22).catch(() => null);
     const frames = m8b.txLog.filter((c) => !c.startsWith('AT'));
+    vectorDiff('REPLAY_BCM', frames);
     ok('BCM 读帧=22 <DID16>（UDS 形态）', frames.includes(`22${did}`) && !frames.some((f) => /^21/.test(f)), frames.join(','));
     ok('重放零未命中（PSM/BCM 每帧都有脚本应答）',
       m8.replayMisses.length === 0 && m8b.replayMisses.length === 0,
@@ -1032,5 +1012,8 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
     bootOk, bootDetail);
 }
 
+console.log(vectorFail
+  ? `E2E_VECTOR_DIFF_FAIL count=${vectorFail} vectors=${VECTOR_IDS.length}`
+  : `E2E_VECTOR_DIFF_EMPTY count=${VECTOR_IDS.length}`);
 console.log(`\n===== 端到端结果：${pass} 通过 / ${fail} 失败 =====`);
-process.exit(fail ? 1 : 0);
+process.exit(fail || vectorFail ? 1 : 0);

@@ -18,7 +18,7 @@
  */
 import {
   readJson, scanForbiddenWords, evaluateRow, carrierStatusOf, sha256, sortedKeys, fileExists,
-  clearGateCache,
+  clearGateCache, runGate, assertionIntegrity,
 } from './align431-eval.mjs';
 
 const ROWS_FILE = 'tools/align431-rows.json';
@@ -71,8 +71,11 @@ for (const e of evaluated) {
   const r = e.row;
   const coord = `43\u0031证据=${r.evidence431} | 我方代码=${r.codePath}`;
   const two = `取证等级=${r.forensicGrade} | U-1载体状态=${e.u1CarrierStatus}`;
+  const t04 = `E0=${r.e0Coord ? `${r.e0Coord.evidenceId}:${r.e0Coord.file}:${r.e0Coord.locator}` : '-'}`
+    + ` | 向量=${r.vectorId || '-'} | provable=${r.provable || '-'}`
+    + ` | runtime应答=${r.runtimeAnswerBacked === true ? 1 : 0} | 符号命中=${r.symbolHitOnly === true ? 1 : 0}`;
   const extra = `gate=${r.gate}#${r.assertion} | diffCmd=${r.diffCmd} | check=${e.detail}`;
-  emit(`[${e.verdict === 'A' ? 'A  ' : '非A'}] ${r.rowId} | 分类=${r.category} | ${coord} | ${two} | ${extra}`);
+  emit(`[${e.verdict === 'A' ? 'A  ' : '非A'}] ${r.rowId} | 分类=${r.category} | ${coord} | ${two} | ${t04} | ${extra}`);
 }
 emit('');
 
@@ -127,6 +130,43 @@ for (const e of u1MissingRows.slice(0, 20)) emit(`  U1MISS ${e.row.rowId} 缺 ${
 emit(`待落盘门禁=${JSON.stringify((rows.deferredGates || []).map((g) => g.gate + '@' + g.phase))}`);
 emit('');
 
+// ⑥ T04 双举证：E0 坐标 / 向量 diff / provable / 24 行重判 / 注入自检
+const integrity = assertionIntegrity(allRows, rows.t04?.assertionIndex);
+const symbolOnlyA = evaluated.filter((e) => e.verdict === 'A' && e.row.symbolHitOnly === true).length;
+const zeroAnswerA = evaluated.filter((e) => e.verdict === 'A'
+  && e.row.runtimeRequired === true && e.row.runtimeAnswerBacked !== true).length;
+const noCoordA = evaluated.filter((e) => e.verdict === 'A'
+  && !(e.row.e0Coord && e.row.e0Coord.reproduceDigest)).length;
+const bcd = evaluated.filter((e) => ['B', 'C', 'D'].includes(e.row.originalVerdict));
+const bcdA = bcd.filter((e) => e.verdict === 'A').length;
+const bcdSymbol = bcd.filter((e) => e.row.symbolHitOnly === true).length;
+const plan = readJson('data/bind-plan.json') || {};
+const highRisk = sortedKeys(plan.ecu || {}).filter((s) => {
+  const e = plan.ecu[s] || {};
+  return Boolean(e.fourTuple) || (e.blockOff || []).length > 1 || e.nMixed === true;
+});
+const highRiskCovered = highRisk.filter((s) => {
+  const e = plan.ecu[s] || {};
+  return e.provable === 'static' && Boolean(e.e0Coord);
+}).length;
+emit('--- ⑥ T04 双举证 / 24 行重判 / 注入自检 ---');
+emit(`E0坐标覆盖=${rows.t04?.e0CoveredRows ?? 0}/${allRows.length} 向量应答覆盖=${rows.t04?.vectorBackedRows ?? 0}/${allRows.length} 无坐标仍标A=${noCoordA}`);
+emit(`靠符号命中翻 A=${symbolOnlyA} 零运行时应答仍标 A=${zeroAnswerA} NO_ASSERTION_DELETED=${integrity.ok} 断言数=${integrity.count}`);
+emit(`24行重判 原B/C/D=${bcd.length} 现A=${bcdA} 回退非A=${bcd.length - bcdA} 其中符号命中=${bcdSymbol}`);
+emit(`高风险 sysId 覆盖=${highRiskCovered}/${highRisk.length}（provable:static + E0 坐标双字段机读）`);
+const injectRun = runGate('tools/verify-align431-injection.mjs');
+const rateM = /INJECTION_RED_RATE (\d+)%/.exec(injectRun.stdout || '');
+const falseM = /INJECTION_FALSE_GREEN (\d+)/.exec(injectRun.stdout || '');
+const redM = /INJECTION_RED_COUNT (\d+)\/(\d+)/.exec(injectRun.stdout || '');
+const injectRate = rateM ? Number(rateM[1]) : -1;
+const injectFalseGreen = falseM ? Number(falseM[1]) : -1;
+const injectRed = redM ? `${redM[1]}/${redM[2]}` : '-/-';
+emit(`注入自检 能红率=${injectRate}% 假绿=${injectFalseGreen} 转红断言=${injectRed} gate退出码=${injectRun.exitCode === null ? 'N/A' : injectRun.exitCode}`);
+for (const line of (injectRun.stdout || '').split('\n')) {
+  if (line.startsWith('INJECT ')) emit(`  ${line}`);
+}
+emit('');
+
 // 汇总 + 退出码
 const aCount = evaluated.filter((e) => e.verdict === 'A').length;
 const nonACount = nonA.length;
@@ -134,8 +174,12 @@ const nonACount = nonA.length;
 //   它不是内容缺陷，处置方向是「先跑 npm run sync」；混进「非 A」会把人引去查代码。
 const precondRows = nonA.filter((e) => e.preconditionMissing);
 const precondCount = precondRows.length;
+const t04Ok = symbolOnlyA === 0 && zeroAnswerA === 0 && noCoordA === 0 && integrity.ok
+  && highRiskCovered === highRisk.length && injectRate === 100 && injectFalseGreen === 0
+  && injectRed.split('/')[0] === injectRed.split('/')[1] && injectRun.exitCode === 0;
 const allA = nonACount === 0 && fw.asClosingReason === 0 && u1MissingRows.length === 0
-  && rows.baseline.deleteZero && rows.baseline.mergeZero && rows.baseline.originalNumberingPreserved;
+  && rows.baseline.deleteZero && rows.baseline.mergeZero && rows.baseline.originalNumberingPreserved
+  && t04Ok;
 emit('--- 汇总 ---');
 emit(`基线=${rows.baseline.count} 新增=${rows.addedRowCount} 总行数=${allRows.length} A=${aCount} 非A=${nonACount}`);
 emit(`前置未满足行数=${precondCount}（gate 退出码 2 = 前置未构建、未判内容；请先 npm run sync）`);
@@ -148,10 +192,19 @@ if (fw.asClosingReason > 0) blockers.push(`禁用结案词命中 ${fw.asClosingR
 if (u1MissingRows.length > 0) blockers.push(`三件套缺失 ${u1MissingRows.length}`);
 if (!rows.baseline.deleteZero) blockers.push('删行≠0');
 if (!rows.baseline.mergeZero) blockers.push('合并行≠0');
+if (!integrity.ok) blockers.push('NO_ASSERTION_DELETED 失败');
+if (symbolOnlyA > 0) blockers.push(`靠符号命中翻 A ${symbolOnlyA}`);
+if (zeroAnswerA > 0) blockers.push(`零运行时应答仍标 A ${zeroAnswerA}`);
+if (noCoordA > 0) blockers.push(`无 E0 坐标仍标 A ${noCoordA}`);
+if (highRiskCovered !== highRisk.length) blockers.push(`高风险 sysId 覆盖 ${highRiskCovered}/${highRisk.length}`);
+if (injectRate !== 100 || injectFalseGreen !== 0 || injectRed.split('/')[0] !== injectRed.split('/')[1]) {
+  blockers.push(`注入自检能红率=${injectRate}% 假绿=${injectFalseGreen}`);
+}
 // 退出码三态：0=全 A；2=非 A **全部**由前置未满足造成（内容未判）；1=其余（含真内容缺陷）。
 const onlyPrecondition = nonACount > 0 && precondCount === nonACount;
 const otherBlockers = fw.asClosingReason > 0 || u1MissingRows.length > 0
-  || !rows.baseline.deleteZero || !rows.baseline.mergeZero || !rows.baseline.originalNumberingPreserved;
+  || !rows.baseline.deleteZero || !rows.baseline.mergeZero || !rows.baseline.originalNumberingPreserved
+  || !t04Ok;
 const exitCode = allA ? 0 : ((onlyPrecondition && !otherBlockers) ? 2 : 1);
 if (exitCode === 2) {
   emit(`退出码=2（${precondCount} 行因前置未构建未判，非内容缺陷 —— 请先 npm run sync；`

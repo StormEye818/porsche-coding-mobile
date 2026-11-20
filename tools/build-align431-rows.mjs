@@ -17,6 +17,8 @@ import { writeFileSync } from 'node:fs';
 import {
   ROOT, GAP_FILE, PRD_FILE, readText, readJson, fileExists, sortedKeys,
   evaluateRow, evaluateCheck, gateVerdict, measureNumberSources, legacyNumbersFromPrd,
+  REGISTRY_FILE, evaluateE0Vector, evaluateProvableTag,
+  e0CoordShape, readVector, vectorDigest, vectorAnswers, assertionIntegrity,
 } from './align431-eval.mjs';
 import { join } from 'node:path';
 
@@ -274,6 +276,97 @@ function originalVerdictOf(line) {
   return m ? m[1] : '?';
 }
 
+/* ──────────────────────────────────────────────────────────────────
+ * ★ T04 · E0 坐标 / 执行向量 / provable 的机读映射
+ *
+ * 映射规则来自 ARCH §4.1「关键步骤 → 证据 ID → gate」与 §5.3「e2e 向量纳管」。
+ * 这里只写**步骤级**规则，不给任何一行手填字段；每行字段由 registry 实测坐标、
+ * 向量文件摘要与 reproduceCmd 的实跑结果生成。映射不到 verified E0 / 向量的行
+ * 一律 `symbolHitOnly=true`、取证等级不升级、判非 A（fail-closed）。
+ * ────────────────────────────────────────────────────────────────── */
+const E0_STEPS = Object.freeze([
+  { key: 'live', vectorId: 'REPLAY_DME', runtime: true,
+    ids: ['E-05', 'E-20', 'E-01', 'E-06'], topics: [], categories: [],
+    re: /live.?map|reportNative|fail.?closed|请求键绑定|NO_NATIVE/i },
+  { key: 'address', vectorId: 'REPLAY_DME', runtime: true,
+    ids: ['PE-01', 'PE-02', 'E-01', 'E-02', 'E-06'], topics: ['连接', '寻址'],
+    categories: ['HB2-DISPATCH'], re: /addr|probe|地址|候选|221409|ATSH|ATCRA/i },
+  { key: 'session', vectorId: 'REPLAY_IC', runtime: true,
+    ids: ['PE-10', 'PE-11', 'PE-12'], topics: ['会话'],
+    categories: ['BEHAVIOR-SESSION'], re: /session|会话|sessionless|10 89/i },
+  { key: 'identity', vectorId: 'REPLAY_DME', runtime: true,
+    ids: ['PE-20', 'PE-21', 'PE-22', 'E-11', 'E-13', 'E-14', 'E09', 'E08'],
+    topics: ['VIN', '车型', '变体'], categories: ['IDENTITY-CHAIN', 'HB3-LAYERS'],
+    re: /ident|身份|变体|车型|VIN|ECM|DME|匹配/i },
+  { key: 'seedkey', vectorId: 'REPLAY_PSM', runtime: true,
+    ids: ['PE-30', 'PE-31', 'PE-32'], topics: ['seed/key'],
+    categories: ['SEEDKEY-CHAIN'], re: /seed|key|27 09|安全访问/i },
+  { key: 'write', vectorId: 'REPLAY_PSM', runtime: true,
+    ids: ['PE-41', 'PE-43'], topics: ['写', '恢复/批量/编程页'],
+    categories: ['BEHAVIOR-13'], re: /write|写|回读|恢复|2E|3B/i },
+  { key: 'read', vectorId: 'REPLAY_PSM', runtime: true,
+    ids: ['PE-40', 'PE-42'], topics: ['读'], categories: ['BEHAVIOR-CATALOG'],
+    re: /read|读帧|DID|LID/i },
+  { key: 'special', vectorId: 'REPLAY_BCM', runtime: false,
+    ids: ['PE-45', 'PE-46', 'E08'], categories: ['NORID', 'D2-NAMESPACE', 'FEATURE-SET-5'],
+    re: /special|例程|特殊功能|菜单|menu|noRid|命名空间/i },
+  { key: 'failure', vectorId: 'REPLAY_IC', runtime: true,
+    ids: ['PE-50', 'PE-51', 'PE-52', 'PE-53', 'PE-54', 'PE-55'],
+    categories: ['BEHAVIOR-TRANSPORT'], re: /78|NRC|NO DATA|超时|timeout|回帧/i },
+  { key: 'platform', vectorId: 'REPLAY_718', runtime: false,
+    ids: ['E01', 'E02', 'E03', 'E04', 'E10', 'E11'], topics: ['平台代'],
+    categories: ['HB1-TYPE'], re: /platform|平台|type|DSN|root.table/i },
+  { key: 'timeout', vectorId: 'REPLAY_IC', runtime: true,
+    ids: ['PE-14', 'E-04'], categories: ['BEHAVIOR-TIMEOUT'],
+    re: /5000|8000|16000|等待参数/i },
+  { key: 'data', vectorId: 'REPLAY_BCM', runtime: false,
+    ids: ['E05', 'E10', 'PE-42', 'E06'], topics: ['数据层'],
+    categories: ['D5-MAXTEXT', 'U1-MISSING-7', 'RESERVED-GATE', 'BEHAVIOR-ARTIFACT'],
+    re: /schema|数据层|enumerate|validateParam|json|产物/i },
+]);
+
+const E0_REGISTRY = readJson(REGISTRY_FILE) || { entries: [] };
+
+/** 按 topic/category/gate/断言/原文稳定选择步骤（不依赖行序、机器状态）。 */
+function stepForRow(row) {
+  const hay = [row.topic, row.category, row.gate, row.assertion, row.codePath,
+    row.evidence431, row.originalText].filter(Boolean).join(' | ');
+  for (const s of E0_STEPS) {
+    if ((s.categories || []).includes(row.category)) return s;
+    if ((s.topics || []).includes(row.topic)) return s;
+  }
+  for (const s of E0_STEPS) if (s.re.test(hay)) return s;
+  return E0_STEPS[E0_STEPS.length - 1];
+}
+
+/** 从 registry 里取该步骤第一个 verified 且坐标合法的 E0 条目，并实跑复算命令。 */
+function evidenceForRow(row, step) {
+  const seen = new Set();
+  for (const id of step.ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const entry = E0_REGISTRY.entries.find((e) => e.evidenceId === id);
+    if (!entry || entry.status !== 'verified' || !e0CoordShape(entry).ok) continue;
+    const r = evaluateE0Vector({ evidenceId: id });
+    if (!r.ok) continue;
+    const shape = e0CoordShape(entry);
+    return { ok: true, evidenceId: id, digest: r.digest,
+      coord: { evidenceId: id, file: entry.e0Coord.file, locator: shape.locator,
+        detail: entry.e0Coord.detail, grade: entry.grade, provable: entry.provable,
+        reproduceDigest: r.digest, sourceLedger: entry.sourceLedger } };
+  }
+  return { ok: false, evidenceId: '', digest: '', coord: null };
+}
+
+/** 纳管向量摘要 + 应答举证（e2e 真跑 diff 由 runtimeProbeVector 在求值时负责）。 */
+function vectorForRow(row, step) {
+  const got = readVector(step.vectorId);
+  if (!got.ok) return { ok: false, vectorId: step.vectorId, digest: '', answers: 0, sampleOnly: true };
+  const answers = vectorAnswers(got.vector).length;
+  return { ok: answers > 0, vectorId: step.vectorId, digest: vectorDigest(got.vector),
+    answers, sampleOnly: got.vector.sampleOnly === true };
+}
+
 /**
  * 构造一行完整判定（10 个规定字段 + 机读 check / 分类 / 载体阶段）。
  *
@@ -307,23 +400,39 @@ function makeRow(opts) {
     check,
   };
   if (baselineLine !== undefined) { row.baselineLine = baselineLine; row.originalVerdict = originalVerdict; }
-  // ★ 裁定 1：deferred 按磁盘实况重算；evidence 命中且实现落地时，
-  //   原 GAP 判 B/C/D 的「取证等级」随实证升级为 A（不手改、不放宽判定内核）。
-  row.check = resolveDeferred(row);
-  // ★ QA R1/R2：取证等级由**实证**驱动升级（不是无条件 A）：
-  //   ① check 解析为 evidence 且 token 命中；或 ② 该行有专属 bench.check 且实际通过。
-  //   两者都要求「真实证据成立」，否则保持原判（B/C/D）。
+  // ★ 裁定 1：deferred 按磁盘实况重算；T04 起**不再**让 evidence token 单独升级取证等级。
+  const baseCheck = resolveDeferred(row);
+  const baseOk = evaluateCheck(baseCheck).ok;
+  const step = stepForRow(row);
+  const ev = evidenceForRow(row, step);
+  const vec = vectorForRow(row, step);
+  row.e0Coord = ev.coord;
+  row.vectorId = vec.ok || !vec.vectorId ? vec.vectorId : '';
+  row.provable = step.runtime ? 'runtime' : 'static';
+  row.runtimeRequired = step.runtime;
+  row.runtimeAnswerBacked = vec.answers > 0;
+  row.sampleOnly = vec.sampleOnly;
+  row.symbolHitOnly = !(ev.ok && vec.ok);
+  const provableSpec = {
+    kind: 'provableTag', provable: row.provable, vectorId: row.vectorId,
+    runtimeRequired: row.runtimeRequired, runtimeAnswerBacked: row.runtimeAnswerBacked,
+    symbolHitOnly: row.symbolHitOnly, sampleGeneralized: false,
+  };
+  const provableOk = evaluateProvableTag(provableSpec).ok;
+  // 原 check 完整保留（只收紧不删除），前置再加 E0 复算 / 向量 diff / provable 三道闸。
+  row.check = { kind: 'all', note: 'T04 双举证：原断言 ∧ E0 坐标复算 ∧ e2e 向量 diff ∧ provable',
+    of: [baseCheck,
+      { kind: 'e0CoordVector', evidenceId: ev.evidenceId, expectDigest: ev.digest },
+      { kind: 'runtimeProbeVector', vectorId: row.vectorId, expectDigest: vec.digest,
+        requireAnswer: true },
+      provableSpec] };
+  // ★ QA R1/R2 + T04：取证等级只由**双举证**驱动升级（E0 复算 + 应答向量 + 原断言）。
+  //   原判 B/C/D 或含真车语义的行，仅靠 evidence token 命中不再翻 A。
   if (forensicGrade !== 'A') {
-    let upgraded = false;
-    if (row.check.kind === 'evidence') {
-      const ev = evaluateCheck(row.check);
-      upgraded = ev.ok;
-    } else if (hasRowEvidence) {
-      upgraded = evaluateCheck(row.check).ok;
-    }
+    const upgraded = baseOk && ev.ok && vec.ok && provableOk && !row.symbolHitOnly;
     if (upgraded) {
       row.forensicGrade = 'A';
-      row.forensicGradeNote = `原 GAP 判 ${originalVerdict ?? forensicGrade} 已被静态实证推翻（行专属证据实测通过）`;
+      row.forensicGradeNote = `原 GAP 判 ${originalVerdict ?? forensicGrade} 已被 E0 复算+运行时应答双举证推翻（非符号命中）`;
     }
   }
   row.forensicGrade = row.forensicGrade || forensicGrade;
@@ -943,6 +1052,11 @@ const numberSources = measureNumberSources();
 const legacyNumbers = legacyNumbersFromPrd();
 const categoryCounts = {};
 for (const r of addedRows) categoryCounts[r.category] = (categoryCounts[r.category] || 0) + 1;
+const allRowsForIndex = [...baselineRows, ...addedRows];
+const assertionIndex = assertionIntegrity(allRowsForIndex, null);
+const bcdRows = baselineRows.filter((r) => ['B', 'C', 'D'].includes(r.originalVerdict));
+const e0Coverage = allRowsForIndex.filter((r) => r.e0Coord && r.e0Coord.reproduceDigest).length;
+const vectorCoverage = allRowsForIndex.filter((r) => r.vectorId && r.runtimeAnswerBacked).length;
 
 const doc = {
   schemaVersion: 1,
@@ -958,6 +1072,21 @@ const doc = {
   },
   addedRowCount: addedRows.length,
   categoryCounts,
+  t04: {
+    schemaVersion: 1,
+    source: 'ARCH §4.1 E0 步骤映射 + §5.3 e2e 向量纳管；字段全部由 registry/向量/复跑命令生成',
+    assertionIndex: { sha256: assertionIndex.sha256, count: assertionIndex.count },
+    rowCount: allRowsForIndex.length,
+    e0CoveredRows: e0Coverage,
+    vectorBackedRows: vectorCoverage,
+    reAdjudicatedRows: bcdRows.map((r) => ({
+      rowId: r.rowId, originalVerdict: r.originalVerdict, verdict: r.verdict,
+      evidenceId: r.e0Coord?.evidenceId || '', vectorId: r.vectorId || '',
+      runtimeAnswerBacked: r.runtimeAnswerBacked === true, symbolHitOnly: r.symbolHitOnly === true,
+    })),
+    symbolHitOnlyRows: allRowsForIndex.filter((r) => r.symbolHitOnly).length,
+    zeroRuntimeAnswerRows: allRowsForIndex.filter((r) => r.runtimeRequired && !r.runtimeAnswerBacked).length,
+  },
   numberSources,
   legacyNumbers,
   deferredGates: [
@@ -974,3 +1103,5 @@ writeFileSync(OUT, JSON.stringify(doc, null, 1) + '\n', 'utf8');
 console.log(`写出 tools/align431-rows.json：基线 ${baselineRows.length} 行 / 新增 ${addedRows.length} 行 / 分类 ${Object.keys(categoryCounts).length} 类 / 数字来源 ${numberSources.length} 项`);
 for (const k of sortedKeys(categoryCounts)) console.log(`  ${k.padEnd(20)} ${categoryCounts[k]}`);
 console.log('ROWS_DELETE_ZERO', doc.baseline.deleteZero, 'ROWS_MERGE_ZERO', doc.baseline.mergeZero, 'N', doc.addedRowCount);
+console.log(`T04_E0_COVERED ${e0Coverage}/${allRowsForIndex.length} T04_VECTOR_BACKED ${vectorCoverage}/${allRowsForIndex.length} T04_BCD_READJUDICATED ${bcdRows.length}`);
+console.log(`T04_SYMBOL_HIT_ONLY ${doc.t04.symbolHitOnlyRows} T04_ZERO_RUNTIME_ANSWER ${doc.t04.zeroRuntimeAnswerRows} NO_ASSERTION_DELETED ${assertionIndex.sha256.slice(0, 16)}`);

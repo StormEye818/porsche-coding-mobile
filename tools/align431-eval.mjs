@@ -22,8 +22,16 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
-/** 仓库根（仅内部使用；绝不出现在审计输出里）。 */
-export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+/**
+ * 仓库根（仅内部使用；绝不出现在审计输出里）。
+ *
+ * T04 注入自检：允许通过 `ALIGN431_ROOT_OVERRIDE` 把同一套只读求值指向
+ * 临时镜像（软链接 + 少量覆写文件），从而**不改真实仓库**即可验证 gate 会转红。
+ * 正常执行（含 npm test / audit）该变量未设置，行为与原来逐字节一致。
+ */
+const REAL_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ENV_ROOT = process.env.ALIGN431_ROOT_OVERRIDE || '';
+export const ROOT = ENV_ROOT && existsSync(ENV_ROOT) ? join(ENV_ROOT, '.') : REAL_ROOT;
 
 /** 权威文档文件名（相对仓库根），按 Q4 / U-7 的「本轮 6 份基线文档 + 现行 PRD」。 */
 export const PRD_FILE = 'PRD-FULLALIGN-43\u0031-20261113.md';
@@ -95,6 +103,274 @@ export function fileExists(rel) {
 /** 稳定的键序遍历。 */
 export function sortedKeys(obj) {
   return Object.keys(obj || {}).sort();
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * T04 · 双举证机读底座
+ *
+ * 所有求值都接受可选 `ctx`（仅注入自检使用）：
+ *   ctx.json   = {'<repo-rel-path>': object}      内存覆写 JSON
+ *   ctx.text   = {'<repo-rel-path>': string}      内存覆写文本
+ *   ctx.vectors= {vectorId: vectorObject}         内存覆写向量
+ *   ctx.e2eStdout = string                        内存模拟 e2e 实跑输出
+ * 未传 ctx 时全部走磁盘，结果与 T01-T03 完全一致。
+ * ────────────────────────────────────────────────────────────────── */
+/** E0 原始包根（从仓库相对位置推导，绝不写进输出）。 */
+export const E0_ROOT = join(REAL_ROOT, '..', 'porsche-mapper', 'ref');
+/** 纳管向量目录（相对仓库根）。 */
+export const VECTOR_DIR = 'tools/align431-vectors';
+/** 参考诊断仪证据台账（T01）。 */
+export const REGISTRY_FILE = 'data/align431-evidence-registry.json';
+/** e2e 向量纳管执行器（T04）。 */
+export const E2E_GATE = 'e2e-flow.mjs';
+
+const E0_CACHE = new Map();
+const VECTOR_CACHE = new Map();
+
+function hasOwn(obj, key) {
+  return Boolean(obj) && Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+/** 带 ctx 覆写的 JSON 读取（只读，不修改入参）。 */
+export function readJsonCtx(rel, ctx) {
+  if (hasOwn(ctx?.json, rel)) return ctx.json[rel];
+  if (ctx?.root) {
+    const p = join(ctx.root, rel);
+    return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null;
+  }
+  return readJson(rel);
+}
+
+/** 带 ctx 覆写的文本读取。 */
+export function readTextCtx(rel, ctx) {
+  if (hasOwn(ctx?.text, rel)) return ctx.text[rel];
+  if (ctx?.root) {
+    const p = join(ctx.root, rel);
+    return existsSync(p) ? readFileSync(p, 'utf8') : null;
+  }
+  return readText(rel);
+}
+
+/** 规范化 sha256（与 sha256() 同一算法，便于 ctx 内比较）。 */
+export const digest = sha256;
+
+/** E0 坐标形状 + 回指原始文件/offset/VA/record 校验（不执行 reproduceCmd）。 */
+export function e0CoordShape(entry) {
+  const c = entry?.e0Coord;
+  if (!c || typeof c.file !== 'string' || !c.file.trim()) {
+    return { ok: false, detail: 'E0 缺 file' };
+  }
+  if (/(?:^|[/\\])(?:\.\.)(?:[/\\]|$)|^(?:\/|[A-Za-z]:[\\/])/.test(c.file)) {
+    return { ok: false, detail: 'E0 file 越出仓库/含绝对路径' };
+  }
+  const hasOffset = Number.isInteger(c.offset) && c.offset >= 0;
+  const hasVA = typeof c.VA === 'string' && /^0x[0-9a-fA-F]+$/.test(c.VA)
+    && Number.parseInt(c.VA.slice(2), 16) > 0;
+  const hasRecord = typeof c.recordId === 'string' && c.recordId.trim().length > 0;
+  if (!hasOffset && !hasVA && !hasRecord) {
+    return { ok: false, detail: 'E0 缺 offset/VA/recordId 或为 0 占位' };
+  }
+  if (!c.detail || String(c.detail).trim().length === 0) {
+    return { ok: false, detail: 'E0 缺 detail（无法回指做法）' };
+  }
+  return {
+    ok: true,
+    locator: hasOffset ? `offset=${c.offset}` : hasVA ? `VA=${c.VA}` : `record=${c.recordId}`,
+    detail: `${c.file}:${hasOffset ? c.offset : hasVA ? c.VA : c.recordId}`,
+  };
+}
+
+/** 执行 registry 的 reproduceCmd，返回稳定 stdout digest；同一命令进程内只跑一次。 */
+export function reproduceE0(entry, ctx) {
+  const shape = e0CoordShape(entry);
+  if (!shape.ok) return { ok: false, detail: shape.detail };
+  if (entry.status !== 'verified') {
+    return { ok: false, detail: `E0 ${entry.evidenceId} 未 verified（fail-closed）` };
+  }
+  const cmd = entry.reproduceCmd;
+  if (typeof cmd !== 'string' || cmd.trim().length === 0) {
+    return { ok: false, detail: 'E0 reproduceCmd 缺失' };
+  }
+  const key = `${digest(cmd)}|${entry.evidenceId}`;
+  if (E0_CACHE.has(key)) return E0_CACHE.get(key);
+  let result;
+  try {
+    const stdout = execFileSync('sh', ['-c', cmd], {
+      cwd: ctx?.root || ROOT,
+      env: { ...process.env, E0_ROOT, LC_ALL: 'C', TZ: 'UTC', NO_COLOR: '1', FORCE_COLOR: '0' },
+      encoding: 'utf8',
+      timeout: 20000,
+      maxBuffer: 8 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    result = { ok: true, digest: digest(stdout), detail: `${shape.detail} reproduce=exit0 diff=空` };
+  } catch (error) {
+    result = { ok: false, detail: `${shape.detail} reproduce≠0（status=${typeof error.status === 'number' ? error.status : 1}）` };
+  }
+  E0_CACHE.set(key, result);
+  return result;
+}
+
+/**
+ * `e0CoordVector`：registry 中存在 + 坐标合法 + reproduceCmd exit 0 + digest 与生成器钉住的期望相等。
+ * `expectDigest` 省略时只要求复算成功（仍要求 registry 坐标真实）。
+ */
+export function evaluateE0Vector(spec, ctx) {
+  if (!spec || !spec.evidenceId) return { ok: false, detail: 'e0CoordVector 缺 evidenceId' };
+  const registry = readJsonCtx(REGISTRY_FILE, ctx);
+  if (!registry || !Array.isArray(registry.entries)) {
+    return { ok: false, detail: 'registry 不可读' };
+  }
+  const entry = registry.entries.find((e) => e.evidenceId === spec.evidenceId);
+  if (!entry) return { ok: false, detail: `registry 无 ${spec.evidenceId}` };
+  const r = reproduceE0(entry, ctx);
+  if (!r.ok) return r;
+  if (spec.expectDigest && spec.expectDigest !== r.digest) {
+    return { ok: false, detail: `${spec.evidenceId} 复算摘要≠钉住值（${r.digest.slice(0, 12)}…）` };
+  }
+  return { ok: true, evidenceId: spec.evidenceId, digest: r.digest,
+    detail: `${spec.evidenceId} ${r.detail}` };
+}
+
+/** 从向量 payload 计算稳定摘要（不进 sha 的字段不参与）。 */
+export function vectorDigest(v) {
+  return digest(JSON.stringify({ vectorId: v.vectorId, expected: v.expected, replay: v.replay }));
+}
+
+/** 读取并校验纳管向量（E1 一律 sampleOnly，禁止泛化全代）。 */
+export function readVector(vectorId, ctx) {
+  if (!vectorId) return { ok: false, detail: 'runtimeProbeVector 缺 vectorId' };
+  if (hasOwn(ctx?.vectors, vectorId)) {
+    const v = ctx.vectors[vectorId];
+    const shape = validateVector(v, vectorId);
+    return shape.ok ? { ok: true, vector: v } : shape;
+  }
+  const rel = `${VECTOR_DIR}/${vectorId}.json`;
+  const text = readTextCtx(rel, ctx);
+  if (text === null) return { ok: false, detail: `向量未纳管：${rel}` };
+  let v;
+  try { v = JSON.parse(text); } catch { return { ok: false, detail: `向量 JSON 损坏：${rel}` }; }
+  const shape = validateVector(v, vectorId);
+  if (!shape.ok) return shape;
+  if (v.sha256 && v.sha256 !== vectorDigest(v)) {
+    return { ok: false, detail: `${vectorId} 向量摘要不符（文件被改）` };
+  }
+  VECTOR_CACHE.set(vectorId, v);
+  return { ok: true, vector: v };
+}
+
+function validateVector(v, expectedId) {
+  if (!v || typeof v.vectorId !== 'string' || !v.vectorId
+      || (expectedId && v.vectorId !== expectedId)) {
+    return { ok: false, detail: '向量缺 vectorId 或与文件名不符' };
+  }
+  if (!Array.isArray(v.expected) || v.expected.length === 0) {
+    return { ok: false, detail: `${v?.vectorId || '?'} 缺 expected 帧序` };
+  }
+  if (!Array.isArray(v.replay) || v.replay.length === 0) {
+    return { ok: false, detail: `${v?.vectorId || '?'} 缺 replay 应答` };
+  }
+  if (v.sampleOnly !== true || v.grade !== 'R' || v.provable !== 'runtime') {
+    return { ok: false, detail: `${v.vectorId} E1/E2 样本未标 sampleOnly+grade:R+provable:runtime` };
+  }
+  if (typeof v.diffCmd !== 'string' || !v.diffCmd || !v.injection || typeof v.injection !== 'object') {
+    return { ok: false, detail: `${v.vectorId} 缺 diffCmd/injection 反例` };
+  }
+  return { ok: true };
+}
+
+/** 向量应答举证：至少一帧非 NO DATA 的实际应答。 */
+export function vectorAnswers(v) {
+  return (v?.replay || []).filter((x) => x && x.resp && String(x.resp).trim() !== 'NO DATA');
+}
+
+/**
+ * `runtimeProbeVector`：向量在册 + 摘要一致 + 帧序 diff=空 + 至少一帧真实应答。
+ * 默认把 e2e-flow.mjs 真跑一次（runGate 缓存），从 stdout 的 `VECTOR <id> ... diff=[]` 取 diff。
+ * 注入自检可传 ctx.e2eStdout 用内存输出替代，避免真跑。
+ */
+export function evaluateRuntimeVector(spec, ctx) {
+  if (!spec || !spec.vectorId) return { ok: false, detail: 'runtimeProbeVector 缺 vectorId' };
+  const got = readVector(spec.vectorId, ctx);
+  if (!got.ok) return got;
+  const v = got.vector;
+  if (spec.expectDigest && spec.expectDigest !== vectorDigest(v)) {
+    return { ok: false, detail: `${v.vectorId} 向量摘要≠钉住值` };
+  }
+  const answers = vectorAnswers(v);
+  if (spec.requireAnswer !== false && answers.length === 0) {
+    return { ok: false, detail: `${v.vectorId} 全 NO DATA：零运行时应答不得标 A` };
+  }
+  if (spec.consumedSource !== false && !ctx?.e2eStdout) {
+    const src = readTextCtx(E2E_GATE, ctx) || '';
+    if (!src.includes(`loadVector('${v.vectorId}')`) || !src.includes('E2E_VECTOR_DIFF_EMPTY')) {
+      return { ok: false, detail: `${v.vectorId} 未接进 e2e 执行面（向量在门禁外）` };
+    }
+  }
+  let stdout = ctx?.e2eStdout;
+  if (typeof stdout !== 'string') {
+    const run = runGate(E2E_GATE);
+    if (!run.executable || run.exitCode !== 0) {
+      return { ok: false, detail: `e2e 门禁未通过（exit=${run.exitCode}）` };
+    }
+    stdout = run.stdout;
+  }
+  const line = stdout.split('\n').find((l) => l.startsWith(`VECTOR ${v.vectorId} `));
+  if (!line) return { ok: false, detail: `e2e 未产出 ${v.vectorId} 的逐帧 diff 行` };
+  const diffOk = /diff=\[\]/.test(line) && /frames=\d+/.test(line);
+  if (!diffOk) return { ok: false, detail: `${v.vectorId} 实发/期望 diff≠空：${line.slice(0, 120)}` };
+  return { ok: true, vectorId: v.vectorId, answers: answers.length,
+    detail: `${v.vectorId} 帧序 diff=空 应答=${answers.length} sampleOnly=${v.sampleOnly}` };
+}
+
+/**
+ * `provableTag`：静态/运行时标注与证据级别一致；E1 样本不得泛化全代；
+ * 运行时行必须有应答举证且不得把 CAN 静态写死。
+ */
+export function evaluateProvableTag(row, ctx) {
+  const p = row?.provable;
+  if (p !== 'static' && p !== 'runtime') {
+    return { ok: false, detail: `缺 provable 标注（${p}）` };
+  }
+  if (row?.symbolHitOnly === true) {
+    return { ok: false, detail: '仅符号命中不得判 A' };
+  }
+  if (row?.runtimeRequired === true) {
+    if (row.planSysId === null) {
+      return { ok: false, detail: 'planSysId=null 静默兜底：fail-closed，不得标 A' };
+    }
+    if (p !== 'runtime') return { ok: false, detail: '运行时语义行标成 static（runtime 静态写死）' };
+    if (row.runtimeAnswerBacked !== true) {
+      return { ok: false, detail: '运行时语义行零应答举证' };
+    }
+  }
+  if (row?.vectorId) {
+    const got = readVector(row.vectorId, ctx);
+    if (!got.ok) return got;
+    if (got.vector.sampleOnly === true && row.sampleGeneralized === true) {
+      return { ok: false, detail: 'E1 样本被泛化为全代真值' };
+    }
+    if (got.vector.hardcodedCan === true) {
+      return { ok: false, detail: '向量把 CAN 静态写死' };
+    }
+  }
+  return { ok: true, detail: `provable=${p} runtimeAnswerBacked=${row?.runtimeAnswerBacked === true} symbolHitOnly=false` };
+}
+
+/**
+ * `NO_ASSERTION_DELETED`：行断言清单与生成器钉住的摘要一致，且每行 gate/assertion 非空。
+ * 注入自检通过 ctx.rows 覆写当前行集；审计传磁盘行集。
+ */
+export function assertionIntegrity(rows, recorded, ctx) {
+  const list = Array.isArray(rows) ? rows : [];
+  const pairs = list.map((r) => `${r.rowId}=${r.assertion || ''}`).sort();
+  const current = digest(pairs.join('\n'));
+  const expected = recorded?.sha256;
+  const ok = list.length > 0 && list.every((r) => typeof r.gate === 'string' && r.gate
+      && typeof r.assertion === 'string' && r.assertion.trim().length > 0)
+    && (!expected || current === expected);
+  return { ok, count: list.length, sha256: current,
+    detail: ok ? `NO_ASSERTION_DELETED 断言 ${list.length} 条完整` : '断言清单被改/删除或存在空断言' };
 }
 
 /** 列出仓库根全部 .md（排序，确定性）。 */
@@ -236,8 +512,12 @@ export function scanForbiddenWords() {
  *   all            {of:[check...]}                     全部 A → A
  *   deferred       {carrier, phase}                    永远非 A（T03/T04 待落地）
  *   evidence       {verified:true, note}               由生成器实测标记（等价于已复跑）
+ *   e0CoordVector  {evidenceId, expectDigest}          E0 坐标在册 + reproduceCmd 复算 diff=空
+ *   runtimeProbeVector {vectorId, expectDigest, requireAnswer}
+ *                                                      纳管向量在册 + e2e 帧序 diff=空 + 应答举证
+ *   provableTag    {row}                               provable/E1 样本/符号命中一致性
  */
-export function evaluateCheck(check) {
+export function evaluateCheck(check, ctx) {
   if (!check || !check.kind) return { ok: false, detail: 'check 描述符缺失' };
   const miss = (rel) => `缺失文件 ${rel}`;
   switch (check.kind) {
@@ -275,10 +555,16 @@ export function evaluateCheck(check) {
       return { ok: n >= check.min, detail: `计数 ${n} ${n >= check.min ? '≥' : '<'} ${check.min}` };
     }
     case 'all': {
-      const rs = (check.of || []).map(evaluateCheck);
+      const rs = (check.of || []).map((c) => evaluateCheck(c, ctx));
       const bad = rs.filter((r) => !r.ok);
       return { ok: bad.length === 0, detail: bad.length ? bad.map((r) => r.detail).join('; ') : `${rs.length} 项子检查全通过` };
     }
+    case 'e0CoordVector':
+      return evaluateE0Vector(check, ctx);
+    case 'runtimeProbeVector':
+      return evaluateRuntimeVector(check, ctx);
+    case 'provableTag':
+      return evaluateProvableTag(check, ctx);
     case 'deferred':
       return { ok: false, detail: `待 ${check.phase} 落地：${check.carrier}` };
     case 'evidence': {
@@ -523,8 +809,8 @@ export function carrierStatusOf(row) {
  * 门禁未落盘 / 断言名不存在 ⇒ 判「非 A」，并把原因交回调用方生成下一载体。
  * R-5：取证等级字段本身不因载体缺失而降级（仍是 A），但行 verdict 为非 A。
  */
-export function evaluateRow(row) {
-  const r = evaluateCheck(row.check);
+export function evaluateRow(row, ctx) {
+  const r = evaluateCheck(row.check, ctx);
   const carrier = carrierStatusOf(row);
   const forensicGrade = row.forensicGrade;
   // ★ QA R1 / G1：verdict 必须额外满足「该行 gate **真实执行**通过 + 断言名命中 stdout」。
