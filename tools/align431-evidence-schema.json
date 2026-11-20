@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "align431-evidence-registry.schema.json",
+  "title": "Porsche 431 evidence registry (T01)",
+  "description": "Machine-readable E0 evidence index derived from the three 431 evidence ledgers. Paths are repo-relative or use the ${E0_ROOT} token; no absolute paths, timestamps or random values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceLedgers", "entries"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "sourceLedgers": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "type": "string", "pattern": "^[^/][^\\r\\n]*$" }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/evidenceEntry" }
+    }
+  },
+  "$defs": {
+    "evidenceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceId",
+        "sourceLedger",
+        "grade",
+        "provable",
+        "practice",
+        "e0Coord",
+        "reproduceCmd",
+        "counterexamples",
+        "consumers",
+        "gateAssert",
+        "status"
+      ],
+      "properties": {
+        "evidenceId": {
+          "type": "string",
+          "pattern": "^(E(0[1-9]|1[0-5])|E-(0[1-9]|1[0-9]|20)|PE-(0[1-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9]|60)|U1)$"
+        },
+        "sourceLedger": { "type": "string", "pattern": "^[^/][^\\r\\n]*$" },
+        "grade": { "type": "string", "enum": ["S", "R", "D"] },
+        "provable": { "type": "string", "enum": ["static", "runtime"] },
+        "practice": { "type": "string", "minLength": 4 },
+        "e0Coord": { "$ref": "#/$defs/e0Coord" },
+        "reproduceCmd": { "type": "string", "minLength": 4 },
+        "counterexamples": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "consumers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "gateAssert": { "type": "string", "minLength": 3 },
+        "status": { "type": "string", "enum": ["verified", "unresolved"] },
+        "failClosed": { "type": "string", "minLength": 1 },
+        "nextCarrier": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "unresolved" } }, "required": ["status"] },
+          "then": { "required": ["failClosed", "nextCarrier"] }
+        }
+      ]
+    },
+    "e0Coord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "detail"],
+      "properties": {
+        "file": { "type": "string", "pattern": "^[^/][^\\r\\n]*$" },
+        "offset": { "type": "integer", "minimum": 0 },
+        "VA": { "type": "string", "pattern": "^0x[0-9a-f]+$" },
+        "recordId": { "type": "string", "minLength": 1 },
+        "detail": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [
+        { "required": ["offset"] },
+        { "required": ["VA"] },
+        { "required": ["recordId"] }
+      ]
+    }
+  }
+}

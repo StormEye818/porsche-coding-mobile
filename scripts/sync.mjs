@@ -320,6 +320,7 @@ if (!process.argv.includes('--refill')) {
   ]);
   const COMPILED_INTO_SRC = Object.freeze([
     ['981-sysids.json', 'sysId 导出表，已转写进 src/module-ecu-map.js；运行时无 fetch'],
+    ['align431-evidence-registry.json', '431 证据 registry（tools/build-align431-evidence-registry.mjs 产物，门禁消费；运行时从不 fetch）'],
     ['all-model-sysids.json', '导出表，编译成 src/model-sysid-map.js（tools/build-model-sysid-map.mjs）'],
     ['coding-address-sources.json', '编码地址取证表（tools/export-coding-address-sources.py 产物，门禁消费）'],
     ['comm-addr-table.json', '通讯地址取证表（src 里仅注释引用；门禁 verify-oem-probe-diff 消费）'],

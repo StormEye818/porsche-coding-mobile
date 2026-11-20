@@ -1,0 +1,1369 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceLedgers": [
+    "docs/evidence/431-linkmap-20261120.md",
+    "docs/evidence/431-postentry-20261120.md",
+    "docs/evidence/431-static-allmodels-20261120.md"
+  ],
+  "entries": [
+    {
+      "evidenceId": "E-01",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 进模块发现循环本体",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_LINK.so",
+        "VA": "0x18f00",
+        "detail": "**做法**：DriveLinksMode_1001 @ libPORSCHE_LINK.so:0x18f00。对候选数组逐元素发 0xFF001409（=22 14 09）"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： `python3 tools/disasm-elf.py ${E0_ROOT}/porche-v24.58/V24.58/libPORSCHE_LINK.so 0x18f00 320` - **实现应做**：进模块候选循环严格 1 帧探针（`221409` UDS / `1A9F` KWP），候选为空时不得发探针；\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_LINK.so 0x18f00",
+      "counterexamples": [
+        "src/app.js:tryAddr | 2101+1A9F+1A87+1A90+221409+221102+220705"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-01"
+      ],
+      "gateAssert": "OEM_DIFF_120_MISMATCH_ZERO",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-02",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 候选数组来源 = addrBlock 行原样搬移，无 internal→CAN 换算",
+      "e0Coord": {
+        "file": "tools/export-drivelinks-v3.py",
+        "offset": 360,
+        "detail": "**可复核命令**：…/python3 tools/disasm-elf.py …/libPORSCHE_FILE.so 0x18a0c 0x168；HANDOFF.md:2746-2759 有逐指令抄录。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`…/python3 tools/disasm-elf.py …/libPORSCHE_FILE.so 0x18a0c 0x168`；HANDOFF.md:2746-2759 有逐指令抄录。 - **实现应做**：`tools/export-drivelinks-v3.py` 的 `internal/flags/bindKey/cmdptr/rowOff` 即此行；把 `bindKey` 明标为**请求键坐标**。 - **反例**：把 `internal 0x06A7` / `bindKey 0x003006A7` 的低 16 位当 CAN（bind-plan 的 `v3key` 源）——空间错配（E-18）。\npython3 -c 'import sys;b=open(sys.argv[1],\"rb\").read();assert len(b)>0;print(sys.argv[1],hex(len(b)))' tools/export-drivelinks-v3.py",
+      "counterexamples": [
+        "internal 0x06A7 | bindKey 0x003006A7 | v3key"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-02",
+        "tools/export-drivelinks-v3.py"
+      ],
+      "gateAssert": "E0_REGISTRY_E_02",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-03",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 请求分发器不解析地址",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_COMM.so",
+        "VA": "0x12898",
+        "detail": "**做法**：PorscheSendCommandByID @ libPORSCHE_COMM.so:0x12898（136B 全读）：组帧→读运行时状态字节→链路发送；"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_COMM.so 0x12898",
+      "counterexamples": [
+        "send()"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-03"
+      ],
+      "gateAssert": "E0_REGISTRY_E_03",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-04",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 超时/间隔是链路建立参数组，不是\"枚举 200ms/地址\"",
+      "e0Coord": {
+        "file": "docs/evidence/431-linkmap-20261120.md",
+        "recordId": "UNRESOLVED-E-04",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`grep -n 'SetCommunicationMaximumWaitTime(' ref/*/V24.58/libCOMM_ABSTRACT_LAYER*.txt`（ Ghidra 反编译行号，见该 JSON）。 - **实现应做**：超时取 `IDENTIFY=8000`/`LINK_DEFAULT=5000` 两档；`KEEPALIVE_MS`/`MAX_PENDING_MS` 标\"我方设计\"， 不冒称原厂（该 JSON 已如此隔离）。\nnode -e 'console.log(\"E0_UNRESOLVED:E-04: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "ATSTFF≈1.02s"
+      ],
+      "consumers": [
+        "data/comm-timeouts-oem.json",
+        "docs/evidence/431-linkmap-20261120.md#E-04"
+      ],
+      "gateAssert": "COMM_TIMEOUT_431_STATIC",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E-04 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-linkmap-20261120.md 对应原始 BIN/.so 中定位 E-04 的坐标与复算命令后再入清单；扫描命令：grep -n 'E-04' docs/evidence/431-linkmap-20261120.md。"
+    },
+    {
+      "evidenceId": "E-05",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 连接期 live map 由原生上报，Java 不生成地址（R，机制 S / 真值 R）",
+      "e0Coord": {
+        "file": "docs/evidence/431-linkmap-20261120.md",
+        "recordId": "UNRESOLVED-E-05",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:E-05: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "反例：在 UI/JS 层\"扫描 0x700–0x7FF 生成地址表\"当 431 行为（D 级，可自我设计但须标注，见 E-19）。"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-05"
+      ],
+      "gateAssert": "E0_REGISTRY_E_05",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E-05 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-linkmap-20261120.md 对应原始 BIN/.so 中定位 E-05 的坐标与复算命令后再入清单；扫描命令：grep -n 'E-05' docs/evidence/431-linkmap-20261120.md。"
+    },
+    {
+      "evidenceId": "E-06",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 两个键空间的分界",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 16,
+        "detail": "CAN 空间：11-bit 0x000–0x7FF（诊断段 0x700–0x7FF），存于 PORSCHE_SYS_DATA.BIN comm cat=0x10 记录 A/C 字段（E-10）。"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x10",
+      "counterexamples": [
+        "bind-plan rule | v3候选(rx→tx=rx-8)"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-06"
+      ],
+      "gateAssert": "E0_REGISTRY_E_06",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-07",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 live map 建立时序（S 机制 / R 真值）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 90364,
+        "detail": "**做法**：连接/进模块阶段：装载体 GetData @FILE:0x160fc（开 PORSCHE_SYS_DATA.BIN/PORSCHE_SERVICE.GAG）→"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`grep -n \"GetData\\|GetSpecArray\\|GetSubSysDataAddr\" HANDOFF.md`（收官段 3616-3622 有逐链转写）。 - **实现应做**：runtime 先建 live map（请求键→已应答 CAN），进模块按请求键查表 0/1 帧确认；不信任缓存，每次回帧校验 ID。 - **反例**：本项目只在 `cands` 为空时 `ensureLiveMap`（工单已知败因）——伪候选（请求键低16）堵住兜底，live map 永不建立。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x160fc",
+      "counterexamples": [
+        "cands | ensureLiveMap"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-07"
+      ],
+      "gateAssert": "E0_REGISTRY_E_07",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-08",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 模块身份串 → 变体的写回",
+      "e0Coord": {
+        "file": "decoded/JOB.BIN",
+        "offset": 391354,
+        "detail": "PFLASH_TextTableElement::IsMatchName/IsMatchValue @ACTF:0x5f8ba/0x5f8de（memcmp 全等）查 JOB.BIN 件号→变体。"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/JOB.BIN 0x5f8ba",
+      "counterexamples": [
+        "src/probe.js | 7F2212"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-08",
+        "src/probe.js"
+      ],
+      "gateAssert": "E0_REGISTRY_E_08",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-09",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 五个代表性 sysId 的模块身份/变体来源",
+      "e0Coord": {
+        "file": "docs/evidence/431-linkmap-20261120.md",
+        "recordId": "UNRESOLVED-E-09",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:E-09: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "UNRECORDED:E-09"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-09"
+      ],
+      "gateAssert": "E0_REGISTRY_E_09",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E-09 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-linkmap-20261120.md 对应原始 BIN/.so 中定位 E-09 的坐标与复算命令后再入清单；扫描命令：grep -n 'E-09' docs/evidence/431-linkmap-20261120.md。"
+    },
+    {
+      "evidenceId": "E-10",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 cat=0x10 真值记录 = tx/rx 静态源（S，核心）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 3619,
+        "detail": "例 sysId 0x0e23 commOff=0x1191B：10 03 01 a0 e1 00 00 e0 ee 00 00 … → A=0xE1A0>>5=0x70D、C=0xEEE0>>5=0x777。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： `python3 -c \"b=open('${E0_ROOT}/decoded/PORSCHE_SYS_DATA.BIN','rb').read();o=0x1191b;print(b[o:o+48].hex(' '));print(hex(int.from_bytes(b[o+3:o+7],'little')>>5),hex(int.from_bytes(b[o+7:o+11],'little')>>5))\"` （期望 `0x70d 0x777`）\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0xe23",
+      "counterexamples": [
+        "bindKey | 0x06A7"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-10"
+      ],
+      "gateAssert": "E0_REGISTRY_E_10",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-11",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "按代 rx 规则真值表（S，来自 E-10 的 C 字段）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 16,
+        "detail": "**原始路径**：派生自 PORSCHE_SYS_DATA.BIN cat=0x10 全体；项目镜像 data/comm-addr-table.json:byGeneration[*].addresses[*].rxRule、"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`python3 -c \"import json,collections;d=json.load(open('data/comm-addr-table.json'));print({g:dict(collections.Counter(a['rxRule'] for a in v['addresses'])) for g,v in d['byGeneration'].items()})\"` - **实现应做**：rx **优先用记录自带**（`raw` 的 C>>5），无记录才按段派生 `tx<=0x7F7 → tx+8`； `+0x100`/`+0x6A`/`rx<tx` 原样保留，禁止 `&0x7FF` 回绕、禁止 `tx+8` 盲目覆盖。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x10",
+      "counterexamples": [
+        "rxDefaultPlus8=3948 | rx!=+8 | ≠+8"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-11"
+      ],
+      "gateAssert": "E0_REGISTRY_E_11",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-12",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 rx 规则来源不是独立\"规则表\"，而是记录 C 字段",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 87424,
+        "detail": "GetCommData @FILE:0x15580（500B）逐指令读 4B A、2B C 写 TOKEN+0x5FC/0x600（反汇编 0x15734-0x15752），"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`…/python3 tools/disasm-elf.py …/libPORSCHE_FILE.so 0x15580 500`（本轮已跑，见 0x15734-0x15752 写 TOKEN）。 - **实现应做**：不要写\"按代 if gen then +0x6A else +8\"的硬编码规则去\"推导\"——应直接读记录 C； 硬编码只可作无记录时的兜底（且派生成 `+8` 仅限 `tx<=0x7F7`）。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x15580",
+      "counterexamples": [
+        "+0x6A"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-12"
+      ],
+      "gateAssert": "E0_REGISTRY_E_12",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-13",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 sysId 0x0e23 — BCM_hinten（gen 0x0E）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 71963,
+        "detail": "**原始坐标**：PORSCHE_SYS_DATA.BIN:0x1191B（raw 0xE1A0 EEE0，m=3）；sysDataOff=0x11941。"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x1191b",
+      "counterexamples": [
+        "0x06A7→0x06AF(+8)"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-13"
+      ],
+      "gateAssert": "E0_REGISTRY_E_13",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-14",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 0x0f4d ——",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 3917,
+        "detail": "**权威裁决（原始字节）**：PORSCHE_SYS_DATA.BIN 中 u32=0x0f4d 全文件**仅 1 处** @0x35ee0，嵌在 0x35EBC 这条"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0xf4d",
+      "counterexamples": [
+        "0x06CC→0x06D4 | 0x0f4d | 0x0e5f"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-14"
+      ],
+      "gateAssert": "E0_REGISTRY_E_14",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-15",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 sysId 0x0b08 — Kombiinstrument（gen 0x0B，UDS IC）",
+      "e0Coord": {
+        "file": "docs/evidence/431-linkmap-20261120.md",
+        "recordId": "UNRESOLVED-E-15",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:E-15: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "0x7F1"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-15"
+      ],
+      "gateAssert": "E0_REGISTRY_E_15",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E-15 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-linkmap-20261120.md 对应原始 BIN/.so 中定位 E-15 的坐标与复算命令后再入清单；扫描命令：grep -n 'E-15' docs/evidence/431-linkmap-20261120.md。"
+    },
+    {
+      "evidenceId": "E-16",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 sysId 0x0b23 — BCM_hinten（gen 0x0B），**不是 DME**",
+      "e0Coord": {
+        "file": "docs/evidence/431-linkmap-20261120.md",
+        "recordId": "UNRESOLVED-E-16",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:E-16: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "0x07C0/0x07C8 | 0x0b23 | 0x7E0/0x7E8"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-16"
+      ],
+      "gateAssert": "E0_REGISTRY_E_16",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E-16 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-linkmap-20261120.md 对应原始 BIN/.so 中定位 E-16 的坐标与复算命令后再入清单；扫描命令：grep -n 'E-16' docs/evidence/431-linkmap-20261120.md。"
+    },
+    {
+      "evidenceId": "E-17",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 sysId 0x0e01 — DME_BDE_Continental（gen 0x0E），DME 身份 sysId 之一",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so",
+        "VA": "0xee0a",
+        "detail": "**坐标**：…:0xEE0A（raw 0xFC00 FD00，m=3）；另 0xF3CF 同 raw（m=4）；sysDataOff=0xEE30。"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so 0xee0a",
+      "counterexamples": [
+        "+8 | +0x6A"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-17"
+      ],
+      "gateAssert": "E0_REGISTRY_E_17",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-18",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 五 sysId 的 bind-plan 候选 vs 真值对照（D 导出 + S 真值）",
+      "e0Coord": {
+        "file": "docs/evidence/431-linkmap-20261120.md",
+        "recordId": "UNRESOLVED-E-18",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： `python3 -c \"import json;bp=json.load(open('data/bind-plan.json'))['ecu'];c=json.load(open('data/comm-addr-table.json'));t={a['ownerSysId']:(a['tx'],a['rx'],a['rxRule']) for g in c['byGeneration'].values() for a in g['addresses']};[print(s,'bind=',bp[s]['cands'][:6],'truth=',t.get(s)) for s in ['0x0e23','0x0f4d','0x0b08','0x0b23','0x0e01']]\"`\nnode -e 'console.log(\"E0_UNRESOLVED:E-18: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "UNRECORDED:E-18"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-18"
+      ],
+      "gateAssert": "E0_REGISTRY_E_18",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E-18 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-linkmap-20261120.md 对应原始 BIN/.so 中定位 E-18 的坐标与复算命令后再入清单；扫描命令：grep -n 'E-18' docs/evidence/431-linkmap-20261120.md。"
+    },
+    {
+      "evidenceId": "E-19",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "D",
+      "provable": "static",
+      "practice": "采用 分界判定（按证据分级）",
+      "e0Coord": {
+        "file": "decoded/JOB.BIN",
+        "offset": 16,
+        "detail": "| cat=0x10 tx/rx 真值与 rx 规则（+0x6A/+0x100/+8/回绕） | **S** | 原始 BIN 字节 + 左移5打包旁证 | 否（可全静态派生）|"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/JOB.BIN 0x10",
+      "counterexamples": [
+        "UNRECORDED:E-19"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-19"
+      ],
+      "gateAssert": "E0_REGISTRY_E_19",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E-20",
+      "sourceLedger": "docs/evidence/431-linkmap-20261120.md",
+      "grade": "R",
+      "provable": "runtime",
+      "practice": "采用 生成器输出契约（响应 team-lead 静态证据线结论）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_DRIVELINKS.BIN",
+        "offset": 16,
+        "detail": "provable: static —— 仅用于 cat=0x10 记录直接给出的 tx/rx 与 rx 派生规则（A>>5/C>>5 可离线复算）。"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_DRIVELINKS.BIN 0x10",
+      "counterexamples": [
+        "## G. 反例总表（实现禁令）",
+        "0x0f4d",
+        "| # | 禁止做法 | 正解（证据） |"
+      ],
+      "consumers": [
+        "docs/evidence/431-linkmap-20261120.md#E-20"
+      ],
+      "gateAssert": "E0_REGISTRY_E_20",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E01",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 平台/type 真值：DSN.BIN 头 22 项索引",
+      "e0Coord": {
+        "file": "decoded/DSN.BIN",
+        "offset": 22,
+        "detail": "**记录坐标/格式**：[u8 count=0x16][ [u8 id][u16 nlen][name\\0][u32 payloadOff] ×22 ]，自 0x1 起、0xe7 结束。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/DSN.BIN 0x16",
+      "counterexamples": [
+        "UNRECORDED:E01"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E01"
+      ],
+      "gateAssert": "E0_REGISTRY_E01",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E02",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 模块清单/模块→sysIdLow 真值：DSN 各 payloadOff 模块索引表",
+      "e0Coord": {
+        "file": "decoded/DSN.BIN",
+        "offset": 0,
+        "detail": "**记录坐标/格式**：表头 [u16 0x0000]，其后 [ [u8 low][u16 nlen][name\\0][u32 recPtr][u16 flag] ×n ]。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/DSN.BIN 0x0",
+      "counterexamples": [
+        "UNRECORDED:E02"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E02"
+      ],
+      "gateAssert": "E0_REGISTRY_E02",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E03",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 SYS_DATA 根表 22 个 type",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 22,
+        "detail": "**坐标/格式**：[u8 count=0x16][[u8 type][u32 off]×22]，type 0x01@0x73 … 0x16@0x64edc（完整值见下命令）。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x16",
+      "counterexamples": [
+        "UNRECORDED:E03"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E03"
+      ],
+      "gateAssert": "E0_REGISTRY_E03",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E04",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 模块 label→sysId 真值：SYS_DATA name-9 记录",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 11,
+        "detail": "| Kombiinstrument_BaseSys | 28826 | **0x0b08** | 仪表 0x0B 代 |"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0xb",
+      "counterexamples": [
+        "UNRECORDED:E04"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E04"
+      ],
+      "gateAssert": "E0_REGISTRY_E04",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E05",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 请求键目录：PORSCHE_DRIVELINKS.BIN",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_DRIVELINKS.BIN",
+        "offset": 1672,
+        "detail": "**坐标/格式**：目录 209 条 × 8B = [u32 sysId][u32 blockOff]，自 0x0；0x7fffffff 终止于 0x688。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_DRIVELINKS.BIN 0x688",
+      "counterexamples": [
+        "UNRECORDED:E05"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E05"
+      ],
+      "gateAssert": "E0_REGISTRY_E05",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E06",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 变体与零件号真值：解密 JOB.BIN（XML）",
+      "e0Coord": {
+        "file": "decoded/JOB.BIN",
+        "offset": 48161,
+        "detail": "个案：PARTNUMBER=98161864015 记录文件偏移 **0xbc21**（grep 命中 48161/48211），变体 SDI9_1_981_3_4L_EU5、模块 DME_BDE_Continental（RE-MODELADDR §3.3）。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/JOB.BIN 0xbc21",
+      "counterexamples": [
+        "UNRECORDED:E06"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E06"
+      ],
+      "gateAssert": "E0_REGISTRY_E06",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E07",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 车型数据集全等：Boxster/Cayman 合并候选的直接证据",
+      "e0Coord": {
+        "file": "docs/evidence/431-static-allmodels-20261120.md",
+        "recordId": "UNRESOLVED-E07",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 - <<'PY'\nnode -e 'console.log(\"E0_UNRESOLVED:E07: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "UNRECORDED:E07"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E07",
+        "src/app.js"
+      ],
+      "gateAssert": "E0_REGISTRY_E07",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E07 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-static-allmodels-20261120.md 对应原始 BIN/.so 中定位 E07 的坐标与复算命令后再入清单；扫描命令：grep -n 'E07' docs/evidence/431-static-allmodels-20261120.md。"
+    },
+    {
+      "evidenceId": "E08",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 label/code 真值：MENU.BIN 节点",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/MENU.BIN",
+        "offset": 2816,
+        "detail": "**坐标/格式**（tools/x431-address-port.py:53-68 已证）：菜单项 ref 的 | 后整数是 MENU.BIN 偏移；节点 +0x20 的字节是 ECU code（low），sysId_low = 0x0b00 + code（旧代口径，新代按 E01 type 换高字节）。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/MENU.BIN 0xb00",
+      "counterexamples": [
+        "UNRECORDED:E08"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E08",
+        "ref/x431-porsche-v24.58/V24.58/MENU.BIN",
+        "tools/x431-address-port.py:53-68"
+      ],
+      "gateAssert": "E0_REGISTRY_E08",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E09",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 VIN→车型/年款/平台：在 .so 代码，不在 BIN 表",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_READWRITE.so",
+        "VA": "0x22ad4",
+        "detail": "PorscheGetYearAndModel @SYSP:**0x22ad4**，tbb 表 @0x22b08（VIN[7]→17 分支）；年款 PorscheGetYearByModel @0x261a8，年款字符表 @0x5E3A0=123456789ABCDEFGHJKLMNPRSTVWXY。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 \\\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_READWRITE.so 0x22ad4",
+      "counterexamples": [
+        "UNRECORDED:E09"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E09",
+        "ref/x431-porsche-v24.58/V24.58/libPORSCHE_SYSP.so"
+      ],
+      "gateAssert": "E0_REGISTRY_E09",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E10",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 request key 真值：DRIVELINKS SpecArray",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_DRIVELINKS.BIN",
+        "offset": 3917,
+        "detail": "**可复核命令**：见 RE-DRIVELINKS-ARRAY §2 / RE-DISCOVERY §2（tools/export-drivelinks-v3.py）。0x0f4d 的三合一裁决与 CAN 真值 0x74E/0x7B8 见 E11。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：见 RE-DRIVELINKS-ARRAY §2 / RE-DISCOVERY §2（`tools/export-drivelinks-v3.py`）。`0x0f4d` 的三合一裁决与 CAN 真值 `0x74E/0x7B8` 见 E11。 - **当前 data/ 对应字段**：`bind-plan.json`、`ecu-addresses.json:entries[*].rows[*].candidates`。 - **差异/建议**：请求键空间 ≠ CAN 域（0x7xx）；门禁不得把 `0x0030xxxx` 当 CAN 校验。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_DRIVELINKS.BIN 0xf4d",
+      "counterexamples": [
+        "UNRECORDED:E10"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E10",
+        "tools/export-drivelinks-v3.py"
+      ],
+      "gateAssert": "E0_REGISTRY_E10",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E11",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 车道变换 0x0f4d 三合一裁决（SYS_DATA sysId + DRIVELINKS 目录键 + 请求键）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 3917,
+        "detail": "**原始坐标 B（SYS_DATA sysId 空间，决定性证据）**：${E0_ROOT}/decoded/PORSCHE_SYS_DATA.BIN cat=0x10 记录 @**0x35ebc**，A=0xE9C0>>5=0x74E(tx)、C=0xF700>>5=0x7B8(rx)；sysId 字段在记录 +0x24 = @**0x35ee0** 处 u32=0x0f4d，其后紧跟名字串 *"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT}/decoded && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0xf4d",
+      "counterexamples": [
+        "UNRECORDED:E11"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E11"
+      ],
+      "gateAssert": "E0_REGISTRY_E11",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E12",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 共享键旁证：PORSCHE_SYS_DATA comm 记录",
+      "e0Coord": {
+        "file": "docs/evidence/431-static-allmodels-20261120.md",
+        "recordId": "UNRESOLVED-E12",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:E12: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "UNRECORDED:E12"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E12"
+      ],
+      "gateAssert": "E0_REGISTRY_E12",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E12 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-static-allmodels-20261120.md 对应原始 BIN/.so 中定位 E12 的坐标与复算命令后再入清单；扫描命令：grep -n 'E12' docs/evidence/431-static-allmodels-20261120.md。"
+    },
+    {
+      "evidenceId": "E13",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 一个菜单项聚合多模块",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/MENU.BIN",
+        "offset": 1315,
+        "detail": "MENU.BIN @0x41cd 节点含 0x0523/0x0f23 两代 BCM_hinten 槽位；@0x4308「PTG(电动尾门)」含 0x0534/0x0f34。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/MENU.BIN 0x523",
+      "counterexamples": [
+        "UNRECORDED:E13"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E13"
+      ],
+      "gateAssert": "E0_REGISTRY_E13",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "E14",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 静态可证清单（原始包足以独立证明）",
+      "e0Coord": {
+        "file": "docs/evidence/431-static-allmodels-20261120.md",
+        "recordId": "UNRESOLVED-E14",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:E14: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "UNRECORDED:E14"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E14"
+      ],
+      "gateAssert": "E0_REGISTRY_E14",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 E14 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-static-allmodels-20261120.md 对应原始 BIN/.so 中定位 E14 的坐标与复算命令后再入清单；扫描命令：grep -n 'E14' docs/evidence/431-static-allmodels-20261120.md。"
+    },
+    {
+      "evidenceId": "E15",
+      "sourceLedger": "docs/evidence/431-static-allmodels-20261120.md",
+      "grade": "R",
+      "provable": "runtime",
+      "practice": "不能静态证明、必须运行时（包内证据）",
+      "e0Coord": {
+        "file": "decoded/DSN.BIN",
+        "offset": 1740,
+        "detail": "4. **纠正坐标与身份口径**：0x0b23=BCM_hinten、DME=0x0b01/0x0e01（E04）；0x0f4d 是 SYS_DATA sysId（SWA2_BaseSys,gen 0x0F）+ DRIVELINKS 目录键 + 请求键 0x06CC-CF 三合一，CAN 真值 0x74E/0x7B8 静态可证；0x0e5f/0x0e60 是异名 sysId（BV_ContrUni"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**（PRD P1-2 数字单一来源）： ```bash cd . && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/DSN.BIN 0x6cc",
+      "counterexamples": [
+        "UNRECORDED:E15"
+      ],
+      "consumers": [
+        "docs/evidence/431-static-allmodels-20261120.md#E15"
+      ],
+      "gateAssert": "E0_REGISTRY_E15",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-01",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 驱动发现循环：每候选 1 帧探针 + n==0 直绑 + 应答即绑",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_LINK.so",
+        "VA": "0x18f00",
+        "detail": "LINK.so:0x18f00"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash python3 \\\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_LINK.so 0x18f00",
+      "counterexamples": [
+        "0x18b0c-0x1ac48 | #0x1409 | #0x1102"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-01"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_01",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-02",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 探针帧与补帧字节（静表 + GAG）",
+      "e0Coord": {
+        "file": "decoded/GAG_COMMAND.GAG.bin",
+        "recordId": "#302",
+        "detail": "rec#302 @ GAG_COMMAND.GAG.bin"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd ${E0_ROOT} && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);b=open(p,\"rb\").read();n=int(sys.argv[2]);assert 0<n<=len(b),\"E0 recordId out of range\";print(os.path.basename(p),\"recordId\",n,hex(len(b)))' decoded/GAG_COMMAND.GAG.bin 302",
+      "counterexamples": [
+        "22 14 09"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-02"
+      ],
+      "gateAssert": "OEM_DIFF_120_MISMATCH_ZERO",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-10",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 会话号分布（静表，全量）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 5441,
+        "detail": "**原始坐标**：PORSCHE_SYS_DATA.BIN（decoded，440820B）comm 子表；data/sysdata-comm.json 的 stats.sessionFrames={\"0x03\":706,\"0x85\":2,\"0x86\":5,\"0x89\":210}；样例字节偏移：10 03 @0x5F49（10 03 01 00 fc 00 00 00 fd 00...）、10 8"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0x1541",
+      "counterexamples": [
+        "GAG_COMMAND"
+      ],
+      "consumers": [
+        "data/sysdata-comm.json",
+        "docs/evidence/431-postentry-20261120.md#PE-10"
+      ],
+      "gateAssert": "OEM_SESSION_EVIDENCE",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-11",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 会话发起函数与正响应/失败分支（反编）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_SYSP.so",
+        "VA": "0x19920",
+        "detail": "SYSP.so:0x19920"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash NM=llvm-nm\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_SYSP.so 0x19920",
+      "counterexamples": [
+        "10 03"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-11"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_11",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-12",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 68 老代 KWP sessionless sysId 不建会话（静表）",
+      "e0Coord": {
+        "file": "decoded/JOB.BIN",
+        "offset": 257,
+        "detail": "**原始坐标**：data/sysdata-comm.json → src/oem-enter-frames.js 的 OEM_SESSIONLESS_SYSIDS_SET（68 键）；样例 '0x0101':[\"2,,|1:81 1:1A9A\"]；JOB.BIN 12 个 DBUSER 中 9X6/9X7/E1 出现 0 次；老代 27 个 impls 首帧全为 22/31/27/21/14/1"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && node -e \"const {OEM_SESSIONLESS_SYSIDS_SET}=require('./src/oem-enter-frames.js');console.log(Object.keys(OEM_SESSIONLESS_SYSIDS_SET||{}).length)\" 2>/dev/null || grep -c '1:81' src/oem-enter-frames.js\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/JOB.BIN 0x101",
+      "counterexamples": [
+        "10 40/10 85/10 03"
+      ],
+      "consumers": [
+        "data/sysdata-comm.json",
+        "docs/evidence/431-postentry-20261120.md#PE-12",
+        "src/oem-enter-frames.js"
+      ],
+      "gateAssert": "FEATURE_SET_FUNCSEQ",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-13",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 保活帧 3E 00（静表 + 反编 + E1）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so",
+        "VA": "0x3ed96",
+        "detail": "GAG#35,COMM_ABSTRACT:0x3ED96"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：见 PE-02 的 GAG 脚本（rec#35）；`llvm-nm` 查 `gDoIpLinkKeep` 等。 - **对应实现要求**：我方 `KEEPALIVE_MS`=2500（ISO 14229-2 S3server/2）是**我方设计值**，包内无周期 TesterPresent；78 续等期间发 3E00 属「等待期保活」，不得写成「原厂周期 2500ms」。 - **反例**：把 `3E 80`（抑制正响应）当保活、或声称原厂有 2500ms 周期保活常量。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so 0x3ed96",
+      "counterexamples": [
+        "3E 80"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-13"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_13",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-14",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 超时/等待常量（反编，E0 唯一可证值）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so",
+        "VA": "0xc2024",
+        "detail": "COMM_ABSTRACT:0xC2024"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash xxd -s 0xc2024 -l 16 ${E0_ROOT}/porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so 0xc2024",
+      "counterexamples": [
+        "反例：把 ATST 的 4ms tick 当诊断超时、把 78 续等节拍 2500ms 当原厂常量。"
+      ],
+      "consumers": [
+        "data/comm-timeouts-oem.json",
+        "docs/evidence/431-postentry-20261120.md#PE-14",
+        "src/comm-timeouts.js"
+      ],
+      "gateAssert": "COMM_TIMEOUT_431_STATIC",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-20",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 cat=0x60 进模块统一四帧（静表，强证据）",
+      "e0Coord": {
+        "file": "decoded/PORSCHE_SYS_DATA.BIN",
+        "offset": 3329,
+        "detail": "**原始坐标**：PORSCHE_SYS_DATA.BIN comm 子表 cat=0x60（96）记录；块 commOff 样例 0xF3CF（0x0d01）起 10 03 01 00 fc 00 00 00 fd 00 00 03...；data/sysdata-comm.json stats；src/oem-enter-frames.js 的 185 序列；GAG_COMMAND 命令 ID"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 - <<'PY'\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/PORSCHE_SYS_DATA.BIN 0xd01",
+      "counterexamples": [
+        "finish() | tryAddr | 22F19E+1A9B | 1A9B"
+      ],
+      "consumers": [
+        "data/sysdata-comm.json",
+        "docs/evidence/431-postentry-20261120.md#PE-20",
+        "src/oem-enter-frames.js"
+      ],
+      "gateAssert": "OEM_DIFF_120_MISMATCH_ZERO",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-21",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 1A 识别链与 LID 语义（反编 + GAG）",
+      "e0Coord": {
+        "file": "decoded/GAG_COMMAND.GAG.bin",
+        "recordId": "#41",
+        "detail": "rec#41 @ GAG_COMMAND.GAG.bin"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：见 PE-02 GAG 脚本（rec#41=`01 02 1a 9f`）。 - **对应实现要求**：识别循环按此固定链跑；变体落定消费 1A84/92/91/94 件号；留原样字节（不 trim 进键，strcmp 字节精确，含尾空格）。 - **反例**：把 1A90 空值当车型名（见 PE-22）；给识别链加「读失败跳过」的自定义容错而无 E0 分支证据（431 固定全发 + 3 miss 截断）。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);b=open(p,\"rb\").read();n=int(sys.argv[2]);assert 0<n<=len(b),\"E0 recordId out of range\";print(os.path.basename(p),\"recordId\",n,hex(len(b)))' decoded/GAG_COMMAND.GAG.bin 41",
+      "counterexamples": [
+        "反例：把 1A90 空值当车型名（见 PE-22）；给识别链加「读失败跳过」的自定义容错而无 E0 分支证据（431 固定全发 + 3 miss 截断）。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-21"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_21",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-22",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 1A90 语义边界（反例锁定：空值≠车型名）",
+      "e0Coord": {
+        "file": "decoded/GAG_TEXT_CN.GAG.bin",
+        "offset": 151012,
+        "detail": "GAG#1011,SYSP:0x24de4"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash NM=llvm-nm\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' decoded/GAG_TEXT_CN.GAG.bin 0x24de4",
+      "counterexamples": [
+        "1A90 | modelName=null"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-22"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_22",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-30",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 安全访问帧序列（反编 + GAG）",
+      "e0Coord": {
+        "file": "decoded/GAG_COMMAND.GAG.bin",
+        "recordId": "#2",
+        "detail": "rec#2 @ GAG_COMMAND.GAG.bin"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：见 PE-02 GAG 脚本（rec#2/950/3 等）。 - **对应实现要求**：seed 尾参按 GAG（`0x09` 带 `01 00`）；响应先校验 SID（UDS `67`/KWP `57`，不回显子功能）再切 seed；空 seed/全零 seed 分别处理；`27` 因任何原因**不得重发**。 - **反例**：裸 `27 09` 不带尾参（吃 NRC 0x13）；把 KWP `17` 正响应也 slice(2) 吃掉一个 seed 字节。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);b=open(p,\"rb\").read();n=int(sys.argv[2]);assert 0<n<=len(b),\"E0 recordId out of range\";print(os.path.basename(p),\"recordId\",n,hex(len(b)))' decoded/GAG_COMMAND.GAG.bin 2",
+      "counterexamples": [
+        "27 09 | 17"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-30"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_30",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-31",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 算法选择链（反编，E0 做法）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_ENTERSYSPASSWORD.so",
+        "VA": "0x2054c",
+        "detail": "ENTERSYSPASSWORD.so:0x21280/0x2054c"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash NM=llvm-nm\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_ENTERSYSPASSWORD.so 0x2054c",
+      "counterexamples": [
+        "Porsche_Mode_1D | 0x1f031"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-31"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_31",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-32",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 可静态提取入库的算法 + 覆盖现状（静表 + 反编）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_ENTERSYSPASSWORD.so",
+        "VA": "0x1e2b0",
+        "detail": "**做法**：算法体全部在 libPORSCHE_ENTERSYSPASSWORD.so，135 个 ASAP1A_CCP_* 变体已按 SA2 虚拟机/内联 VM/ADD/特殊/OTHER 五族提取入库；SEEDKEY-REGISTRY-SELFCHECK.json = 135/135 id、675/675 case 通过（含 EMPTY 空壳）；两个具名算法 CServiceSeedAndKe"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && node tools/sa2-coverage-audit.mjs 2>&1 | head -3\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_ENTERSYSPASSWORD.so 0x1e2b0",
+      "counterexamples": [
+        "反例：把 61.4% 当缺陷/「真车待办」收口；把 104 条无 case 当拒写（与 431「不发 key 继续写」相反）；猜 key（错 key → 35→36 锁死）。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-32",
+        "src/seedkey-registry.js",
+        "tools/sa2-coverage-audit.mjs"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_32",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-40",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 读帧构造（反编 + 静表）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libPORSCHE_READWRITE.so",
+        "VA": "0x0f830c",
+        "detail": "READWRITE.so:0x0f830c"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash NM=llvm-nm\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libPORSCHE_READWRITE.so 0x0f830c",
+      "counterexamples": [
+        "22 00 XX"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-40"
+      ],
+      "gateAssert": "READ_FRAME_ID",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-41",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 写帧构造（反编 + GAG）",
+      "e0Coord": {
+        "file": "decoded/GAG_COMMAND.GAG.bin",
+        "recordId": "#1218",
+        "detail": "rec#1218 @ GAG_COMMAND.GAG.bin"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：见 PE-02 GAG 脚本（rec#1218/994）；PE-40 llvm-nm 换 `SysTemWriteData`。 - **对应实现要求**：写帧按记录 writeSid 驱动；位宽随写 SID；无「3B 必须配 21」配对闸；回读比对整块；写失败上抛不空吞。 - **反例**：把 UDS 2E 用的 DID 当 KWP 3B 的 LID；写失败静默成功；发错 key 后重试（计数锁死）。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);b=open(p,\"rb\").read();n=int(sys.argv[2]);assert 0<n<=len(b),\"E0 recordId out of range\";print(os.path.basename(p),\"recordId\",n,hex(len(b)))' decoded/GAG_COMMAND.GAG.bin 1218",
+      "counterexamples": [
+        "反例：把 UDS 2E 用的 DID 当 KWP 3B 的 LID；写失败静默成功；发错 key 后重试（计数锁死）。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-41"
+      ],
+      "gateAssert": "SEEDKEY_PRODUCTION_REACHABLE",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-42",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 多帧/长度/位宽（反编 + 静表）",
+      "e0Coord": {
+        "file": "analysis/COMPLETE-MAP.json",
+        "offset": 183117,
+        "detail": "COMM_ABSTRACT:0x2CB4D,COMPLETE-MAP"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`python3 -c \"import json;d=json.load(open('${E0_ROOT}/analysis/COMPLETE-MAP.json'));print(len(d))\"`（口径按文件实际键）。 - **对应实现要求**：位域按记录 byte/bit/width 精确切；ISO-TP 首帧 PCI、连续帧序号校验；多帧截断/序号跳变报错而非拿短块写回。 - **反例**：按整除猜条长（N1 bug 已修）；多帧截断当完整块回读。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 offset out of range\";print(os.path.basename(p),\"offset\",hex(v),b[v:v+16].hex())' analysis/COMPLETE-MAP.json 0x2cb4d",
+      "counterexamples": [
+        "反例：按整除猜条长（N1 bug 已修）；多帧截断当完整块回读。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-42"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_42",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-43",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 写前读后校验与恢复（反编 + 文档取证）",
+      "e0Coord": {
+        "file": "docs/evidence/431-postentry-20261120.md",
+        "recordId": "UNRESOLVED-PE-43",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`grep -n \"备份\\\\|回读\\\\|不自动回滚\" ./RE-WRITEGATES-20261105.md`。 - **对应实现要求**：保持 备份→单项→回读→失败恢复；不引入 431 无证据的「值域/level 门禁」；写结果由 ECU 裁决（NRC 自然上浮）不算 B。 - **反例**：写后不回读；回读不一致自动回滚（431 无此行为）；发明拒写门禁。\nnode -e 'console.log(\"E0_UNRESOLVED:PE-43: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "反例：写后不回读；回读不一致自动回滚（431 无此行为）；发明拒写门禁。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-43"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_43",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 PE-43 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-postentry-20261120.md 对应原始 BIN/.so 中定位 PE-43 的坐标与复算命令后再入清单；扫描命令：grep -n 'PE-43' docs/evidence/431-postentry-20261120.md。"
+    },
+    {
+      "evidenceId": "PE-45",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 特殊功能 = SPECF.so 命令模板流（反编）",
+      "e0Coord": {
+        "file": "docs/evidence/431-postentry-20261120.md",
+        "recordId": "UNRESOLVED-PE-45",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 -c \"import json;d=json.load(open('data/function-sequences.json'));print(d['count'],d['withRid'])\"\nnode -e 'console.log(\"E0_UNRESOLVED:PE-45: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "反例：只发一条 31 就判成败（长例程被误报失败）；给所有序列预解锁 27 09（SpecFunctionByID 等 100+ 条 22/10→31 流无 27 实证=431 不解锁）。"
+      ],
+      "consumers": [
+        "data/function-sequences.json",
+        "docs/evidence/431-postentry-20261120.md#PE-45",
+        "tools/build-function-sequences.py"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_45",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 PE-45 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-postentry-20261120.md 对应原始 BIN/.so 中定位 PE-45 的坐标与复算命令后再入清单；扫描命令：grep -n 'PE-45' docs/evidence/431-postentry-20261120.md。"
+    },
+    {
+      "evidenceId": "PE-46",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 driveDisabled 拦截（数据+E0 边界）",
+      "e0Coord": {
+        "file": "data/actuator.json",
+        "offset": 1306,
+        "detail": "**原始坐标**：data/actuator.json（277 处 driveDisabled 字段）；src/routine-gate.js（getRoutineGateReason）；src/schema.js drivableReason；ACCEPTANCE-MATRIX.md:103-110（94 无模板 + 7 地址歧义 + 0x051A 孤证留档）。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash cd . && python3 -c \"import json;d=json.load(open('data/actuator.json'));it=d['items'];print('total',sum(1 for x in it if x.get('driveDisabled')),'form31',sum(1 for x in it if x.get('driveDisabled') and str(x.get('form'))=='31'))\"\npython3 -c 'import sys;b=open(sys.argv[1],\"rb\").read();assert len(b)>0;print(sys.argv[1],hex(len(b)))' data/actuator.json",
+      "counterexamples": [
+        "coder.runRoutine()"
+      ],
+      "consumers": [
+        "data/actuator.json",
+        "docs/evidence/431-postentry-20261120.md#PE-46",
+        "src/routine-gate.js"
+      ],
+      "gateAssert": "E0_REGISTRY_PE_46",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-50",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 7F78 = 已受理待处理，续等不重发（反编，强证据）",
+      "e0Coord": {
+        "file": "porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so",
+        "VA": "0x39510",
+        "detail": "COMM_ABSTRACT:0x39510"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**： ```bash NM=llvm-nm\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);v=int(sys.argv[2],16);b=open(p,\"rb\").read();assert 0<=v<len(b),\"E0 VA out of range\";print(os.path.basename(p),\"VA\",hex(v),b[v:v+16].hex())' porche-v24.58/V24.58/libCOMM_ABSTRACT_LAYER.so 0x39510",
+      "counterexamples": [
+        "反例：78 后重发原帧（我方历史隐患，2026-11-16 已重写）；把 78 当终结响应后把迟到正响应配给下一请求；「只续等还是重发」——证据结论是只续等（Set7F78Ctrl + 包内无周期保活 + E1 9 条等待链三者一致）。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-50",
+        "tools/verify-keepalive-78.mjs"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-51",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 NRC 0x12（子功能/服务级拒）单发不重试不换 SID",
+      "e0Coord": {
+        "file": "docs/evidence/431-postentry-20261120.md",
+        "recordId": "UNRESOLVED-PE-51",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`sed -n '93,102p' ./RE-FLOWSPEC-20261108.md`。 - **对应实现要求**：NRC 上浮到 UI；禁止「SID 0x12 换 SID 重试」（旧自创恢复已删，coder.js:1541-1542）。 - **反例**：`22 00 28` 被拒后改发 `21 xx` 重试（真实失败场景的正确做法是先按记录选对 SID 而非失败后换）。\nnode -e 'console.log(\"E0_UNRESOLVED:PE-51: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "22 00 28 | 21 xx"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-51"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 PE-51 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-postentry-20261120.md 对应原始 BIN/.so 中定位 PE-51 的坐标与复算命令后再入清单；扫描命令：grep -n 'PE-51' docs/evidence/431-postentry-20261120.md。"
+    },
+    {
+      "evidenceId": "PE-52",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 NRC 0x11 / 0x10 / 0x22 / 0x31（逐项归口）",
+      "e0Coord": {
+        "file": "src/coder.js",
+        "offset": 16,
+        "detail": "**原始坐标**：src/coder.js:144-158 NRC 文案表（0x10/11/12/22/24/31/33/35/36/37/72/78/7E/7F）；RE-FLOWSPEC §3.2.1（7F 21 31=LID 不存在，单发即败）。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`sed -n '143,159p' ./src/coder.js`。 - **对应实现要求**：这些 NRC 统一为「失败上浮 + 不重试」；条件类 0x22 不自动重试等条件满足（E0 无此分支）。 - **反例**：把 0x22 当可重试故障反复轮询；0x31 后自动切到另一 LID 重试。\npython3 -c 'import sys;b=open(sys.argv[1],\"rb\").read();assert len(b)>0;print(sys.argv[1],hex(len(b)))' src/coder.js",
+      "counterexamples": [
+        "反例：把 0x22 当可重试故障反复轮询；0x31 后自动切到另一 LID 重试。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-52",
+        "src/coder.js:144-158"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-53",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 NRC 0x35/0x36（钥匙错/超次）不重试",
+      "e0Coord": {
+        "file": "decoded/GAG_COMMAND.GAG.bin",
+        "recordId": "#950",
+        "detail": "rec#950 @ GAG_COMMAND.GAG.bin"
+      },
+      "reproduceCmd": "python3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);b=open(p,\"rb\").read();n=int(sys.argv[2]);assert 0<n<=len(b),\"E0 recordId out of range\";print(os.path.basename(p),\"recordId\",n,hex(len(b)))' decoded/GAG_COMMAND.GAG.bin 950",
+      "counterexamples": [
+        "反例：用全零 key/默认 key 碰运气解锁。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-53"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-54",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 NO DATA / 空应答（静表 + 反编）",
+      "e0Coord": {
+        "file": "docs/evidence/431-postentry-20261120.md",
+        "recordId": "UNRESOLVED-PE-54",
+        "detail": "账本未给出可解析且在文件范围内的 0x 坐标或记录号，禁止猜值。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:PE-54: fail-closed; no E0 recompute command\")'",
+      "counterexamples": [
+        "反例：把某模块全部读取 NO DATA 标成「该车未装此模块，正确」。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-54"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "unresolved",
+      "failClosed": "无 E0 坐标的 PE-54 不进实现、不标 A；运行时遇到该分支即失败退出。",
+      "nextCarrier": "在 docs/evidence/431-postentry-20261120.md 对应原始 BIN/.so 中定位 PE-54 的坐标与复算命令后再入清单；扫描命令：grep -n 'PE-54' docs/evidence/431-postentry-20261120.md。"
+    },
+    {
+      "evidenceId": "PE-55",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 错帧 ID / 回帧头校验（E0 做法 + E1 抽样）",
+      "e0Coord": {
+        "file": "src/coder.js",
+        "offset": 2016,
+        "detail": "**原始坐标**：src/coder.js:422/697 注释（探 0x7F1/0x7F9 回 7E8 症状）；E1 DME/网关捕获（.local/x431-re/，仅本机）；DME bench（x431-dme-bench-2026-09-13.md：FC00→0x7E0、FD00→0x7E8，SJA1000 11bit 打包假设）。"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**：`sed -n '418,425p;693,700p' ./src/coder.js`。 - **对应实现要求**：每次换模块重设 ATSH/ATCRA/ATFCSH；回帧 ID 不符即 fail-closed 报错；主链与广播链口径统一。 - **反例**：探 A 模块拿 B 模块的回帧当 A 的成功（串线假绿）。\npython3 -c 'import sys;b=open(sys.argv[1],\"rb\").read();assert len(b)>0;print(sys.argv[1],hex(len(b)))' src/coder.js",
+      "counterexamples": [
+        "反例：探 A 模块拿 B 模块的回帧当 A 的成功（串线假绿）。"
+      ],
+      "consumers": [
+        "docs/evidence/431-postentry-20261120.md#PE-55",
+        "src/coder.js:422"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "PE-60",
+      "sourceLedger": "docs/evidence/431-postentry-20261120.md",
+      "grade": "S",
+      "provable": "static",
+      "practice": "采用 静态表可证 / 反编译可证 / 无包证据 三分",
+      "e0Coord": {
+        "file": "decoded/GAG_COMMAND.GAG.bin",
+        "recordId": "#1853",
+        "detail": "rec#1853 @ GAG_COMMAND.GAG.bin"
+      },
+      "reproduceCmd": "# ledger-reproduce: - **可复核命令**（失败分类汇总）：见各 PE 条目；总入口 `node tools/verify-keepalive-78.mjs` + `node tools/sa2-coverage-audit.mjs`。 - **对应实现要求**：任何无 E0 坐标的兜底/默认/常量/超时/分支不得进运行时（G-2）；上述 6 项一律「标注 + fail-closed」，禁止用「真车待办/包内无/运行时态」作结案理由。 - **反例**：把无证据项猜一个值填进去（如保活周期填 30ms/2500ms 冒充原厂）、用单一 E1 日志泛化全代（G-3）。\npython3 -c 'import os,sys;p=os.path.join(os.environ[\"E0_ROOT\"],sys.argv[1]);b=open(p,\"rb\").read();n=int(sys.argv[2]);assert 0<n<=len(b),\"E0 recordId out of range\";print(os.path.basename(p),\"recordId\",n,hex(len(b)))' decoded/GAG_COMMAND.GAG.bin 1853",
+      "counterexamples": [
+        "反例：把无证据项猜一个值填进去（如保活周期填 30ms/2500ms 冒充原厂）、用单一 E1 日志泛化全代（G-3）。"
+      ],
+      "consumers": [
+        "data/sysdata-comm.json",
+        "docs/evidence/431-postentry-20261120.md#PE-60"
+      ],
+      "gateAssert": "KEEPALIVE_78_SINGLE_SEND",
+      "status": "verified"
+    },
+    {
+      "evidenceId": "U1",
+      "sourceLedger": "docs/ARCH-全链路真实对齐-20261120.md",
+      "grade": "D",
+      "provable": "static",
+      "practice": "禁止将未证字面量写入单一来源清单：**数字 `2566` 的定义**：PRD P1-2 列入单一来源清单，但三本证据账本未给出坐标或复算命令（`drivelinks-v3.json` 中出现该字面量，语义未证）",
+      "e0Coord": {
+        "file": "docs/ARCH-全链路真实对齐-20261120.md",
+        "recordId": "UNCLEAR-U1",
+        "detail": "三本证据账本与原始包证据均未提供该数字的 E0 坐标或明确复算命令；只作为其它数值的子串出现，语义未证。"
+      },
+      "reproduceCmd": "node -e 'console.log(\"E0_UNRESOLVED:U1; fail-closed; value intentionally not registered\")'",
+      "counterexamples": [
+        "把相邻数字的子串截断当作该数字的定值",
+        "沿用 PRD P1-2 旧单一来源清单中的该项"
+      ],
+      "consumers": [
+        "docs/ARCH-全链路真实对齐-20261120.md#U1",
+        "docs/PRD-全链路真实对齐-20261120.md#P1-2"
+      ],
+      "gateAssert": "E0_REGISTRY_U1",
+      "status": "unresolved",
+      "failClosed": "T01 不得猜值；若无法给出 E0 复算命令，则**从单一来源清单移除**并在 PRD 标注，禁止沿用或自创",
+      "nextCarrier": "在 `PORSCHE_DRIVELINKS.BIN` / `.so` 反编译中定位该计数语义，附坐标+命令后再入清单"
+    }
+  ]
+}
