@@ -6,7 +6,7 @@
   "provable": "runtime",
   "source": {
     "kind": "simulation-log",
-    "file": "docs/realcar/2026-11-20-991-IC-sim-v080.log",
+    "file": "docs/realcar/2026-11-20-991-IC-sim-v080.txt",
     "capturedAt": "2026-11-20",
     "appTag": "v0.8.0",
     "commit": "7247c27",

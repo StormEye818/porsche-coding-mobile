@@ -12,9 +12,9 @@
 
 | 文件 | 类型 | 用途 |
 |---|---|---|
-| `docs/realcar/2026-11-20-981-BCM-hinten-v080.log` | 实车原始日志 | 2015 Boxster/Cayman 981，VIN `WP0AB2981FK180962`，进「后端电子设备」失败 |
+| `docs/realcar/2026-11-20-981-BCM-hinten-v080.txt` | 实车原始日志 | 2015 Boxster/Cayman 981，VIN `WP0AB2981FK180962`，进「后端电子设备」失败 |
 | `tools/vectors/realcar-981-bcm-20261120.json` | 实车结构化向量 | 从原始日志逐帧抽出，标 `grade:E1 / sampleOnly:true` |
-| `docs/realcar/2026-11-20-991-IC-sim-v080.log` | 模拟原始日志 | 2016 911（991）模拟模式进 IC 失败 |
+| `docs/realcar/2026-11-20-991-IC-sim-v080.txt` | 模拟原始日志 | 2016 911（991）模拟模式进 IC 失败 |
 | `tools/vectors/sim-991-ic-20261120.json` | 模拟结构化向量 | 模拟模式 VIN/车型识别成功、进 IC 失败的回放样本 |
 
 ## 观测到的共同失败

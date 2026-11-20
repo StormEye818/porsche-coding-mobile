@@ -6,7 +6,7 @@
   "provable": "runtime",
   "source": {
     "kind": "realcar-log",
-    "file": "docs/realcar/2026-11-20-981-BCM-hinten-v080.log",
+    "file": "docs/realcar/2026-11-20-981-BCM-hinten-v080.txt",
     "capturedAt": "2026-11-20",
     "appTag": "v0.8.0",
     "commit": "7247c27",
