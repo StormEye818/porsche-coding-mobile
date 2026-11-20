@@ -3,6 +3,8 @@
 
 # Porsche Coder 项目交接文档
 
+> ⚠️ **历史交接**：mes-reverse / alfaproxi FIX-CHECKLIST / 另一车型工具链仅作历史流程记录，不是 Porsche 431 做法证据；本轮以 `docs/evidence/431-*-20261120.md` 为准。
+
 ---
 
 ## ✅ 2026-11-18(3) · iOS 常规蓝牙（非 MFi）同类问题对齐（**当前有效状态**）
@@ -291,7 +293,7 @@ UI 对齐 431 四级树形流程，25 车型系统覆盖率 77.7%。模拟模式
 - `~/mes-reverse/rea-evidence/jadx/jadx-headless-mcp-0.7.1-all.jar`
   （SHA-256 `6e5eacf500b64292bfb73c49797c1958f6ee44646e43e868039ae7feb573ff75` 已对 REA pinned）
 - **直接用 wrapper**：`bash ~/mes-reverse/rea-evidence/rea-android.sh <命令> ...`
-  （已固化 JAVA_HOME / JAR 路径 / 指纹校验，别再手敲 export）
+  （已固化 JAVA_HOME / JAR 路径 / 指纹校验，别再手敲 export）【B侧工具，非431证据】
 - 大 APK（`X431PRO3SPlus.apk` 156MB）加 `REA_JADX_HEAP_MIB` 提堆；
   按 `macos-memory-safety-rules` / `macos-power-budget-40w` 单独排期，别塞进日常任务
 
@@ -311,7 +313,7 @@ UI 对齐 431 四级树形流程，25 车型系统覆盖率 77.7%。模拟模式
 
 → **目前没有第二版 X431，多版本 diff 做不了。** 想验 diff 流程只能用 primftpd 那 4 版（对本项目无意义）。
 
-### 🎯 已勘察成果 → `~/mes-reverse/rea-evidence/x431-apk-findings.md`
+### 🎯 已勘察成果 → `~/mes-reverse/rea-evidence/x431-apk-findings.md` 【B侧工具，非431证据】
 
 **「编程/特殊功能清单级对齐」的权威数据源找到了**，别再从 `MENU.BIN` 反推：
 
@@ -342,7 +344,7 @@ jadx 退化到 smali（`fell_back: true`）。**不是坏了，读 smali 即可*
 ## ⚠️ 2026-10-15 上车前预检修复（11 项，全绿）
 
 **上车前必须看这一节** —— 用 REA 挖到的参考实现事实逐条对照代码，找出真车会踩的坑，已全修。
-清单见 `~/mes-reverse/rea-evidence/FIX-CHECKLIST.md`。验证：`node smoke-fixes.mjs` **33/33** + 语法全过。
+清单见 `~/mes-reverse/rea-evidence/FIX-CHECKLIST.md`。【B侧工具，非431证据】验证：`node smoke-fixes.mjs` **33/33** + 语法全过。
 
 ### 🔴 必炸级（已修）
 
