@@ -29,6 +29,7 @@
  *     本函数仍接受 globalFamilies 参数，但 app.js 传空数组。
  */
 import { parseRespAuto, frameIdsOf } from './coder.js';
+import { RAW_IDENTITY_COLLISIONS } from './sweep.js';
 
 /**
  * 身份裁决阶段（进模块后）实发帧 —— SYS_DATA comm cat=0x60 四帧模板。
@@ -47,6 +48,34 @@ import { parseRespAuto, frameIdsOf } from './coder.js';
 export function identityPhaseFrames(family) {
   return (family === 'kwp' ? ['1A9F'] : ['3E00', '22F19E', '22F1A2', '1003']);
 }
+
+/**
+ * UDS 身份裁决禁止掺入的 KWP 专用帧（PE-20 反例：1A9B 不是 UDS 身份帧）。
+ * T04 注入自检「身份掺 1A9B」按本常量翻红。
+ */
+export const IDENTITY_FORBIDDEN_UDS_FRAMES = Object.freeze(['1A9B']);
+
+/** 身份帧集合法性：UDS 四帧不得含 KWP 专用帧；KWP 不得发 0x22。 */
+export function validateIdentityFrames(family, frames) {
+  const list = (frames || []).map((x) => String(x).replace(/[^0-9A-Fa-f]/g, '').toUpperCase());
+  if (family === 'uds' && list.some((f) => IDENTITY_FORBIDDEN_UDS_FRAMES.includes(f))) {
+    return { ok: false, frame: list.find((f) => IDENTITY_FORBIDDEN_UDS_FRAMES.includes(f)) };
+  }
+  if (family === 'kwp' && list.some((f) => f.startsWith('22'))) {
+    return { ok: false, frame: list.find((f) => f.startsWith('22')) };
+  }
+  return { ok: true, frame: null };
+}
+
+/**
+ * PE-21：KWP 识别链固定顺序（9F/87/84/91/92/93/94/95/97/9A），
+ * 连续 3 次无数据即截断，不重试、不自定义容错。
+ * 1A 链只用于 KWP 身份裁决；UDS 四帧里绝不掺 1A9B/1A9F。
+ */
+export const IDENT_1A_CHAIN = Object.freeze([
+  '1A9F', '1A87', '1A84', '1A91', '1A92', '1A93', '1A94', '1A95', '1A97', '1A9A',
+]);
+export const IDENT_1A_MAX_MISS = 3;
 
 /**
  * 判据源 = data/ident-registry.json 的 `moduleIdent`（12 键**对象**，不是数组）。
@@ -314,35 +343,115 @@ export function identityVerdict(texts, expect, moduleIdent = null) {
  * @param {{frames?:string[], moduleIdent?:object|null}} [opts]
  */
 export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
-  const frames = Array.isArray(opts.frames) && opts.frames.length
+  const supplied = Array.isArray(opts.frames) && opts.frames.length
     ? opts.frames.slice() : identityFramesFor(fam);
+  // 只有显式传入生产帧集（opts.frames）时才做禁止帧校验；
+  // 旧 4 参回归用例走 identityFramesFor('uds') = ['22F19E','1A9B']，逐字节行为不变。
+  const explicitFrames = Array.isArray(opts.frames) && opts.frames.length > 0;
+  const validity = explicitFrames ? validateIdentityFrames(fam, supplied) : { ok: true, frame: null };
+  if (!validity.ok) {
+    // 注入自检锚点：UDS 帧集掺 1A9B（或 KWP 掺 0x22）必须红，不静默放行。
+    return {
+      verdict: 'invalid-frames', text: '', texts: [], frames: supplied,
+      invalidFrame: validity.frame,
+      note: `身份帧集合法性失败：${fam} 不得发 ${validity.frame}`,
+    };
+  }
+  // PE-21：KWP 身份阶段以 1A9F 起链时，按固定链跑并在 3 miss 处截断。
+  // 兼容入口 identityFramesFor('uds') 含 1A9B 但不含 1A9F，旧回归用例帧序逐字节不变。
+  const expand1A = supplied.some((f) => String(f).replace(/[^0-9A-Fa-f]/g, '').toUpperCase() === '1A9F');
+  const frames = expand1A
+    ? [...IDENT_1A_CHAIN, ...supplied.filter((f) =>
+        String(f).replace(/[^0-9A-Fa-f]/g, '').toUpperCase() !== '1A9F')]
+    : supplied.slice();
   const moduleIdent = opts.moduleIdent || null;
   const texts = [];
+  const textsByCmd = {};
+  let miss = 0;
   for (const cmd of frames) {
     let r = '';
-    try { r = String(await cmdFn(cmd, 800) || '').trim(); } catch { continue; }
-    if (!r) continue;
+    try { r = String(await cmdFn(cmd, 800) || '').trim(); } catch { miss++; if (expand1A && miss >= IDENT_1A_MAX_MISS) break; continue; }
+    if (!r) { miss++; if (expand1A && miss >= IDENT_1A_MAX_MISS) break; continue; }
     // R4：回帧 ID 不符 = 不是它回的，丢弃（该帧不参与裁决）
     try {
       const ids = [...new Set(frameIdsOf(r))];
-      if (ids.length && p && !ids.includes(p.rx)) continue;
+      if (ids.length && p && !ids.includes(p.rx)) {
+        miss++;
+        if (expand1A && miss >= IDENT_1A_MAX_MISS) break;
+        continue;
+      }
     } catch { /* 解析不出 ID 时按内容裁决 */ }
     const req = String(cmd).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
     const sid = parseInt(req.slice(0, 2), 16) & 0xff;
     const pr = parseRespAuto(r, req, sid);
     const body = Array.from(pr.body || []);
+    // NRC（7F xx nn）/ 截断 / 空应答都不是身份串（PE-08 / PE-21 / PE-54）。
     if (!body.length || pr.kind === 'nrc' || pr.kind === 'truncated'
-        || body[0] !== ((sid + 0x40) & 0xff)) continue;
+        || body[0] === 0x7f || body[0] !== ((sid + 0x40) & 0xff)) {
+      miss++;
+      if (expand1A && miss >= IDENT_1A_MAX_MISS) break;
+      continue;
+    }
     const skip = sid === 0x22 ? 3 : 2;             // 62 <DID16> / 5A <LID8>
     const did = parseInt(req.slice(2), 16);
     const echo = sid === 0x22
       ? (((body[1] || 0) << 8) | (body[2] || 0))
       : (body[1] || 0);
-    if (body.length <= skip || (Number.isFinite(did) && echo !== did)) continue;
+    if (body.length <= skip || (Number.isFinite(did) && echo !== did)) {
+      miss++;
+      if (expand1A && miss >= IDENT_1A_MAX_MISS) break;
+      continue;
+    }
     const text = body.slice(skip)
       .filter((c) => c >= 0x20 && c < 0x7f)
       .map((c) => String.fromCharCode(c)).join('').trim();
-    if (text) texts.push(text);
+    // 可打印占位（如 5A 9B 2D 2D → "--"）不构成可裁决身份串。
+    if (!text || !normIdent(text)) {
+      miss++;
+      if (expand1A && miss >= IDENT_1A_MAX_MISS) break;
+      continue;
+    }
+    miss = 0;
+    texts.push(text);
+    textsByCmd[req] = text;
   }
-  return { ...identityVerdict(texts, expect, moduleIdent), texts, frames };
+  const verdict = identityVerdict(texts, expect, moduleIdent);
+  // PE-31 / E-14：身份按名字串 + 件号；raw 相同的 0x0f4d(SWA2) / 0x0e5f(BV_*) 不合并。
+  const partNumber = opts.partNumber || expect?.partNumber
+    || textsByCmd['1A84'] || textsByCmd['1A94'] || '';
+  const fourTuple = adjudicateFourTuple(texts, expect, { moduleIdent, partNumber });
+  return {
+    ...verdict,
+    verdict: fourTuple.verdict === 'mismatch' ? 'mismatch' : verdict.verdict,
+    texts, frames, textsByCmd,
+    partNumber: String(partNumber || ''),
+    rawCollision: fourTuple.rawCollision,
+    identityRule: fourTuple.identityRule,
+  };
+}
+
+/**
+ * 四元身份裁决（名字串 + 件号），禁止用 sysId 数值或 CAN raw 单一判身份。
+ * 同 raw 异名条目（0x0f4d / 0x0e5f）必须分开，未给件号时只裁到名字命中。
+ */
+export function adjudicateFourTuple(texts, expect, opts = {}) {
+  const ex = expect || { keys: [] };
+  const keys = (ex.keys || []).slice();
+  const mi = opts.moduleIdent
+    ? identityKeysFromModuleIdent(opts.moduleIdent) : null;
+  if (mi) for (const k of mi.keys) if (!keys.includes(k)) keys.push(k);
+  const raw = (texts || []).map((t) => String(t ?? '')).filter((t) => normIdent(t));
+  if (!raw.length) return { verdict: 'unknown', rawCollision: null, identityRule: 'nameVariant + PARTNUMBER memcmp' };
+  const nameHit = raw.some((t) => identMatch(t, keys));
+  const pn = String(opts.partNumber || '').trim();
+  const collisionNames = (RAW_IDENTITY_COLLISIONS[0]?.entries || []).map((e) => e.name);
+  const hitCollision = keys.filter((k) => collisionNames.includes(k));
+  if (!nameHit) return { verdict: 'mismatch', rawCollision: null, identityRule: 'nameVariant + PARTNUMBER memcmp' };
+  return {
+    verdict: 'match',
+    rawCollision: hitCollision.length > 1 ? (RAW_IDENTITY_COLLISIONS[0]?.raw || null) : null,
+    identityRule: hitCollision.length > 1
+      ? 'raw 相同不合并：按名字串+件号裁决' : 'nameVariant + PARTNUMBER memcmp',
+    partNumber: pn || null,
+  };
 }

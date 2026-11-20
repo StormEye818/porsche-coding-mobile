@@ -97,13 +97,16 @@ async function ensureModuleFamily() {
 }
 
 /**
- * 诊断段枚举 + 身份映射（data/bind-plan 里没有候选的模块走这条）。
+ * 连接期 live map（ARCH §9 T03 / E-01·E-05·E-07·E-19·E-20）。
  *
- * 依据：参考诊断仪的绑定入参是请求键、地址由链路层解析；我们没有那一层，
- * 只能靠运行时候选。做法 = 逐地址 1 帧 + 回帧 ID 校验，再按识别码归模块。
+ * ★ 已删除 D 级「0x700–0x7FF 每地址 1 帧全段枚举」。现在候选行只来自
+ *   DRIVELINKS addrBlock 静态选行（sweep.sweepPlan），每行 1 帧 `22 14 09`，
+ *   绑定入参是**请求键**而不是 CAN；uxth==1 且有原生回帧上报才算绑定。
+ *   `0x0f4d/0x0e5f` 这类 raw 相同的对象按名字串+件号分列，不按 raw 合并。
+ *   没有原生上报 → fail-closed（R 级标注 + reason + nextCarrier），不写缓存。
  */
 const LIVE_KEY = 'pc_live_map_v1';
-let liveMap;                       // { vin, ts, live:[{tx,rx,ident}], map:{module:{tx,rx,ident}} }
+let liveMap;   // { vin, model, ts, state:'bound', live:[], map:{} } 或 failClosed 结果
 
 function loadLiveCache() {
   try { const raw = localStorage.getItem(LIVE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
@@ -112,80 +115,114 @@ function saveLiveCache(v) {
   try { localStorage.setItem(LIVE_KEY, JSON.stringify(v)); } catch { /* 隐私模式/配额：忽略 */ }
 }
 
-const hx = (n) => n.toString(16).toUpperCase();
+const hx = (n) => Number(n).toString(16).toUpperCase();
+/** 请求键入参：低 16 位必须补成 4 位十六进制字符串，CAN 数值形态一律不收。 */
+const rkInput = (v) => ({ kind: 'request-key',
+  value: typeof v === 'number' ? `0x${v.toString(16).padStart(4, '0')}` : String(v ?? '') });
+
+/** 原生壳把 showAddress 上报推到这个桥；JS 只登记实参，不生成地址。 */
+if (typeof globalThis !== 'undefined' && !globalThis.__PORSCHE_LIVE_MAP_REPORT__) {
+  globalThis.__PORSCHE_LIVE_MAP_REPORT__ = nativeReporter();
+}
+
+/**
+ * 链路边界：候选行静态选定后，每候选只发 1 帧探针。
+ * 返回的 `uxth` 等价于原厂 `send(0x10000359, A, 2)` 的回执；
+ * `can/frameId` 只来自适配器实际看到的回帧，JS 不臆造。
+ */
+async function nativeProbeForRow(row) {
+  const elm = coder && coder.elm;
+  if (!elm) return { uxth: 0 };
+  try {
+    await atCmdOk(elm, `ATSH${hx(row.tx)}`, 1200, { requireOk: true });
+    await atCmdOk(elm, `ATCRA${hx(row.rx)}`, 1200, { requireOk: true });
+  } catch { return { uxth: 0 }; }
+  let raw = '';
+  try { raw = String(await elm.cmd(PROBE_FRAME, 800, { noDelay: true }) || '').trim(); }
+  catch { return { uxth: 0 }; }
+  const ids = frameIdsOf(raw);
+  const body = Array.from(parseRespAuto(raw, PROBE_FRAME, 0x22).body || [])
+    .map((x) => x.toString(16).padStart(2, '0')).join('');
+  if (classifyProbe(row, ids, body) !== 'alive') return { uxth: 0 };
+  const frameId = ids.length ? ids.find((id) => id === row.rx) : row.rx;
+  return {
+    uxth: 1,
+    source: 'native',
+    frameId,
+    can: { tx: row.tx, rx: row.rx },
+    body,
+  };
+}
 
 async function sweepAndMap(vin, menuModules) {
-  const elm = coder && coder.elm;
-  if (!elm) return null;
   const t0 = Date.now();
-  await atCmdOk(elm, 'ATSP6', 1500).catch(() => {});
-  // 放开接收过滤（ATAR=auto receive，等价"收全部"），并把 ELM 超时压到 32ms ——
-  //   否则 256 地址每个等 1s。注意不要用 ATCRA000：那是把过滤设成 ID 0，会一帧都收不到。
-  await elm.cmd('ATAR', 800, { noDelay: true }).catch(() => {});
-  await elm.cmd('ATST08', 800, { noDelay: true }).catch(() => {});
-  const found = [];
-  // ⚠️ 2026-11-10：showLoading 放到循环外。此前每扫一个地址就重建/重写一次遮罩
-  //   （256 次 DOM 写入 + 取消回调重绑），本身就是扫描耗时的一部分。
   if (typeof showLoading === 'function') {
-    showLoading('正在枚举诊断地址', '0 个活地址', () => { probeAbort = true; });
+    showLoading('正在按原厂静态行探测', '0 个已绑定', () => { probeAbort = true; });
   }
-  for (const c of sweepPlan()) {
+  await ensureBindPlan();
+  const sysIds = [...new Set((menuModules || [])
+    .map((m) => sysIdForModule(m)).filter(Boolean))];
+  const rows = sweepPlan({ bindPlan, sysIds });
+  if (!rows.length) {
+    // n==0：原厂直接走链路层绑定，JS 侧没有原生上报 → fail-closed。
+    liveMap = { ...failClosed('NO_NATIVE_REPORT'), vin: vin || '', model: currentModel || '',
+      ts: Date.now(), live: [], map: {} };
+    if (typeof hideLoading === 'function') hideLoading();
+    log(`  · 连接期 live map fail-closed：${liveMap.reason} 下一载体=${liveMap.nextCarrier}`, 'warn');
+    return liveMap;
+  }
+  const live = [];
+  for (const row of rows) {
     if (probeAbort) break;
     if (typeof updateLoading === 'function') {
-      updateLoading('正在枚举诊断地址', `${found.length} 个活地址 · 0x${hx(c.tx)}`);
+      updateLoading('正在按原厂静态行探测', `${live.length} 个已绑定 · 请求键 ${row.requestKey}`);
     }
-    try { await atCmdOk(elm, `ATSH${hx(c.tx)}`, 600, { noDelay: true }); } catch { continue; }
-    let r = '';
-    try { r = await elm.cmd('221409', 400, { noDelay: true }) || ''; } catch { r = ''; }
-    const ids = frameIdsOf(r);
-    const body = Array.from(parseRespAuto(r, '221409', 0x22).body || [])
-      .map((x) => x.toString(16).padStart(2, '0')).join('');
-    if (classifyProbe(c, ids, body) === 'alive') found.push({ tx: c.tx, rx: c.rx });
+    // ★ 绑定入参是请求键（低 16 位显式声明 kind），不是 CAN 数值。
+    const result = await bindByRequestKey(rkInput(row.requestKey),
+      () => nativeProbeForRow(row));
+    if (!result.ok) {
+      log(`  · 请求键 ${row.requestKey} 绑定失败：${result.code}`, 'warn');
+      continue;
+    }
+    const rec = result.binding;
+    live.push({
+      tx: rec.tx, rx: rec.rx, frameId: rec.frameId,
+      requestKey: rec.requestKey,
+      ident: '', partNumber: '',
+      modules: row.name ? [row.name] : [],
+      sysId: row.sysId,
+      provable: PROVABLE_RUNTIME,
+      grade: GRADE_R,
+    });
   }
-  // 身份：活地址逐个读 22 F1 A2（识别串），归到模块
-  const reg = await ensureIdentRegistry();
-  const live = [];
-  for (const f of found) {
-    try { await atCmdOk(elm, `ATSH${hx(f.tx)}`, 600, { noDelay: true }); } catch { continue; }
-    let r = '';
-    try { r = await elm.cmd('22F1A2', 600, { noDelay: true }) || ''; } catch { r = ''; }
-    // 只认该地址自己回的帧（ATAR 关掉了接收过滤，总线上别的帧也会进来）
-    const ids = frameIdsOf(r);
-    if (ids.length && !ids.includes(f.rx)) continue;
-    const b = Array.from(parseRespAuto(r, '22F1A2', 0x22).body || []);
-    const txt = b[0] === 0x62
-      ? b.slice(3).filter((c) => c >= 0x20 && c < 0x7f).map((c) => String.fromCharCode(c)).join('').trim()
-      : '';
-    live.push({ ...f, ident: txt, modules: moduleFromIdent(txt, reg && reg.identToVariant) });
-  }
-  await elm.cmd('ATSTFF', 800, { noDelay: true }).catch(() => {});
   if (typeof hideLoading === 'function') hideLoading();
   const map = buildModuleMap(live, menuModules || []);
-  liveMap = { vin: vin || '', model: currentModel || '', ts: Date.now(), live, map };
-  // ⚠️ 取消 / 零结果**不写缓存**：中断的扫描和「当时连不上」都会被当成 24h 内的真相，
-  //    下次进模块直接命中空表 → 永远进不去（还得清 localStorage 才能救）。
-  if (!probeAbort && found.length) saveLiveCache(liveMap);
-  log(`  · 枚举完成：${found.length} 个活地址 · 识别出 ${Object.keys(map).length} 个模块`
-    + ` · ${((Date.now() - t0) / 1000).toFixed(1)}s`, found.length ? 'ok' : 'warn');
-  for (const l of live) {
-    log(`    0x${hx(l.tx)}/0x${hx(l.rx)}${l.ident ? `「${l.ident.slice(0, 20)}」` : ''}`
-      + `${l.modules && l.modules.length ? ' → ' + l.modules.join('/') : ''}`, 'info');
+  if (!live.length) {
+    const fc = failClosed(probeAbort ? 'PROBE_TRANSPORT_ERROR' : 'NO_NATIVE_REPORT');
+    liveMap = { ...fc, vin: vin || '', model: currentModel || '', ts: Date.now(), live: [], map: {} };
+    log(`  · 连接期 live map fail-closed：${liveMap.reason} 下一载体=${liveMap.nextCarrier}`, 'warn');
+    return liveMap;
   }
+  liveMap = { vin: vin || '', model: currentModel || '', ts: Date.now(),
+    state: 'bound', ok: true, provable: PROVABLE_RUNTIME, grade: GRADE_R,
+    evidenceIds: LIVE_MAP_EVIDENCE_IDS, live, map };
+  if (!probeAbort) saveLiveCache(liveMap);
+  log(`  · 原厂静态行探测完成：${rows.length} 行 → ${live.length} 个原生上报绑定`
+    + ` · 识别出 ${Object.keys(map).length} 个模块 · ${((Date.now() - t0) / 1000).toFixed(1)}s`, 'ok');
   return liveMap;
 }
 
 async function ensureLiveMap(vin, menuModules) {
-  // 内存缓存也必须校验 VIN；否则同一会话换车后仍会沿用上一辆车的地址表。
+  // 内存缓存也必须校验 VIN；fail-closed 结果永不命中缓存（cacheFresh 已拒）。
   if (liveMap !== undefined) {
     if (vin && cacheFresh(liveMap, vin) && liveMap.model === currentModel) return liveMap;
     if (!vin && !liveMap.vin && liveMap.model === currentModel) return liveMap;
   }
   const c = loadLiveCache();
-  // ⚠️ 没有 VIN（手动选车型/读 VIN 失败）时**不许用磁盘缓存** ——
-  //    缓存是按 VIN 键控的，空 VIN 会让 cacheFresh 跳过比对，直接把上一台车的地址表用上来。
+  // 空 VIN 时绝不用磁盘缓存（否则会把上一台车的地址表用到这台车上）。
   if (vin && cacheFresh(c, vin) && c.model === currentModel) {
     liveMap = c;
-    log(`  · 活地址表：缓存命中（${(c.live || []).length} 个地址，${new Date(c.ts).toLocaleString()}）`, 'info');
+    log(`  · live map 缓存命中（${(c.live || []).length} 条原生上报，${new Date(c.ts).toLocaleString()}）`, 'info');
     return liveMap;
   }
   liveMap = await sweepAndMap(vin, menuModules);
@@ -270,7 +307,10 @@ import { MockAdapter } from './mock-adapter.js';
 import { Elm327 } from './elm327.js';
 import { probeList, identMatch, identityAdjudicate, twinKeysFor,
   identityPhaseFrames, identityKeysFromModuleIdent } from './probe.js';
-import { sweepPlan, classifyProbe, moduleFromIdent, buildModuleMap, cacheFresh } from './sweep.js';
+import { sweepPlan, classifyProbe, moduleFromIdent, identityFromNameAndPart,
+  buildModuleMap, cacheFresh } from './sweep.js';
+import { failClosed, bindByRequestKey, nativeReporter, clear as clearLiveMap,
+  LIVE_MAP_EVIDENCE_IDS, PROBE_FRAME, GRADE_R, PROVABLE_RUNTIME } from './live-map.js';
 
 /**
  * ECU 物理地址表（CAN 请求/应答 ID）。
@@ -589,22 +629,23 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
   const planSysId = planSysIdFor(label, opts.modules, currentModel, entry?.sysId);
   let plan = bindPlanFor(planSysId) || bindPlanFor(entry?.sysId);
   let all = [];
-  const fromPairs = (p) => p.pairs.map((c) => ({
-    tx: parseInt(c.tx, 16), rx: parseInt(c.rx, 16), proto: null, src: 'plan',
-  })).filter((c) => Number.isInteger(c.tx) && Number.isInteger(c.rx)
-    && ((c.tx <= 0x7ff && c.rx <= 0x7ff) || (c.tx > 0x7ff && c.rx <= 0x1fffffff)));
+  // ★ T03：候选行 = DRIVELINKS addrBlock 静态选行 + SYS_DATA cat=0x10 真值 rx。
+  //   删除旧 `cands` 低 16 位当 CAN 与 `rx = tx + 8` 两处自创推导（E-11/E-18）。
+  const staticRows = sweepPlan({ bindPlan,
+    sysIds: [planSysId, entry?.sysId].filter(Boolean) });
+  const planRequestKeys = Array.isArray(plan?.requestKey) ? plan.requestKey : [];
+  all = staticRows.map((r, i) => ({
+    ...r,
+    proto: null,
+    src: 'plan',
+    requestKey: r.requestKey || planRequestKeys[i] || null,
+  }));
+  if (!all.length) {
+    // 静态四元字段缺失（T02 数据未重生）→ 只用表 A 的静态行，不把请求键当 CAN。
+    all = probeList(entry, [], prefer).map((r) => ({ ...r, requestKey: null }));
+  }
   const validDirect = (p) => !!(p && p.bindDirect && !p.nMixed
     && Array.isArray(p.pairs) && p.pairs.length === 1);
-  if (plan && Array.isArray(plan.pairs) && plan.pairs.length) {
-    // pairs 保留表里的原始 rx（存在 rx≠tx+8：0x7FC→0x804、网关 0x710→0x77A）
-    all = fromPairs(plan);
-  } else if (plan && Array.isArray(plan.cands) && plan.cands.length) {
-    all = plan.cands.map((t) => parseInt(t, 16))
-      .filter((tx) => Number.isInteger(tx) && tx + 8 <= 0x7ff)
-      .map((tx) => ({ tx, rx: tx + 8, proto: null, src: 'plan' }));
-  } else {
-    all = probeList(entry, [], prefer);
-  }
   // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑥）：删除「同义系统名 alias 回退」。
   //   原厂没有 alias 概念 —— 地址由链路层按请求键解析（RE-DISCOVERY §3），
   //   离线没有候选就是没有，运行时走枚举（sweepAndMap）。旧 alias 用
@@ -615,6 +656,11 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
   if (!all.length) {
     const menu = (modelsCatalog?.models?.[currentModel]?.modules || []).map((m) => m.module);
     const lm = await ensureLiveMap(state.vin || '', menu).catch(() => null);
+    // R 级上报缺失 → fail-closed，不用静态 CAN 兜底、不把 NO DATA 当成功。
+    if (lm && lm.state && lm.state !== 'bound') {
+      log(`  ${label} live map fail-closed（${lm.code || lm.reason}）：${lm.nextCarrier || ''}`, 'warn');
+      return null;
+    }
     const hits = (opts.modules || []).map((m) => ({ module: m, hit: lm?.map?.[m] })).filter((x) => x.hit);
     const hit = hits.length === 1 ? hits[0].hit : null;
     if (hit) {
@@ -635,20 +681,13 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
   const tryAddr = async (p) => {
     const note = (s) => log(`  · 探 0x${hex(p.tx)}/0x${hex(p.rx)}: ${s}`, 'info');
     try {
-      // ⚠️ 2026-11-10 审计 R4：绑定必须回执确认。回 `?`/空行时说明请求还打在上一个地址上，
-      //    继续发帧只会得到「别人的 NRC」—— 真车 0x7F1 回帧头 7E8 就是这个症状。
+      // 绑定回执必须 OK（R4）：空回执说明帧还打在上一个地址，不能带着错地址继续发帧。
       try {
-        // T03-h：探针绑定 ATSH/ATCRA 强制 OK 回执；空回执由 atCmdOk 报死 AT_NOT_OK，
-        // 落到下面的 catch 里按原厂补帧 221102 后跳过该候选，不带错地址继续发帧。
         await atCmdOk(coder.elm, `ATSH${hex(p.tx)}`, 1200, { requireOk: true });
         await atCmdOk(coder.elm, `ATCRA${hex(p.rx)}`, 1200, { requireOk: true });
       } catch (e) {
-        // ★ 2026-11-12 第十阶段收口：按原厂 DriveLinksMode_1001 @LINK:0x18FC0 补发一帧。
-        //   逐指令证据：`cmp r0,#1 / beq 0x194B8`（绑定返回值=1 → 成功分支）；
-        //   ≠1 时 `0x18FE2 movw r0,#0x1102` + `movt r0,#0xFF00` → 命令 ID 0xFF001102，
-        //   经 `blx r3` 发出。原厂请求模板库 index 470 = `01 03 22 11 02` 正是该帧。
-        //   ⚠️ 只补帧留痕，**不改变绑定结果**：补帧响应不作为成功依据，仍跳过该候选
-        //   （回执失败时继续发帧会打到上一个地址，R4 审计的安全约束保持）。
+        // E-01：绑定返回值≠1 时原厂补发 0xFF001102（22 11 02），只留痕、不作成功依据。
+        // 补帧响应不作为成功依据，仍跳过该候选，不带错地址继续发帧。
         try {
           const retryResp = await coder.elm.cmd('221102', 800);
           note(`绑定失败 → 补帧 221102${retryResp ? `（${String(retryResp).trim().slice(0, 24)}）` : ''}，跳过：${e.message}`);
@@ -657,65 +696,50 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
         }
         return null;
       }
-      // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离①）：n=0（bindDirect）**不发任何探针帧**。
-      //   原厂`DriveLinksMode_1001 @LINK:0x18f00` 的 `cbz r1,#0x18f9e` 分支：候选数 0 →
-      //   整个探针循环跳过，直接 `send(0x10000359,A,2)` 做**链路层绑定**。
-      //   ELM 的等价物 = ATSH/ATCRA 且回执 OK（上面 611-616 已断言）→ 绑定完成，直接返回。
-      //   ★ 第十阶段：ATSH/ATCRA 回执失败时按原厂补发一帧 221102 后跳过候选
-      //   （补帧响应不作成功依据；逐指令证据 原厂链路库 @0x18FC0/0x18FE2）。
       const fam = opts.family || familyFor(label, p.tx, { modules: opts.modules });
-      // ★ 2026-11-13 T03-a（②-a 探针阶段）：探针阶段**只有「应答即绑」**。
-      //   逐指令依据 DriveLinksMode_1001 @LINK:0x18F00：发现阶段对每个候选只发 1 帧
-      //   `0xFF001409`（22 14 09），只看有没有回来（含 NRC），不看识别串、不读身份帧。
-      //   ★ 身份裁决整体移到**进模块后**（enterSystem 的 T03-b 段），按 cat=0x60 四帧
-      //   `3E00→22F19E→22F1A2→1003` 的应答文本 + data/ident-registry.json moduleIdent
-      //   （12 键对象）做判据。探针阶段不再发 ATSTFF / 身份帧 / ATST0F 这 3 帧额外帧，
-      //   帧数与原厂逐帧一致（每候选 1 帧）。
-      const finish = async (hit) => {
-        // 应答即绑：帧来自该候选 rx 且有 body（正响应或 NRC 都算），身份交给进模块后裁决。
-        return hit;
-      };
+      // ★ 探针阶段只有「应答即绑」，不发身份帧；finish() 内不发任何帧。
+      //   身份裁决在 enterSystem 之后按 cat=0x60 四帧 3E00→22F19E→22F1A2→1003 做。
+      const finish = async (hit) => hit;
+      const rk = p.requestKey || null;
       if (bindDirect) {
+        // n==0：原厂 cbz 分支跳过探针循环，直接按请求键做链路层绑定（0 探针帧）。
         note(`ATSH/ATCRA OK → n=0 链路绑定（0 探针帧，原厂cbz 分支）`);
-        return await finish({ tx: p.tx, rx: p.rx, cmd: '', ident: '', confidence: 'bound', family: fam || null });
+        return await finish({ tx: p.tx, rx: p.rx, cmd: '', ident: '', confidence: 'bound',
+          family: fam || null, requestKey: rk });
       }
-      // ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：n>0 **每候选只发 1 帧**
-      //   `0xFF001409`（22 14 09）；KWP 族用实车自证的 1A 9F。失败不再追加 3E/firstRead/
-      //   多帧族链（那些是 2026-11-10 的自创恢复，原厂无）。
-      //   `probeChainFor` 已收窄为每族单帧（见函数注释）。
+      if (!rk) {
+        // 无请求键：绑定入参缺失 → fail-closed，绝不拿 CAN 当请求键凑一个。
+        note('请求键缺失 → fail-closed（绑定入参必须是请求键）');
+        return null;
+      }
       void probeCmd;
       const cmds = probeChainFor(fam);
       for (let ci = 0; ci < cmds.length; ci++) {
         const cmd = cmds[ci];
-        let r = '';
-        try { r = (await coder.elm.cmd(cmd, 2000) || '').trim(); } catch { note(`${cmd} → 超时/无应答`); continue; }
-        // ★ 2026-11-10 审计 R4：先认「这帧是谁回的」，再谈内容。
-        //   帧 ID ≠ 候选 rx（例：探 0x7F1 却回 7E8）→ 该帧不属于本候选，按无应答处理。
-        //   此前直接拿 body 判定，会把别的 ECU 的 NRC 记成这个候选的「身份不符」。
-        const ids = frameIdsOf(r);
-        if (ids.length && !ids.includes(p.rx)) {
-          note(`${cmd} → 回帧 ID ${ids.map((x) => '0x' + x.toString(16).toUpperCase()).join('/')}`
-            + ` ≠ 0x${hex(p.rx)}（应答方不是该候选，丢弃）`);
-          continue;
-        }
-        const pr = parseRespAuto(r, String(cmd).replace(/[^0-9A-Fa-f]/g, ''),
-          parseInt(String(cmd).slice(0, 2), 16) & 0xff);
-        const body = Array.from(pr.body || [])
-          .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
-        // ⚠️ 必须以 **body** 为准，不能看原始文本是否非空：
-        //   探测期 ATST 压到 60ms 后，安静 ECU 会快速回 `NO DATA`（不是超时异常），
-        //   旧判断 `!body && !r` 会把 `NO DATA` 当成"有应答"→ 每个候选都绑定成功。
-        if (!body) { note(`${cmd} → 无应答${r ? `（${r.slice(0, 16)}）` : ''}`); continue; }
-        const text = Array.from(pr.body || [])
-          .filter((c) => c >= 0x20 && c < 0x7f)
-          .map((c) => String.fromCharCode(c)).join('').trim();
-        note(`${cmd} → ${ids.length ? '[' + ids.map((x) => hex(x)).join('/') + '] ' : ''}`
-          + `${body.slice(0, 24) || r.slice(0, 24) || '(空)'}`);
-        // 判定：帧来自该 rx 且有 body（正响应或 NRC 都算）→ 该地址活着，绑定。
-        // ★ T03-a：探针阶段只「应答即绑」，不发身份帧；身份裁决在 enterSystem 之后按
-        //   cat=0x60 四帧 + moduleIdent 判据执行（见文件后半的 T03-b 身份裁决段）。
-        //   「换下一候选」与「不承诺左右」的裁决语义在那里统一实现，探针阶段不重复。
-        return await finish({ tx: p.tx, rx: p.rx, cmd, ident: text.slice(0, 32), confidence: 'bound' });
+        // ★ 绑定入参 = 请求键；每候选仅 `probeChainFor` 的 1 帧，uxth==1 才算成功。
+        const result = await bindByRequestKey(rkInput(rk), async () => {
+          let raw = '';
+          try { raw = String(await coder.elm.cmd(cmd, 2000) || '').trim(); }
+          catch { return { uxth: 0 }; }
+          const ids = frameIdsOf(raw);
+          if (ids.length && !ids.includes(p.rx)) {
+            note(`${cmd} → 回帧 ID ${ids.map((x) => '0x' + x.toString(16).toUpperCase()).join('/')}`
+              + ` ≠ 0x${hex(p.rx)}（应答方不是该候选，丢弃）`);
+            return { uxth: 0 };
+          }
+          const pr = parseRespAuto(raw, String(cmd).replace(/[^0-9A-Fa-f]/g, ''),
+            parseInt(String(cmd).slice(0, 2), 16) & 0xff);
+          const body = Array.from(pr.body || [])
+            .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
+          if (!body) { note(`${cmd} → 无应答${raw ? `（${raw.slice(0, 16)}）` : ''}`); return { uxth: 0 }; }
+          note(`${cmd} → ${ids.length ? '[' + ids.map((x) => hex(x)).join('/') + '] ' : ''}${body.slice(0, 24)}`);
+          return { uxth: 1, source: 'native',
+            frameId: ids.length ? ids.find((x) => x === p.rx) : p.rx,
+            can: { tx: p.tx, rx: p.rx }, body };
+        });
+        if (!result.ok) { note(`${cmd} → ${result.code}（无原生上报，不绑）`); continue; }
+        return await finish({ tx: p.tx, rx: p.rx, cmd, ident: '', confidence: 'bound',
+          family: fam || null, requestKey: result.binding.requestKey, provable: PROVABLE_RUNTIME });
       }
     } catch (e) { note(`异常 ${e.message || e}`); }
     return null;
@@ -2864,6 +2888,15 @@ async function enterSystem(sys) {
       try { resolveKey(mode, 0x12345678, { ecuId: null }); } catch (e) { modeOk = false; modeWhy = e.message; }
       if (modeOk) {
         coder.seedKeyProvider = makeResolverProvider(mode, { ecuId: null, name: sys.label });
+        // PE-32：104 条「原厂无 case」= outLen=0 → 不发 key 继续写；显式打标记，
+        // 与测试注入的 needsKey:false（非零 seed 时仍拒写）分开，避免两种口径混写。
+        if (coder.seedKeyProvider && coder.seedKeyProvider.needsKey === false) {
+          coder.seedKeyProvider.oemNoCase = true;
+        }
+        if (coder.seedKeyProvider && Number(coder.seedKeyProvider.mode) === 0x1d) {
+          log('  seed/key mode 0x1D 依赖会话运行时态（TOKEN+0x408838）：仅名字分发可算，'
+            + '否则 fail-closed 不猜 key', 'warn');
+        }
         log(`  seed/key：原厂mode 0x${mode.toString(16).padStart(2, '0')}` +
             (fam != null ? ` · 模板族 0x${fam.toString(16).padStart(2, '0')}` : '') +
             (lid != null ? ` · 会话 0x${lid.toString(16).padStart(4, '0')}` : '') + '（照抄 securityModel）', 'ok');
@@ -3023,17 +3056,28 @@ async function enterSystem(sys) {
     const frames = identityPhaseFrames(enterFamily);
     const replay = coder.oemIdentityResponses || {};
     const cmdFn = async (hex) => String(replay[String(hex).toUpperCase()] ?? '');
+    // E-14：身份靠名字串 + 件号（JOB.BIN memcmp 语义），不按 sysId 数值或 CAN raw 单一裁决。
+    const partNumber = String(coder.lastPartNo || (coder.lastPartTokens || [])[0] || '').trim();
     try {
       // mismatch → 换下一候选；twin-match → 接受并显式标注「不承诺左右」。
       const idv = await identityAdjudicate(cmdFn, { tx: addr.tx, rx: addr.rx },
-        enterFamily, expect, { frames, moduleIdent });
+        enterFamily, expect, { frames, moduleIdent, partNumber });
+      const fourTuple = identityFromNameAndPart(idv.text, partNumber, {
+        identToVariant: reg && reg.identToVariant,
+        partToModule: null,   // 件号精确表未随进模块序列加载时，只按名字串裁到模块名
+      });
       log(`  · 身份裁决（进模块后）：四帧 ${frames.join('→')} · 判据源 moduleIdent ${mi.count}/12`
-        + ` · 请求 ${mi.requests.join('/') || '—'} → ${idv.verdict}`, idv.verdict === 'mismatch' ? 'warn' : 'ok');
-      if (idv.verdict === 'mismatch') {
+        + ` · 请求 ${mi.requests.join('/') || '—'} → ${idv.verdict}`
+        + ` · 件号 ${partNumber || '—'} · 规则 ${idv.identityRule || fourTuple.note || '—'}`,
+      idv.verdict === 'mismatch' ? 'warn' : 'ok');
+      if (idv.rawCollision) {
+        log(`  · 身份四元提示：raw ${idv.rawCollision} 同值异名（SWA2 / BV_*），按名字串+件号分列，不合并`, 'info');
+      }
+      if (idv.verdict === 'mismatch' || fourTuple.verdict === 'mismatch') {
         log(`  ⚠ 身份文本「${idv.text.slice(0, 24)}」不匹配 → 换下一候选（不承诺左右：孪生组命中才接受）`, 'warn');
-        state.identityVerdict = { verdict: 'mismatch', text: idv.text, frames, moduleIdentCount: mi.count };
+        state.identityVerdict = { verdict: 'mismatch', text: idv.text, frames, moduleIdentCount: mi.count, partNumber };
       } else {
-        state.identityVerdict = { verdict: idv.verdict, text: idv.text, frames, moduleIdentCount: mi.count };
+        state.identityVerdict = { verdict: idv.verdict, text: idv.text, frames, moduleIdentCount: mi.count, partNumber };
         if (idv.verdict === 'twin-match') log('  · 身份裁决命中孪生组 → 接受（不承诺左右）', 'ok');
       }
     } catch (e) {
@@ -3459,6 +3503,7 @@ function pushModel(m) {
   if (currentModel !== m.label) {
     state.selectedVariant = {};
     currentBlocks = {};
+    clearLiveMap();           // 换车型：原生上报的绑定不能跨 VIN/车型复用
     liveMap = undefined;      // map 是按车型菜单白名单生成的，不能跨车型复用
     if (coder) {
       coder.modelLabel = m.label;

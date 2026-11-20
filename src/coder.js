@@ -160,6 +160,49 @@ export const NRC = {
 };
 
 /**
+ * PE-11（SYSP.so `PorscheEnterSys` @0x19920）：会话回 `7F 10 12`
+ * = 该 ECU 不支持这个模板号 → **换会话模板号，不重试同号**。
+ * 主模板 10 89 被拒时没有下一模板的 E0 证据 → fail-closed（不猜、不降级无会话继续）。
+ */
+export const SESSION_NRC12_POLICY = Object.freeze({
+  code: 0x12,
+  action: 'switch-template-no-retry-same-number',
+  altTemplate: 0x89,
+  evidence: 'PE-11',
+});
+
+/** 给出换号目标；已是主模板或无证据时返回 null（调用方必须 fail-closed）。 */
+export function sessionAlternateFor(sysId, current) {
+  void sysId;   // 模板号按 E0 唯一换号规则，不按协议族猜
+  const cur = Number(current);
+  if (!Number.isFinite(cur)) return null;
+  return cur === SESSION_NRC12_POLICY.altTemplate ? null : SESSION_NRC12_POLICY.altTemplate;
+}
+
+/**
+ * PE-31/PE-32：seed/key 选择链的 E0 分类。
+ *  - `oemNoCase`         : 104 条「原厂 switch 无 case」→ outLen=0，不发 key 继续写流程；
+ *  - `mode0x1d`          : 依赖会话全局态，名字分发可算则算，否则 fail-closed（绝不猜 key）；
+ *  - `needsKey:false` 但无 oemNoCase 标记：非零 seed 属证据冲突 → 拒写。
+ */
+export const SEEDKEY_CHAIN_POLICY = Object.freeze({
+  noCase: 'outLen=0 → skip key → continue write',
+  mode0x1d: 'name-dispatch-or-fail-closed（不猜 key）',
+  retryOn27: false,
+  evidence: 'PE-30/PE-31/PE-32',
+});
+
+/** 是否 104 条「原厂无 case」生产路径（只有显式 oemNoCase 标记才成立）。 */
+export function isOemNoCaseProvider(provider) {
+  return !!(provider && provider.needsKey === false && provider.oemNoCase === true);
+}
+
+/** mode 0x1D 是否只有名字分发兜底；无名字算法则 fail-closed。 */
+export function isRuntimeStateMode(mode) {
+  return (Number(mode) & 0xff) === 0x1d;
+}
+
+/**
  * SeedKeyProvider —— seed/key 算法插槽。
  *
  * 用法：拿到算法后
@@ -877,6 +920,28 @@ export class Coder {
     return r;
   }
 
+  /**
+   * 7F 10 12 的单一换号出口：按 PE-11 换模板号 10 89，发一次，绝不重发同号。
+   * 没有下一模板（当前已是 89）→ fail-closed 抛错，不降级为「无会话继续」。
+   * @returns {Promise<boolean>} true = 已用新号建立会话
+   */
+  async _switchSessionOnNrc12(e, sess) {
+    if (!e || e.nrc !== 0x12) return false;
+    const alt = sessionAlternateFor(this.oemSysId, sess);
+    if (alt == null) {
+      throw new CodingError(
+        `会话 10 ${Number(sess).toString(16).toUpperCase().padStart(2, '0')} 回 7F 10 12`
+        + `（${SESSION_NRC12_POLICY.evidence}）：无下一模板号证据，fail-closed；不重试同号、不无会话继续`,
+        0x12);
+    }
+    const altHex = `10${alt.toString(16).toUpperCase().padStart(2, '0')}`;
+    this._say(`  (7F 10 12 → 换模板号 ${altHex}，不重试同号)`);
+    const r = await this.uds(altHex);
+    this._expectSession(r, alt);
+    this.oemSession = alt;
+    return true;
+  }
+
   async enterSession(session, opts = {}) {
     // ★ 2026-11-12 全量收口：上层按证据开启「原厂序列模式」时，逐帧按 comm 记录发帧，
     //   不再靠族流猜帧序。显式给 session（服务专属流程）或无证据序列时保持既有族流，
@@ -921,7 +986,7 @@ export class Coder {
         this._expectSession(sr, sess);
         this._say(`  ✅ 会话 ${sessHex} 就绪（${family === 'kwp' ? 'KWP 流直接建会话' : '家族未证·按规格未覆盖，走主会话同形'}）`);
       } catch (e) {
-        if (requirePositive) throw e;
+        if (requirePositive) { if (await this._switchSessionOnNrc12(e, sess)) return true; throw e; }
         this._say(`  (会话 ${sessHex} 无正响应：${e.message} —— 原厂 flag=0 尽力而为，继续)`);
       }
     } else {
@@ -934,7 +999,7 @@ export class Coder {
           const sr = await this.uds('1003');
           this._expectSession(sr, 0x03);
         } catch (e) {
-          if (requirePositive) throw e;
+          if (requirePositive) { if (await this._switchSessionOnNrc12(e, sess)) return true; throw e; }
           this._say(`  (10 03 未支持：${e.message} —— 继续)`);
         }
       }
@@ -1035,7 +1100,7 @@ export class Coder {
         this._expectSession(sr, sess);
         this._say(`  ✅ 会话 ${sessHex} 就绪`);
       } catch (e) {
-        if (requirePositive) throw e;
+        if (requirePositive) { if (await this._switchSessionOnNrc12(e, sess)) return true; throw e; }
         this._say(`  (会话 ${sessHex} 无正响应：${e.message} —— 原厂 flag=0 尽力而为，继续)`);
       }
     }
@@ -1647,6 +1712,11 @@ export class Coder {
     //    重试吃满 → 0x36 锁死。needsKey=false 要给出「原厂无 case」的针对性报错。
     if (!kArr.length) {
       const noAlgo = this.seedKeyProvider && this.seedKeyProvider.needsKey === false;
+      if (isOemNoCaseProvider(this.seedKeyProvider)) {
+        // PE-32：104 条「原厂无 case」= outLen=0 → 不发 key 继续写流程（不是拒写）。
+        this._say('  (PE-32 原厂无 case：outLen=0，不发 key，按 E0 继续写流程)');
+        return true;
+      }
       if (noAlgo) {
         // ★ 2026-11-12 全量审计修不一致：旧 securityAccess() 在这里「不发 key 继续写」，
         //   而实际写路径 securityAccessEx() 同条件**抛错拒写** —— 同 ECU 同 provider 两入口
@@ -2256,6 +2326,15 @@ async function securityAccessEx({ level = 0x09, keyBytes = null, kwp = false, ke
   //   两者都不能发 `00 00 00 00` 出去：那会吃 NRC 0x35，重试吃满 → 0x36 锁死。
   if (!kArr.length) {
     const noAlgo = this.seedKeyProvider && this.seedKeyProvider.needsKey === false;
+    if (isOemNoCaseProvider(this.seedKeyProvider)) {
+      // PE-31/PE-32：switch 无 case → outLen=0 → 不发 key 继续流程；不猜 key、不重试 27。
+      this._say('  (PE-32 原厂无 case：outLen=0，不发 key，按 E0 继续写流程)');
+      return true;
+    }
+    if (isRuntimeStateMode(this.seedKeyProvider?.mode) && !noAlgo) {
+      throw new CodingError('mode 0x1D 依赖会话运行时全局态（TOKEN+0x408838）：'
+        + '名字分发未给出算法 → fail-closed，不发 key、不猜 key、不重试 27');
+    }
     throw new CodingError(noAlgo
       ? `该模块（mode 0x${(this.seedKeyProvider.mode ?? 0).toString(16)}）在原厂seed/key 表里没有对应的算法分支` +
         `（原本不需要密钥），但 ECU 仍返回了非零 seed —— 拒绝猜测 key。` +
