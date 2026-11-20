@@ -344,7 +344,7 @@ jadx 退化到 smali（`fell_back: true`）。**不是坏了，读 smali 即可*
 ## ⚠️ 2026-10-15 上车前预检修复（11 项，全绿）
 
 **上车前必须看这一节** —— 用 REA 挖到的参考实现事实逐条对照代码，找出真车会踩的坑，已全修。
-清单见 `~/mes-reverse/rea-evidence/FIX-CHECKLIST.md`。【B侧工具，非431证据】验证：`node smoke-fixes.mjs` **33/33** + 语法全过。
+验证：以本项目 `npm test` / `node smoke-fixes.mjs` 实跑计数为准，不引用另一车型项目清单。
 
 ### 🔴 必炸级（已修）
 

@@ -1,7 +1,7 @@
 /**
  * sync.mjs — 组装 www/ 并保住 app 内插件注册。
  *
- * ⚠️ 必踩的坑（alfaproxi 2026-09-30 实测）：
+ * ⚠️ 必踩的坑（2026-09-30 真机实测）：
  *
  * ① Capacitor 的 app 内插件（如 MfiSerialPlugin）不会自动注册。
  *    `npx cap sync` 只登记 npm 插件，且**每次重写** capacitor.config.json
@@ -12,7 +12,7 @@
  *    `import { registerPlugin } from '@capacitor/core'` 直接当 ES module 加载
  *    会报 "Failed to resolve module specifier"，整个模块图挂掉，
  *    表现为「界面出来了但所有按钮点了没反应」。
- *    必须用 esbuild `bundle:true` 打成单文件（照搬 alfaproxi 的 vendor 方案）。
+ *    必须用 esbuild `bundle:true` 打成单文件（采用已验证的 vendor 方案）。
  *
  * 用法：
  *   node scripts/sync.mjs            # 打包 + 同步 + 回填
