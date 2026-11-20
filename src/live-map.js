@@ -42,8 +42,8 @@ export const FAIL_CLOSED_REASON = Object.freeze({
   FRAME_ID_MISMATCH: 'LIVE_MAP_FRAME_ID_MISMATCH',
 });
 export const NEXT_CARRIER =
-  '原生 DiagnoseDataSrc.showAddress("4000") 上报接口（请求键→已应答 CAN）'
-  + ' + libPORSCHE_LINK.so DriveLinksMode_1001 @0x18f00 逐指令复核';
+  '原生诊断地址上报接口未就绪（请求键→已应答 CAN 的运行时映射）；'
+  + '请按 E-05 / E-19 / E-20 证据载体检查连接期地址发现上报';
 export const SCAN_COMMAND =
   "grep -n 'E-05\\|E-19\\|E-20' docs/evidence/*linkmap*.md";
 
