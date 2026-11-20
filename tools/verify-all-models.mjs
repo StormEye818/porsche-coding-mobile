@@ -7,7 +7,7 @@
  *      981 回归、low/unresolved 不覆盖。
  *  [B] 运行时：src/model-sysid-map.js 按车型解析（Macan/G1/992/Taycan/981/986）。
  *  [C] 步骤2 路由：sysdata-routing.json 22 锚点 / byGeneration / 根表 22 type。
- *  [D] 步骤3 绑定计划：bind-plan.json 981 五项验收 + 全代条目 + 0x0B 对账基线。
+ *  [D] 步骤3 绑定计划：bind-plan.json 981 五项验收 + 全代条目 + 0x0B IC 真值双候选对账基线。
  *  [E] 步骤4 编码地址：coding-address-sources.json 全库无 SYS_DATA 流 → ALLDATA coding 池。
  *  [F] 步骤5 comm 键：comm-shared-keys.json 共享键 0x03A7 锚点。
  *
@@ -138,14 +138,29 @@ console.log('\n[D] 步骤3 绑定计划（全代多源）');
   const cands = (sid) => (plan.ecu[sid]?.cands || []).map((c) => parseInt(c, 16));
   ok('981 DME=0x7E0', cands('0x0e01').includes(0x7E0));
   ok('981 PASM 含 0x7D0（跨代路由行）', cands('0x0e13').includes(0x7D0));
-  ok('981 IC=0x7F1', cands('0x0e08').includes(0x7F1));
+  const ic981Pairs = plan.ecu['0x0e08']?.pairs || [];
+  ok('981 IC 本代真值 0x0714（0x0714/0x077E commCat10 静态 rx=tx+0x6A；0x07F1 仅派生候选）',
+    cands('0x0e08').includes(0x0714) && cands('0x0e08').includes(0x07F1)
+    && ic981Pairs.some((p) => p.tx?.toLowerCase() === '0x0714'
+      && p.rx?.toLowerCase() === '0x077e' && p.rxRule === 'rx=tx+0x6A'
+      && p.rxSource === 'commCat10' && p.provable === 'static')
+    && ic981Pairs.some((p) => p.tx?.toLowerCase() === '0x07f1'
+      && p.rx?.toLowerCase() === '0x07f9' && p.provable === 'derived'));
   ok('981 IC ≠ PSM（集合无交集）',
     !cands('0x0e08').some((c) => cands('0x0e05').includes(c)));
   const s981 = J('981-sysids.json');
   const resolved = Object.values(s981.modules).filter((m) => (m.sysIds || []).some((s) => cands(s).length)).length;
   ok(`981 ≥40/48 静态解出（实际 ${resolved}）`, resolved >= 40);
-  ok('0x0B 对账基线：IC cands=[0x07F1]',
-    JSON.stringify(plan.ecu['0x0b08']?.cands) === '["0x07F1"]');
+  const ic0bPairs = plan.ecu['0x0b08']?.pairs || [];
+  ok('0x0B IC 真值双候选 {0x0714,0x07F1}（0x0714/0x077E 本代静态首选，0x07F1/0x07F9 派生非首选）',
+    JSON.stringify([...cands('0x0b08')].sort((a, b) => a - b)) === JSON.stringify([0x714, 0x7F1])
+    && ic0bPairs[0]?.tx?.toLowerCase() === '0x0714'
+    && ic0bPairs[0]?.rx?.toLowerCase() === '0x077e'
+    && ic0bPairs[0]?.rxRule === 'rx=tx+0x6A'
+    && ic0bPairs[0]?.provable === 'static'
+    && ic0bPairs[1]?.tx?.toLowerCase() === '0x07f1'
+    && ic0bPairs[1]?.rx?.toLowerCase() === '0x07f9'
+    && ic0bPairs[1]?.provable === 'derived');
   ok('0x0B 对账基线：PASM 含 0x07D0', cands('0x0b13').includes(0x7D0));
   const allSids = Object.keys(plan.ecu);
   ok('新代 0x10+ 条目已建立', allSids.some((s) => s.startsWith('0x10')) && allSids.some((s) => s.startsWith('0x14')));

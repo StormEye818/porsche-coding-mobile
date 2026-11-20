@@ -1,13 +1,13 @@
 /**
- * live-map.js — 431 连接期 live map（E0 账本 E-01 / E-05 / E-07 / E-19 / E-20）。
+ * live-map.js — E0 证据包连接期 live map（E0 账本 E-01 / E-05 / E-07 / E-19 / E-20）。
  *
  * ★ 关键口径（禁止回归）：
  *   - 请求键空间 `0x0030xxxx` / `0xFF60xxxx`（DRIVELINKS addrBlock 行键 A）
  *     与 CAN 空间（11-bit 请求/应答 ID）是**两个键空间**，不可互取低 16 位。
- *   - 「哪条 CAN 真的应答了、请求键最终绑到哪条 CAN」在 431 包内三次负扫描 0 命中，
+ *   - 「哪条 CAN 真的应答了、请求键最终绑到哪条 CAN」在 E0 证据包内三次负扫描 0 命中，
  *     只有 R 级原生发现上报（showAddress 族回调）能给真值。Java/JS 层不生成地址。
  *   - 拿不到原生上报 → fail-closed：带 reason + nextCarrier + R 级标注；
- *     禁止静态写死 CAN、禁止把 D 级「0x700–0x7FF / 200ms 全段枚举」当 431 做法。
+ *     禁止静态写死 CAN、禁止把 D 级「0x700–0x7FF / 200ms 全段枚举」当参考诊断仪做法。
  *   - 绑定只认 `uxth == 1`（DriveLinksMode_1001 @LINK:0x18f00 `cmp #1`），
  *     每候选只 1 帧 `22 14 09`（`0xFF001409`），n==0 跳过探针循环；
  *     NRC / 无名应答都不算绑定成功。
@@ -20,7 +20,7 @@ export const GRADE_R = 'R';
 export const PROVABLE_RUNTIME = 'runtime';
 export const LIVE_MAP_EVIDENCE_IDS = Object.freeze(['E-01', 'E-05', 'E-07', 'E-19', 'E-20']);
 
-/** 431 发现循环常量（E-01 / PE-01 / PE-02；不是 CAN 地址）。 */
+/** 参考诊断仪发现循环常量（E-01 / PE-01 / PE-02；不是 CAN 地址）。 */
 export const PROBE_FRAME = '221409';
 export const PROBE_REQUEST_ID = 0xff001409;
 export const BIND_REQUEST_ID = 0x10000359;
@@ -45,7 +45,7 @@ export const NEXT_CARRIER =
   '原生 DiagnoseDataSrc.showAddress("4000") 上报接口（请求键→已应答 CAN）'
   + ' + libPORSCHE_LINK.so DriveLinksMode_1001 @0x18f00 逐指令复核';
 export const SCAN_COMMAND =
-  "grep -n 'E-05\\|E-19\\|E-20' docs/evidence/431-linkmap-20261120.md";
+  "grep -n 'E-05\\|E-19\\|E-20' docs/evidence/*linkmap*.md";
 
 /** 模块级 live map：requestKey(canonical) → {tx, rx, frameId, ...}。 */
 const bindings = new Map();
