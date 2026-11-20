@@ -3,7 +3,7 @@
 
 # Porsche Coder 项目交接文档
 
-> ⚠️ **历史交接**：mes-reverse / alfaproxi FIX-CHECKLIST / 另一车型工具链仅作历史流程记录，不是 Porsche 431 做法证据；本轮以 `docs/evidence/431-*-20261120.md` 为准。
+> ⚠️ **历史交接**：mes-reverse / 跨项目 FIX-CHECKLIST / 另一车型工具链仅作历史流程记录，不是 Porsche 431 做法证据；本轮以 `docs/evidence/431-*-20261120.md` 为准。
 
 ---
 
@@ -372,7 +372,7 @@ jadx 退化到 smali（`fell_back: true`）。**不是坏了，读 smali 即可*
 - `special-functions.json` → schemaVersion 3，**65/67 补 `systemId`**（= systemCatalog 的 ecu 号）
 - 新增 **`build-special-functions.py`**：校验 + 回填 + **`--spe-cfg` 接口**
   （拿到真车/SD 卡的 `SPECFG.INI` 后即可与权威源 `[SYS_SPEC]` 对账）
-- Porsche `Elm327.cmd()` 补串行锁（与 AlfaProxi 同款）
+- Porsche `Elm327.cmd()` 补串行锁（与另一车型实现同款）
 - **发版面泄漏清洗**：`src/app.js`、`coder.js`、`elm327.js`、`schema.js`、`www/index.html`
   里的第三方工具名与逆向描述全部中性化，终检干净
 
@@ -433,7 +433,7 @@ jadx 退化到 smali（`fell_back: true`）。**不是坏了，读 smali 即可*
 
 自研 iOS app，与 **X431 保时捷包 1:1 代码级对齐**（用户明确要求）：
 连接 → 选车型 → 选模块 → 选功能 → 编码条目/特殊功能 → 执行。
-**不走黑盒、每项细节要理解、离线验证为主、只上车一次**（不重复 alfaproxi 那种反复测 bug）。
+**不走黑盒、每项细节要理解、离线验证为主、只上车一次**（不重复旧项目那种反复测 bug 的弯路）。
 
 ---
 
@@ -2389,7 +2389,7 @@ scene"），应该当时就查。
    下移等于没做，webview 仍满屏顶进状态栏，而 `env()` 又被这套 frame 操作清成 0，
    页面自己也没法量。
 
-**修法**：照 alfaproxi 那套已验证可用的组合改（`alfaproxi/app/mobile.css` 2026-09-30
+**修法**：照已验证可用的同类组合改（同类 mobile.css 方案 2026-09-30
 真机验证）——webview 满屏（`overlaysWebView:true`）+ CSS `env(safe-area-inset-*)`
 **四边都让位**。`fitSafeTop()` 整段删掉：env() 随折叠/旋转/换屏自动跟随，
 不需要 JS 量测、没有缓存失效问题，长宽比判刘海那个坑也一并不存在了。
@@ -2398,12 +2398,12 @@ scene"），应该当时就查。
 覆盖 `ios/App/App/capacitor.config.json`。我先只改了 ios 那份，被 sync 冲掉了，
 装上去还是旧值（白查一轮）。
 
-对照参考：**`alfaproxi` 是这套问题的正确样板**，遇到 Duo/安全区/折叠适配先看它，
+对照参考：**这类问题已有验证过的正确样板**，遇到 Duo/安全区/折叠适配先看样板，
 别自己从头推。
 
 ### 待办
 
-- [x] ~~装机~~ 两个 app 已装到 iPhone Duo（`cn.bigmiao.porschecoder` / `cn.bigmiao.alfaproxi`）
+- [x] ~~装机~~ 两个 app 已装到 iPhone Duo（`cn.bigmiao.porschecoder` / 另一车型 app）
 - [ ] 首次启动需人手信任 `MW795KJMTY`（设置 → 通用 → VPN与设备管理）
 - [ ] 上真机复核 Duo **内屏横屏**状态栏是否不再重叠（本轮修的就是这个）
 
@@ -3329,7 +3329,7 @@ smoke **338/0** · e2e **33/0** · walkthrough **38/0** · 泄漏全扫 0。未�
   （清检索词回该层未搜索全量），再按才退层；旧实现直接退层 → 一按跳回设码选择页。
 - **修复**：`goBack()` 首步判断**任意层的活跃检索词**（`top.searchQuery`，不限 codgroup，
   覆盖刷隐藏等带搜索的层）→ 清词重渲保层；两条返回路径（侧边栏 sbBack / Duo 原生
-  APXRail.select('back')）同走 goBack，天然拉齐。
+  PorscheRail.select('back')）同走 goBack，天然拉齐。
 - 测试断言：搜索态返回=词空+仍在本层 ✓（双形态过）。
 
 ### 2. 模拟模式入口自动读 VIN（用户实测）
@@ -3344,7 +3344,7 @@ smoke **338/0** · e2e **33/0** · walkthrough **38/0** · 泄漏全扫 0。未�
 
 ### 4. 测试基建：双形态 UI 操作级测试（防"没拉齐"类回归）
 - `scripts/ui-sim-test.mjs` 参数化：env `UI_SIM_CFG={w,h,back:'css'|'native',tag}`
-  ——**直板 430×860（#sbBack）+ Duo 951×669（原生 APXRail 返回）**两形态各跑全 29 项：
+  ——**直板 430×860（#sbBack）+ Duo 951×669（原生 PorscheRail 返回）**两形态各跑全 29 项：
   自动搜索弹确认（模拟同弹）/车型落定/系统菜单/版本·特殊功能·数据流·执行器**内层页**
   （标题+主区+secParam 隐藏）/执行器真发 2F/搜索→详情→返回保留/搜索态返回=退搜索保层/
   写入 431 原文确认+备份写回读/备份恢复入口/系统扫描/导出。

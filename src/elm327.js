@@ -51,7 +51,7 @@ export class Elm327 {
     this.echo = true;
     this.log = [];
     // 请求串行锁：串口半双工，任何并发 cmd 都会串帧
-    // （与 alfaproxi/src/elm327.js 同款；那边 readProxiAll 并发读曾差点把垃圾写进 ECU）
+    // （同类真机问题；那边 readProxiAll 并发读曾差点把垃圾写进 ECU）
     this.reqChain = Promise.resolve();
     port.on('data', (bytes) => this._feed(bytes));
   }

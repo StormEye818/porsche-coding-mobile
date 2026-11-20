@@ -1,5 +1,5 @@
 /**
- * mfi-port.js — vLinker MS 的 iOS MFi 串口通道（复用 alfaproxi 真机验证方案）。
+ * mfi-port.js — vLinker MS 的 iOS MFi 串口通道（复用已验证的真机方案）。
  *
  * 背景（2026-09-30 真机打通，vLinker MS 验证）：
  *   MFi 适配器由 iOS 系统持有经典蓝牙链路（设置里常驻「已连接」），

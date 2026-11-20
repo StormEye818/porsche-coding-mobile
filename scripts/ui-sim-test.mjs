@@ -6,10 +6,10 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 
 const SHOT = '/tmp/ui-sim';
-// ★ 双形态：直板（430/css #sbBack）vs Duo 内屏（951×669/原生 APXRail）
+// ★ 双形态：直板（430/css #sbBack）vs Duo 内屏（951×669/原生 PorscheRail）
 const CFG = JSON.parse(process.env.UI_SIM_CFG || '{"w":430,"h":860,"back":"css","tag":"slab"}');
 const doBack = async () => {
-  if (CFG.back === 'native') await page.evaluate(() => window.APXRail && window.APXRail.select('back'));
+  if (CFG.back === 'native') await page.evaluate(() => window.PorscheRail && window.PorscheRail.select('back'));
   else await page.click('#sbBack').catch(() => {});
   await page.waitForTimeout(800);
 };

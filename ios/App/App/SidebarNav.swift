@@ -110,7 +110,7 @@ class SidebarNav: UITabBarController, UITabBarControllerDelegate {
     }
 
     private func notifyWeb(_ tabId: String) {
-        let js = "window.APXRail && window.APXRail.select('\(tabId)')"
+        let js = "window.PorscheRail && window.PorscheRail.select('\(tabId)')"
         (webHost as? CAPBridgeViewController)?.bridge?.webView?
             .evaluateJavaScript(js, completionHandler: nil)
         glassRail?.emitSelect(tabId)

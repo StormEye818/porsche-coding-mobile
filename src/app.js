@@ -1550,7 +1550,7 @@ function guessModelFromVin(vin) {
 }
 
 
-// ===== 侧边栏布局（参考 AlfaProxi 三态 rail/dock）=====
+// ===== 侧边栏布局（三态 rail/dock）=====
 // ★ 2026-10-31：Duo 展开 → rail（右侧竖栏）；手机/窄屏 → dock（底部横栏）。
 //   所有返回操作集中到侧边栏 sbBack 按钮。
 //   ⚠️ 全部防御式写法 —— $() 返回 null 时不抛异常，否则整个模块不执行。
@@ -1584,7 +1584,7 @@ window.addEventListener('orientationchange', () => setTimeout(applySideBarMode, 
 //   所有上报被 `if (window.GlassRail)` 静默跳过。
 const GlassRail = registerPlugin('GlassRail');
 
-window.APXRail = {
+window.PorscheRail = {
   select: (id) => {
     try {
       switch (id) {
@@ -2112,7 +2112,7 @@ function goBack() {
   // ★ 2026-11-06 返回语义（用户实测步骤：设码→刷隐藏→搜索→返回）：
   //   搜索态下返回 = **先退出搜索**（清检索词回该层未搜索全量列表），再按才退层。
   //   此前直接退层 → 从搜索结果一按就跳回设码选择页（跳过"退出搜索"这一步）。
-  //   两条返回路径（侧边栏 sbBack / Duo 原生 APXRail）都走这里，天然拉齐。
+  //   两条返回路径（侧边栏 sbBack / Duo 原生 PorscheRail）都走这里，天然拉齐。
   const _top = stack[stack.length - 1];
   if (_top && (_top.searchQuery || '').trim()) {
     _top.searchQuery = '';
