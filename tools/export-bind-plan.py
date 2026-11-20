@@ -588,7 +588,9 @@ def main():
         if gen_here < 0x14 and truth_rows and not ({t for t, _, _ in truth_rows} & set(ordered)):
             stats['rawTruthMissingBeforeInjection'] += 1
         if cp:
-            ordered = [c for c in sorted(cp) if c not in ordered] + ordered
+            # 本代 cat=0x10 真值始终是首选：即使该 tx 已由 tierA/routeGroup/crossgen
+            # 进入 ordered，也必须先从原位置摘掉再整体前插（只换序，不删候选、不截断）。
+            ordered = sorted(cp) + [c for c in ordered if c not in cp]
             prov = ([{'can': hx(c), 'rx': hx(cp[c]),
                       'rxRule': truth_rule_by_sid[sid][c],
                       'sources': ['commCat10'], 'provenance': 'commCat10',

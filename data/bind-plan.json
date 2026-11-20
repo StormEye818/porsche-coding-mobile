@@ -27318,8 +27318,8 @@
    "nMixed": true,
    "bindDirect": false,
    "cands": [
-    "0x06EC",
     "0x07E0",
+    "0x06EC",
     "0x07E1",
     "0x07E2",
     "0x07E3",
@@ -27331,18 +27331,18 @@
    ],
    "pairs": [
     {
-     "tx": "0x06EC",
-     "rx": "0x06F4",
-     "rxRule": "rx=tx+8",
-     "rxSource": "tableA-crossgen-unique",
-     "provable": "derived"
-    },
-    {
      "tx": "0x07E0",
      "rx": "0x07E8",
      "rxRule": "rx=tx+8",
      "rxSource": "commCat10",
      "provable": "static"
+    },
+    {
+     "tx": "0x06EC",
+     "rx": "0x06F4",
+     "rxRule": "rx=tx+8",
+     "rxSource": "tableA-crossgen-unique",
+     "provable": "derived"
     },
     {
      "tx": "0x07E1",
@@ -33200,11 +33200,18 @@
    "nMixed": true,
    "bindDirect": false,
    "cands": [
+    "0x07E0",
     "0x079D",
-    "0x079F",
-    "0x07E0"
+    "0x079F"
    ],
    "pairs": [
+    {
+     "tx": "0x07E0",
+     "rx": "0x07E8",
+     "rxRule": "rx=tx+8",
+     "rxSource": "commCat10",
+     "provable": "static"
+    },
     {
      "tx": "0x079D",
      "rx": "0x07A5",
@@ -33218,13 +33225,6 @@
      "rxRule": "rx=tx+8(fallback-no-cat10-record)",
      "rxSource": "adapter-plus8-unproven",
      "provable": "derived"
-    },
-    {
-     "tx": "0x07E0",
-     "rx": "0x07E8",
-     "rxRule": "rx=tx+8",
-     "rxSource": "commCat10",
-     "provable": "static"
     }
    ],
    "firstRead": "220000",

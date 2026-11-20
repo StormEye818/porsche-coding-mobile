@@ -195,6 +195,57 @@ assertEq('STATIC_TRUTH_RX_FROM_RECORD_C', wrongRx.length === 0,
 assertEq('STATIC_TRUTH_RX_NOT_GLOBAL_PLUS8', globalPlus8.length === 0,
   `overridden=${globalPlus8.length} sample=${globalPlus8.slice(0, 3).join(',')}`);
 
+// ⑤b 本代真值首选排序：commCat10 真值必须整体排在派生候选之前，且按 sorted(cp) 顺序。
+const firstPairProblems = [];
+let firstPairChecked = 0;
+for (const [sid, rows] of rawTruth) {
+  const entry = ecu[sid];
+  if (!entry) continue;
+  // 与生成器 cp 同一有效域：0<tx<=0x7F7、rx<=0x7FF；超范围记录只进 rejectedPairs。
+  const expectedTx = [...rows.values()]
+    .filter((r) => r.tx > 0 && r.tx <= 0x7F7 && r.rx <= 0x7FF)
+    .map((r) => r.tx).sort((a, b) => a - b);
+  if (!expectedTx.length) continue;
+  firstPairChecked += 1;
+  const list = entry.pairs || [];
+  const truthAt = list.map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.rxSource === 'commCat10' && p.provable === 'static');
+  const derivedAt = list.map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.rxSource !== 'commCat10');
+  const lastTruth = truthAt.length ? truthAt[truthAt.length - 1].i : -1;
+  const firstDerived = derivedAt.length ? derivedAt[0].i : list.length;
+  const truthOrder = truthAt.map(({ p }) => norm(p.tx));
+  const orderOk = truthAt.length === expectedTx.length &&
+    truthOrder.every((t, i) => t === expectedTx[i]) && lastTruth < firstDerived;
+  const firstIsTruth = list.length > 0 && list[0].rxSource === 'commCat10' &&
+    list[0].provable === 'static' && norm(list[0].tx) === expectedTx[0];
+  const commProv = (entry.provenance || [])
+    .filter((p) => (p.sources || []).includes('commCat10'))
+    .map((p) => norm(p.can));
+  const provOk = commProv.length === expectedTx.length &&
+    commProv.every((t, i) => t === expectedTx[i]);
+  if (!orderOk || !firstIsTruth || !provOk) {
+    firstPairProblems.push(`${sid}:expect=${expectedTx.join('/')} pairs=${list.slice(0, 4).map((p) => `${p.tx}:${p.rxSource}`).join(',')} prov=${commProv.join('/')}`);
+  }
+}
+// 代表对象逐项钉住（0x0e01 是本次回归根因：真值 0x07E0/0x07E8 必须与 derived 隔离）。
+const representativeFirst = {
+  '0x0e01': { tx: 0x7E0, rx: 0x7E8 },
+  '0x0e23': { tx: 0x70D, rx: 0x777 },
+  '0x0f4d': { tx: 0x74E, rx: 0x7B8 },
+  '0x0b08': { tx: 0x714, rx: 0x77E },
+};
+const repFirstProblems = [];
+for (const [sid, expected] of Object.entries(representativeFirst)) {
+  const head = (ecu[sid]?.pairs || [])[0];
+  const ok = head && norm(head.tx) === expected.tx && norm(head.rx) === expected.rx &&
+    head.rxSource === 'commCat10' && head.provable === 'static';
+  if (!ok) repFirstProblems.push(`${sid}:${head ? `${head.tx}/${head.rx}:${head.rxSource}` : 'MISSING'}`);
+}
+assertEq('STATIC_TRUTH_TRUE_PAIR_FIRST',
+  firstPairProblems.length === 0 && repFirstProblems.length === 0,
+  `checked=${firstPairChecked} badOrder=${firstPairProblems.length} reps=${repFirstProblems.length} sample=${[...firstPairProblems, ...repFirstProblems].slice(0, 3).join(' | ')}`);
+
 // ⑥ 0x0e23 首选真值 0x070D / 0x0777 (+0x6A)
 const e23 = ecu['0x0e23'] || {};
 const e23Pair = (e23.pairs || []).find((p) => norm(p.tx) === 0x70D);
