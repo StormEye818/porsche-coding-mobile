@@ -389,35 +389,68 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
     ok('internal 0x0117 UDS 簇短名单已删（无 0x77A 簇）', !txs.includes(0x77a) && !txs.includes(0x7c0));
   }
 
-  // ── IC 绑定断言（2026-11-10 新契约：记录驱动 + 单帧绑定 + 回帧 ID 校验）──
+  // ── IC 绑定断言（2026-11-10 新契约 + 431 真值双候选收口）──
   //   依据 RE-DISCOVERY：参考诊断仪对 n=0 的记录**不发探针**，直接绑定；
   //   我们等价实现 = 一帧族存活帧（UDS 3E00 / KWP 裸 3E），判据是「回帧来自该 rx 且有 body」。
   //   身份不在这里裁决，交给进模块后的首参数读帧。
+  //   ★ 431 真值：0x0b08 两条候选——0x0714/0x077E（commCat10 · static · rx=tx+0x6A，首选）
+  //     与 0x07F1/0x07F9（tableA-same-sys · derived · rx=tx+8，旧路径次选）。
+  //     ATCRA 一律取 pairs 对应 rx，不再硬编码 tx+8；首选候选排首位，命中即停。
   {
     const plan = JSON.parse(readFileSync('./data/bind-plan.json', 'utf8'));
     const ic = plan.ecu['0x0b08'];
     ok('IC 混合 n → 禁止直绑（不能跨行吞并）', ic && ic.nMixed === true && ic.bindDirect === false, JSON.stringify(ic));
-    ok('IC 候选=该组唯一诊断段行 0x7F1', ic && ic.cands.length === 1 && parseInt(ic.cands[0], 16) === 0x7F1);
 
-    // 拓扑 A：0x7F1 就是目标 → 一帧 3E00 应绑定成功
-    const ecus = { 0x7F1: { name: 'IC', dsn: 'Kombiinstrument_9x1', kwp: false } };
+    // 候选集与 pair 证据与 431 真值一一对应（不再单押 0x7F1）：
+    //   0x0714/0x077E = rx=tx+0x6A · commCat10 · static（首选）；
+    //   0x07F1/0x07F9 = rx=tx+8 · tableA-same-sys · derived（旧路径次选，不再是唯一首选真值）
+    const candTxs = (ic.cands || []).map((x) => parseInt(x, 16));
+    const pair714 = (ic.pairs || []).find((p) => parseInt(p.tx, 16) === 0x0714);
+    const pair7F1 = (ic.pairs || []).find((p) => parseInt(p.tx, 16) === 0x07F1);
+    const cands431Ok = candTxs.includes(0x0714) && candTxs.includes(0x07F1)
+      && !!pair714 && parseInt(pair714.rx, 16) === 0x077E
+      && pair714.rxRule === 'rx=tx+0x6A' && pair714.rxSource === 'commCat10' && pair714.provable === 'static'
+      && !!pair7F1 && parseInt(pair7F1.rx, 16) === 0x07F9 && pair7F1.rxRule === 'rx=tx+8'
+      && pair7F1.rxSource === 'tableA-same-sys' && pair7F1.provable === 'derived';
+    ok('IC 候选=431 双候选 0x0714/0x077E(static,首选)+0x07F1/0x07F9(derived,次选)',
+      cands431Ok,
+      `cands=${candTxs.map((t) => '0x' + t.toString(16)).join(',')} pair714=${JSON.stringify(pair714)} pair7F1=${JSON.stringify(pair7F1)}`);
+
+    // 拓扑 A：两条候选的 rx 都能应答（0x0714→0x077E，0x7F1→0x7F9）。
+    //   按 431 真值首选候选 0x0714 排在 cands 首位，命中即停 —— 不该发出第二候选的帧。
+    const ecus = {
+      0x0714: { name: 'IC', dsn: 'Kombiinstrument_9x1', kwp: false },
+      0x07F1: { name: 'IC', dsn: 'Kombiinstrument_9x1', kwp: false },
+    };
     const mIC = new MockAdapter({ latencyMs: 0, strictAddress: true, ecus });
     const eIC = new Elm327(mIC, { timeoutMs: 2000 });
     const { frameIdsOf } = await import('./src/coder.js');
+    // rx 一律查 pairs，不再硬编码 tx+8
+    const rxOf = (tx) => {
+      const p = (ic.pairs || []).find((q) => parseInt(q.tx, 16) === tx);
+      return p ? parseInt(p.rx, 16) : null;
+    };
     let hit = null;
-    for (const tx of ic.cands.map((c) => parseInt(c, 16))) {
+    const probed = [];
+    for (const tx of candTxs) {
+      const rx = rxOf(tx);
+      if (rx == null) continue;
       await eIC.cmd(`ATSH${tx.toString(16).toUpperCase()}`, 500);
-      await eIC.cmd(`ATCRA${(tx + 8).toString(16).toUpperCase()}`, 500);
+      await eIC.cmd(`ATCRA${rx.toString(16).toUpperCase()}`, 500);
       const r = (await eIC.cmd('3E00', 800) || '').trim();
+      probed.push(tx);
       const ids = frameIdsOf(r);
       const body = Array.from(parseResp(r).body || []).map((x) => x.toString(16).padStart(2, '0')).join('');
-      const idOk = !ids.length || ids.includes(tx + 8);
-      if (idOk && body) { hit = { tx, body }; break; }
+      const idOk = !ids.length || ids.includes(rx);
+      if (idOk && body) { hit = { tx, rx, body }; break; }
     }
-    ok('n=0 单帧绑定成功（0x7F1/0x7F9）', !!hit && hit.tx === 0x7F1, hit && `bind=0x${hit.tx.toString(16)}`);
-    ok('绑定帧只发 1 条（无 21/1A/22 探针链）',
-      mIC.txLog.filter((c) => !c.startsWith('AT')).length === 1,
-      mIC.txLog.filter((c) => !c.startsWith('AT')).join(','));
+    ok('按 431 真值首选 0x0714/0x077E 绑定成功且命中即停（不探次候选 0x7F1）',
+      !!hit && hit.tx === 0x0714 && hit.rx === 0x077E
+      && probed.length === 1 && probed[0] === 0x0714,
+      hit && `bind=0x${hit.tx.toString(16)}/0x${hit.rx.toString(16)} probed=${probed.map((t) => '0x' + t.toString(16)).join(',')}`);
+    const icFrames = mIC.txLog.filter((c) => !c.startsWith('AT'));
+    ok('首选即命中：txLog 非 AT 恰好 1 条（3E00，无 21/1A/22 探针链）',
+      icFrames.length === 1 && icFrames[0] === '3E00', icFrames.join(','));
 
     // 拓扑 B：只有 0x7E8 会答（模拟「别人替你应答」）→ 必须判死
     const mBad = new MockAdapter({ latencyMs: 0, replay: [{ req: '3E00', resp: '7E8 02 7E 00' }] });
