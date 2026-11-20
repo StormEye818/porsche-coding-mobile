@@ -258,28 +258,39 @@
 - **原始文件**：`PORSCHE_DRIVELINKS.BIN`
 - **坐标/格式**：addrBlock 行 `[u8 idx][u16 internal][u16 flags][u32 cmdptr][u16 x1010]`；`cmdptr+3` 起 SpecArray=`[u8 count][count×u32]`，元素是请求键（`0x0030xxxx`/`0xFF60xxxx`），**不是 CAN 地址**。
 - **实测**：PASM 记录 @0x8D74 元素 `0x003005C4`；DME @0x2FB0 元素 `0x003005BF`；IC 行键 `A=0xFF60026B`。候选数 n：0→2034 行（零探针直绑）、1→964 行、2→10 行。
-- **可复核命令**：见 RE-DRIVELINKS-ARRAY §2 / RE-DISCOVERY §2（`tools/export-drivelinks-v3.py`）。
+- **可复核命令**：见 RE-DRIVELINKS-ARRAY §2 / RE-DISCOVERY §2（`tools/export-drivelinks-v3.py`）。`0x0f4d` 的三合一裁决与 CAN 真值 `0x74E/0x7B8` 见 E11。
 - **当前 data/ 对应字段**：`bind-plan.json`、`ecu-addresses.json:entries[*].rows[*].candidates`。
 - **差异/建议**：请求键空间 ≠ CAN 域（0x7xx）；门禁不得把 `0x0030xxxx` 当 CAN 校验。
 
-### E11 — 车道变换 0x0f4d 专证（身份 sysId ≠ 地址键）
+### E11 — 车道变换 0x0f4d 三合一裁决（SYS_DATA sysId + DRIVELINKS 目录键 + 请求键）
 
-- **原始文件**：`PORSCHE_DRIVELINKS.BIN`
-- **坐标**：目录项 @0x278 → sysId=**0x0f4d** blockOff=0x10c9；addrBlock @**0x1148a** 头 `3e 01 04 03`，前 4 行的 flags 字段 = `06cc/06cd/06ce/06cf`（直连键 `0x003006CC–0x003006CF`），原始字节 @0x1148a：
+> 与 linkmap 线 E-14 交叉裁决（2026-11-20 team-lead 指派）。原始字节结论已同步 research-431-linkmap。
+
+- **裁决结论（纠正本账本旧措辞）**：`0x0f4d` **是合法的 SYS_DATA sysId**（模块名 **`SWA2_BaseSys`**，gen 0x0F），**同时**又是 DRIVELINKS 目录键 + 直连请求键 `0x003006CC–0x003006CF`——三个键空间**同一数值三合一**。旧措辞「0x0f4d 是地址键不是 sysId」**错误**，已废止。真正与之异名的是 `0x0e5f/0x0e60`（gen 0x0E，名字 `BV_ContrUnitLaneChangAssis2UDS_BaseSys`）。
+- **原始坐标 A（DRIVELINKS 键空间）**：`/Users/se818/porsche-mapper/ref/decoded/PORSCHE_DRIVELINKS.BIN` 目录项 @0x278 → sysId=**0x0f4d** blockOff=0x10c9；addrBlock @**0x1148a** 头 `3e 01 04 03`，前 4 行 flags=`06cc/06cd/06ce/06cf`（直连键 `0x003006CC–0x003006CF`），原始字节：
   ```
   3e 01 04 03 05 00 01 cc 06 30 00 c7 14 01 00 10
   10 02 cd 06 30 00 0a 15 01 00 10 10 03 ce 06 30 …
   ```
-- **身份 sysId**：`0x0E5F/0x0E60`（0x0E 代 comm 子表按 `BV_ContrUnitLaneChangAssis2UDS_BaseSys` 精确 join，RE-CLOSURE §4.2）。
+- **原始坐标 B（SYS_DATA sysId 空间，决定性证据）**：`/Users/se818/porsche-mapper/ref/decoded/PORSCHE_SYS_DATA.BIN` `cat=0x10` 记录 @**0x35ebc**，`A=0xE9C0>>5=0x74E(tx)`、`C=0xF700>>5=0x7B8(rx)`；sysId 字段在记录 +0x24 = @**0x35ee0** 处 `u32=0x0f4d`，其后紧跟名字串 **`SWA2_BaseSys\0` / `SWA2_A2_1`**。全文件 `u32=0x0f4d` **仅此 1 处**，确证它是真 sysId。
+- **异名同功能 sysId（gen 0x0E）**：@**0x1402f** sysId=`0x0e5f`、名字串 `BV_ContrUnitLaneChangAssis2UDS_BaseSys`、CAN raw 同为 `0xE9C0F700`→`0x74E/0x7B8`（与 0x0f4d **raw 逐字节相同但名字不同，禁止合并身份**）；@**0x14197** sysId=`0x0e60`、同名字串、CAN raw `0x9A404640`→`0x4D2/0x232`（另一 CAN 对）。
 - **可复核命令**：
   ```bash
   cd /Users/se818/porsche-mapper/ref/decoded && python3 - <<'PY'
-  b=open('PORSCHE_DRIVELINKS.BIN','rb').read(); a=0x1148a
-  print(b[a:a+80].hex(' '))
+  import struct,re
+  b=open('PORSCHE_SYS_DATA.BIN','rb').read()
+  for off in (0x35ebc,0x1402f,0x14197):
+    print(hex(off), 'sysId@+0x24=', hex(struct.unpack_from('<I',b,off+0x24)[0]),
+          'name=', re.search(rb'[A-Za-z][A-Za-z0-9_]{3,}\x00',b[off+0x2c:off+0x60]).group()[:-1].decode())
+  d=open('PORSCHE_DRIVELINKS.BIN','rb').read(); print('DRIVELINKS @0x1148a:',d[0x1148a:0x1148a+32].hex(' '))
   PY
   ```
-- **当前 data/ 对应字段**：`981-sysids.json` 里车道变换项的 evidence 字段同时记 0x0E5F（身份）与 0x0F4D（地址键）。
-- **差异/建议**：0x0F4D 是**地址键不是 sysId**；用 0x0E5F 查地址会空、用 0x0F4D 当身份会跨代——门禁须二者分列，不可互换。
+- **当前 data/ 对应字段**：`all-model-sysids.json:platforms.9X1.modules.BV_ContrUnitLaneChangAssis2UDS` = `{sysId:0x0f4d, method:drivelinks-key, evidence:"地址键=0x0F4D…；身份 sysId=0x0E5F/0x0E60…"}`；`platforms.CAJUN.modules.SWA2={sysId:0x0f4d, method:name9-vote}`。`981-sysids.json` 车道变换项 evidence 同时记两名。
+- **差异/建议（门禁三元组与字段命名）**：
+  - 门禁对象写成四元（不要叫「身份 sysId」单值）：`{ sysId: '0x0f4d', sysName: 'SWA2_BaseSys', requestKey: [0x06CC,0x06CF], can: {tx:0x74E, rx:0x7B8, rxRule:'rx=tx+0x6A'}, provable: 'static', altIdentitySysIds: ['0x0e5f','0x0e60'] }`。`0x0e5f/0x0e60` 字段名用 **`altIdentitySysIds`（同功能异名 sysId）** 或 `nameVariantSysIds`，**禁止**叫「身份 sysId」（易误解为唯一身份键）。
+  - 进模块查 live map 用 **sysId=0x0f4d + 请求键 0x06CC-CF**（DRIVELINKS 目录键决定探测行）；身份裁决按 **名字串 `SWA2_BaseSys` vs `BV_ContrUnitLaneChangAssis2UDS_BaseSys` + 件号**，不是按单一 sysId 数值。
+  - CAN 真值 `0x74E/0x7B8` 是 cat=0x10 静态可证；「请求键→该 CAN 的运行时绑定」是 runtime，不得静态写死（E20 分界）。
+  - 0x0f4d 与 0x0e5f raw 相同但名字不同——**禁止因 raw 相同合并为同一 sysId**。
 
 ### E12 — 共享键旁证：`PORSCHE_SYS_DATA` comm 记录
 
@@ -369,9 +380,39 @@
 1. **三门禁锚点**：① `DSN.id 集合 == SYS_DATA.type 集合 == 0x01..0x16`；② 每平台模块数 == DSN payloadOff 模块表行数（9X1 56/CAJUN 64/9X6 29/9X7 41）；③ 车型合并前校验两车型变体文件集 + items 签名全等（E07）。
 2. **分开两类「多 sysId」**：同 blockOff（如 0x0E59/0x0E5A，可只取首枚）vs 不同 blockOff（如 Macan 0x0f23/0x0f34、菜单聚合 BCM_hinten+Heckklappe，必须分别绑定）。判据=DRIVELINKS blockOff 是否相同（E13）。
 3. **sysId 高字节只用 DSN 规范 type**（E02 flag 不可当高字节）；9X6/9X7 的 canonicalType 必须标 derived 并保留严格超集证明。
-4. **纠正坐标错误**：0x0b23=BCM_hinten、DME=0x0b01/0x0e01；0x0f4d=车道变换地址键、身份=0x0e5f/0x0e60（E04,E11）。
+4. **纠正坐标与身份口径**：0x0b23=BCM_hinten、DME=0x0b01/0x0e01（E04）；0x0f4d 是 SYS_DATA sysId（`SWA2_BaseSys`,gen 0x0F）+ DRIVELINKS 目录键 + 请求键 0x06CC-CF 三合一，CAN 真值 0x74E/0x7B8 静态可证；0x0e5f/0x0e60 是异名 sysId（`BV_ContrUnitLaneChangAssis2UDS_BaseSys`,gen 0x0E），字段名用 altIdentitySysIds 不叫「身份 sysId」（E11）。
 5. **静态/运行时分栏**：生成器输出须带 `provable: static|runtime` 标记；请求键→CAN、trim 名、车型精确落定、探测成败四项一律标 runtime，禁止静态产物里写死 CAN 地址（E15）。
 6. **VIN 链按 .so 转写复核**：`vin-vehicle-map.json` 的 15 分支须与 SYSP:0x22ad4 tbb + READWRITE:0x147c80 双字符分派逐项对账，标 `source=so-reverse`（E09）。
+
+---
+
+## 7. 数字口径复核（响应 team-lead 172/302/281 确认请求，2026-11-20）
+
+**结论：team-lead 修正口径正确，三数全部复现 = 172 / 302 / 281**（linkmap 文档 §F 的 296 是归一 bug）。
+
+- **623** = bind-plan ecu 全部 sysId；**408** = 有 cat=0x10 本代真值的 sysId（gen<0x14 296 + gen>=0x14 112）。
+- **172** = 大小写归一化后 `gen<0x14` 真值 tx 未进 bind-plan cands 的 sysId 数。
+- **302** = gen<0x14 的本 sysId 真值配对数；**281** = 其中 `rx != tx+8` 的配对数。
+- **296 的来源**：linkmap §F 命令用 `t[0].upper()` 比较，但 cands 是 `0x06A7` 形式（`0x` 前缀 + hex 大写），truth tx 是 `0x070D`——`upper()` 未统一 `0x` 前缀大小写在部分条目上 miss，把 172 虚增成 296。**正确做法是大小写 + `0x` 前缀双重归一**（`str(x).lower().replace('0x','')`）。
+
+- **可复核命令**（PRD P1-2 数字单一来源）：
+  ```bash
+  cd /Users/se818/porsche-coder && python3 - <<'PY'
+  import json
+  bp=json.load(open('data/bind-plan.json')); cat=json.load(open('data/comm-addr-table.json'))
+  def norm(x): return str(x).lower().replace('0x','')   # 大小写+前缀归一（关键）
+  truth={}
+  for gv in cat['byGeneration'].values():
+    for a in gv['addresses']: truth.setdefault(a['ownerSysId'].lower(),set()).add((a['tx'],a['rx'],a['rxRule']))
+  gen=lambda s:int(s,16)>>8
+  missing=[s for s,e in bp['ecu'].items() if gen(s)<0x14 and s.lower() in truth
+           and not ({norm(t[0]) for t in truth[s.lower()]} & {norm(c) for c in (e.get('cands') or [])})]
+  pairs=[(s,t) for s,e in bp['ecu'].items() if gen(s)<0x14 and s.lower() in truth for t in truth[s.lower()]]
+  print('缺真值候选 sysId(归一后) =',len(missing))       # 172
+  print('本sysId真值配对 =',len(pairs),'rx!=+8 =',sum(1 for _,t in pairs if t[2]!='rx=tx+8'))  # 302 / 281
+  PY
+  ```
+- **建议**：把 linkmap §F 命令与本文档此段统一为归一版；PRD P0-1 判据「172→0」的基线数有效，可继续使用。
 
 ---
 
