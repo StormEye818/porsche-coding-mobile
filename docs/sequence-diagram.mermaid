@@ -1,0 +1,68 @@
+sequenceDiagram
+    autonumber
+    actor U as 上层调用
+    participant LM as src/live-map.js
+    participant AP as src/app.js(发现链)
+    participant PB as src/probe.js
+    participant CD as src/coder.js
+    participant G as 门禁verify-*
+    participant E0 as E0证据(只读原始包)
+
+    Note over E0,LM: 【连接期】静态选行 + 1帧探针 + 请求键绑定 (E-02/E-01/PE-01)
+    U->>AP: connect(vin, sysId)
+    AP->>E0: 复算 addrBlock 静态选行 (E-02)
+    E0-->>AP: staticRows (rx取cat=0x10,非+8)
+    loop 每个候选(每候选仅1帧)
+        AP->>CD: send(requestKey, 22 14 09) (PE-02)
+        CD-->>AP: resp (uxth==1?)
+    end
+    Note over AP: n==0 跳过探针直绑 (PE-01)
+    alt 原生上报可用
+        E0-->>LM: showAddress("4000"): requestKey→CAN (R级,E-05)
+        LM->>LM: reportNative() 绑定, frameId防串线
+        LM-->>AP: LiveMapResult(ok,bound,runtime)
+    else 上报缺失/无绑定
+        LM-->>AP: LiveMapResult(fail-closed,reason+nextCarrier) (E-20)
+        Note right of LM: 禁止全段枚举/静态写死CAN/标A
+    end
+    AP->>G: verify-live-map-failclosed (注入上报缺失必红)
+    G-->>AP: gate PASS/FAIL
+
+    Note over CD: 【进模块后】会话 (PE-10/11/12)
+    U->>CD: enterSessionFor(sysId)
+    CD->>E0: 查 OEM_SESSION_BY_SYSID (PE-10)
+    alt sessionless(68 sysId)
+        CD-->>U: 不发10xx (PE-12)
+    else 10xx
+        CD->>CD: 发会话帧, 校验50+回显
+        alt 7F 10 12
+            CD->>CD: 换模板号, 不重试同号 (PE-11)
+        end
+    end
+
+    Note over PB: 四帧身份 (PE-20/21) + 名字串/件号裁决
+    CD->>PB: identityAdjudicate(四帧, 1A链)
+    PB->>E0: cat=0x60 四帧模板 (PE-20)
+    PB->>PB: 名字串 SWA2 vs BV_* + PARTNUMBER (E-11)
+    Note right of PB: 不按sysId数值单一裁决; raw相同不合并
+    PB-->>CD: FourTupleIdentity(0x0f4d四元)
+
+    Note over CD: seed/key (PE-30/31/32)
+    CD->>E0: mode表→家族→名字分发 (PE-31)
+    alt 有算法(962/135变体)
+        CD->>CD: 27 09 01 00→key→27 0A (不重试)
+    else 无case 104 或 mode0x1D 4条
+        CD->>CD: outLen=0不发key继续写 / 名字分发或fail-closed (PE-32)
+    end
+
+    Note over CD: 读/写/特殊/失败分类 (PE-40..55)
+    CD->>CD: 读SID按记录(+0x40), 写3B/2E备份→回读
+    CD->>CD: 特殊功能序列原样, 空参裸31拦截 (PE-45/46)
+    alt 7F xx 78
+        CD->>CD: 续等不重发 (PE-50)
+    else 0x12/0x35/0x36/NO DATA
+        CD->>CD: 单发即败上浮, 不重试/不换SID (PE-51..54)
+    end
+    CD->>CD: 回帧ID校验, 错ID当场报错 (PE-55)
+    CD->>G: 全链 gate + 243行审计 (diff=空)
+    G-->>U: A-1..A-10 结果(命令输出证明)

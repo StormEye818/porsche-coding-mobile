@@ -1,0 +1,139 @@
+classDiagram
+    class EvidenceRegistry {
+      +string schemaVersion
+      +EvidenceEntry[] entries
+      +build() EvidenceRegistry
+      +verify() boolean
+      +entry(id) EvidenceEntry
+    }
+    class EvidenceEntry {
+      +string evidenceId
+      +string sourceLedger
+      +Grade grade
+      +Provable provable
+      +string practice
+      +E0Coord e0Coord
+      +string reproduceCmd
+      +string[] counterexamples
+      +string[] consumers
+      +string gateAssert
+      +Status status
+      +string failClosed
+      +string nextCarrier
+    }
+    class E0Coord {
+      +string file
+      +int offset
+      +string VA
+      +string recordId
+      +string detail
+    }
+    class BindPlanEntry {
+      +string sysId
+      +string[] requestKey
+      +CanPair can
+      +string rxRule
+      +string name
+      +string[] altIdentitySysIds
+      +string blockOff
+      +Provable provable
+      +string e0Coord
+    }
+    class CommAddrRecord {
+      +string ownerSysId
+      +int tx
+      +int rx
+      +string rxRule
+      +int rawA
+      +int rawC
+      +Provable provable
+    }
+    class FourTupleIdentity {
+      +string sysId
+      +string sysName
+      +string[] requestKey
+      +CanPair can
+      +string[] altIdentitySysIds
+      +string identityRule
+    }
+    class CanPair {
+      +int tx
+      +int rx
+      +string rxRule
+      +Provable provable
+    }
+    class LiveMap {
+      +Map~string,CanPair~ map
+      +reportNative(NativeLiveMapReport) LiveMapResult
+      +lookup(requestKey) LiveMapResult
+      +bindByRequestKey(requestKey,sendFn) LiveMapResult
+      +failClosed(reason) LiveMapResult
+    }
+    class NativeLiveMapReport {
+      +string requestKey
+      +CanPair can
+      +int frameId
+    }
+    class DiscoveryPlan {
+      +Row[] staticRows
+      +int probeFrame
+      +int compleFrame
+      +selectRows(sysId) Row[]
+      +probeOnce(candidate) Frame
+      +bind(requestKey) boolean
+    }
+    class SessionPlan {
+      +string sessionFrame
+      +bool sessionless
+      +enter(sysId) Response
+      +onNrc12() SessionPlan
+    }
+    class IdentityChain {
+      +Frame[] fourFrames
+      +string[] lidChain
+      +adjudicate(text, partNumber) FourTupleIdentity
+    }
+    class SeedKeyPlan {
+      +int mode
+      +string algoId
+      +calc(seed) bytes
+      +chain() SeedKeyPlan
+    }
+    class FailureClass {
+      +string nrc
+      +string action
+      +classify(resp) FailureClass
+    }
+    class AuditRow {
+      +string rowId
+      +E0Coord e0Coord
+      +string vectorId
+      +Provable provable
+      +string verdict
+      +bool symbolHitOnly
+      +bool runtimeAnswerBacked
+    }
+    class ExecutableVector {
+      +string vectorId
+      +Frame[] expected
+      +string diffCmd
+      +string injection
+    }
+
+    EvidenceRegistry "1" o-- "many" EvidenceEntry : contains
+    EvidenceEntry "1" --> "1" E0Coord : pointsTo
+    EvidenceEntry "many" --> "many" AuditRow : consumedBy
+    BindPlanEntry "1" --> "1" CanPair : has
+    BindPlanEntry "1" --> "many" FourTupleIdentity : mayBe
+    CommAddrRecord "1" --> "1" CanPair : derives
+    FourTupleIdentity "1" --> "1" CanPair : staticCan
+    FourTupleIdentity "1" --> "many" BindPlanEntry : altNames
+    LiveMap "1" o-- "many" NativeLiveMapReport : consumes
+    LiveMap "1" --> "1" DiscoveryPlan : builtFrom
+    DiscoveryPlan "1" --> "many" BindPlanEntry : selectsRows
+    DiscoveryPlan "1" --> "1" SessionPlan : thenEnters
+    SessionPlan "1" --> "1" IdentityChain : thenIdentifies
+    IdentityChain "1" --> "1" SeedKeyPlan : thenUnlocks
+    SeedKeyPlan "1" --> "1" AuditRow : verifiedBy
+    AuditRow "1" --> "1" ExecutableVector : executedBy
+    FailureClass "many" ..> "many" ExecutableVector : injectedAs
