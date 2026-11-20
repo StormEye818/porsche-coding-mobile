@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "captureId": "SIM-20261120-991-IC-V080",
+  "grade": "E1",
+  "sampleOnly": true,
+  "provable": "runtime",
+  "source": {
+    "kind": "simulation-log",
+    "file": "docs/realcar/2026-11-20-991-IC-sim-v080.log",
+    "capturedAt": "2026-11-20",
+    "appTag": "v0.8.0",
+    "commit": "7247c27",
+    "mode": "simulation"
+  },
+  "vehicle": {
+    "vin": "WP0ZZZ991GS123456",
+    "modelYearCode": "G",
+    "modelYear": 2016,
+    "model": "911（991）",
+    "platform": "9X1",
+    "typeId": 14
+  },
+  "observedFrames": [
+    {
+      "phase": "vinAutoSearch",
+      "request": "1A90",
+      "response": [
+        "7E8 5A 90 57 50 30 5A 5A",
+        "7E8 5A 39 39 31 47 53 31",
+        "7E8 32 33 34 35 36"
+      ],
+      "parsedVin": "WP0ZZZ991GS123456",
+      "verdict": "ok"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "request": "221102",
+      "response": ["7E8 62 11 02 39 31 31 28", "7E8 39 39 31 29"],
+      "parsedText": "911(991)",
+      "verdict": "ok"
+    }
+  ],
+  "targetModule": {
+    "label": "IC(仪表)",
+    "resolvedSysId": "0x0e08",
+    "expectedTruePair": {
+      "tx": "0x0714",
+      "rx": "0x077E",
+      "rxRule": "rx=tx+0x6A",
+      "provable": "static"
+    },
+    "observedFailure": "request-key-missing-before-probe",
+    "observedCandidate": { "tx": "0x0340", "rx": "0x0348" },
+    "observedCandidatesSource": "data/ecu-addresses.json tabB1 shared pool via fallback"
+  },
+  "acceptanceUse": {
+    "mustReplayAfterEverySimulationOrRuntimeFix": true,
+    "mustCheck": [
+      "VIN and trim resolution still work",
+      "simulation does not enter real-car live-map fail-closed",
+      "IC simulation target must not be sole tabB1 fallback 0x340/0x348",
+      "no fabricated positive response beyond observed VIN/name frames"
+    ]
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "captureId": "REALCAR-20261120-981-BCM-HINTEN-V080",
+  "grade": "E1",
+  "sampleOnly": true,
+  "provable": "runtime",
+  "source": {
+    "kind": "realcar-log",
+    "file": "docs/realcar/2026-11-20-981-BCM-hinten-v080.log",
+    "capturedAt": "2026-11-20",
+    "appTag": "v0.8.0",
+    "commit": "7247c27",
+    "adapter": "OBDLink MX+ 53935",
+    "transport": "classic-bluetooth-spp"
+  },
+  "vehicle": {
+    "vin": "WP0AB2981FK180962",
+    "modelYearCode": "F",
+    "modelYear": 2015,
+    "model": "Boxster（981）",
+    "candidateModelFamily": ["Boxster（981）", "Cayman（981）"],
+    "platform": "9X1",
+    "typeId": 13
+  },
+  "observedFrames": [
+    {
+      "phase": "selfTest",
+      "request": "ATI",
+      "response": ["ELM327 v1.4b"],
+      "verdict": "ok"
+    },
+    {
+      "phase": "selfTest",
+      "request": "ATRV",
+      "response": ["12.1V"],
+      "verdict": "ok"
+    },
+    {
+      "phase": "protocolLock",
+      "request": "ATSP6",
+      "response": ["OK"],
+      "verdict": "ok",
+      "note": "CAN 11bit/500k locked; KWP 1A9F answered"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "tx": "0x7e0",
+      "rx": "0x7e8",
+      "request": "221102",
+      "response": ["7E8037F2212"],
+      "verdict": "nrc",
+      "nrc": "0x12"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "tx": "0x7e0",
+      "rx": "0x7e8",
+      "request": "221101",
+      "response": ["7E8037F2212"],
+      "verdict": "nrc",
+      "nrc": "0x12"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "tx": "0x7e0",
+      "rx": "0x7e8",
+      "request": "1A90",
+      "response": [
+        "7E810135A9000000000",
+        "7E82100000000000000",
+        "7E822000000000000AA"
+      ],
+      "parsed": "5A90000000000000000000000000000000AA",
+      "verdict": "ok-but-empty-vin"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "tx": "0x7e0",
+      "rx": "0x7e8",
+      "request": "2151",
+      "response": ["7E8037F2112"],
+      "verdict": "nrc",
+      "nrc": "0x12"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "request": "210905",
+      "response": ["NO DATA"],
+      "verdict": "no-data"
+    },
+    {
+      "phase": "vinAutoSearch",
+      "request": "0902",
+      "response": [
+        "7E81014490201575030",
+        "7E82141423239383146",
+        "7E8224B313830393632"
+      ],
+      "parsedVin": "WP0AB2981FK180962",
+      "verdict": "ok"
+    }
+  ],
+  "targetModule": {
+    "label": "后端电子设备",
+    "resolvedSysId": "0x0e23",
+    "expectedTruePair": {
+      "tx": "0x070D",
+      "rx": "0x0777",
+      "rxRule": "rx=tx+0x6A",
+      "provable": "static",
+      "e0Coord": "PORSCHE_SYS_DATA.BIN:0x1191B"
+    },
+    "expectedRequestKeys": [
+      "0x003004FF", "0x00300500", "0x00300501", "0x00300502",
+      "0x00300503", "0x00300504", "0x00300505", "0x00300506",
+      "0x00300507", "0x00300508", "0x00300509", "0x0030050A",
+      "0x0030050B", "0x0030050C", "0x0030050D", "0x00300510",
+      "0x00300513", "0x003006A7", "0x003006A8", "0x003007A5",
+      "0x003007A6", "0x003007A7", "0x003007A8", "0x003007A9",
+      "0x003007AA", "0x003007AB", "0x003007AC", "0x003007AD",
+      "0x003007AE", "0x003007AF", "0x003007B0", "0x003007B1",
+      "0x003007B2"
+    ],
+    "observedCandidates": [
+      { "tx": "0x024F", "rx": "0x0257" },
+      { "tx": "0x03A0", "rx": "0x03A8" },
+      { "tx": "0x074F", "rx": "0x0757" },
+      { "tx": "0x06DD", "rx": "0x06E5" },
+      { "tx": "0x07C0", "rx": "0x07C8" },
+      { "tx": "0x06E3", "rx": "0x06EB" },
+      { "tx": "0x07BD", "rx": "0x07C5" },
+      { "tx": "0x01A2", "rx": "0x01AA" }
+    ],
+    "observedFailure": "request-key-missing-before-probe",
+    "observedCandidatesSource": "data/ecu-addresses.json ecu 0x0e23/0x0b23 tabB1 shared pool",
+    "expectedAfterFix": {
+      "candidateTx": "0x070D",
+      "candidateRx": "0x0777",
+      "probeFrame": "221409",
+      "bindingInput": "request-key from 0x0e23.requestKeys",
+      "mustNotEmit": [
+        "request-key-missing fail-closed for sysId 0x0e23",
+        "0x340/0x348 or tabB1 fallback candidates as sole path"
+      ]
+    }
+  },
+  "acceptanceUse": {
+    "mustReplayAfterEveryProtocolOrRuntimeFix": true,
+    "mustCheck": [
+      "VIN auto-search frames still match this vector",
+      "model resolution still selects Boxster/Cayman 981 family",
+      "0x0e23 static row is consumable from real bind-plan.json",
+      "backend electronic module probe uses request-key binding, not request-key-missing fail-closed",
+      "no fabricated positive response for 0x070D/0x0777; this capture did not reach that frame"
+    ]
+  }
+}
