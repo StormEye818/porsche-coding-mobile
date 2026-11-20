@@ -15,11 +15,11 @@
  */
 import {
   mkdtempSync, symlinkSync, mkdirSync, readdirSync, readFileSync, writeFileSync,
-  copyFileSync, unlinkSync, rmSync,
+  copyFileSync, unlinkSync,
 } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   ROOT, E0_ROOT, digest, readJson, assertionIntegrity, evaluateE0Vector,
@@ -27,7 +27,9 @@ import {
 } from './align431-eval.mjs';
 
 const REAL_ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
-const SKIP_TOP = new Set(['data', 'src', 'tools', 'www', 'node_modules', '.git']);
+// .git 必须软链接进镜像：builder 的 IMPL_LANDED_NO_LOCAL_ONLY_CARRIER 要用
+// `git ls-files --error-unmatch` 验证依赖确实入库（只读操作，不改真实 .git）。
+const SKIP_TOP = new Set(['data', 'src', 'tools', 'www', 'node_modules']);
 const WATCH_FILES = [
   'data/bind-plan.json', 'data/comm-addr-table.json', 'data/align431-evidence-registry.json',
   'tools/align431-rows.json', 'tools/verify-live-map-failclosed.mjs', 'src/live-map.js',
@@ -60,6 +62,16 @@ function makeOverlay() {
   return root;
 }
 
+/**
+ * 删除镜像。用 shell `rm -rf`（不跟随软链接）而不是 fs.rmSync：
+ * 本机沙箱里 fs.rmSync 对 180 个软链接要 30s，shell 只要 0.1s；
+ * 注入自检是 audit 内的一个 gate，必须稳定低于 gate 超时。
+ */
+function removeOverlay(root) {
+  try { execFileSync('rm', ['-rf', root], { stdio: 'ignore', timeout: 10000 }); }
+  catch { /* 已删除则忽略 */ }
+}
+
 /** 覆写镜像中的 JSON（真实文件只读）。 */
 function overlayJson(root, rel, mutate) {
   const p = join(root, rel);
@@ -88,6 +100,22 @@ function runGate(root, gateRel) {
       ALIGN431_T03B: '1', NODE_OPTIONS: '',
     },
     encoding: 'utf8', timeout: 60000, maxBuffer: 64 * 1024 * 1024,
+  });
+  return { code: r.status === null ? -1 : r.status, stdout: String(r.stdout || '') };
+}
+
+/** 在镜像里跑 builder 的依赖入库自检（快速路径，不重生全量 rows）。 */
+function runBuilderCarrierCheck(root) {
+  const r = spawnSync(process.execPath, [join(root, 'tools/build-align431-rows.mjs'), '--check-carriers'], {
+    cwd: root,
+    env: {
+      ...process.env,
+      ALIGN431_ROOT_OVERRIDE: root,
+      E0_ROOT,
+      TZ: 'UTC', LANG: 'C', LC_ALL: 'C', NO_COLOR: '1', FORCE_COLOR: '0',
+      ALIGN431_T03B: '1', NODE_OPTIONS: '',
+    },
+    encoding: 'utf8', timeout: 60000, maxBuffer: 8 * 1024 * 1024,
   });
   return { code: r.status === null ? -1 : r.status, stdout: String(r.stdout || '') };
 }
@@ -155,7 +183,7 @@ try {
     failures.push('BASELINE_NOT_GREEN');
   }
 } finally {
-  rmSync(baselineRoot, { recursive: true, force: true });
+  removeOverlay(baselineRoot);
 }
 
 // ① 错 sysId：把 0x0e23 首选真值改成 DME 地址 → 身份坐标断言必红。
@@ -170,7 +198,7 @@ try {
     overlayGateScript(root, 'tools/verify-align431-static-truth.mjs');
     const run = runGate(root, 'tools/verify-align431-static-truth.mjs');
     record('01', 'WRONG_SYSID_0E23', 'STATIC_TRUTH_E0_0E23', true, gateRed(run, 'STATIC_TRUTH_E0_0E23'));
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { removeOverlay(root); }
 }
 
 // ② 错 rx：+0x6A 改成 +8 → 402 限定段与 rxRule 断言必红。
@@ -187,7 +215,7 @@ try {
     overlayGateScript(root, 'tools/verify-oem-probe-diff.mjs');
     const run = runGate(root, 'tools/verify-oem-probe-diff.mjs');
     record('02', 'WRONG_RX_PLUS8', 'OEM_DIFF_402_402', true, gateRed(run, 'OEM_DIFF_402_402'));
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { removeOverlay(root); }
 }
 
 // ③ 伪候选：请求键低 16 位 v3key 当 CAN 源 → 路径级断言与 E0 坐标必红。
@@ -207,7 +235,7 @@ try {
       { json: { [REGISTRY_FILE]: fakeRegistry } }).ok;
     record('03', 'FAKE_CANDIDATE_REQUESTKEY_AS_CAN', 'STATIC_TRUTH_NO_REQUESTKEY_AS_CAN', true,
       gateIsRed && e0Red);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { removeOverlay(root); }
 }
 
 // ④ planSysId=null 静默兜底 → fail-closed，不得标 A。
@@ -261,7 +289,7 @@ try {
     const run = runGate(root, 'tools/verify-align431-static-truth.mjs');
     record('08', 'MACAN_SINGLE_BIND', 'STATIC_TRUTH_MACAN_DUAL_BIND', true,
       gateRed(run, 'STATIC_TRUTH_MACAN_DUAL_BIND'));
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { removeOverlay(root); }
 }
 
 // ⑨ 删/改名任一 gate 断言 → NO_ASSERTION_DELETED 完整性必红。
@@ -284,7 +312,31 @@ try {
     const run = runGate(root, 'tools/verify-live-map-failclosed.mjs');
     record('10', 'REPORT_MISSING_STILL_BOUND', 'INJECT_REPORT_MISSING_STILL_BOUND', true,
       gateRed(run, 'INJECT_REPORT_MISSING_STILL_BOUND'));
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally { removeOverlay(root); }
+}
+
+// ⑪（十类之外）防回归：implLanded 依赖必须是 tracked 载体；改掉 tracked proof token 必须红。
+let carrierGuardOk = false;
+{
+  const greenRoot = makeOverlay();
+  const redRoot = makeOverlay();
+  try {
+    const greenRun = runBuilderCarrierCheck(greenRoot);
+    const green = greenRun.code === 0 && /IMPL_LANDED_NO_LOCAL_ONLY_CARRIER PASS/.test(greenRun.stdout);
+    const rel = 'tools/build-routines-verified.py';
+    const original = readFileSync(join(REAL_ROOT, rel), 'utf8');
+    const token = 'MENU_911_681_TO_454_PROOF';
+    if (!original.includes(token)) throw new Error('注入锚点缺失：build-routines proof token');
+    overlayText(redRoot, rel, original.split(token).join('MENU_911_681_TO_454_PR00F'));
+    const redRun = runBuilderCarrierCheck(redRoot);
+    const red = redRun.code !== 0 && /IMPL_LANDED_NO_LOCAL_ONLY_CARRIER FAIL/.test(redRun.stdout);
+    carrierGuardOk = green && red;
+    console.log(`INJECT_EXTRA IMPL_LANDED_NO_LOCAL_ONLY_CARRIER baseline=${green ? 1 : 0} red=${red ? 1 : 0}`);
+    if (!carrierGuardOk) failures.push('IMPL_LANDED_NO_LOCAL_ONLY_CARRIER');
+  } finally {
+    removeOverlay(greenRoot);
+    removeOverlay(redRoot);
+  }
 }
 
 // 注入结束：真实仓库关键文件必须逐字节未变。
@@ -304,10 +356,11 @@ const falseGreen = results.filter((r) => !r.red || !r.green).length + (restored 
 console.log(`INJECTION_RED_COUNT ${redCount}/${results.length}`);
 console.log(`INJECTION_RED_RATE ${redRate}%`);
 console.log(`INJECTION_FALSE_GREEN ${falseGreen}`);
-if (redRate === 100 && falseGreen === 0) {
+const allOk = redRate === 100 && falseGreen === 0 && carrierGuardOk;
+if (allOk) {
   console.log('INJECTION_RED_RATE_100 PASS');
 } else {
   for (const f of failures) console.log(`INJECTION_FAIL ${f}`);
   console.log('INJECTION_RED_RATE_100 FAIL');
 }
-process.exit(redRate === 100 && falseGreen === 0 ? 0 : 1);
+process.exit(allOk ? 0 : 1);

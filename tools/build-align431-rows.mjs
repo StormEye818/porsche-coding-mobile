@@ -14,6 +14,7 @@
  * 跑法：node tools/build-align431-rows.mjs
  */
 import { writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import {
   ROOT, GAP_FILE, PRD_FILE, readText, readJson, fileExists, sortedKeys,
   evaluateRow, evaluateCheck, gateVerdict, measureNumberSources, legacyNumbersFromPrd,
@@ -198,36 +199,86 @@ const DEFERRED_EVIDENCE = Object.freeze({
   UI_TEXT_GAG_IDX_COORD: { file: 'data/vehicle-id-type-map.json', token: 'menuTexts', note: 'GAG_TEXT_CN idx 1961..1992 32 条文本表 + TWIN_GROUPS 不承诺左右' },
 });
 
+/**
+ * 阶段实现落地的**单一来源**依赖清单（逐条读磁盘，禁止硬编码「已落地」）。
+ *
+ * T04 反例修复（2026-11-20）：原先 681→454 证明依赖本机 ignored 的 `rebuild-all.py`，
+ * 干净 clone 不存在 → 19 行 deferred 无法转 evidence，出现「本机 A / clone 非 A」假绿。
+ * 现在统一换成 git 入库的 `tools/build-routines-verified.py`（`--verify` 模式下第 586 行
+ * 有同名硬断言），并由 `assertImplCarriersTracked()` 在每次 builder 启动时硬校验
+ * **所有阶段依赖必须 git ls-files --error-unmatch 成功且 token 真存在**，否则 builder 红。
+ */
+const IMPL_DEPENDENCIES = Object.freeze({
+  T03: Object.freeze([
+    { file: 'src/coder.js', token: 'isCharNum' },
+    { file: 'src/write-alignment.js', token: 'evaluateWriteAlignmentChecks' },
+    { file: 'src/elm327.js', token: 'requireOk' },
+    { file: 'data/drivelinks.json', token: 'modeVerified' },
+    { file: 'tools/verify-oem-probe-diff.mjs', token: 'identityPhaseHardAssert' },
+    { file: 'src/coder.js', token: 'oemIdentityResponses' },
+  ]),
+  T04: Object.freeze([
+    { file: 'tools/verify-u1-triple.mjs', token: 'U1_TRIPLE_ZERO_MISSING' },
+    { file: 'tools/verify-u2-numbers.mjs', token: 'U2_D5_13873' },
+    { file: 'tools/verify-fullchain-audit.mjs', token: 'NORID_STATIC_CARRIER' },
+    // 不再依赖本地 ignored 文件；使用 tracked --verify 载体（第 586 行同断言）。
+    { file: 'tools/build-routines-verified.py', token: 'MENU_911_681_TO_454_PROOF' },
+    { file: GAP_FILE, token: 'U-2 单一真值' },
+    { file: 'package.json', token: 'audit:align431' },
+  ]),
+});
+
+/** 依赖是否真在磁盘且含 token。 */
+function implDepPresent(dep) {
+  const text = readText(dep.file);
+  return text !== null && text.includes(dep.token);
+}
+
 /** 阶段实现落地标记（逐条读磁盘，禁止硬编码「已落地」）。 */
 function implLanded(phase) {
-  const has = (file, token) => {
-    const t = readText(file);
-    return t !== null && t.includes(token);
-  };
+  const key = phase === 'T03-b' ? 'T03' : phase;
   if (phase === 'T01' || phase === 'T02') return true;
-  if (phase === 'T03' || phase === 'T03-b') {
-    // T03 已验收：D-4 两链 / 13 项行为写闸门 / 空回执阻断 / seed-key 生产链 / ②-b 硬断言
-    return has('src/coder.js', 'isCharNum')
-      && has('src/write-alignment.js', 'evaluateWriteAlignmentChecks')
-      && has('src/elm327.js', 'requireOk')
-      && has('data/drivelinks.json', 'modeVerified')
-      && has('tools/verify-oem-probe-diff.mjs', 'identityPhaseHardAssert')
-      && has('src/coder.js', 'oemIdentityResponses');
-  }
-  if (phase === 'T04') {
-    // 本组终验产物：① 全组断言名真实落盘 ② U-2 单一真值 ③ 681→454 证明
-    // ④ audit:align431 接入 scripts.test（最后一步），缺一即保持 deferred。
-    const pkg = readJson('package.json');
-    const testChain = pkg?.scripts?.test || '';
-    return has('tools/verify-u1-triple.mjs', 'U1_TRIPLE_ZERO_MISSING')
-      && has('tools/verify-u2-numbers.mjs', 'U2_D5_13873')
-      && has('tools/verify-fullchain-audit.mjs', 'NORID_STATIC_CARRIER')
-      && has('rebuild-all.py', 'MENU_911_681_TO_454_PROOF')
-      && has('GAP-INVENTORY-20261112.md', 'U-2 单一真值')
-      && testChain.includes('audit:align431');
-  }
-  return false;
+  const deps = IMPL_DEPENDENCIES[key] || [];
+  if (!deps.length || !deps.every(implDepPresent)) return false;
+  // T04 还需 audit:align431 真接在 scripts.test 链上（已从 package.json token 同时校验）。
+  return true;
 }
+
+/**
+ * 防回归：所有 implLanded 依赖必须**入库**（clean clone 可重生），ignored/新增缺失一律红。
+ * `git ls-files --error-unmatch` 是判定「tracked」的唯一口径；git 不可用也按失败处理。
+ */
+function assertImplCarriersTracked() {
+  const bad = [];
+  let checked = 0;
+  for (const phase of sortedKeys(IMPL_DEPENDENCIES)) {
+    for (const dep of IMPL_DEPENDENCIES[phase]) {
+      checked += 1;
+      let tracked = false;
+      try {
+        execFileSync('git', ['ls-files', '--error-unmatch', dep.file], {
+          cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'],
+        });
+        tracked = true;
+      } catch { /* git 缺失 / 文件 ignored / 文件不存在：一律 fail-closed */ }
+      if (!tracked || !implDepPresent(dep)) {
+        bad.push(`${phase}:${dep.file}#${dep.token}`);
+      }
+    }
+  }
+  if (bad.length) {
+    console.log(`IMPL_LANDED_NO_LOCAL_ONLY_CARRIER FAIL checked=${checked} bad=${bad.length} ${bad.join(';')}`);
+    process.exit(1);
+  }
+  console.log(`IMPL_LANDED_NO_LOCAL_ONLY_CARRIER PASS checked=${checked}`);
+}
+
+// `node tools/build-align431-rows.mjs --check-carriers` 只跑依赖入库自检，供注入自检快速证伪。
+if (process.argv.includes('--check-carriers')) {
+  assertImplCarriersTracked();
+  process.exit(0);
+}
+assertImplCarriersTracked();
 
 /** 按磁盘实况把 deferred 解析为 evidence 或保持 deferred。 */
 function resolveDeferred(row) {
