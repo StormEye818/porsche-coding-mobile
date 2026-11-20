@@ -424,8 +424,16 @@ console.log('\n[4] 审计其余修复回归');
   ok('CS1/E1 由 DSN 模块索引表接入运行时',
     /dsn-module-index/.test(R('../data/all-model-sysids.json'))
     && !/0x1D 是 2 字节空壳/.test(R('../tools/verify-pending.mjs')));
-  ok('bind-plan rule 如实写明 comm 自带 rx 优先',
-    /comm cat=0x10 记录自带 rx 优先/.test(R('../tools/export-bind-plan.py')));
+  // ★ T02 全代真值（impl-contract-fix）：生成器口径已改为「CAN 空间只来自 cat=0x10 的
+  //   A>>5 / C>>5；rx 优先取同一条记录的 C>>5 原值」。旧字面串「记录自带 rx 优先」已删，
+  //   门禁必须同步验证新语义，防止「测试写旧 A、生成器写新 A」。
+  ok('bind-plan 生成器写明 CAN 只来自 cat=0x10 A>>5/C>>5 且 rx 取同记录 C 原值',
+    (() => {
+      const gen = R('../tools/export-bind-plan.py');
+      return /A>>5/.test(gen) && /C>>5/.test(gen)
+        && /rx 优先取同一条 cat=0x10 记录的 C>>5 原值/.test(gen)
+        && !/comm cat=0x10 记录自带 rx 优先/.test(gen);
+    })());
 }
 
 // ── ⑤ 代码 ↔ 文档一致性 ─────────────────────────────────────────
