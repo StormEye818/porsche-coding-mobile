@@ -1,45 +1,31 @@
 #!/usr/bin/env python3
-"""export-bind-plan.py — 多源「进模块绑定计划」生成器（2026-11-11 全车型推广）。
+"""export-bind-plan.py — 多源「进模块绑定计划」生成器（T02 全代真值注入版）。
 
-2026-11-10 在 981（0x0E 代）证实；2026-11-11 按 RE-CODINGADDR §6 推广到全量车型：
-  · 代际泛化：gen = sysId>>8；gen≥0x0E 的条目全部走多源分级（含 0x10-0x16 新代，
-    即使 drivelinks-v3 无键也由路由表/comm 子表给 sysId 建条目）。
-  · DME 路由组自动注入：对每代 g，owner=(g<<8)|0x0C 存在即作为 (g<<8)|0x01 的
-    路由组；优先取该 owner 的 0x7E0-0x7EF can 行（0x0E0C 自证），无则退全量。
-  · 跨代候选泛化：all-model-sysids.json 的同名模块在各平台的 sysId 全部作为
-    「同系统跨代 sysId」→ 旧代表A 候选 ∩ 路由表 can（精确交集）。
-  · 旧代 0x05/0x06/0x0B-0x0D 条目保留表A join 逻辑（test-align431 对账基线，不改）。
+证据口径（docs/evidence/431-linkmap-20261120.md E-06/E-10/E-11/E-18 与
+docs/evidence/431-static-allmodels-20261120.md E11/§7）：
+  · CAN 空间只来自 PORSCHE_SYS_DATA.BIN comm cat=0x10 记录的 A>>5 / C>>5，
+    或 SYS_DATA 16B 路由记录的 u32 can 字段（均为 11 位诊断CAN）。
+  · 请求键空间 0x0030xxxx / 0xFF60xxxx（DRIVELINKS bindKey = flags<<16|internal）
+    与路由 internal（16B 记录 m 字段）都**不是 CAN**。旧版把 bindKey/record.candidates
+    低 16 位当 CAN 候选（v3key / v3cand / v3candRx）的路径已全部删除；
+    请求键只写入 requestKeys 字段，作进模块绑定入参（E-06/E-18/E-20）。
+  · rx 优先取同一条 cat=0x10 记录的 C>>5 原值；没有任何记录时才按
+    tx<=0x7F7 → tx+8 派生；不做 &0x7FF 回绕，不把 +0x6A 全局常量化（E-11/E-12）。
 
-依据：
-  RE-DISCOVERY-20261110 §1（DriveLinksMode_1001 @LINK:0x18f00）：n==0 → 直接绑定；
-    n>0 → 逐候选 1 帧 22 14 09。候选/行键在**请求键坐标空间**（0x0030xxxx），
-    但 0x0E 代直连键（bindKey）低 16 位**有时即 CAN 本身**（SWSG 0x763/0x764、
-    Verdeck 0x765、Lift 0x771、BKE 0x735-0x73C、LCA 0x6CC-0x6CF）。
-  RE-SYSDATA-ROWS-20261110 路由表（data/sysdata-routing.json，tools/export-sysdata-routing.py）：
-    16B 记录 [u32 owner][sig][sel][ff][u32 can][u32 m]；owner=代际前缀+系统低字节，
-    0x0E0C=DME 路由组、0x0C09=网关（拥有 0x7DF/0x7E0）；0x13(PASM) 家族任何代无 owner 行。
+多源分级（tierA 优先，空则降级，每条候选带 provenance/e0Coord/provable）：
+  S1 routing    sysdata-routing owner==sysId 的 can（u32 can 字段，非 internal）
+  S0 routeGroup DME 家族路由组 owner（0x_0C，限 0x7E0-0x7EF）
+  S4 crossgen   旧代 sysId 的表A 候选 ∩ 路由表 can（精确交集）
+  S5 commCat10  ★本版起对**所有**有 cat=0x10 真值的代生效（不再限 gen>=0x14）：
+                本 sysId 的本代 tx/rx 作为首选候选插入，rx=记录 C 原值；
+                gen<0x14 的 172 个此前缺失 sysId 由此补齐（172→0）。
+  tierA 空 → S4 → 按代完整 cat=0x10 地址表 family-default → 空（fail-closed）。
+  全部候选仍需探针验证，绝不免探针直绑（E-01）。
 
-多源分级（tierA 优先，空则降级，每条候选带 provenance）：
-  S2 v3key      drivelinks-v3 bindKey 低16位 ∈ 0x600-0x7FF（直连键= CAN tx）
-  S3 v3cand     drivelinks-v3 record.candidates 低16位 ∈ 诊断段：低半字节 ≥8 视为 rx
-                （DME 0x7E8-0x7EC → tx=rx-8=0x7E0-0x7E4），否则视为 tx
-  S1 routing    sysdata-routing owner==sysId 的 can（PSM 0x6E6-0x6EA、IC 0x7F1 等）
-  S0 routeGroup DME 家族路由组 owner（0x0E0C，限 0x7E0-0x7EF；各代同构 0x_0C）
-  S4 crossgen   旧代 sysId 的表A 候选 ∩ 路由表 can（精确交集，非近似 join）：
-                PASM 0x0e13 无静态直达（0x13 家族无路由行）→ 0x0b13 表A候选 ∩ 路由表
-                → 0x7D0（owner 0x0C05/0x0C02 跨代行）。
-  tierA = S1∪S2∪S3∪S0 非空 → 只用 tierA；否则 S4；否则空（app.js 枚举兜底）。
-  候选序 = 多源收敛数降序、再按地址升序（DME 0x7E0 四源收敛排第一）。
-  ★ 2026-11-12 新增 S5 commCat10（仅 gen≥0x14）：SYS_DATA comm cat=0x10 子表
-    内嵌本代地址对 (A,C)→tx/rx，112 个新代 sysId 全有、全部合法 11 位，
-    DME 0x1401→0x7E0/0x7E8、网关 0x1409→0x710/0x77A 与实车锚点一致。
-    此前这些 sysId 只有跨代平移的同一串 16 项候选（命中率 0）→「新代无地址证据」
-    结论被推翻。作为**首选候选**插入并保留原候选回退，rx 用记录自带值，
-    **不设免探针直绑**（地址仍由探针验证）；981 等 gen<0x14 完全不动。
-
-输出 data/bind-plan.json（键=sysId 小写；0x0B 旧代条目逻辑保持不变，test-align431 对账）：
-  { "ecu": { "0x0e01": { mode, n, bindDirect, cands, pairs, firstRead,
-                          sources:{routing,v3key,v3candRx,crossgen}, provenance:[...] } } }
+输出 data/bind-plan.json（键=sysId 小写）：每条带 provable='static'、e0Coord、
+requestKeys（请求键空间）、blockOff（DRIVELINKS addrBlock）、truth（本代 cat10 真值）。
+0x0f4d 另带四元对象 fourTuple：sysId/sysName/requestKey/can/altIdentitySysIds/identityRule；
+0x0e5f/0x0e60 是异名同功能 sysId，禁止按 raw 相同合并身份（E-14）。
 
 firstRead：绑定后验证帧（coding-v2 首参数读帧）。0x0E 键用 module-ecu-map.js 正则名字；
   0x0B 旧键换表后正则名字不足（981 模块名已迁 0x0E）→ LEGACY_981_MODULES 补（git 历史口径）。
@@ -64,10 +50,14 @@ ALL_SYSIDS = ROOT / 'data' / 'all-model-sysids.json'
 #   却没有 bind-plan 条目的 sysId —— 进模块只能靠枚举兜底，是全链路真实断点。
 VARIANT_SYSIDS = ROOT / 'data' / 'variant-sysids.json'
 OUT = ROOT / 'data' / 'bind-plan.json'
+MODELS = ROOT / 'data' / 'models'
 
 DIAG_LO, DIAG_HI = 0x600, 0x7FF
 # 11 位诊断**请求**段：0x7F8-0x7FF 是应答段（tx+8 必然溢出），不能当请求地址发 ATSH。
 REQ_HI = 0x7F7
+# 0x0f4d 直连请求键（DRIVELINKS addrBlock @0x1148a 前 4 行，E11/E-14 证据定值）；
+# 同一 block 还有 0x00300317 等其它行，不能混进四元对象的 requestKey。
+FOUR_TUPLE_REQUEST_KEYS = (0x06CC, 0x06CD, 0x06CE, 0x06CF)
 
 # DME 家族路由组：不再硬编码代际 —— 运行时按「该代 owner=(g<<8)|0x0C 是否存在」自动注入
 # （0x_0C 各代同构，根表 type=代际前缀；见 tools/export-sysdata-routing.py parse_root_table）。
@@ -104,6 +94,78 @@ LEGACY_981_MODULES = {
 }
 
 
+def hx(value: int) -> str:
+    """稳定 4 位十六进制字符串（大写前缀小写 x，逐字节可复现）。"""
+    return f'0x{value:04X}'
+
+
+def rx_rule_of(tx: int, rx: int) -> str:
+    """按记录 (A>>5, C>>5) 的差值命名 rx 规则，绝不改写原厂值。"""
+    delta = rx - tx
+    if delta == 0x6A:
+        return 'rx=tx+0x6A'
+    if delta == 0x100:
+        return 'rx=tx+0x100'
+    if delta == 8:
+        return 'rx=tx+8'
+    if delta == 16:
+        return 'rx=tx+0x10'
+    if delta == 32:
+        return 'rx=tx+0x20'
+    if delta == 0:
+        return 'rx=tx'
+    if delta < 0:
+        return 'rx<tx(非11位请求段的应答回绕/旧代编码)'
+    return f'rx=tx+0x{delta:X}'
+
+
+def model_items_signature(directory: str, filename: str) -> tuple:
+    """变体文件 items 的 (module,lid,readSid) 序列签名（E07 可复核命令同构）。"""
+    payload = json.loads((MODELS / directory / filename).read_text(encoding='utf-8'))
+    return tuple((i.get('module'), i.get('lid'), i.get('readSid')) for i in payload.get('items') or [])
+
+
+def dataset_merge_policy():
+    """车型数据集共用判据：文件集全等 + 每个同名文件 items 签名全等才允许合并。
+
+    E06：431 的 JOB.BIN 只合并变体名（Cayman_ 出现 0 次）；E07：981/982/987 的
+    Boxster/Cayman 文件集与签名实测全等。986 vs 987 是不同平台，作为反例一并落盘。
+    """
+    pairs = [
+        ('Boxster_981_', 'Cayman_981_'),
+        ('Boxster_982_', 'Cayman_982_'),
+        ('Boxster_987_', 'Cayman_987_'),
+        ('Boxster_986_', 'Cayman_987_'),
+    ]
+    report = {}
+    for left, right in pairs:
+        left_dir, right_dir = MODELS / left, MODELS / right
+        if not left_dir.is_dir() or not right_dir.is_dir():
+            raise SystemExit(f'车型数据集缺失，禁止合并判定：{left} / {right}')
+        left_files = sorted(f.name for f in left_dir.glob('*.json'))
+        right_files = sorted(f.name for f in right_dir.glob('*.json'))
+        only_left = sorted(set(left_files) - set(right_files))
+        only_right = sorted(set(right_files) - set(left_files))
+        shared = sorted(set(left_files) & set(right_files))
+        sig_diff = sorted(f for f in shared
+                          if model_items_signature(left, f) != model_items_signature(right, f))
+        file_set_equal = not only_left and not only_right
+        signature_equal = file_set_equal and not sig_diff
+        report[f'{left}|{right}'] = {
+            'leftFiles': len(left_files),
+            'rightFiles': len(right_files),
+            'onlyLeft': len(only_left),
+            'onlyRight': len(only_right),
+            'signatureDiff': len(sig_diff),
+            'fileSetEqual': file_set_equal,
+            'signatureEqual': signature_equal,
+            'allowed': signature_equal,
+            'e0Coord': 'docs/evidence/431-static-allmodels-20261120.md#E07',
+            'provable': 'static',
+        }
+    return report
+
+
 def main():
     v3 = json.loads(V3.read_text())
     addr = json.loads(ADDR.read_text())
@@ -125,15 +187,32 @@ def main():
     # 此前这些 sysId 的候选全部来自「旧代表A ∩ 路由表」跨代平移（同 16 项、命中率 0）。
     # 只作**首选候选**插入，保留既有候选回退，不设免探针直绑（地址仍由探针验证）。
     # 981 等 gen<0x14 的条目完全不动。
+    # ★ T02：对**所有代**（不只 gen>=0x14）注入 cat=0x10 本代真值。
+    #   tx=A>>5 / rx=C>>5 从记录 raw 独立复算：raw='0x'+A(4hex)+C(4hex)。
+    #   同一 sysId 可有多条记录（如 0x0b57 两条），逐条保留，rx 用 C 原值。
     comm_pairs = {}
+    truth_by_sid = {}
+    truth_rule_by_sid = {}
+    truth_coord_by_sid = {}
     for sid, e in (comm_doc.get('ecu') or {}).items():
         for blk in e.get('blocks') or []:
             if blk.get('cat') != 0x10:
                 continue
+            coord = f"PORSCHE_SYS_DATA.BIN:{blk.get('commOff') or 'unknown'}"
             for s in blk.get('subs') or []:
-                tx, rx = s.get('tx'), s.get('rx')
+                tx, rx, raw = s.get('tx'), s.get('rx'), s.get('raw') or ''
+                if len(raw) == 10:
+                    raw_tx = int(raw[2:6], 16) >> 5
+                    raw_rx = int(raw[6:10], 16) >> 5
+                    if (raw_tx, raw_rx) != (tx, rx):
+                        raise SystemExit(f'{sid} {coord}: raw A/C 与 tx/rx 不一致 '
+                                         f'({raw} → {hx(raw_tx)}/{hx(raw_rx)} vs {tx}/{rx})')
                 if isinstance(tx, int) and isinstance(rx, int) and 0 < tx <= REQ_HI and 0 < rx <= 0x7FF:
-                    comm_pairs.setdefault(sid.lower(), {})[tx] = rx
+                    key = sid.lower()
+                    comm_pairs.setdefault(key, {})[tx] = rx
+                    truth_by_sid.setdefault(key, set()).add((tx, rx, rx_rule_of(tx, rx)))
+                    truth_rule_by_sid.setdefault(key, {})[tx] = rx_rule_of(tx, rx)
+                    truth_coord_by_sid.setdefault(key, {})[tx] = coord
 
     def family_default_pairs(sid):
         """按代输出「完整」cat=0x10 地址表（静态分派规则，非逐 sysId 唯一地址）。
@@ -281,18 +360,30 @@ def main():
         ent = (v3.get('ecu') or {}).get(sid) or {}
         return [r for b in ent.get('blocks', []) for r in b.get('rows', [])]
 
-    def v3_keys_of(sid):
-        """(直连键 set, 候选 set) —— 低16位 ∈ 诊断段。"""
-        keys, cands = set(), set()
+    def v3_request_keys_of(sid):
+        """请求键全集（0x0030xxxx / 0xFF60xxxx）——只作绑定入参，绝不下降为 CAN。"""
+        keys = set()
         for r in v3_rows(sid):
             bk = r.get('bindKey')
-            if bk and DIAG_LO <= int(bk, 16) & 0xFFFF <= DIAG_HI:
-                keys.add(int(bk, 16) & 0xFFFF)
-            for c in (r.get('record') or {}).get('candidates') or []:
-                v = int(c, 16) & 0xFFFF
-                if DIAG_LO <= v <= DIAG_HI:
-                    cands.add(v)
-        return keys, cands
+            if bk:
+                keys.add(f'0x{int(bk, 16):08X}')
+            internal = r.get('internal')
+            flags = r.get('flags')
+            if internal and flags:
+                keys.add(f'0x{(int(flags, 16) << 16) | int(internal, 16):08X}')
+        return sorted(keys)
+
+    def v3_fake_can_low16(sid):
+        """旧版 v3key/v3cand 曾误当 CAN 的请求键低 16 位——只作反例标注，绝不进 cands。"""
+        vals = set()
+        for r in v3_rows(sid):
+            candidates = [r.get('bindKey')] + list((r.get('record') or {}).get('candidates') or [])
+            for value in candidates:
+                if value:
+                    v = int(value, 16) & 0xFFFF
+                    if DIAG_LO <= v <= DIAG_HI:
+                        vals.add(v)
+        return vals
 
     def crossgen_cands_of(module, cur_sid):
         """S4：同系统跨代 sysId 的表A 候选 ∩ 路由表 can（精确交集，非近似 join）。
@@ -388,6 +479,7 @@ def main():
         n_mixed = bool(ns) and any(n != ns[0] for n in ns)
 
         gen = int(sid, 16) >> 8
+        req_keys = v3_request_keys_of(sid)
         if gen >= 0x0E:
             # ===== 0x0E+ 代（含 0x10-0x16 新代）：多源分级（全车型推广） =====
             src_map = defaultdict(set)   # can -> 源名集合
@@ -395,14 +487,9 @@ def main():
                 for c in cans:
                     if DIAG_LO <= c <= DIAG_HI:
                         src_map[c].add(name)
-            keys, vc = v3_keys_of(sid)
-            mark(keys, 'v3key')
-            # S3：候选低半字节 ≥8 视为 rx → tx=c-8；否则 tx=c
-            rx_cands = {c for c in vc if (c & 0xF) >= 8 and DIAG_LO <= c - 8}
-            tx_cands = vc - rx_cands
-            mark(tx_cands, 'v3cand')
-            mark({c - 8 for c in rx_cands}, 'v3candRx')
-            # S1：owner==sysId 的路由行
+            # ★ T02：v3key / v3cand / v3candRx 三条「请求键低16位=CAN」路径全删。
+            #   DRIVELINKS bindKey/internal 只写入 requestKeys 作绑定入参（E-06/E-18）。
+            # S1：owner==sysId 的路由行（u32 can 字段，不是 routing internal）
             own = route_by_owner.get(sid)
             if own:
                 mark(own, 'routing')
@@ -423,7 +510,7 @@ def main():
                             mark({pt}, 'crossgenProven')
 
             tierA = {c for c, ss in src_map.items()
-                     if ss & {'v3key', 'v3cand', 'v3candRx', 'routing', 'routeGroup', 'crossgenProven'}}
+                     if ss & {'routing', 'routeGroup', 'crossgenProven'}}
             prov = []
             if tierA:
                 for c in sorted(tierA):
@@ -492,17 +579,26 @@ def main():
                              for c in ordered])
                     stats['genRoutingStaticTable'] += 1
 
-        # ★ 2026-11-12 本代 comm 地址对接入：只作用于 0x14/0x15/0x16 新代，
-        #   且作为首选候选（不删既有候选、不设免探针直绑）。
+        # ★ T02 全代真值注入：对所有有 cat=0x10 记录的 sysId（不只 0x14+），
+        #   把本代 tx/rx 作为**首选候选**插入；rx 一律取记录 C>>5 原值。
+        #   gen<0x14 的 172 个此前缺真值候选 sysId 由此归零（172→0）。
         gen_here = int(sid, 16) >> 8
-        cp = comm_pairs.get(sid) if gen_here >= 0x14 else None
+        truth_rows = sorted(truth_by_sid.get(sid, set()))
+        cp = comm_pairs.get(sid) or {}
+        if gen_here < 0x14 and truth_rows and not ({t for t, _, _ in truth_rows} & set(ordered)):
+            stats['rawTruthMissingBeforeInjection'] += 1
         if cp:
             ordered = [c for c in sorted(cp) if c not in ordered] + ordered
-            prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{cp[c]:04X}',
-                      'sources': ['commCat10'],
-                      'note': 'SYS_DATA comm cat=0x10 本代子表内嵌地址对（A/C 编码）'}
+            prov = ([{'can': hx(c), 'rx': hx(cp[c]),
+                      'rxRule': truth_rule_by_sid[sid][c],
+                      'sources': ['commCat10'], 'provenance': 'commCat10',
+                      'provable': 'static',
+                      'e0Coord': truth_coord_by_sid[sid][c],
+                      'note': 'SYS_DATA comm cat=0x10 本代真值（A>>5/C>>5，rx 取记录 C 原值）'}
                      for c in sorted(cp)] + prov)
             stats['commCat10'] += 1
+        if gen_here < 0x14 and truth_rows and ({t for t, _, _ in truth_rows} & set(ordered)):
+            stats['genBelow14TruthPresentAfter'] += 1
 
         # ★ 2026-11-13 HB-2 收口：变体实际用到、但 tierA/跨代/表A 全空的 sysId 不留 0 候选。
         #   ① 本 ECU 的 comm cat=0x10 子表带地址对 → 直接用（完整，不截断）；
@@ -516,7 +612,7 @@ def main():
         # ordered 非空但**全落在应答段/超 11 位**时，最终 pairs 仍是空
         # （例 0x050c 表A 只给 0x7FD），同样要补，否则留一个 0 候选断点。
         newly_sourced = False
-        if not ordered or all(c > REQ_HI for c in ordered):
+        if (not ordered or all(c > REQ_HI for c in ordered)) and not truth_rows:
             newly_sourced = True
             ordered = [c for c in ordered if c <= REQ_HI]
             exact = comm_pairs.get(sid)
@@ -534,19 +630,30 @@ def main():
                     cp = fam
                     ordered = sorted(fam)               # ★ 完整输出，16 项截断已移除
                     gen_key = f'0x{(int(sid, 16) >> 8):02X}'
+                    # 旧版只有 v3key/v3cand 伪候选的 sysId，删除伪候选后按代静态表兜底；
+                    # 单列 provenance，避免把 120 条 family-default 分母虚增为 123。
+                    only_fake_before = bool(v3_fake_can_low16(sid)) and not truth_rows
+                    fam_tag = ('commCat10-addressTable-fallback' if only_fake_before
+                               else 'commCat10-family-default')
+                    why = ('旧版仅有请求键低16位伪 CAN 候选（v3key/v3cand），已删除；'
+                           '现按代取完整 cat=0x10 静态地址表' if only_fake_before
+                           else '本 ECU comm 仅 cat=0x60 固定四帧模板（subs 为索引非 CAN 地址）')
                     prov = ([{'can': f'0x{c:04X}', 'rx': f'0x{fam[c]:04X}',
                               'ownerSysId': fam_owner.get(c),
-                              'sources': ['commCat10-family-default'],
+                              'sources': [fam_tag],
                               'provenance': (
                                   f'commCat10-addressTable(gen静态地址表={gen_key},'
                                   f'ownerSysId={fam_owner.get(c)})+'
                                   'oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)'),
-                              'note': ('本 ECU comm 仅 cat=0x60 固定四帧模板（subs 为索引非 CAN 地址）；'
+                              'note': (why + '；'
                                        f'静态来源规则=代 {gen_key} → 该代完整 cat=0x10 地址表 → '
                                        '候选探测（每候选 1 帧 221409 + 应答即绑）；'
                                        '非按车型唯一地址，由 oemProbeSequence 四帧模板逐字节一致支撑')}
                              for c in ordered] + prov)
-                    stats['commFamilyDefault'] += 1
+                    if not only_fake_before:
+                        stats['commFamilyDefault'] += 1
+                    else:
+                        stats['fakeKeyFallbackRelabelled'] += 1
 
         pairs, rejected_pairs = [], []
         for c in ordered:
@@ -564,7 +671,9 @@ def main():
             # 本代 comm 记录自带 rx（A/C 编码），优先于「tx+8」默认推导。
             cp_rx = (cp or {}).get(c)
             if cp_rx is not None:
-                rx, rx_source = f'0x{cp_rx:04X}', 'commCat10'
+                rx = f'0x{cp_rx:04X}'
+                rx_source = ('commCat10' if c in truth_rule_by_sid.get(sid, {})
+                             else 'commCat10-family-default')
             else:
                 rx, rx_source = rx_for(sid, c)
             if rx is None:
@@ -577,8 +686,16 @@ def main():
                 rejected_pairs.append({'tx': tx_s, 'rx': rx, 'reason': 'rx-not-valid-for-11bit', 'source': rx_source})
                 stats['rxRejected'] += 1
                 continue
-            pairs.append((tx_s, rx))
-            stats['rxPreserved' if rx_source.startswith('tableA') else 'rxDefaultPlus8'] += 1
+            if rx_source == 'commCat10':
+                pair_rule = truth_rule_by_sid[sid][c]
+                stats['rxFromRecordC'] += 1
+            elif rx_source.startswith('tableA') or rx_source == 'commCat10-family-default':
+                pair_rule = rx_rule_of(c, int(rx, 16))
+                stats['rxPreserved'] += 1
+            else:
+                pair_rule = 'rx=tx+8(fallback-no-cat10-record)'
+                stats['rxDefaultPlus8'] += 1
+            pairs.append((tx_s, rx, pair_rule, rx_source))
         # 只有「全部相关行均 n=0 + 唯一合法地址」才允许免探针直绑。
         # n=0 多候选或混合 n 必须继续探测/枚举，不能拿首项冒充唯一地址。
         # ★ 新增补源（本 ECU comm 地址对 / 按代完整静态地址表）一律禁止免探针直绑：
@@ -586,15 +703,54 @@ def main():
         #   唯一实测地址；n=0 也不能拿首项冒充唯一地址。
         bind_direct = bool(rows) and not n_mixed and n_value == 0 and len(pairs) == 1 \
             and not newly_sourced
+        # 每条候选带 provable + E0 坐标；请求键只作绑定入参，绝不写进 cands。
+        default_coord = (truth_coord_by_sid.get(sid) or {}).get(
+            min(cp) if cp else -1, f'data/drivelinks-v3.json#{sid}')
+        for item in prov:
+            item.setdefault('provable', 'static')
+            item.setdefault('e0Coord', default_coord)
+        blocks_here = v3.get('ecu', {}).get(sid, {}).get('blocks', []) or []
+        block_offs = sorted({int(b.get('addrBlock', -1)) for b in blocks_here if b.get('addrBlock') is not None})
+        block_keys = sorted({str(b.get('blockKey')) for b in blocks_here if b.get('blockKey')})
         rec = {
             'mode': f'0x{mode:04x}' if mode is not None else None,
             'n': n_value,
             'nMixed': n_mixed,
             'bindDirect': bind_direct,
-            'cands': [t for t, _ in pairs],
-            'pairs': [{'tx': t, 'rx': r} for t, r in pairs],
+            'cands': [p[0] for p in pairs],
+            'pairs': [{'tx': t, 'rx': r, 'rxRule': rule, 'rxSource': src,
+                       'provable': 'static' if src == 'commCat10' else 'derived'}
+                      for t, r, rule, src in pairs],
             'firstRead': (first_read_of(sid) or {}).get('frame'),
+            'provable': 'static',
+            'e0Coord': default_coord,
+            'requestKeys': req_keys,
+            'blockOff': block_offs,
+            'blockKeys': block_keys,
+            'truth': [{'tx': hx(t), 'rx': hx(r), 'rxRule': rule, 'provable': 'static',
+                       'e0Coord': truth_coord_by_sid[sid].get(t, default_coord)}
+                      for t, r, rule in truth_rows],
         }
+        # 0x0f4d 四元对象：sysId + 请求键 + CAN 真值 + 异名同功能 sysId；
+        # 0x0e5f 与 0x0f4d 的 raw 相同但名字不同，禁止合并（E-14 / E11）。
+        if sid == '0x0f4d':
+            four_keys = [k for k in FOUR_TUPLE_REQUEST_KEYS if f'0x{(0x0030 << 16) | k:08X}' in req_keys]
+            if four_keys != list(FOUR_TUPLE_REQUEST_KEYS):
+                raise SystemExit('0x0f4d 四元对象请求键缺失（证据 E11 应为 0x06CC..0x06CF）')
+            truth_074e = next((t for t in truth_rows if t[0] == 0x74E), (0x74E, 0x7B8, 'rx=tx+0x6A'))
+            four = {
+                'sysId': '0x0f4d',
+                'sysName': 'SWA2_BaseSys',
+                'requestKey': four_keys,
+                'can': {'tx': truth_074e[0], 'rx': truth_074e[1],
+                        'rxRule': truth_074e[2], 'provable': 'static'},
+                'altIdentitySysIds': ['0x0e5f', '0x0e60'],
+                'identityRule': 'nameVariant + PARTNUMBER memcmp',
+                'provable': 'static',
+                'e0Coord': truth_coord_by_sid[sid].get(0x74E, default_coord),
+            }
+            rec['fourTuple'] = dict(four)
+            rec.update({k: v for k, v in four.items() if k != 'fourTuple'})
         if rejected_pairs:
             rec['rejectedPairs'] = rejected_pairs
         if rows and not n_mixed and n_value == 0 and len(pairs) != 1:
@@ -679,29 +835,38 @@ def main():
 
     doc = {
         'schemaVersion': 6,
-        'source': ('drivelinks-v3 + sysdata-routing(路由表/根表22type) + sysdata-comm(cat=0x10 本代地址对) '
-                   '+ comm-addr-table(10 代完整 cat=0x10 地址表/ownerSysId/rx 校验/四帧模板) '
-                   '+ all-model-sysids(全车型换表) + variant-sysids(4588 变体实解析 sysId) '
-                   '+ ecu-addresses(表A/跨代) + coding-v2(首参数/族)'),
-        'rule': ('全车型多源分级：gen=sysId>>8，gen≥0x0E 走 tierA = v3直连键(bindKey低16位=CAN) '
-                 '∪ v3候选(rx→tx=rx-8) ∪ 路由表(owner==sysId) ∪ DME路由组(每代自动注入 0x_0C)；'
-                 'tierA 空→同系统跨代表A候选∩路由表can（精确交集）；再空→枚举兜底。'
-                 'tierA / crossgen 两路输出标独立 provenance（tierA / crossgen），'
-                 '不计入 120 条错配分母也不计入 402/527 分母；5 处 16/20 项截断已全部删除。'
-                 'gen≥0x14 另把 SYS_DATA comm cat=0x10 本代地址对作为首选候选（保留原候选回退，不直绑）。'
-                 '变体实解析 sysId 若 tierA/跨代/表A 全空 → 用本 ECU comm cat=0x10 地址对补候选；'
-                 '仅 cat=0x60 模板无地址对 → 按代取「完整」cat=0x10 静态地址表 + ownerSysId + rx 校验，'
-                 'provenance=commCat10-addressTable(gen静态地址表,ownerSysId)+'
-                 'oemProbeSequence(3E00/22F19E/22F1A2/1003,185/185逐字节一致)；'
-                 '参考诊断仪静态做法 = 候选循环（每候选 1 帧 22 14 09）+ 应答即绑，不产生逐 sysId 唯一地址表。'
-                 'n 逐行保留，混合 n 不合并；bindDirect 仅在全行 n=0 且唯一合法地址时成立。'
-                 'rx 规则（2026-11-12 审计如实化）：comm cat=0x10 记录自带 rx 优先'
-                 '（含 +0x100、+0x6A 以及 rx<tx 等非 tx+8 形态，不改写原厂值）；'
-                 '无记录 rx 时才按 11 位请求 tx≤0x7F7 → rx=tx+8 派生；'
-                 'tx 落在 0x7F8-0x7FF（应答段）、tx 或 rx 超出 11 位（路由表 12 位空间）'
-                 '一律进 rejectedPairs，绝不 &0x7FF 回绕、绝不发 ATCRA。'),
+        'source': ('drivelinks-v3(请求键/addrBlock) + sysdata-routing(路由表 u32 can/根表22type) '
+                   '+ sysdata-comm(cat=0x10 本代真值 A>>5/C>>5) '
+                   '+ comm-addr-table(完整 cat=0x10 地址表/ownerSysId/rx 规则) '
+                   '+ all-model-sysids(全车型换表) + variant-sysids(变体实解析 sysId) '
+                   '+ ecu-addresses(表A/跨代) + coding-v2(首参数/族) '
+                   '+ data/models(Boxster/Cayman 文件集+items 签名)'),
+        'rule': ('T02 全代真值注入：CAN 只来自 SYS_DATA comm cat=0x10 的 A>>5/C>>5 与路由表 u32 can；'
+                 'DRIVELINKS bindKey/internal（0x0030xxxx / 0xFF60xxxx）与 record.candidates 低 16 位'
+                 '是请求键，只写 requestKeys 作绑定入参，绝不进 cands（v3key/v3cand/v3candRx 路径数=0）。'
+                 'gen=sysId>>8；对每个有 cat=0x10 本代真值的 sysId（全代，不再限 gen>=0x14）'
+                 '把 tx/rx 作为首选候选注入，rx 取记录 C 原值；gen<0x14 此前缺真值的 172 个 sysId 归零。'
+                 'tierA=路由表(owner==sysId)∪DME 路由组∪跨代已证 tx；空则同系统跨代表A候选∩路由表 can；'
+                 '再空则按代取完整 cat=0x10 地址表 family-default；候选仍需探针验证，绝不免探针直绑。'
+                 'rx 规则原样保留 +0x6A/+0x100/+8/rx<tx；无 cat=0x10 记录时才按 tx≤0x7F7 → +8 派生；'
+                 'tx/rx 超 11 位进 rejectedPairs，绝不 &0x7FF 回绕、不把 +0x6A 全局常量化。'
+                 '0x0f4d 四元对象按名字串+件号裁决，0x0e5f/0x0e60 是异名同功能 sysId（raw 相同不合并）；'
+                 'Macan 后端电子设备 0x0f23/0x0f34 blockOff 不同 → 分别绑定；'
+                 'Boxster/Cayman 981/982/987 仅在文件集+items 签名全等时允许合并。'),
         'stats': dict(stats),
         'coverage': coverage,
+        'truthBaseline': {
+            'genBelow14TruthSysIds': 296,
+            'genBelow14MissingBefore': 172,
+            'genBelow14TruthPairs': 302,
+            'genBelow14RxNotPlus8': 281,
+            'evidence': [
+                'docs/evidence/431-static-allmodels-20261120.md#7',
+                'docs/evidence/431-linkmap-20261120.md#F',
+            ],
+            'provable': 'static',
+        },
+        'datasetMerge': dataset_merge_policy(),
         'ecu': dict(sorted(out.items())),
     }
     # 硬门禁：任何错误直绑、候选/pair 不一致或协议非法 rx 都不许落盘。
@@ -718,15 +883,17 @@ def main():
         if rec.get('bindDirect'):
             for p in (rec.get('pairs') or []):
                 still_direct[(p['tx'], p['rx'])].append(sid)
-    for pair, sids in still_direct.items():
-        if len(sids) > 1:
-            problems.append(f'{pair[0]}/{pair[1]}: 仍被 {len(sids)} 个 sysId 直绑 {sids}')
-        if (rec.get('cands') or []) != [p['tx'] for p in pairs]:
+        if (rec.get('cands') or []) != [p['tx'] for p in (rec.get('pairs') or [])]:
             problems.append(f'{sid}: cands 与 pairs.tx 不一致')
-        for p in pairs:
+        if not rec.get('provable'):
+            problems.append(f'{sid}: 缺 provable 标记')
+        for p in (rec.get('pairs') or []):
             tx, rx = int(p['tx'], 16), int(p['rx'], 16)
             if not ((tx <= 0x7FF and rx <= 0x7FF) or (tx > 0x7FF and rx <= 0x1FFFFFFF)):
                 problems.append(f"{sid}: 协议非法 pair {p['tx']}→{p['rx']}")
+    for pair, sids in still_direct.items():
+        if len(sids) > 1:
+            problems.append(f'{pair[0]}/{pair[1]}: 仍被 {len(sids)} 个 sysId 直绑 {sids}')
     if problems:
         raise SystemExit('bind-plan 硬门禁失败：\n  ' + '\n  '.join(problems[:20]))
 
@@ -751,6 +918,34 @@ def main():
     var_missing = [s for s in var_ids if not cand_of(s)]
     checks.append((f'变体实解析 {len(var_ids)} 个 sysId 全部有地址候选（缺 {len(var_missing)}）',
                    not var_missing))
+    # T02 数字单一来源自检：623 / 408 / 172→0 / 302 / 281（大小写+0x 前缀归一）。
+    # 分母口径与 evidence §7 完全一致：按 comm-addr-table.byGeneration[].addresses[].ownerSysId
+    # （tx/rx 去重后的首 owner），不按 sysdata-comm 原始 subs 聚合，避免 410/304 假多算。
+    truth_rows_all = defaultdict(set)
+    for gen_rows in (comm_addr_doc.get('byGeneration') or {}).values():
+        for row in gen_rows.get('addresses') or []:
+            owner = str(row.get('ownerSysId') or '').lower()
+            if owner:
+                truth_rows_all[owner].add((int(row['tx'], 16), int(row['rx'], 16), row.get('rxRule') or ''))
+    truth_sids = [s for s in out if s in truth_rows_all]
+    checks.append((f'本代 cat=0x10 真值 sysId={len(truth_sids)}（408）', len(truth_sids) == 408))
+    missing_after = []
+    pair_count = rx_not_plus8 = 0
+    for s in truth_sids:
+        rows = sorted(truth_rows_all[s])
+        if (int(s, 16) >> 8) < 0x14:
+            cand_set = {int(c, 16) for c in (out[s].get('cands') or [])}
+            if not ({t for t, _, _ in rows} & cand_set):
+                missing_after.append(s)
+            for t, r, rule in rows:
+                pair_count += 1
+                if rule != 'rx=tx+8':
+                    rx_not_plus8 += 1
+    checks.append((f'gen<0x14 缺真值候选 sysId={len(missing_after)}（172→0）', not missing_after))
+    checks.append((f'gen<0x14 本 sysId 真值配对={pair_count}（302）', pair_count == 302))
+    checks.append((f'gen<0x14 rx≠+8={rx_not_plus8}（281）', rx_not_plus8 == 281))
+    gen14_truth_sids = sum(1 for s in truth_sids if (int(s, 16) >> 8) < 0x14)
+    checks.append((f'gen<0x14 真值 sysId={gen14_truth_sids}（296）', gen14_truth_sids == 296))
     if var_missing:
         print('  缺失样本：', var_missing[:10])
     for name, okk in checks:

@@ -59,6 +59,19 @@ function rxRuleOf(tx, rx) {
 }
 
 // ── 逐代聚合完整 cat=0x10 地址表（tx→rx 去重，保留 ownerSysId） ──────────
+/** T02：从记录 raw 独立复算 A>>5 / C>>5；与导出 tx/rx 不一致即红。 */
+function decodeRawPair(raw, tx, rx, sid, commOff) {
+  if (typeof raw !== 'string' || !/^0x[0-9A-Fa-f]{8}$/.test(raw)) {
+    throw new Error(`${sid} ${commOff || ''}: cat=0x10 raw 格式非法 ${String(raw)}`);
+  }
+  const a = parseInt(raw.slice(2, 6), 16) >> 5;
+  const c = parseInt(raw.slice(6, 10), 16) >> 5;
+  if (a !== tx || c !== rx) {
+    throw new Error(`${sid} ${commOff || ''}: raw A/C=${raw} → ${hex16(a)}/${hex16(c)} 与 tx/rx=${hex16(tx)}/${hex16(rx)} 不一致`);
+  }
+  return { a, c };
+}
+
 const byGen = {};
 const cat10Subs = [];
 const cat60Blocks = [];
@@ -70,13 +83,19 @@ for (const sid of sortedKeys(comm.ecu || {})) {
     for (const s of blk.subs || []) {
       if (typeof s.tx !== 'number' || typeof s.rx !== 'number') continue;
       if (blk.cat === 0x10) {
-        cat10Subs.push({ sid, gen, tx: s.tx, rx: s.rx });
+        decodeRawPair(s.raw, s.tx, s.rx, sid, blk.commOff);
+        const e0Coord = `PORSCHE_SYS_DATA.BIN:${blk.commOff || 'unknown'}#${sid}`;
+        cat10Subs.push({ sid, gen, tx: s.tx, rx: s.rx, raw: s.raw, e0Coord });
         const g = (byGen[gen] ??= { gen, genHex: '0x' + gen.toString(16).toUpperCase().padStart(2, '0'), ownerSysIds: new Set(), pairs: new Map() });
         g.ownerSysIds.add(sid);
         const key = `${s.tx}/${s.rx}`;
         const prev = g.pairs.get(key);
         if (prev) prev.ownerSysIds.add(sid);
-        else g.pairs.set(key, { tx: s.tx, rx: s.rx, ownerSysId: sid, ownerSysIds: new Set([sid]), rxRule: rxRuleOf(s.tx, s.rx) });
+        else g.pairs.set(key, {
+          tx: s.tx, rx: s.rx, ownerSysId: sid, ownerSysIds: new Set([sid]),
+          rxRule: rxRuleOf(s.tx, s.rx), raw: s.raw, e0Coord,
+          ruleSource: 'record-C>>5', provable: 'static',
+        });
       } else if (blk.cat !== 0x10) {
         nonCat10Subs.push({ sid, gen, cat: blk.cat, tx: s.tx, rx: s.rx });
       }
@@ -147,6 +166,7 @@ for (const genStr of sortedKeys(byGen)) {
   const g = byGen[genStr];
   const pairs = [...g.pairs.values()].sort((a, b) => a.tx - b.tx || a.rx - b.rx).map((p) => ({
     tx: hex16(p.tx), rx: hex16(p.rx), ownerSysId: p.ownerSysId, rxRule: p.rxRule,
+    raw: p.raw, e0Coord: p.e0Coord, ruleSource: 'record-C>>5', provable: 'static',
   }));
   const rules = [...new Set(pairs.map((p) => p.rxRule))].sort();
   generations.push({
@@ -216,8 +236,29 @@ for (const [sid, v] of famSids) {
 const identRequests = {};
 for (const m of Object.values(ident.moduleIdent || {})) identRequests[m.request] = (identRequests[m.request] || 0) + 1;
 
+// T02：每条 cat=0x10 行必带 provable:'static' 与 E0 坐标；rx 规则逐条来自 C>>5。
+const allCat10Rows = Object.values(byGeneration).flatMap((g) => g.addresses || []);
+const missingProvable = allCat10Rows.filter((a) => a.provable !== 'static' || !a.e0Coord || !a.raw);
+if (missingProvable.length) {
+  throw new Error(`cat=0x10 行缺 provable/e0Coord/raw：${missingProvable.length}`);
+}
+const distinctRxRules = [...new Set(allCat10Rows.map((a) => a.rxRule))].sort();
+if (distinctRxRules.length < 4 || !distinctRxRules.includes('rx=tx+0x6A') ||
+    !distinctRxRules.includes('rx=tx+8')) {
+  throw new Error(`rx 规则被常量化：${JSON.stringify(distinctRxRules)}`);
+}
+const staticTruth = {
+  encoding: 'tx=A>>5, rx=C>>5（raw=0x + A(4hex) + C(4hex)，SJA1000 11-bit 左对齐）',
+  provable: 'static',
+  cat10Rows: allCat10Rows.length,
+  rawChecked: cat10Subs.length,
+  distinctRxRules,
+  e0Ref: 'PORSCHE_SYS_DATA.BIN cat=0x10；E-10/E-11/E-12（431-linkmap-20261120.md）',
+};
+
 const limitCheck = {
   cat10SubsTotal: cat10Subs.length,
+  staticTruthRowsWithProvable: allCat10Rows.length,
   txRange700_77F: inRange.length,
   rxEqTxPlus6A: plus6A.length,
   cat60Blocks: cat60Blocks.length,
@@ -236,9 +277,10 @@ const limitCheck = {
 };
 
 const doc = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   kind: 'comm-addr-table',
-  source: 'data/sysdata-comm.json（cat=0x10 全表按代聚合 / cat=0x60 四帧模板 / 非 0x10 cat 低优先级族） + data/bind-plan.json（family-default 与 provenance） + data/ident-registry.json（moduleIdent.request）',
+  source: 'data/sysdata-comm.json（cat=0x10 raw A/C 全表按代聚合 / cat=0x60 四帧模板 / 非 0x10 cat 低优先级族） + data/bind-plan.json（family-default 与 provenance） + data/ident-registry.json（moduleIdent.request）',
+  staticTruth,
   generations,
   limitCheck,
   lowPriorityCandidates,
