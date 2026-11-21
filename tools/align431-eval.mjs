@@ -44,6 +44,7 @@ export const CURRENT_SCOPE_DOCS = Object.freeze([
   PRD_FILE,
   'RE-GAPVERIFY-20261112.md',
   'TAKEOVER.md',
+  'ACCEPTANCE-ALIGN431-20261120.md',
 ]);
 
 /** §0 不可协商前提列出的 10 类禁用结案词（原文分类 → 可机读的等价表述）。 */

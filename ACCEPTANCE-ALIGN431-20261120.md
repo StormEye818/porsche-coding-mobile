@@ -105,7 +105,7 @@
 - 清单：`AUDIT-20261112.md`、`B-TO-A-CLOSURE-20261112.md`、`GAP-INVENTORY-20261112.md`、
   `ACCEPTANCE-MATRIX.md`、`PRD-FULLALIGN-431-20261113.md`、`RE-GAPVERIFY-20261112.md`、`TAKEOVER.md`、
   `docs/ARCH-全链路真实对齐-20261120.md`、`docs/PRD-全链路真实对齐-20261120.md`、
-  三本 `docs/evidence/431-*.md`、`docs/ACCEPTANCE-ALIGN431-20261120.md`、
+  三本 `docs/evidence/431-*.md`、`ACCEPTANCE-ALIGN431-20261120.md`、
   `docs/工程规范-验收文档与发版面.md`、`tools/verify-align431-qa.mjs`、
   `tools/verify-align431-injection.mjs`、`tools/align431-rows.json`、`tools/align431-eval.mjs`、
   `data/align431-evidence-registry.json`、`tools/align431-vectors/`（5 份）、
@@ -119,7 +119,8 @@
 - stdout sha256（本机实测）：`376f8a18172c0a577bdf561e867548823ead048351e3240de435b8b78384a9f3`
 - 机读汇总：`GENERATOR_CONTRACT_PASS count=26 external=3 offline=2 runtime=13 gate=14`
 - 干净 clone 退出码 / stdout sha256：`0` / `064fbc21bcf231fc5640e2bc93307ae638d0fe43bf92440310dcea20dd3875f3`（干净 clone 未跑 sync 直接跑 gate）；跑过 `npm test`（含 `npm run sync`）后同命令 stdout sha256 为 `b7cd9c46bc3b3b72f8f17c4e08ddb80204815120d9bc0c296bae106e47b80735`，两态差异仅因 `EXTERNAL_WWW_DATA_IDENTICAL` 由 INFO 转 PASS；机读汇总两态均为 `GENERATOR_CONTRACT_PASS count=26 external=3 offline=2 runtime=13 gate=14`
-- 干净 clone 全链与审计实测：`npm test` 退出 `0`（951s；`test-align431 49 通过/0 失败`、`e2e 127 通过/0 失败`、`all-models 79 通过/0 失败`、`243/243 A`、`QA 16/16 PASS`）；`npm run audit:align431` 两次退出 `0`、stdout 逐字节相同，内部指纹 `sha256=0f5766c1e8b7f30aedbef053162d484692bded5fff13d4b8215f901df2781289`，文件 sha256 `038246944a8d808436415f1c9a8c883d7ce4cbc90a0526b3645922ccd040c158`
+- 干净 clone 全链与审计实测：`npm test` 退出 `0`（951s；`test-align431 49 通过/0 失败`、`e2e 127 通过/0 失败`、`all-models 79 通过/0 失败`、`243/243 A`、`QA 16/16 PASS`）；`npm run audit:align431` 两次退出 `0`、stdout 逐字节相同，内部指纹 `sha256=e855ef8adf6d47b987cf4e2f912b20cb9414e0978c10f132cd2a8044e8e15be3`，文件 sha256 `038246944a8d808436415f1c9a8c883d7ce4cbc90a0526b3645922ccd040c158`
+- 指纹变更说明：`0f5766c1…` → `e855ef8a…` 来自本轮把验收记录由 `docs/` 移根，导致审计的 `扫描 .md 文件数` 由 18 变 19（根级 .md 扫描集 +1，属文档落档位置变更）；243/243 A、LIVE_*、注入自检与 QA 断言全部未变，**非审计范围放宽**。末尾「不进指纹」的 `未入库 .md 份数` 在本机工作树与干净 clone 间不同（42 / 0），不进指纹、不影响上述值。
 - 覆盖：权威枚举 **git tracked** 的 26 个 `tools/build-*` / `tools/export-*` 生成器全部在册；
   另 3 个本机取证生成器（含 `/Users/se818/...`、`/tmp/...`，未入库）由
   `EXTERNAL_GENERATORS` 段纳管，不写「29 个全部入库」：
@@ -135,8 +136,8 @@
 
 | 命令 | 退出码 | stdout sha256 | 备注 |
 |---|---|---|---|
-| `npm run audit:align431`（第 1 次） | `0` | `0325b7391971a96355bf7358604135812cd979dad10d2885e07c5fc7276534a2` | 内部指纹 `9c67e16e…` |
-| `npm run audit:align431`（第 2 次） | `0` | `0325b7391971a96355bf7358604135812cd979dad10d2885e07c5fc7276534a2` | 同上；两次逐字节相同 |
+| `npm run audit:align431`（第 1 次） | `0` | `4fc74f55ac2cbce6254a14888e622c9887b0141c222a5c58757f23d6d6c3ee4a` | 内部指纹 `e855ef8a…`（移根后当前实测；§1.3/§3 的 `9c67e16e…` 与 `0325b739…`/`ee496e4f…` 为移根前历史记录） |
+| `npm run audit:align431`（第 2 次） | `0` | `4fc74f55ac2cbce6254a14888e622c9887b0141c222a5c58757f23d6d6c3ee4a` | 同上；两次逐字节相同 |
 | `node tools/verify-align431-qa.mjs`（复用本机两份审计输出） | `0` | `2a9edffa5861a632f8cecbfa306c421999bb135440a34758016cdfc6df693635` | `QA_SUMMARY 15/15 PASS` |
 | `node tools/verify-align431-qa.mjs`（不复用，gate 自行真跑两次审计） | `0` | `ad82ff1ea95cfd6011142d8e02e83ef540bd93addc88c4feb43ee9e528ef241a` | `QA_SUMMARY 15/15 PASS`，Q15 `reuse=0` |
 | `node tools/verify-align431-injection.mjs` | `0` | `91fe29bde8d75c440561d53544bc28e67160ffb7612b993919c080813d4d18cc` | `INJECTION_RED_RATE 100%` |
@@ -159,9 +160,10 @@
 
 ## 3. 跨机确定性
 
-- 本机两次审计 stdout 整段相同：`0325b739…` == `0325b739…`。
-- clone 两次审计 stdout 整段相同：`ee496e4f…` == `ee496e4f…`。
-- 本机与 clone 的**内部指纹**相同：`9c67e16e65a41412dc8413fa5872c810ddb3d5d9dfce3041fdb49862372e6d85`。
+- 以下 4 行为**移根前 T05 历史记录**，保留作时序对照；当前 HEAD 的 stdout sha / 内部指纹见 §1.10 与 §2（`e855ef8a…` / `4fc74f55…`），差异仅来自验收记录由 `docs/` 移根使根级 .md 扫描集 18→19，非审计范围放宽。
+- 本机两次审计 stdout 整段相同（移根前）：`0325b739…` == `0325b739…`。
+- clone 两次审计 stdout 整段相同（移根前）：`ee496e4f…` == `ee496e4f…`。
+- 本机与 clone 的**内部指纹**相同（移根前）：`9c67e16e65a41412dc8413fa5872c810ddb3d5d9dfce3041fdb49862372e6d85`。
 - 本机与 clone 的整段 stdout 差异**仅**在末尾明确标注「不进指纹」的一行
   （本机 `未入库 .md 42 份` / clone `未入库 .md 0 份`）；指纹段逐字节相同，符合 A-8。
 

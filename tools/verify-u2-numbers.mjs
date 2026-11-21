@@ -203,6 +203,7 @@ const NEVER_EXEMPT = Object.freeze([
   GAP_FILE,          // GAP-INVENTORY-20261112.md —— 41 行基线源（Q1 原文保留另有行级豁免）
   ACCEPTANCE_FILE,   // 验收矩阵，无日期，无歧义
   TAKEOVER_FILE,     // 活文档，永远受检
+  'ACCEPTANCE-ALIGN431-20261120.md', // 现行验收记录（根级），必须参与 drift，不归档豁免
 ]);
 
 /** 一次性留痕：显式白名单，逐份写出。只有这 3 份，且不会增长。 */
@@ -320,7 +321,7 @@ const METRICS = Object.freeze([
   { name: 'verify-fullchain', value: 38 },
   { name: 'verify-write-gate', value: 60 },
   { name: 'verify-runtime-safety', value: 30 },
-  { name: 'test-align431', value: 38 },
+  { name: 'test-align431', value: 49 },
   { name: 'walkthrough', value: 84 },
   { name: 'verify-pending', value: 69 },
   { name: 'verify-sysdata-comm', value: 16 },

@@ -15,7 +15,7 @@
 >
 > 当前 `npm test` **34 步** 全绿（实测 8m32s，退出码 0）：
 ```
-test-align431 38 · smoke-fixes 376 · e2e-flow 127 · walkthrough 84 · verify-all-models 79
+test-align431 49 · smoke-fixes 376 · e2e-flow 127 · walkthrough 84 · verify-all-models 79
 verify-runtime-safety 30 · verify-sysdata-comm 16 · verify-oem-session 32 · verify-oem-frames 37
 verify-fullchain 38 · verify-write-gate 60 · verify-fullchain-audit 95 · verify-hb1 10
 verify-oem-probe-diff 9 · verify-menu-tree-no-truncation 8 · D2 6 · verify-ui-text-gag 5
