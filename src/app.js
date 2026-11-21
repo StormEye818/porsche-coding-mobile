@@ -2677,6 +2677,48 @@ function identMatchesSys(ident, sys) {
   return false;
 }
 
+/**
+ * ★ 阶段 B：模拟模式专用静态行解析（真实 bind-plan → runtime rows，stage A 同一条纯函数链）。
+ *
+ * 与 probeAddressFor 的区别：这里**只选行**，不进 requestKey/live-map/native-report gate。
+ * sysId 候选与 probeAddressFor 的 planSysIdFor 顺序对齐，并补上模块名映射与菜单条目 sysId，
+ * 让 991 IC(0x0e08) 这类「中文标签无精确 sysId」的模块也能拿到真实静态行。
+ * requestKey 只随行带回用于展示；CAN 只取行的 tx/rx，绝不取低 16 位、绝不 rx=tx+8 推导。
+ *
+ * @param {object} sys 当前系统条目（label / modules / ecu）
+ * @returns {Promise<object|null>} 静态候选行（static 真值优先），无行返回 null
+ */
+async function simStaticRowFor(sys) {
+  await ensureBindPlan();
+  const entry = addrEntryFor(sys.label, sys);
+  const sysIds = [...new Set([
+    planSysIdFor(sys.label, sys.modules, currentModel, entry?.sysId),
+    entry?.sysId,
+    ...(sys.modules || []).map((m) => sysIdForMod(m)),
+  ].filter(Boolean))];
+  const rows = sweepPlan({ bindPlan, sysIds });
+  return rows.find((r) => r.provable === 'static') || rows[0] || null;
+}
+
+/**
+ * ★ 阶段 B：模拟地址证据。state/provable 明确写 sim，绝不冒充真车 R 级原生上报。
+ *
+ * @param {{tx:number,rx:number,requestKey?:string|null,sysId?:string}} row 静态行或表证据
+ * @param {string} detail 证据来源说明
+ * @returns {object} 模拟地址（含 state:'sim' / provable:'sim'）
+ */
+function simAddrEvidence(row, detail) {
+  return {
+    tx: row.tx,
+    rx: row.rx,
+    state: 'sim',
+    provable: 'sim',
+    requestKey: row.requestKey ?? null,   // 仅展示，不参与任何绑定
+    sysId: row.sysId || null,
+    note: `模拟车按静态行演示，不进真车 live-map（${detail}）`,
+  };
+}
+
 async function enterSystem(sys) {
   if (!needLink()) return false;
   // ★ 模拟模式：mock 回出候选模块的默认变体识别串 —— 对齐真车 ODX 识别链，
@@ -2687,24 +2729,14 @@ async function enterSystem(sys) {
     .map((mod) => (cat0?.modules || []).find((m) => m.module === mod))
     .filter(Boolean);
   const varNames = [...new Set(modRecs.map((mi) => autoPickVariant(mi, '').name))].filter(Boolean);
-  if (simMode && simMock) {
-    if (varNames.length) {
-      simMock.identText = varNames.join(' ');
-      // ★ 模拟车识别目标 = 与真车同源的候选序（2026-11-10 改）：
-      //   bind-plan（本模块诊断段）→ 与 probeAddressFor 同一条数据；不再用全库族并集。
-      const entrySim = addrEntryFor(sys.label, sys);
-      const planSim = bindPlanFor(entrySim?.sysId);
-      const listSim = (planSim && planSim.cands && planSim.cands.length)
-        ? planSim.cands.map((t) => ({ tx: parseInt(t, 16) }))
-        : probeList(entrySim, [], variantMatchedInternals(sys.label, null, varNames));
-      simMock.identTextTx = listSim.length
-        ? listSim[0].tx
-        : (coder && coder.tx != null ? coder.tx : null);
-      if (simMock.identTextTx != null) {
-        log(`  · 模拟车识别目标 = 0x${simMock.identTextTx.toString(16).toUpperCase()}`
-          + `（候选 ${listSim.length} 个，bind-plan 同源）`, 'info');
-      }
-    }
+  // ★ 阶段 B：模拟/真车硬边界。模拟只喂自己的识别串；目标地址在下方**真车 gate 之前**
+  //   由 simStaticRowFor() 从阶段 A 的真实 runtime 静态行解析，不再读 plan.cands 低 16 位
+  //   （那是请求键显示值，991 IC 曾因此落到 0x340）。真车路径（!simMode）完全不变。
+  const simActive = !!(simMode && simMock);
+  let simRow = null;
+  if (simActive) {
+    if (varNames.length) simMock.identText = varNames.join(' ');
+    simRow = await simStaticRowFor(sys);
   }
   state.currentAddr = null;   // 进模块失败时不能沿用上一个模块的地址证据
   let addr = addrFor(sys.label, currentModel, sys);
@@ -2723,10 +2755,35 @@ async function enterSystem(sys) {
   const hasShortlist = (entry0?.cands || []).length + (entry0?.candsAux || []).length > 1;
   const needProbe = !addr || addr.tx == null || addr.rx == null
     || (addr.state === 'candidate' && hasShortlist);
-  if (needProbe) {
+  if (simActive) {
+    // ★ 阶段 B 短路点：模拟模式在此整体退出真车链（probeAddressFor → bindByRequestKey →
+    //   live-map fail-closed）。模拟车没有原生发现上报，套真车 R 级 gate 只会得到
+    //   「请求键缺失 / 通讯失败」；这里按真实静态行（或已有表证据）直接落模拟地址。
+    if (simRow) {
+      const detail = `sysId=${simRow.sysId || '-'} 静态行 0x${hx(simRow.tx)}/0x${hx(simRow.rx)}`
+        + ` · ${simRow.source}/${simRow.provable}`;
+      addr = simAddrEvidence(simRow, detail);
+      simMock.identTextTx = addr.tx;
+      log(`  · 模拟车按静态行演示，不进真车 live-map：${sys.label}`
+        + ` → 0x${hx(addr.tx)}/0x${hx(addr.rx)}（${detail}`
+        + ` · requestKey=${simRow.requestKey ?? 'null'} 仅展示）`, 'info');
+    } else if (addr && addr.tx != null && addr.rx != null) {
+      // 无 runtime row：只用 addrFor / addrTableUnique 的已有表证据，绝不自创地址。
+      addr = simAddrEvidence(addr, 'addrFor/addrTableUnique 表证据');
+      simMock.identTextTx = addr.tx;
+      log(`  · 模拟车按已有表证据演示，不进真车 live-map：${sys.label}`
+        + ` → 0x${hx(addr.tx)}/0x${hx(addr.rx)}`, 'info');
+    } else {
+      hideLoading();
+      toast('err', `${sys.label} 模拟车无可用地址`,
+        '静态行与地址表都没有证据；模拟模式不猜地址、不进真车探测');
+      log(`  · ${sys.label} 模拟车无静态行/表证据：不进真车 live-map，也不猜地址`, 'warn');
+      return false;
+    }
+  } else if (needProbe) {
     {
-      // ★ 2026-11-07 治本：模拟模式不再给占位地址（占位会跳过探测路径，
-      //   真车探测 bug 测不出来——上轮漏检根因）。模拟车按真车拓扑走同一条探测。
+      // ★ 阶段 B：本分支现在**只在真车模式**执行（模拟已在上方短路）。
+      //   保留原探测/绑定/fail-closed 链不动，真车 gate 不放宽。
       log(`  ${sys.label} 候选解析：按模块记录绑定（n=0 直绑 / n>0 单帧 22 14 09）…`, 'info');
       // 首次进模块也要先加载家族统计，再决定探针族，不能首趟 null、次趟才正确。
       await ensureModuleFamily();
@@ -2800,7 +2857,13 @@ async function enterSystem(sys) {
     } catch { /* 不致命 */ }
     if (dsn && identTextMatch(dsn, sys.label, varNames, modRecs, sys.modules)) {
       log(`  ✅ 身份文本匹配（识别串「${dsn.slice(0, 24)}」）`, 'ok');
-      state.currentAddr = { ...addr, state: 'verified', note: '身份文本匹配' };
+      // 阶段 B：模拟车的身份文本匹配只升证据说明，不改 state/provable —— 不冒充真车 R 级。
+      // 真车分支保持原字面写法（smoke-fixes 源码级门禁钉住）。
+      if (simActive) {
+        state.currentAddr = { ...state.currentAddr, state: 'sim', provable: 'sim', note: '模拟车身份文本匹配（演示）' };
+      } else {
+        state.currentAddr = { ...addr, state: 'verified', note: '身份文本匹配' };
+      }
     } else if (dsn) {
       log(`  · 识别串「${dsn.slice(0, 24)}」未匹配名字注册表，地址证据保持 ${addr.state || 'candidate'}`, 'warn');
     } else {
@@ -3276,7 +3339,13 @@ async function enterSystem(sys) {
   //   我们等价的可观测事实是「进模块后整块都读出来了」。表唯一/候选态据此升为 verified，
   //   写入闸门才有真实依据（此前 'table' 直接可写，但 0x7F1 是 IC/BKE/EPB/PSM 共享的组地址）。
   if (readFail === 0 && lids.length && state.currentAddr) {
-    state.currentAddr = { ...state.currentAddr, state: 'verified', note: '进模块后整块读取成功' };
+    state.currentAddr = simActive
+      ? { ...state.currentAddr, state: 'sim', provable: 'sim', note: '模拟车整块读取成功（演示）' }
+      : { ...state.currentAddr, state: 'verified', note: '进模块后整块读取成功' };
+  }
+  // 阶段 B 终态护栏：模拟车无论走到哪条成功路径，最终地址证据都保持 sim。
+  if (simActive && state.currentAddr) {
+    state.currentAddr = { ...state.currentAddr, state: 'sim', provable: 'sim' };
   }
   hideLoading();
   if (readFail === 0) {
@@ -3782,6 +3851,9 @@ function addrSafeForAction() {
   // ★ 2026-11-10 修：'bound'（n=0 单帧绑定，新增态）此前不在白名单 → 会被当未知**拒写**。
   //   它等价于 probed：回帧来自该 rx 且该地址有应答，风险由回读校验兜底。
   if (['measured', 'probed', 'bound', 'manual', 'verified', 'table'].includes(st)) return true;
+  // 阶段 B：'sim' 只由模拟模式短路产生（真车路径永不写此态），等价表唯一一选，
+  //   不是放宽真车 gate —— 真车仍只认上面的实测/绑定/核验态。
+  if (st === 'sim') return true;
   if (st === 'candidate' || st === 'probed-unverified') {
     // ★ 2026-11-11 注释收口：地址态在默认路径**不拦写**（原厂无地址态闸门）。
     //   `setSafety({addrState:true})` 时才会走到本函数做严格判定；此时候选态仍放行
