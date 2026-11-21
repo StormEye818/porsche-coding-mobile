@@ -118,7 +118,8 @@
 - 退出码（本机实测）：`0`
 - stdout sha256（本机实测）：`376f8a18172c0a577bdf561e867548823ead048351e3240de435b8b78384a9f3`
 - 机读汇总：`GENERATOR_CONTRACT_PASS count=26 external=3 offline=2 runtime=13 gate=14`
-- 干净 clone 退出码 / stdout sha256：`待独立 QA 实测填入`（本机 sha 仅作对照，不冒充 clone 实测）
+- 干净 clone 退出码 / stdout sha256：`0` / `064fbc21bcf231fc5640e2bc93307ae638d0fe43bf92440310dcea20dd3875f3`（干净 clone 未跑 sync 直接跑 gate）；跑过 `npm test`（含 `npm run sync`）后同命令 stdout sha256 为 `b7cd9c46bc3b3b72f8f17c4e08ddb80204815120d9bc0c296bae106e47b80735`，两态差异仅因 `EXTERNAL_WWW_DATA_IDENTICAL` 由 INFO 转 PASS；机读汇总两态均为 `GENERATOR_CONTRACT_PASS count=26 external=3 offline=2 runtime=13 gate=14`
+- 干净 clone 全链与审计实测：`npm test` 退出 `0`（951s；`test-align431 49 通过/0 失败`、`e2e 127 通过/0 失败`、`all-models 79 通过/0 失败`、`243/243 A`、`QA 16/16 PASS`）；`npm run audit:align431` 两次退出 `0`、stdout 逐字节相同，内部指纹 `sha256=0f5766c1e8b7f30aedbef053162d484692bded5fff13d4b8215f901df2781289`，文件 sha256 `038246944a8d808436415f1c9a8c883d7ce4cbc90a0526b3645922ccd040c158`
 - 覆盖：权威枚举 **git tracked** 的 26 个 `tools/build-*` / `tools/export-*` 生成器全部在册；
   另 3 个本机取证生成器（含 `/Users/se818/...`、`/tmp/...`，未入库）由
   `EXTERNAL_GENERATORS` 段纳管，不写「29 个全部入库」：
