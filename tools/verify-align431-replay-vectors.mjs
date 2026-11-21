@@ -22,6 +22,8 @@ import {
 } from './align431-eval.mjs';
 
 const REAL_ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
+/** 两条历史失败现场向量：e2e 必须输出独立机器行，gate 必须核对为 PASS。 */
+const HISTORICAL_IDS = Object.freeze(['REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC']);
 /** @type {string[]} */
 const failures = [];
 const fail = (message) => failures.push(message);
@@ -129,24 +131,53 @@ if (stdoutFile && existsSync(stdoutFile)) {
   if (run.error || run.status !== 0) fail(`E2E_EXIT ${run.status === null ? -1 : run.status}`);
 }
 const lines = stdout.split('\n');
+/** @type {Map<string, boolean>} VECTOR 行逐条真执行结果，用于交叉核对历史回放机器行。 */
+const vectorLineOk = new Map();
 for (const id of VECTOR_IDS) {
   const line = lines.find((l) => l.startsWith(`VECTOR ${id} `));
   if (!line) {
+    vectorLineOk.set(id, false);
     fail(`E2E_VECTOR_LINE_MISSING ${id}`);
     continue;
   }
   const mFrames = /\bframes=(\d+)\b/.exec(line);
   if (!mFrames || !/\bdiff=\[\]/.test(line)) {
+    vectorLineOk.set(id, false);
     fail(`E2E_VECTOR_DIFF ${id}`);
     continue;
   }
   const got = readVector(id);
   if (got.ok && Number(mFrames[1]) !== got.vector.expected.length) {
+    vectorLineOk.set(id, false);
     fail(`E2E_VECTOR_FRAME_COUNT ${id}`);
+    continue;
   }
+  vectorLineOk.set(id, true);
 }
 if (!lines.some((l) => l.trim() === `E2E_VECTOR_DIFF_EMPTY count=${VECTOR_IDS.length}`)) {
   fail(`E2E_VECTOR_COUNT_NOT_${VECTOR_IDS.length}`);
+}
+
+/* ── [16] 历史失败现场回放机器行：存在、count、逐条状态 + VECTOR 行交叉核对 ── */
+const historicalLine = lines.find((l) => l.startsWith('HISTORICAL_FAILURE_REPLAY '));
+if (!historicalLine) {
+  fail('HISTORICAL_REPLAY_LINE_MISSING');
+} else {
+  const mCount = /\bcount=(\d+)\b/.exec(historicalLine);
+  if (!mCount || Number(mCount[1]) !== HISTORICAL_IDS.length) {
+    fail('HISTORICAL_REPLAY_LINE_COUNT');
+  }
+  for (const id of HISTORICAL_IDS) {
+    const mStatus = new RegExp(`\\b${id}=(PASS|FAIL)\\b`).exec(historicalLine);
+    if (!mStatus) {
+      fail(`HISTORICAL_REPLAY_STATUS_MISSING ${id}`);
+    } else if (mStatus[1] !== 'PASS') {
+      fail(`HISTORICAL_REPLAY_STATUS_FAIL ${id}`);
+    } else if (vectorLineOk.get(id) !== true) {
+      // 机器行声称 PASS 但该组 VECTOR 行缺失/diff≠空 —— 视为机器行自证失败。
+      fail(`HISTORICAL_REPLAY_LINE_INCONSISTENT ${id}`);
+    }
+  }
 }
 
 if (failures.length) {

@@ -1050,7 +1050,9 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
     REPLAY_REALCAR981_BCM: loadVector('REPLAY_REALCAR981_BCM').replay,
     REPLAY_SIM991_IC: loadVector('REPLAY_SIM991_IC').replay,
   };
+  const historicalStatus = Object.create(null);
   for (const id of ['REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC']) {
+    const vectorFailBefore = vectorFail;
     const v = loadVector(id);
     const m16 = new MockAdapter({ latencyMs: 0, replay: replayScripts[id] });
     const e16 = new Elm327(m16, { timeoutMs: 2000 });
@@ -1059,6 +1061,9 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
       await e16.request(req, 2000).catch(() => 'NO DATA');
     }
     const actualFrames = m16.txLog.filter((c) => !c.startsWith('AT'));
+    const framesMatch = v.expected.length > 0
+      && actualFrames.length === v.expected.length
+      && v.expected.every((frame, i) => actualFrames[i] === frame);
     vectorDiff(id, actualFrames);
 
     // 负向断言：不得把「修复后应该成功」伪装成日志证据。
@@ -1077,7 +1082,13 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
       vectorFail++;
       console.log(`REPLAY_ASSERT_FAIL ${id} failureMarkerMissing=${JSON.stringify(missing)}`);
     }
+    // 机器行状态只取自本次真执行的 vectorFail 增量、逐帧 diff 与负向断言，绝不恒为 PASS。
+    historicalStatus[id] = (vectorFail === vectorFailBefore && framesMatch
+      && forged.length === 0 && missing.length === 0) ? 'PASS' : 'FAIL';
   }
+  console.log(`HISTORICAL_FAILURE_REPLAY count=2`
+    + ` REPLAY_REALCAR981_BCM=${historicalStatus.REPLAY_REALCAR981_BCM}`
+    + ` REPLAY_SIM991_IC=${historicalStatus.REPLAY_SIM991_IC}`);
 }
 
 console.log(vectorFail
