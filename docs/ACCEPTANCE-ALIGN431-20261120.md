@@ -108,8 +108,27 @@
   三本 `docs/evidence/431-*.md`、`docs/ACCEPTANCE-ALIGN431-20261120.md`、
   `docs/工程规范-验收文档与发版面.md`、`tools/verify-align431-qa.mjs`、
   `tools/verify-align431-injection.mjs`、`tools/align431-rows.json`、`tools/align431-eval.mjs`、
-  `data/align431-evidence-registry.json`、`tools/align431-vectors/`（5 份）。
+  `data/align431-evidence-registry.json`、`tools/align431-vectors/`（5 份）、
+  `tools/verify-generator-consumer-contract.mjs`、`tools/generator-consumer-contracts.json`。
 - 退出码：`0`（缺失项数 = 0；结论于 T05 提交后复查）
+
+### 1.10 `node tools/verify-generator-consumer-contract.mjs`（阶段 F 契约巡检 gate）
+
+- 命令：`node tools/verify-generator-consumer-contract.mjs`
+- 退出码（本机实测）：`0`
+- stdout sha256（本机实测）：`376f8a18172c0a577bdf561e867548823ead048351e3240de435b8b78384a9f3`
+- 机读汇总：`GENERATOR_CONTRACT_PASS count=26 external=3 offline=2 runtime=13 gate=14`
+- 干净 clone 退出码 / stdout sha256：`待独立 QA 实测填入`（本机 sha 仅作对照，不冒充 clone 实测）
+- 覆盖：权威枚举 **git tracked** 的 26 个 `tools/build-*` / `tools/export-*` 生成器全部在册；
+  另 3 个本机取证生成器（含 `/Users/se818/...`、`/tmp/...`，未入库）由
+  `EXTERNAL_GENERATORS` 段纳管，不写「29 个全部入库」：
+  `data/function-sequences.json`、`data/special-functions-real.json` 为
+  generator-external / output-tracked / runtime-consumed（sha 钉住 + FEATURE_DATA_SOURCES +
+  sync 同步 + www/data 字节一致 + 真消费者调用）；
+  `data/module-disposition-252.json` 为 offline-only（不计 runtime A）。
+  `nodeFunction` 用真实产物真调消费者，`gateCommand` 真跑 gate 验退出码/机器行。
+- 可证伪性：新增未登记生成器 / 改错 output 路径 / 把真被消费产物标 offline-only 三类注入均转红
+  （见 `docs/工程规范-验收文档与发版面.md` §4 的契约巡检条款）。
 
 ## 2. 本机命令集
 

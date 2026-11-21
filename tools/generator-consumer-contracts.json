@@ -1,0 +1,484 @@
+{
+  "schemaVersion": 2,
+  "purpose": "阶段F：git tracked 的 26 个 tools/build-*/tools/export-* 生成器 → 真实产物 → 真实消费者契约；另设 EXTERNAL_GENERATORS 纳管 3 个本机取证生成器（未入库），其 tracked 产物或 offline-only 产物单独真验证。每条 check 都是真执行规格，不含 pass/fail 手工布尔字段。",
+  "countExpected": 26,
+  "runtimeCountedTypes": [
+    "nodeFunction",
+    "gateCommand"
+  ],
+  "contracts": [
+    {
+      "generator": "tools/build-acceptance-981.py",
+      "artifact": "data/acceptance-981-modules.tsv",
+      "consumer": "offline-only",
+      "check": {
+        "reason": "981 模块验收矩阵；运行期零 fetch（.tsv 不在 scripts/sync.mjs 的 .json 同步范围），243 行判定不引用；仅证明未被消费，不计入 runtime A。",
+        "prove": "notConsumedByRuntimeOrRows"
+      },
+      "evidence": "真执行检查为非消费证明：rows 全文/app.js 精确 fetch 集/special-catalog 的 FEATURE_DATA_SOURCES 均不含该产物；干净 clone 可缺席，不把本地 ignored 文件算作已验证。"
+    },
+    {
+      "generator": "tools/build-align431-evidence-registry.mjs",
+      "artifact": "data/align431-evidence-registry.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-align431-evidence-registry.mjs",
+        "expectExit": 0,
+        "expectLine": "VERIFY_EVIDENCE_REGISTRY PASS"
+      },
+      "evidence": "真跑纳管 registry 的独立 gate，按退出码与其机器行判定，而非 grep 源码中的断言名。"
+    },
+    {
+      "generator": "tools/build-align431-rows.mjs",
+      "artifact": "tools/align431-rows.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./tools/align431-eval.mjs",
+        "fn": "evaluateCheck",
+        "args": [
+          {
+            "$": "rowsNestedEvidenceCheck"
+          }
+        ],
+        "assert": {
+          "fieldEquals": {
+            "field": "ok",
+            "value": true
+          }
+        }
+      },
+      "evidence": "从真实 rows 产物中取一条嵌套 evidence 检查描述符，调用真实 eval 的 evaluateCheck 求值；描述符来自产物而非手写 fixture。"
+    },
+    {
+      "generator": "tools/build-actuators.py",
+      "artifact": "data/actuator.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/special-catalog.js",
+        "fn": "loadFeatureCatalog",
+        "args": [
+          {
+            "$": "diskFetch"
+          }
+        ],
+        "assert": {
+          "pathCountGte": {
+            "path": [
+              "sources",
+              "actuator.json",
+              "items"
+            ],
+            "min": 1
+          }
+        },
+        "mode": "async"
+      },
+      "evidence": "真实 UI 侧消费者 loadFeatureCatalog 用注入的磁盘 fetch 真读 actuator.json 并 enumeratePages；断言枚举出的 items 非空。"
+    },
+    {
+      "generator": "tools/build-comm-addr-table.mjs",
+      "artifact": "data/comm-addr-table.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-oem-probe-diff.mjs",
+        "expectExit": 0,
+        "expectLine": "PASS / 0 FAIL"
+      },
+      "evidence": "该 gate 的复跑命令显式包含 build-comm-addr-table.mjs，真跑后验退出码与 PASS 机器行。"
+    },
+    {
+      "generator": "tools/build-dsn-module-sysids.mjs",
+      "artifact": "data/dsn-module-sysids.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-hb1.mjs",
+        "expectExit": 0,
+        "expectLine": "10 通过 / 0 失败"
+      },
+      "evidence": "HB-1 门禁真读 dsn-module-sysids.json 做 canonicalType 严格超集硬校验。"
+    },
+    {
+      "generator": "tools/build-ident-registry.py",
+      "artifact": "data/ident-registry.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/sweep.js",
+        "fn": "moduleFromIdent",
+        "args": [
+          "900000",
+          {
+            "$": "artifactField",
+            "path": [
+              "identToVariant"
+            ]
+          }
+        ],
+        "assert": {
+          "countGte": 1
+        }
+      },
+      "evidence": "真实身份裁决函数 moduleFromIdent 用产物里的 identToVariant 真值调用，代表识别串 900000 必须解出模块。"
+    },
+    {
+      "generator": "tools/build-model-sysid-map.mjs",
+      "artifact": "src/model-sysid-map.js",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/model-sysid-map.js",
+        "fn": "sysIdForModule",
+        "args": [
+          "ACC3",
+          "Macan"
+        ],
+        "assert": {
+          "equals": "0x0f40"
+        }
+      },
+      "evidence": "真实运行时映射函数 sysIdForModule 直接调用生成产物中的表，Macan ACC3 必须解析到 0x0f40。"
+    },
+    {
+      "generator": "tools/build-oem-enter-frames.mjs",
+      "artifact": "src/oem-enter-frames.js",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/oem-enter-frames.js",
+        "fn": "oemEnterSequences",
+        "args": [
+          "0x0e23"
+        ],
+        "assert": {
+          "countGte": 1
+        }
+      },
+      "evidence": "真实消费者 oemEnterSequences 调用生成产物中的序列表，0x0e23 必须返回非空进模块序列。"
+    },
+    {
+      "generator": "tools/build-oem-session-table.mjs",
+      "artifact": "src/oem-session-table.js",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/oem-session-table.js",
+        "fn": "oemSessionFor",
+        "args": [
+          "0x0108"
+        ],
+        "assert": {
+          "hasAllKeys": [
+            "session",
+            "requireResponse",
+            "gen",
+            "seq"
+          ]
+        }
+      },
+      "evidence": "真实消费者 oemSessionFor 调用生成产物中的会话表，非 sessionless sysId 必须返回完整四字段。"
+    },
+    {
+      "generator": "tools/build-platform-type-map.mjs",
+      "artifact": "data/platform-type-map.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/seedkey-nonasap.js",
+        "fn": "platformForModel",
+        "args": [
+          "Taycan"
+        ],
+        "assert": {
+          "named": "platformTypeMapAgreesWithRuntime"
+        }
+      },
+      "evidence": "真实 seed/key 平台选择函数 platformForModel('Taycan') 得 J1，与产物 platformTypes 的 J1 项交叉一致；不是字符串命中。"
+    },
+    {
+      "generator": "tools/build-routines-verified.py",
+      "artifact": "data/routines-verified.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/special-catalog.js",
+        "fn": "loadFeatureCatalog",
+        "args": [
+          {
+            "$": "diskFetch"
+          }
+        ],
+        "assert": {
+          "pathCountGte": {
+            "path": [
+              "sources",
+              "routines-verified.json",
+              "items"
+            ],
+            "min": 1
+          }
+        },
+        "mode": "async"
+      },
+      "evidence": "loadFeatureCatalog 真读 routines-verified.json 并断言 items 非空，证明已验证例程清单被功能全集消费者实际取用。"
+    },
+    {
+      "generator": "tools/build-special-map.py",
+      "artifact": "data/special-function-map.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/special-catalog.js",
+        "fn": "loadFeatureCatalog",
+        "args": [
+          {
+            "$": "diskFetch"
+          }
+        ],
+        "assert": {
+          "jsonPathNonEmpty": [
+            "sources",
+            "special-function-map.json",
+            "maps"
+          ]
+        },
+        "mode": "async"
+      },
+      "evidence": "loadFeatureCatalog 真读 special-function-map.json，断言 maps 非空。"
+    },
+    {
+      "generator": "tools/build-vin-type-table.mjs",
+      "artifact": "data/vin-type-table.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-hb1.mjs",
+        "expectExit": 0,
+        "expectLine": "10 通过 / 0 失败"
+      },
+      "evidence": "HB-1 门禁复跑命令显式包含 build-vin-type-table.mjs，真读 vin-type-table.json 并验机器行。"
+    },
+    {
+      "generator": "tools/build-write-alignment.mjs",
+      "artifact": "src/write-alignment.js",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/write-alignment.js",
+        "fn": "evaluateWriteAlignmentChecks",
+        "args": [],
+        "assert": {
+          "fieldEquals": {
+            "field": "aligned",
+            "value": true
+          }
+        }
+      },
+      "evidence": "真实写闸门纯函数 evaluateWriteAlignmentChecks 对生成产物中的四组帧逐条复算，必须 aligned。"
+    },
+    {
+      "generator": "tools/export-981-sysids.py",
+      "artifact": "data/981-sysids.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-sysdata-comm.mjs",
+        "expectExit": 0,
+        "expectLine": "16 通过 / 0 失败"
+      },
+      "evidence": "sysdata-comm 门禁真读 981-sysids.json（本代 sysId 真值），验退出码与 16/0 机器行。"
+    },
+    {
+      "generator": "tools/export-actinfo-modules.py",
+      "artifact": "data/actinfo-modules.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-catalog-frame-bytes.mjs",
+        "expectExit": 0,
+        "expectLine": "CATALOG_FRAME_BYTE_EQUAL_431 PASS"
+      },
+      "evidence": "构帧字节门禁真读 actinfo-modules.json 做模块级地址解析，验 2F/31 逐字节相等机器行。"
+    },
+    {
+      "generator": "tools/export-all-model-sysids.py",
+      "artifact": "data/all-model-sysids.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-all-models.mjs",
+        "expectExit": 0,
+        "expectLine": "79 通过 / 0 失败"
+      },
+      "evidence": "全车型门禁 [A] 真读 all-model-sysids.json 做平台/代际唯一映射断言。"
+    },
+    {
+      "generator": "tools/export-bind-plan.py",
+      "artifact": "data/bind-plan.json",
+      "consumer": "nodeFunction",
+      "check": {
+        "module": "./src/sweep.js",
+        "fn": "selectAddrRows",
+        "args": [
+          {
+            "$": "artifact"
+          },
+          [
+            "0x0e23"
+          ]
+        ],
+        "assert": {
+          "allTruthyField": "requestKey"
+        }
+      },
+      "evidence": "独立调用真实 selectAddrRows(realBindPlan, sysIds)，代表 sysId 0x0e23 的每一行 requestKey 必须来自生产字段；不复制阶段 A gate 的断言实现。"
+    },
+    {
+      "generator": "tools/export-coding-address-sources.py",
+      "artifact": "data/coding-address-sources.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-all-models.mjs",
+        "expectExit": 0,
+        "expectLine": "79 通过 / 0 失败"
+      },
+      "evidence": "全车型门禁 [E] 真读 coding-address-sources.json 做编码地址来源断言。"
+    },
+    {
+      "generator": "tools/export-comm-shared-keys.py",
+      "artifact": "data/comm-shared-keys.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-all-models.mjs",
+        "expectExit": 0,
+        "expectLine": "79 通过 / 0 失败"
+      },
+      "evidence": "全车型门禁 [F] 真读 comm-shared-keys.json 做共享键 0x03A7 锚点断言。"
+    },
+    {
+      "generator": "tools/export-drivelinks-v3.py",
+      "artifact": "data/drivelinks-v3.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-align431-static-truth.mjs",
+        "expectExit": 0,
+        "expectLine": "STATIC_TRUTH_PASS count=21"
+      },
+      "evidence": "静态真值门禁真读 drivelinks-v3.json 做 blockOff/地址签名复算。"
+    },
+    {
+      "generator": "tools/export-ecu-address.py",
+      "artifact": "data/ecu-addresses.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-all-models.mjs",
+        "expectExit": 0,
+        "expectLine": "79 通过 / 0 失败"
+      },
+      "evidence": "全车型门禁真读 ecu-addresses.json 做地址表推广断言。"
+    },
+    {
+      "generator": "tools/export-sysdata-comm.py",
+      "artifact": "data/sysdata-comm.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-sysdata-comm.mjs",
+        "expectExit": 0,
+        "expectLine": "16 通过 / 0 失败"
+      },
+      "evidence": "sysdata-comm 门禁同名真消费者，16 条断言逐项实跑。"
+    },
+    {
+      "generator": "tools/export-sysdata-routing.py",
+      "artifact": "data/sysdata-routing.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-all-models.mjs",
+        "expectExit": 0,
+        "expectLine": "79 通过 / 0 失败"
+      },
+      "evidence": "全车型门禁 [C] 真读 sysdata-routing.json 做 22 锚点/byGeneration 断言。"
+    },
+    {
+      "generator": "tools/export-variant-sysids.mjs",
+      "artifact": "data/variant-sysids.json",
+      "consumer": "gateCommand",
+      "check": {
+        "command": "node tools/verify-write-gate.mjs",
+        "expectExit": 0,
+        "expectLine": "60 通过 / 0 失败"
+      },
+      "evidence": "写闸门门禁真读 variant-sysids.json 做变体 sysId 写路径断言。"
+    }
+  ],
+  "externalExpected": 3,
+  "EXTERNAL_GENERATORS": [
+    {
+      "generator": "tools/build-function-sequences.py",
+      "whyNotTracked": "本机取证工具，含绝对路径 /tmp/tmpl-refs.json（:4,:155）与 /Users/se818/porsche-mapper/ref/.../libPORSCHE_SPECF.so（:21）；入库破坏公开面。",
+      "evidenceLines": [
+        4,
+        21,
+        155
+      ],
+      "outputArtifact": "data/function-sequences.json",
+      "artifactTracking": "tracked",
+      "consumerKind": "runtime-consumed",
+      "sha256": "05079506d57241e22101065ce9556a4b683bd3b2460f1df9f41b1db9a30f11db",
+      "check": {
+        "module": "./src/special-catalog.js",
+        "fn": "loadFeatureCatalog",
+        "args": [
+          {
+            "$": "diskFetch"
+          }
+        ],
+        "mode": "async",
+        "assert": {
+          "pathCountGte": {
+            "path": [
+              "sources",
+              "function-sequences.json",
+              "functions"
+            ],
+            "min": 1
+          }
+        }
+      },
+      "evidence": "产物已入库且 sha 钉在本清单；FEATURE_DATA_SOURCES 与 sync.mjs RUNTIME_REACHABLE 均含该产物，真实 UI 消费者 loadFeatureCatalog 用磁盘 fetch 真读并枚举 functions。"
+    },
+    {
+      "generator": "tools/build-special-catalog.py",
+      "whyNotTracked": "本机取证工具，含 /Users/se818/porsche-mapper/ref/.../libPORSCHE_SPECF.so（:19）与 /tmp/func-routines.json（:142）；入库破坏公开面。",
+      "evidenceLines": [
+        19,
+        142
+      ],
+      "outputArtifact": "data/special-functions-real.json",
+      "artifactTracking": "tracked",
+      "consumerKind": "runtime-consumed",
+      "sha256": "f0a24b1969db7c41248f86ee2fd0edd71ca271c5acd96cf7658cd574229515e0",
+      "check": {
+        "module": "./src/special-catalog.js",
+        "fn": "loadFeatureCatalog",
+        "args": [
+          {
+            "$": "diskFetch"
+          }
+        ],
+        "mode": "async",
+        "assert": {
+          "jsonPathNonEmpty": [
+            "sources",
+            "special-functions-real.json",
+            "platforms"
+          ]
+        }
+      },
+      "evidence": "产物已入库且 sha 钉在本清单；FEATURE_DATA_SOURCES / sync 同步真实消费，loadFeatureCatalog 真读并校验 platforms 非空。"
+    },
+    {
+      "generator": "tools/build-module-disposition.py",
+      "whyNotTracked": "服务本地 ignored 产物 data/module-disposition-252.json；含 /Users/se818/porsche-mapper/ref/decoded/*.BIN（:35,:36）。",
+      "evidenceLines": [
+        35,
+        36
+      ],
+      "outputArtifact": "data/module-disposition-252.json",
+      "artifactTracking": "local-ignored",
+      "consumerKind": "offline-only",
+      "check": {
+        "reason": "离线覆盖率审计中间产物；运行期零 fetch，243 行判定不引用；干净 clone 可缺席。",
+        "prove": "notConsumedByRuntimeOrRows"
+      },
+      "evidence": "offline-only 不计 runtime A；gate 用非消费证明（rows/appFetch/featureCatalog 三处）判定，且自注入能红。"
+    }
+  ]
+}
