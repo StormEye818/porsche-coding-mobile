@@ -143,8 +143,13 @@ async function nativeProbeForRow(row) {
   const ids = frameIdsOf(raw);
   const body = Array.from(parseRespAuto(raw, PROBE_FRAME, 0x22).body || [])
     .map((x) => x.toString(16).padStart(2, '0')).join('');
+  // ★ 阶段 C：请求键→CAN 绑定的真值只能来自原生回帧上报。有 body 但 frameIdsOf
+  //   解析不出帧 ID（或帧 ID ≠ 本行 rx）时，绝不拿静态 row.rx 冒充观测帧 ID。
   if (classifyProbe(row, ids, body) !== 'alive') return { uxth: 0 };
-  const frameId = ids.length ? ids.find((id) => id === row.rx) : row.rx;
+  const frameId = ids.length ? ids.find((id) => id === row.rx) : undefined;
+  if (!Number.isInteger(frameId) || frameId !== row.rx) {
+    return { uxth: 0, reason: 'NO_OBSERVED_FRAME_ID' };
+  }
   return {
     uxth: 1,
     source: 'native',
@@ -734,10 +739,16 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
           const body = Array.from(pr.body || [])
             .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
           if (!body) { note(`${cmd} → 无应答${raw ? `（${raw.slice(0, 16)}）` : ''}`); return { uxth: 0 }; }
-          note(`${cmd} → ${ids.length ? '[' + ids.map((x) => hex(x)).join('/') + '] ' : ''}${body.slice(0, 24)}`);
+          // ★ 阶段 C：即使有 body，帧 ID 也必须由 frameIdsOf(raw) 实际观测且等于候选 rx。
+          //   p.rx 只用于 ATSH/ATCRA 选候选，不得作为 reportNative 的 frameId 兜底来源。
+          const frameId = ids.length ? ids.find((x) => x === p.rx) : undefined;
+          if (!Number.isInteger(frameId) || frameId !== p.rx) {
+            note(`${cmd} → 无可解析的原生回帧 ID，不绑定（有 body 也不是原生上报）`);
+            return { uxth: 0, reason: 'NO_OBSERVED_FRAME_ID' };
+          }
+          note(`${cmd} → [${ids.map((x) => hex(x)).join('/')}] ${body.slice(0, 24)}`);
           return { uxth: 1, source: 'native',
-            frameId: ids.length ? ids.find((x) => x === p.rx) : p.rx,
-            can: { tx: p.tx, rx: p.rx }, body };
+            frameId, can: { tx: p.tx, rx: p.rx }, body };
         });
         if (!result.ok) { note(`${cmd} → ${result.code}（无原生上报，不绑）`); continue; }
         return await finish({ tx: p.tx, rx: p.rx, cmd, ident: '', confidence: 'bound',
