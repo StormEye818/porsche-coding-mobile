@@ -18,8 +18,10 @@
  */
 import {
   readJson, scanForbiddenWords, evaluateRow, carrierStatusOf, sha256, sortedKeys, fileExists,
-  clearGateCache, runGate, assertionIntegrity,
+  clearGateCache, runGate, assertionIntegrity, E2E_GATE,
 } from './align431-eval.mjs';
+// ★ 阶段 D1：高风险覆盖必须由**生产消费者**证明，不用 rows/plan 的静态字段自证。
+import { selectAddrRows } from '../src/sweep.js';
 
 const ROWS_FILE = 'tools/align431-rows.json';
 const rows = readJson(ROWS_FILE);
@@ -41,10 +43,15 @@ function u1TripleMissing(row) {
 }
 
 const allRows = [...(rows.baselineRows || []), ...(rows.addedRows || [])];
+
+// ★ 阶段 D1：先真跑 e2e 取得 stdout，再让每一行在这份 live 证据上重算。
+//   e2e 未通过时传空 stdout —— vectorAnswers 取不到 VECTOR 行，所有向量行立即非 A。
+const e2eRun = runGate(E2E_GATE);
+const liveCtx = { e2eStdout: e2eRun.exitCode === 0 ? (e2eRun.stdout || '') : '' };
 const evaluated = allRows.map((row) => {
-  // verdict / u1CarrierStatus 一律按「审计运行时的磁盘实况」重算，
+  // verdict / u1CarrierStatus 一律按「审计运行时的磁盘实况 + e2e 真执行 stdout」重算，
   // 不信任 JSON 里落盘的快照值 —— 门禁文件被改名/落盘时立即反映（反例注入可证）。
-  const live = evaluateRow(row);
+  const live = evaluateRow(row, liveCtx);
   return {
     row,
     verdict: live.verdict,
@@ -54,6 +61,11 @@ const evaluated = allRows.map((row) => {
     u1Missing: u1TripleMissing(row),
     // ★ 前置未满足（gate 退出码 2）与「内容不一致」是两件事，必须各自可数。
     preconditionMissing: live.gatePreconditionMissing === true,
+    liveMode: live.liveMode,
+    liveFacts: live.liveFacts,
+    liveSymbolHitOnly: live.liveSymbolHitOnly === true,
+    liveRuntimeAnswerBacked: live.liveRuntimeAnswerBacked === true,
+    snapshotMismatch: live.snapshotMismatch || [],
   };
 });
 
@@ -73,7 +85,8 @@ for (const e of evaluated) {
   const two = `取证等级=${r.forensicGrade} | U-1载体状态=${e.u1CarrierStatus}`;
   const t04 = `E0=${r.e0Coord ? `${r.e0Coord.evidenceId}:${r.e0Coord.file}:${r.e0Coord.locator}` : '-'}`
     + ` | 向量=${r.vectorId || '-'} | provable=${r.provable || '-'}`
-    + ` | runtime应答=${r.runtimeAnswerBacked === true ? 1 : 0} | 符号命中=${r.symbolHitOnly === true ? 1 : 0}`;
+    + ` | 快照runtime=${r.runtimeAnswerBacked === true ? 1 : 0} | 快照符号=${r.symbolHitOnly === true ? 1 : 0}`
+    + ` | LIVE 运行时应答=${e.liveRuntimeAnswerBacked ? 1 : 0} 符号命中=${e.liveSymbolHitOnly ? 1 : 0}`;
   const extra = `gate=${r.gate}#${r.assertion} | diffCmd=${r.diffCmd} | check=${e.detail}`;
   emit(`[${e.verdict === 'A' ? 'A  ' : '非A'}] ${r.rowId} | 分类=${r.category} | ${coord} | ${two} | ${t04} | ${extra}`);
 }
@@ -132,14 +145,16 @@ emit('');
 
 // ⑥ T04 双举证：E0 坐标 / 向量 diff / provable / 24 行重判 / 注入自检
 const integrity = assertionIntegrity(allRows, rows.t04?.assertionIndex);
-const symbolOnlyA = evaluated.filter((e) => e.verdict === 'A' && e.row.symbolHitOnly === true).length;
+// ★ 阶段 D1：A 行的符号命中 / 零应答一律用 live 重算值，不信 rows 快照。
+const symbolOnlyA = evaluated.filter((e) => e.verdict === 'A' && e.liveSymbolHitOnly).length;
 const zeroAnswerA = evaluated.filter((e) => e.verdict === 'A'
-  && e.row.runtimeRequired === true && e.row.runtimeAnswerBacked !== true).length;
+  && e.row.runtimeRequired === true && !e.liveRuntimeAnswerBacked).length;
+const snapshotMismatchA = evaluated.filter((e) => e.verdict === 'A' && e.snapshotMismatch.length).length;
 const noCoordA = evaluated.filter((e) => e.verdict === 'A'
   && !(e.row.e0Coord && e.row.e0Coord.reproduceDigest)).length;
 const bcd = evaluated.filter((e) => ['B', 'C', 'D'].includes(e.row.originalVerdict));
 const bcdA = bcd.filter((e) => e.verdict === 'A').length;
-const bcdSymbol = bcd.filter((e) => e.row.symbolHitOnly === true).length;
+const bcdSymbol = bcd.filter((e) => e.liveSymbolHitOnly).length;
 const plan = readJson('data/bind-plan.json') || {};
 const highRisk = sortedKeys(plan.ecu || {}).filter((s) => {
   const e = plan.ecu[s] || {};
@@ -149,11 +164,22 @@ const highRiskCovered = highRisk.filter((s) => {
   const e = plan.ecu[s] || {};
   return e.provable === 'static' && Boolean(e.e0Coord);
 }).length;
+// ★ 阶段 D1：真调生产消费者 selectAddrRows()，证明高风险 sysId 有 runtime row + 请求键。
+const liveCoveredSysIds = highRisk.filter((s) => {
+  const runtimeRows = selectAddrRows(plan, [s]);
+  return runtimeRows.length > 0 && runtimeRows.every((r) => typeof r.requestKey === 'string' && r.requestKey.length > 0);
+});
+const liveHighRiskCovered = liveCoveredSysIds.length;
+const liveAnswers = evaluated.reduce((n, e) => n + (Number(e.liveFacts?.answers) || 0), 0);
 emit('--- ⑥ T04 双举证 / 24 行重判 / 注入自检 ---');
 emit(`E0坐标覆盖=${rows.t04?.e0CoveredRows ?? 0}/${allRows.length} 向量应答覆盖=${rows.t04?.vectorBackedRows ?? 0}/${allRows.length} 无坐标仍标A=${noCoordA}`);
 emit(`靠符号命中翻 A=${symbolOnlyA} 零运行时应答仍标 A=${zeroAnswerA} NO_ASSERTION_DELETED=${integrity.ok} 断言数=${integrity.count}`);
-emit(`24行重判 原B/C/D=${bcd.length} 现A=${bcdA} 回退非A=${bcd.length - bcdA} 其中符号命中=${bcdSymbol}`);
+emit(`24行重判 原B/C/D=${bcd.length} 现A=${bcdA} 回退非A=${bcd.length - bcdA} 其中live符号命中=${bcdSymbol}`);
 emit(`高风险 sysId 覆盖=${highRiskCovered}/${highRisk.length}（provable:static + E0 坐标双字段机读）`);
+emit('--- ⑥b 阶段 D1 live 重算汇总（不读 rows 快照判 A） ---');
+emit(`LIVE_RECOMPUTE=1 LIVE_SOURCE=e2e_stdout+selectAddrRows+registry LIVE_E2E_EXIT=${e2eRun.exitCode === null ? 'N/A' : e2eRun.exitCode}`);
+emit(`LIVE_SYMBOL_HIT_ONLY=${symbolOnlyA} LIVE_ZERO_ANSWER_A=${zeroAnswerA} LIVE_SNAPSHOT_MISMATCH=${snapshotMismatchA}`);
+emit(`LIVE_HIGH_RISK_COVERED=${liveHighRiskCovered}/${highRisk.length} LIVE_VECTOR_ANSWERS=${liveAnswers}`);
 const injectRun = runGate('tools/verify-align431-injection.mjs');
 const rateM = /INJECTION_RED_RATE (\d+)%/.exec(injectRun.stdout || '');
 const falseM = /INJECTION_FALSE_GREEN (\d+)/.exec(injectRun.stdout || '');
@@ -174,8 +200,10 @@ const nonACount = nonA.length;
 //   它不是内容缺陷，处置方向是「先跑 npm run sync」；混进「非 A」会把人引去查代码。
 const precondRows = nonA.filter((e) => e.preconditionMissing);
 const precondCount = precondRows.length;
-const t04Ok = symbolOnlyA === 0 && zeroAnswerA === 0 && noCoordA === 0 && integrity.ok
-  && highRiskCovered === highRisk.length && injectRate === 100 && injectFalseGreen === 0
+const t04Ok = symbolOnlyA === 0 && zeroAnswerA === 0 && snapshotMismatchA === 0
+  && noCoordA === 0 && integrity.ok
+  && highRiskCovered === highRisk.length && liveHighRiskCovered === highRisk.length
+  && e2eRun.exitCode === 0 && injectRate === 100 && injectFalseGreen === 0
   && injectRed.split('/')[0] === injectRed.split('/')[1] && injectRun.exitCode === 0;
 const allA = nonACount === 0 && fw.asClosingReason === 0 && u1MissingRows.length === 0
   && rows.baseline.deleteZero && rows.baseline.mergeZero && rows.baseline.originalNumberingPreserved
@@ -193,10 +221,13 @@ if (u1MissingRows.length > 0) blockers.push(`三件套缺失 ${u1MissingRows.len
 if (!rows.baseline.deleteZero) blockers.push('删行≠0');
 if (!rows.baseline.mergeZero) blockers.push('合并行≠0');
 if (!integrity.ok) blockers.push('NO_ASSERTION_DELETED 失败');
-if (symbolOnlyA > 0) blockers.push(`靠符号命中翻 A ${symbolOnlyA}`);
-if (zeroAnswerA > 0) blockers.push(`零运行时应答仍标 A ${zeroAnswerA}`);
+if (symbolOnlyA > 0) blockers.push(`live 靠符号命中翻 A ${symbolOnlyA}`);
+if (zeroAnswerA > 0) blockers.push(`live 零运行时应答仍标 A ${zeroAnswerA}`);
+if (snapshotMismatchA > 0) blockers.push(`rows 快照与 live 重算不一致 ${snapshotMismatchA}`);
 if (noCoordA > 0) blockers.push(`无 E0 坐标仍标 A ${noCoordA}`);
-if (highRiskCovered !== highRisk.length) blockers.push(`高风险 sysId 覆盖 ${highRiskCovered}/${highRisk.length}`);
+if (highRiskCovered !== highRisk.length) blockers.push(`高风险 sysId 静态覆盖 ${highRiskCovered}/${highRisk.length}`);
+if (liveHighRiskCovered !== highRisk.length) blockers.push(`高风险 sysId live runtime row 覆盖 ${liveHighRiskCovered}/${highRisk.length}`);
+if (e2eRun.exitCode !== 0) blockers.push(`e2e 真执行 exit=${e2eRun.exitCode}`);
 if (injectRate !== 100 || injectFalseGreen !== 0 || injectRed.split('/')[0] !== injectRed.split('/')[1]) {
   blockers.push(`注入自检能红率=${injectRate}% 假绿=${injectFalseGreen}`);
 }

@@ -243,7 +243,14 @@ export function readVector(vectorId, ctx) {
   if (hasOwn(ctx?.vectors, vectorId)) {
     const v = ctx.vectors[vectorId];
     const shape = validateVector(v, vectorId);
-    return shape.ok ? { ok: true, vector: v } : shape;
+    if (!shape.ok) return shape;
+    // ★ 阶段 D1：内存覆写的向量同样受钉住摘要约束（例：把 replay 改成全 NO DATA
+    //   而不改 sha256 必须转红）。应答真值只从 e2e stdout 取，这里的摘要只是
+    //   「向量文件未被篡改」的负向校验，不是应答举证。
+    if (v.sha256 && v.sha256 !== vectorDigest(v)) {
+      return { ok: false, detail: `${vectorId} 内存覆写向量摘要不符（replay 被改但 sha256 未更新）` };
+    }
+    return { ok: true, vector: v };
   }
   const rel = `${VECTOR_DIR}/${vectorId}.json`;
   const text = readTextCtx(rel, ctx);
@@ -279,14 +286,68 @@ function validateVector(v, expectedId) {
   return { ok: true };
 }
 
-/** 向量应答举证：至少一帧非 NO DATA 的实际应答。 */
-export function vectorAnswers(v) {
+/**
+ * ★ 阶段 D1：应答举证只认 e2e **真执行 stdout**，不再把向量 replay JSON 文本当应答。
+ *
+ * 证据优先级（逐条从 stdout 取，绝不读 v.replay.resp 作为正响应）：
+ *   ① `VECTOR_ANSWER <id> ...` —— 新增的实际应答行（若 e2e 后续补发）；
+ *   ② `VECTOR_DUMP <id> actual=[...]` —— e2e 现有 ALIGN431_VECTOR_DUMP=1 的真实帧 dump；
+ *   ③ `VECTOR <id> frames=n diff=[]` —— e2e 真执行输出：diff 由实发帧与 expected 逐帧比对
+ *      得出，frames>0 且 diff=[] 证明该 replay 脚本被 Coder 真正消费并发完 n 帧。
+ * 缺 VECTOR 行一律返回空数组（删除该行 → 应答不成立，可证伪）。
+ *
+ * 兼容说明：`vectorAnswers(v)` 不传 stdout 的旧签名只服务 build 期快照
+ * （tools/build-align431-rows.mjs 不可改）；审计 / QA / 注入路径一律传 stdout。
+ */
+export function vectorAnswers(v, stdout) {
+  if (typeof stdout === 'string') return vectorAnswersFromStdout(v, stdout);
+  // 仅 build 期生成 rows.json 快照使用；不得在审计/QA 中作为应答举证。
   return (v?.replay || []).filter((x) => x && x.resp && String(x.resp).trim() !== 'NO DATA');
 }
 
+/** 从 e2e stdout 提取某向量的 live 应答证明条目（每项含 source，便于审计自证来源）。 */
+export function vectorAnswersFromStdout(v, stdout) {
+  const id = v?.vectorId;
+  if (!id || typeof stdout !== 'string') return [];
+  const lines = stdout.split('\n');
+  const vectorLine = lines.find((l) => l.startsWith(`VECTOR ${id} `));
+  if (!vectorLine) return [];
+  const framesM = /\bframes=(\d+)\b/.exec(vectorLine);
+  if (!framesM) return [];
+  const frames = Number(framesM[1]);
+  if (!(frames > 0) || !/\bdiff=\[\]/.test(vectorLine)) return [];
+  // 帧数与向量 expected 长度不一致时不给应答举证（防止拼接的假 stdout）。
+  if (Array.isArray(v.expected) && v.expected.length && frames !== v.expected.length) return [];
+
+  const answerLines = lines.filter((l) => l.startsWith(`VECTOR_ANSWER ${id} `)
+    && !/NO DATA/.test(l));
+  if (answerLines.length) {
+    return answerLines.map((line, i) => ({ source: 'VECTOR_ANSWER', frame: `answer-${i + 1}` }));
+  }
+  const dumpLine = lines.find((l) => l.startsWith(`VECTOR_DUMP ${id} `));
+  if (dumpLine) {
+    const m = /actual=(\[[^\n]*\])/.exec(dumpLine);
+    if (m) {
+      try {
+        const actual = JSON.parse(m[1]);
+        if (Array.isArray(actual) && actual.length) {
+          return actual.map((frame, i) => ({ source: 'VECTOR_DUMP', frame: `frame-${i + 1}:${String(frame)}` }));
+        }
+      } catch { /* dump 损坏则落到 VECTOR 行证据 */ }
+    }
+  }
+  return Array.from({ length: frames }, (_, i) => ({ source: 'VECTOR', frame: `frame-${i + 1}` }));
+}
+
+/** 向量声明全 NO DATA 的负向断言（不是应答举证；举证仍只来自 e2e stdout）。 */
+function vectorDeclaresAllNoData(v) {
+  const replay = Array.isArray(v?.replay) ? v.replay : [];
+  return replay.length > 0 && replay.every((x) => !x || !x.resp || String(x.resp).trim() === 'NO DATA');
+}
+
 /**
- * `runtimeProbeVector`：向量在册 + 摘要一致 + 帧序 diff=空 + 至少一帧真实应答。
- * 默认把 e2e-flow.mjs 真跑一次（runGate 缓存），从 stdout 的 `VECTOR <id> ... diff=[]` 取 diff。
+ * `runtimeProbeVector`：向量在册 + 摘要一致 + 帧序 diff=空 + e2e stdout 实跑应答举证。
+ * 默认把 e2e-flow.mjs 真跑一次（runGate 缓存），从 stdout 取 VECTOR / VECTOR_ANSWER / VECTOR_DUMP。
  * 注入自检可传 ctx.e2eStdout 用内存输出替代，避免真跑。
  */
 export function evaluateRuntimeVector(spec, ctx) {
@@ -294,16 +355,17 @@ export function evaluateRuntimeVector(spec, ctx) {
   const got = readVector(spec.vectorId, ctx);
   if (!got.ok) return got;
   const v = got.vector;
-  if (spec.expectDigest && spec.expectDigest !== vectorDigest(v)) {
+  const vDigest = vectorDigest(v);
+  if (spec.expectDigest && spec.expectDigest !== vDigest) {
     return { ok: false, detail: `${v.vectorId} 向量摘要≠钉住值` };
   }
-  const answers = vectorAnswers(v);
-  if (spec.requireAnswer !== false && answers.length === 0) {
-    return { ok: false, detail: `${v.vectorId} 全 NO DATA：零运行时应答不得标 A` };
+  if (vectorDeclaresAllNoData(v)) {
+    return { ok: false, detail: `${v.vectorId} 向量声明全 NO DATA：零运行时应答不得标 A` };
   }
   if (spec.consumedSource !== false && !ctx?.e2eStdout) {
     const src = readTextCtx(E2E_GATE, ctx) || '';
-    if (!src.includes(`loadVector('${v.vectorId}')`) || !src.includes('E2E_VECTOR_DIFF_EMPTY')) {
+    if (!src.includes(`loadVector('${v.vectorId}').replay`)
+        || !src.includes('E2E_VECTOR_DIFF_EMPTY')) {
       return { ok: false, detail: `${v.vectorId} 未接进 e2e 执行面（向量在门禁外）` };
     }
   }
@@ -315,46 +377,108 @@ export function evaluateRuntimeVector(spec, ctx) {
     }
     stdout = run.stdout;
   }
+  const answers = vectorAnswersFromStdout(v, stdout);
+  if (spec.requireAnswer !== false && answers.length === 0) {
+    return { ok: false, detail: `${v.vectorId} e2e stdout 无 live 应答举证（VECTOR/VECTOR_ANSWER 缺失或 diff≠空）` };
+  }
   const line = stdout.split('\n').find((l) => l.startsWith(`VECTOR ${v.vectorId} `));
-  if (!line) return { ok: false, detail: `e2e 未产出 ${v.vectorId} 的逐帧 diff 行` };
-  const diffOk = /diff=\[\]/.test(line) && /frames=\d+/.test(line);
-  if (!diffOk) return { ok: false, detail: `${v.vectorId} 实发/期望 diff≠空：${line.slice(0, 120)}` };
+  if (!line || !/\bdiff=\[\]/.test(line) || !/\bframes=\d+/.test(line)) {
+    return { ok: false, detail: `${v.vectorId} 实发/期望 diff≠空：${(line || '').slice(0, 120)}` };
+  }
   return { ok: true, vectorId: v.vectorId, answers: answers.length,
-    detail: `${v.vectorId} 帧序 diff=空 应答=${answers.length} sampleOnly=${v.sampleOnly}` };
+    answerSource: answers[0]?.source || '-', digest: vDigest,
+    detail: `${v.vectorId} 帧序 diff=空 live应答=${answers.length} 来源=${answers[0]?.source || '-'} sampleOnly=${v.sampleOnly}` };
+}
+
+/**
+ * ★ 阶段 D1：rows 快照（symbolHitOnly / runtimeAnswerBacked / sampleGeneralized /
+ * e0Coord.reproduceDigest / vector expectDigest）与 live 重算值**任一不一致即非 A**。
+ * ctx.live 由 liveFactsForRow() 从当前 E0 复算 + e2e stdout 真执行结果构造。
+ */
+export function snapshotMismatchOf(row, live) {
+  const mm = [];
+  if (!live || typeof live !== 'object') return mm;
+  const boolPairs = [
+    ['symbolHitOnly', 'symbolHitOnly'],
+    ['runtimeAnswerBacked', 'runtimeAnswerBacked'],
+    ['sampleGeneralized', 'sampleGeneralized'],
+  ];
+  for (const [k, snapshotKey] of boolPairs) {
+    if (typeof live[k] !== 'boolean') continue;
+    if ((row?.[snapshotKey] === true) !== live[k]) mm.push(`${snapshotKey}:快照=${row?.[snapshotKey] === true}live=${live[k]}`);
+  }
+  if (typeof live.e0Digest === 'string' && live.e0Digest
+      && typeof row?.e0Coord?.reproduceDigest === 'string' && row.e0Coord.reproduceDigest
+      && live.e0Digest !== row.e0Coord.reproduceDigest) {
+    mm.push('e0Coord.reproduceDigest');
+  }
+  if (typeof live.vectorDigest === 'string' && live.vectorDigest) {
+    const expected = findCheckValue(row?.check, 'runtimeProbeVector', 'expectDigest');
+    if (typeof expected === 'string' && expected && expected !== live.vectorDigest) {
+      mm.push('vectorDigest');
+    }
+  }
+  return mm;
+}
+
+/** 在 check 描述符树中找第一个指定 kind 的字段值。 */
+function findCheckValue(check, kind, field) {
+  if (!check || typeof check !== 'object') return undefined;
+  if (check.kind === kind && check[field] !== undefined) return check[field];
+  if (check.kind === 'all') {
+    for (const c of (check.of || [])) {
+      const v = findCheckValue(c, kind, field);
+      if (v !== undefined) return v;
+    }
+  }
+  return undefined;
 }
 
 /**
  * `provableTag`：静态/运行时标注与证据级别一致；E1 样本不得泛化全代；
  * 运行时行必须有应答举证且不得把 CAN 静态写死。
+ * 有 ctx.live 时一律用 live 值覆盖 row 快照，并校验快照与 live 一致（不一致 → 非 A）。
  */
 export function evaluateProvableTag(row, ctx) {
   const p = row?.provable;
   if (p !== 'static' && p !== 'runtime') {
     return { ok: false, detail: `缺 provable 标注（${p}）` };
   }
-  if (row?.symbolHitOnly === true) {
-    return { ok: false, detail: '仅符号命中不得判 A' };
+  const live = (ctx?.live && typeof ctx.live === 'object') ? ctx.live : {};
+  const liveMode = Object.keys(live).length > 0;
+  const mm = snapshotMismatchOf(row, liveMode ? live : null);
+  if (mm.length) {
+    return { ok: false, detail: `live 重算与 rows 快照不一致：${mm.join(', ')}`, snapshotMismatch: mm };
+  }
+  const symbolHit = typeof live.symbolHitOnly === 'boolean' ? live.symbolHitOnly : row?.symbolHitOnly === true;
+  const answerBacked = typeof live.runtimeAnswerBacked === 'boolean'
+    ? live.runtimeAnswerBacked : row?.runtimeAnswerBacked === true;
+  const generalized = typeof live.sampleGeneralized === 'boolean'
+    ? live.sampleGeneralized : row?.sampleGeneralized === true;
+  if (symbolHit) {
+    return { ok: false, detail: '仅符号命中不得判 A（live 重算）' };
   }
   if (row?.runtimeRequired === true) {
     if (row.planSysId === null) {
       return { ok: false, detail: 'planSysId=null 静默兜底：fail-closed，不得标 A' };
     }
     if (p !== 'runtime') return { ok: false, detail: '运行时语义行标成 static（runtime 静态写死）' };
-    if (row.runtimeAnswerBacked !== true) {
-      return { ok: false, detail: '运行时语义行零应答举证' };
+    if (!answerBacked) {
+      return { ok: false, detail: '运行时语义行零应答举证（live e2e stdout）' };
     }
   }
   if (row?.vectorId) {
     const got = readVector(row.vectorId, ctx);
     if (!got.ok) return got;
-    if (got.vector.sampleOnly === true && row.sampleGeneralized === true) {
+    if (got.vector.sampleOnly === true && generalized) {
       return { ok: false, detail: 'E1 样本被泛化为全代真值' };
     }
     if (got.vector.hardcodedCan === true) {
       return { ok: false, detail: '向量把 CAN 静态写死' };
     }
   }
-  return { ok: true, detail: `provable=${p} runtimeAnswerBacked=${row?.runtimeAnswerBacked === true} symbolHitOnly=false` };
+  return { ok: true, liveMode: liveMode ? 1 : 0, snapshotMismatch: mm,
+    detail: `provable=${p} runtimeAnswerBacked=${answerBacked} symbolHitOnly=${symbolHit} liveMode=${liveMode ? 1 : 0}` };
 }
 
 /**
@@ -555,9 +679,11 @@ export function evaluateCheck(check, ctx) {
       return { ok: n >= check.min, detail: `计数 ${n} ${n >= check.min ? '≥' : '<'} ${check.min}` };
     }
     case 'all': {
-      const rs = (check.of || []).map((c) => evaluateCheck(c, ctx));
+      // ★ 阶段 D1：保留每个子结果（含 kind），供 live 事实自证；不新增任何放行分支。
+      const rs = (check.of || []).map((c) => ({ ...evaluateCheck(c, ctx), kind: c.kind }));
       const bad = rs.filter((r) => !r.ok);
-      return { ok: bad.length === 0, detail: bad.length ? bad.map((r) => r.detail).join('; ') : `${rs.length} 项子检查全通过` };
+      return { ok: bad.length === 0, subResults: rs,
+        detail: bad.length ? bad.map((r) => r.detail).join('; ') : `${rs.length} 项子检查全通过` };
     }
     case 'e0CoordVector':
       return evaluateE0Vector(check, ctx);
@@ -802,27 +928,89 @@ export function carrierStatusOf(row) {
   };
 }
 
+/** 只保留指定 kind 的 check 子树（live 事实求值时跳过 provableTag，避免自指）。 */
+function filterChecksByKind(check, kinds) {
+  if (!check || typeof check !== 'object') return null;
+  if (kinds.includes(check.kind)) return check;
+  if (check.kind === 'all') {
+    const of = (check.of || []).map((c) => filterChecksByKind(c, kinds)).filter(Boolean);
+    return of.length ? { kind: 'all', of } : null;
+  }
+  return null;
+}
+
+/** 递归收集 evaluateCheck 结果树里带 kind 的子结果。 */
+function collectKindResults(result, out = []) {
+  if (!result || typeof result !== 'object') return out;
+  if (result.kind) out.push(result);
+  for (const sub of (result.subResults || [])) collectKindResults(sub, out);
+  return out;
+}
+
+/**
+ * ★ 阶段 D1：按当前 registry / 向量 / e2e stdout 重算一行的 live 事实。
+ *   symbolHitOnly     = !(E0 坐标复算通过 && 向量 e2e 实跑通过)（与 build 期同一规则）
+ *   runtimeAnswerBacked = 向量 e2e stdout 确有 live 应答
+ *   e0Digest/vectorDigest = 本次复算摘要（用于钉住快照一致性）
+ * ctx.live 若显式提供布尔值则以注入值为准（可证伪测试用）。
+ */
+export function liveFactsForRow(row, ctx) {
+  const subtree = filterChecksByKind(row?.check, ['e0CoordVector', 'runtimeProbeVector']);
+  const result = subtree ? evaluateCheck(subtree, ctx) : { ok: false };
+  const subs = collectKindResults(result);
+  const e0 = subs.filter((r) => r.kind === 'e0CoordVector');
+  const vec = subs.filter((r) => r.kind === 'runtimeProbeVector');
+  const e0Ok = e0.length > 0 && e0.every((r) => r.ok === true);
+  const vecOk = vec.length > 0 && vec.every((r) => r.ok === true);
+  const answers = vec.reduce((n, r) => n + (Number(r.answers) || 0), 0);
+  const facts = {
+    symbolHitOnly: !(e0Ok && vecOk),
+    runtimeAnswerBacked: vecOk && answers > 0,
+    sampleGeneralized: row?.sampleGeneralized === true,
+    e0Ok,
+    vecOk,
+    answers,
+    answerSource: vec.find((r) => r.answerSource)?.answerSource || '-',
+    e0Digest: e0.map((r) => r.digest || '').join('|'),
+    vectorDigest: vec.map((r) => r.digest || '').join('|'),
+  };
+  if (ctx?.live && typeof ctx.live === 'object') {
+    for (const k of ['symbolHitOnly', 'runtimeAnswerBacked', 'sampleGeneralized']) {
+      if (typeof ctx.live[k] === 'boolean') facts[k] = ctx.live[k];
+    }
+  }
+  facts.snapshotMismatch = snapshotMismatchOf(row, facts);
+  return facts;
+}
+
 /**
  * 求值单行：verdict 必须同时满足三个独立条件（团队审计阻断项修正 ③）：
  *   ① check 取证复跑通过；② forensicGrade==='A'（取证等级）；
  *   ③ u1CarrierStatus==='齐备'（门禁文件 + 断言名真实存在）。
  * 门禁未落盘 / 断言名不存在 ⇒ 判「非 A」，并把原因交回调用方生成下一载体。
  * R-5：取证等级字段本身不因载体缺失而降级（仍是 A），但行 verdict 为非 A。
+ * ★ 阶段 D1：传 ctx 时先 live 重算再求值；不传 ctx（build 期）行为完全不变。
  */
 export function evaluateRow(row, ctx) {
-  const r = evaluateCheck(row.check, ctx);
+  const liveFacts = ctx ? liveFactsForRow(row, ctx) : null;
+  const evalCtx = liveFacts ? { ...ctx, live: liveFacts } : ctx;
+  const r = evaluateCheck(row.check, evalCtx);
   const carrier = carrierStatusOf(row);
   const forensicGrade = row.forensicGrade;
   // ★ QA R1 / G1：verdict 必须额外满足「该行 gate **真实执行**通过 + 断言名命中 stdout」。
   //   只查文件存在 / 文本含断言名的旧逻辑对真实回归零敏感度（写帧改错仍全 A）。
   const gate = gateVerdict(row);
-  const ok = r.ok && forensicGrade === 'A' && carrier.status === '齐备' && gate.ok;
+  const snapshotMismatch = liveFacts?.snapshotMismatch || [];
+  const ok = r.ok && forensicGrade === 'A' && carrier.status === '齐备' && gate.ok
+    && snapshotMismatch.length === 0;
   const detail = [
     r.detail,
     `取证等级=${forensicGrade}`,
     `U-1载体状态=${carrier.status}`,
     ...carrier.reasons,
     gate.detail,
+    ...(liveFacts ? [`live重算=符号命中${liveFacts.symbolHitOnly ? 1 : 0}/应答${liveFacts.runtimeAnswerBacked ? 1 : 0}/来源${liveFacts.answerSource}`] : []),
+    ...(snapshotMismatch.length ? [`快照不一致=${snapshotMismatch.join(', ')}`] : []),
   ].join(' | ');
   return {
     verdict: ok ? 'A' : '非A',
@@ -835,6 +1023,11 @@ export function evaluateRow(row, ctx) {
     gateOk: gate.ok,
     // ★ 前置未满足（exit 2）必须一路带到汇总，否则「没构建」会被读成「有缺陷」。
     gatePreconditionMissing: gate.preconditionMissing === true,
+    liveMode: liveFacts ? 1 : 0,
+    liveFacts,
+    liveSymbolHitOnly: liveFacts ? liveFacts.symbolHitOnly : undefined,
+    liveRuntimeAnswerBacked: liveFacts ? liveFacts.runtimeAnswerBacked : undefined,
+    snapshotMismatch,
   };
 }
 

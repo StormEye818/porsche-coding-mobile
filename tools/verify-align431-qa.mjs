@@ -24,6 +24,8 @@
  *   Q12 基线 41 行编号+原文保留 / 删行 0 / 合并行 0 / 断言只增不删
  *   Q13 243/243 A 且高风险覆盖 130/130 Q14 24 行 B/C/D 重判双举证、符号命中 0
  *   Q15 audit 两次 sha256 稳定且指纹不含本机绝对路径 / Date / random / cwd
+ *   Q16 rows 快照 symbolHitOnly/runtimeAnswerBacked 与 audit live 重算逐行一致
+ *       （阶段 D1：Q02/Q03/Q04/Q05/Q14 均改用 live 证据，不再只读 rows 快照）
  *
  * 用法：
  *   node tools/verify-align431-qa.mjs
@@ -43,6 +45,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const E0_ROOT = join(ROOT, '..', 'porsche-mapper', 'ref');
+// ★ 阶段 D1：QA 自身也用**生产消费者** on 真实 bind-plan 重算覆盖，
+//   不 import 被测 align431-eval/audit 的任何求值函数（src/ 是生产代码，不是 gate）。
+const { selectAddrRows } = await import(new URL('../src/sweep.js', import.meta.url).href);
 
 /* ─────────────────────────── 基础设施（本文件独立实现） ─────────────────────────── */
 /** node:crypto sha256 —— 不复用被测 gate 的 sha256 实现。 */
@@ -114,6 +119,45 @@ if (!rows || !bp || !registry || allRows.length === 0) {
   process.exit(1);
 }
 
+/* ───────────────── 阶段 D1：审计 live 重算证据（黑盒读 audit stdout） ──────── */
+/** 从 audit 机器行解析逐行 live 值与汇总；缺任一机器行即视为 live 证据不可用。 */
+function parseLiveAudit(stdout) {
+  const text = String(stdout || '');
+  const perRow = new Map();
+  for (const line of text.split('\n')) {
+    const rowM = /^\[(A\s+|非A)\]\s+(\S+)\s+\|/.exec(line);
+    if (!rowM) continue;
+    const liveM = /LIVE 运行时应答=([01])\s+符号命中=([01])/.exec(line);
+    if (liveM) {
+      perRow.set(rowM[2], {
+        runtimeAnswerBacked: liveM[1] === '1',
+        symbolHitOnly: liveM[2] === '1',
+      });
+    }
+  }
+  const sumM = /LIVE_SYMBOL_HIT_ONLY=(\d+)\s+LIVE_ZERO_ANSWER_A=(\d+)\s+LIVE_SNAPSHOT_MISMATCH=(\d+)/.exec(text);
+  const hrM = /LIVE_HIGH_RISK_COVERED=(\d+)\/(\d+)/.exec(text);
+  return {
+    marker: /LIVE_RECOMPUTE=1/.test(text),
+    rows: perRow,
+    summary: sumM ? { symbolOnly: Number(sumM[1]), zeroAnswer: Number(sumM[2]), mismatch: Number(sumM[3]) } : null,
+    highRisk: hrM ? { covered: Number(hrM[1]), total: Number(hrM[2]) } : null,
+    e2eExit: (/LIVE_E2E_EXIT=(\d+)/.exec(text) || [])[1] || null,
+  };
+}
+
+const AUDIT_A_ENV = process.env.ALIGN431_QA_AUDIT_A;
+const AUDIT_B_ENV = process.env.ALIGN431_QA_AUDIT_B;
+const AUDIT_REUSE = Boolean(AUDIT_A_ENV && AUDIT_B_ENV && existsSync(AUDIT_A_ENV) && existsSync(AUDIT_B_ENV));
+const auditA = AUDIT_REUSE
+  ? { exitCode: 0, stdout: readFileSync(AUDIT_A_ENV, 'utf8') }
+  : runNode('tools/audit-align431.mjs');
+const liveAudit = parseLiveAudit(auditA.stdout);
+const liveReady = auditA.exitCode === 0 && liveAudit.marker
+  && liveAudit.rows.size === allRows.length && Boolean(liveAudit.summary)
+  && Boolean(liveAudit.highRisk) && liveAudit.e2eExit === '0';
+const liveOf = (row) => liveAudit.rows.get(row.rowId);
+
 /* ─────────────────────────── Q01 无坐标实现行 = 0 ─────────────────────────── */
 {
   // 实现行 = 审计纳入的每一行；标 A 且 E0 坐标无 reproduceDigest 即「无坐标实现」。
@@ -152,10 +196,19 @@ let highRiskCovered = [];
     return e.provable === 'static' && Boolean(e.e0Coord);
   });
   const uncovered = highRiskList.length - highRiskCovered.length;
-  check('Q02', 'ZERO_COVERAGE_HIGH_RISK_SYSID_ZERO',
-    uncovered === 0 && highRiskList.length === HIGH_RISK_EXPECTED,
-    `0 uncovered / ${HIGH_RISK_EXPECTED} highRisk`,
-    `${uncovered} uncovered / ${highRiskCovered.length}/${highRiskList.length} highRisk`);
+  // ★ 阶段 D1：真执行覆盖 = selectAddrRows(真实 bind-plan, sysId) 有 runtime row 且请求键非空。
+  const liveCovered = highRiskList.filter((s) => {
+    const runtimeRows = selectAddrRows(bp, [s]);
+    return runtimeRows.length > 0
+      && runtimeRows.every((r) => typeof r.requestKey === 'string' && r.requestKey.length > 0);
+  });
+  const pass = uncovered === 0 && highRiskList.length === HIGH_RISK_EXPECTED
+    && liveReady && liveCovered.length === highRiskList.length
+    && liveAudit.highRisk.covered === liveCovered.length;
+  check('Q02', 'ZERO_COVERAGE_HIGH_RISK_SYSID_ZERO', pass,
+    `0 static-uncovered / ${HIGH_RISK_EXPECTED} highRisk / live rows>0`,
+    `${uncovered} static-uncovered / ${liveCovered.length}/${highRiskList.length} live`
+    + ` / auditLive=${liveAudit.highRisk?.covered ?? '-'}/${liveAudit.highRisk?.total ?? '-'}`);
 }
 
 /* ─────────────────────────── Q03 零覆盖 sysId = 0 ─────────────────────────── */
@@ -168,24 +221,37 @@ let highRiskCovered = [];
   const uncovered = keys.filter((s) => {
     const e = ecu[s] || {};
     const covered = Boolean(e.e0Coord) && (e.provable === 'static' || e.provable === 'runtime');
+    const liveRows = selectAddrRows(bp, [s]);
     const explicitlyNA = NA_MARK.test(JSON.stringify(e));
-    return !covered && !explicitlyNA;
+    return (!covered || liveRows.length === 0) && !explicitlyNA;
   });
-  check('Q03', 'ZERO_COVERAGE_SYSID_ZERO', uncovered.length === 0 && keys.length === 623,
-    '0 uncovered / 623 sysId', `${uncovered.length} uncovered / ${keys.length} sysId`);
+  check('Q03', 'ZERO_COVERAGE_SYSID_ZERO',
+    uncovered.length === 0 && keys.length === 623 && liveReady,
+    '0 uncovered / 623 sysId (E0+provable+live runtime rows)',
+    `${uncovered.length} uncovered / ${keys.length} sysId liveReady=${liveReady ? 1 : 0}`);
 }
 
-/* ─────────────────────────── Q04 靠符号命中翻 A 行 = 0 ─────────────────────── */
+/* ─────────────────────────── Q04 靠符号命中翻 A 行 = 0（live 重算） ─────────── */
 {
-  const bad = allRows.filter((r) => r.verdict === 'A' && r.symbolHitOnly === true);
-  check('Q04', 'SYMBOL_HIT_A_ROWS_ZERO', bad.length === 0, 0, bad.length);
+  // ★ 阶段 D1：主判据来自 audit 的 LIVE 逐行机器行；rows 快照仍作附加收紧（Q16 校验一致性）。
+  const bad = allRows.filter((r) => {
+    if (r.verdict !== 'A') return false;
+    const f = liveOf(r);
+    return !f || f.symbolHitOnly === true || r.symbolHitOnly === true;
+  });
+  check('Q04', 'SYMBOL_HIT_A_ROWS_ZERO', liveReady && bad.length === 0, 0, bad.length,
+    `liveRows=${liveAudit.rows.size}`);
 }
 
-/* ─────────────────────────── Q05 零运行时应答仍标 A 行 = 0 ─────────────────── */
+/* ─────────────────────────── Q05 零运行时应答仍标 A 行 = 0（live 重算） ──────── */
 {
-  const bad = allRows.filter((r) => r.verdict === 'A'
-    && r.runtimeRequired === true && r.runtimeAnswerBacked !== true);
-  check('Q05', 'ZERO_RUNTIME_ANSWER_A_ROWS_ZERO', bad.length === 0, 0, bad.length);
+  const bad = allRows.filter((r) => {
+    if (r.verdict !== 'A' || r.runtimeRequired !== true) return false;
+    const f = liveOf(r);
+    return !f || f.runtimeAnswerBacked !== true || r.runtimeAnswerBacked !== true;
+  });
+  check('Q05', 'ZERO_RUNTIME_ANSWER_A_ROWS_ZERO', liveReady && bad.length === 0, 0, bad.length,
+    `liveRows=${liveAudit.rows.size}`);
 }
 
 /* ─────────────────────────── Q06 注入能红率 100% / 假绿 0（黑盒复跑） ─────────── */
@@ -390,27 +456,31 @@ let highRiskCovered = [];
 /* ─────────────────────────── Q14 24 行 B/C/D 重判双举证、符号命中 0 ─────────── */
 {
   const bcd = allRows.filter((r) => ['B', 'C', 'D'].includes(r.originalVerdict));
-  const bad = bcd.filter((r) => !(r.verdict === 'A'
-    && r.e0Coord && typeof r.e0Coord.reproduceDigest === 'string'
-    && r.runtimeAnswerBacked === true
-    && typeof r.vectorId === 'string' && r.vectorId.length > 0
-    && r.symbolHitOnly !== true));
+  const bad = bcd.filter((r) => {
+    const f = liveOf(r);
+    return !(r.verdict === 'A'
+      && r.e0Coord && typeof r.e0Coord.reproduceDigest === 'string'
+      && f && f.runtimeAnswerBacked === true
+      && typeof r.vectorId === 'string' && r.vectorId.length > 0
+      && f.symbolHitOnly === false);
+  });
   const recordedReAdj = (rows.t04 && Array.isArray(rows.t04.reAdjudicatedRows))
     ? rows.t04.reAdjudicatedRows.length : -1;
   check('Q14', 'BCD_24_READJUDICATED_DOUBLE_EVIDENCE',
-    bcd.length === 24 && bad.length === 0 && recordedReAdj === 24,
-    '24 rows A + E0 + runtime + vector, symbolHit=0, recorded=24',
+    liveReady && bcd.length === 24 && bad.length === 0 && recordedReAdj === 24,
+    '24 rows A + E0 + live runtime + vector, live symbolHit=0, recorded=24',
     `bcd=${bcd.length} bad=${bad.length} recorded=${recordedReAdj}`);
 }
 
 /* ─────────────────────────── Q15 audit 两次 sha256 稳定 + 指纹无机器痕迹 ────── */
 {
-  // 缺省真实跑两次；可用 ALIGN431_QA_AUDIT_A / _B 复用已采集 stdout（验收链已跑过时避免重复慢跑）。
-  const envA = process.env.ALIGN431_QA_AUDIT_A;
-  const envB = process.env.ALIGN431_QA_AUDIT_B;
-  const reuse = Boolean(envA && envB && existsSync(envA) && existsSync(envB));
-  const a = reuse ? { exitCode: 0, stdout: readFileSync(envA, 'utf8') } : runNode('tools/audit-align431.mjs');
-  const b = reuse ? { exitCode: 0, stdout: readFileSync(envB, 'utf8') } : runNode('tools/audit-align431.mjs');
+  // ★ 阶段 D1：第一次 audit 已在文件前部真跑并供 Q02-Q05/Q14/Q16 使用；这里只跑第二次。
+  //   仍可用 ALIGN431_QA_AUDIT_A / _B 复用已采集的两份 stdout（验收链已跑过时避免重复慢跑）。
+  const a = auditA;
+  const b = AUDIT_REUSE
+    ? { exitCode: 0, stdout: readFileSync(AUDIT_B_ENV, 'utf8') }
+    : runNode('tools/audit-align431.mjs');
+  const reuse = AUDIT_REUSE ? 1 : 0;
   const shaA = sha256(a.stdout);
   const shaB = sha256(b.stdout);
   const internalA = (/sha256=([0-9a-f]{64})/.exec(a.stdout) || [])[1] || '';
@@ -429,6 +499,32 @@ let highRiskCovered = [];
     'exit0/0 same sha256, fingerprint free of abs-path/Date/random/cwd',
     `exit=${a.exitCode}/${b.exitCode} shaSame=${shaA === shaB ? 1 : 0}`
     + ` internalSame=${internalA === internalB ? 1 : 0} marks=${marks.length} reuse=${reuse ? 1 : 0}`);
+}
+
+/* ───── Q16 rows 快照 vs live 重算一致性 + audit 自身确实做了 live 重算 ───── */
+{
+  // 快照造假防护：任何 row 的 symbolHitOnly / runtimeAnswerBacked 与 audit live 值不同即 FAIL。
+  const mismatched = [];
+  for (const r of allRows) {
+    const f = liveOf(r);
+    if (!f) { mismatched.push(`${r.rowId}:缺live行`); continue; }
+    if ((r.symbolHitOnly === true) !== f.symbolHitOnly) mismatched.push(`${r.rowId}:symbolHitOnly`);
+    if ((r.runtimeAnswerBacked === true) !== f.runtimeAnswerBacked) mismatched.push(`${r.rowId}:runtimeAnswerBacked`);
+  }
+  // 证明 audit 自己做了 live 重算：机器行齐备 + 源码真调生产消费者/e2e live 上下文。
+  const auditSrc = readText('tools/audit-align431.mjs') || '';
+  const sourceProof = auditSrc.includes('selectAddrRows(plan, [s])')
+    && auditSrc.includes('evaluateRow(row, liveCtx)')
+    && auditSrc.includes('LIVE_HIGH_RISK_COVERED=')
+    && auditSrc.includes('LIVE_SOURCE=e2e_stdout+selectAddrRows+registry');
+  const summaryOk = liveAudit.summary && liveAudit.summary.symbolOnly === 0
+    && liveAudit.summary.zeroAnswer === 0 && liveAudit.summary.mismatch === 0;
+  const pass = liveReady && sourceProof && mismatched.length === 0 && Boolean(summaryOk);
+  check('Q16', 'ROWS_SNAPSHOT_MATCH_LIVE_RECOMPUTE', pass,
+    'audit live machine lines complete / selectAddrRows called / 0 snapshot mismatch',
+    `mismatch=${mismatched.length} sourceProof=${sourceProof ? 1 : 0}`
+    + ` liveReady=${liveReady ? 1 : 0} summary=${JSON.stringify(liveAudit.summary)}`,
+    mismatched.length ? mismatched.slice(0, 5).join(',') : '');
 }
 
 /* ─────────────────────────── 汇总与退出码 ─────────────────────────── */
