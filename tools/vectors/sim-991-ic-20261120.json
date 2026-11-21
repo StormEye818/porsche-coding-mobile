@@ -1,6 +1,10 @@
 {
   "schemaVersion": 1,
   "captureId": "SIM-20261120-991-IC-V080",
+  "vectorId": "REPLAY_SIM991_IC",
+  "normalizedVectorId": "REPLAY_SIM991_IC",
+  "gateEligible": true,
+  "mustReplay": true,
   "grade": "E1",
   "sampleOnly": true,
   "provable": "runtime",

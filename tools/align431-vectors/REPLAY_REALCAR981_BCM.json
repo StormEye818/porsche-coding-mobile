@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "vectorId": "REPLAY_REALCAR981_BCM",
+  "source": "E1 实车失败现场 2026-11-20 · Boxster/Cayman 981 VIN WP0AB2981FK180962 · 后端电子设备进模块失败",
+  "grade": "R",
+  "provable": "runtime",
+  "sampleOnly": true,
+  "mustReplay": true,
+  "kind": "historical-failure-replay",
+  "captureId": "REALCAR-20261120-981-BCM-HINTEN-V080",
+  "expectedFile": "tools/align431-vectors/REPLAY_REALCAR981_BCM.expected.json",
+  "replayFile": "tools/align431-vectors/REPLAY_REALCAR981_BCM.replay.json",
+  "sourceLogFile": "docs/realcar/2026-11-20-981-BCM-hinten-v080.txt",
+  "sourceLogSha256": "7dd66f9af727b1e6ea3a605730f6304823412eb9194f29eda5e3f303dc115d77",
+  "expectedSha256": "6794abe514f72982c56c6c34abcbff6c81a0865ab3e4f40415f0e68c219be8e5",
+  "replaySha256": "99f831b97ad1605bd8ffc75e2c675c6c0dd0864d5bf95b0ba9df6093fc9bdc9e",
+  "diffCmd": "node e2e-flow.mjs | grep -F 'VECTOR REPLAY_REALCAR981_BCM '",
+  "failureAssertion": {
+    "observedFailure": "request-key-missing-before-probe",
+    "mustContain": [
+      "request-key-missing"
+    ],
+    "mustNotContain": [
+      "070d",
+      "0777",
+      "221409",
+      "621409"
+    ],
+    "reason": "原始日志在发 22 14 09 / 探 0x070D-0x0777 之前即 fail-closed；回放不得伪造该正响应。"
+  },
+  "injection": {
+    "expectedTamper": "改 REPLAY_REALCAR981_BCM.expected.json 观测帧但不更新 expectedSha256 → replay gate 必须红",
+    "replayTamper": "改 REPLAY_REALCAR981_BCM.replay.json 应答字节但不更新 replaySha256 → replay gate 必须红",
+    "fabricatedPositive": "在 REPLAY_REALCAR981_BCM.replay.json 塞入 0x070D/0x0777 或 0x0714/0x077E 正响应 → replay gate 必须红",
+    "failureMarkerRemoved": "删掉 REPLAY_REALCAR981_BCM.expected.json 的 request-key-missing 观测标记 → replay gate 必须红",
+    "e2eOutside": "把 REPLAY_REALCAR981_BCM 从 e2e 执行面移除 → replay gate / runtimeProbeVector 必须红"
+  },
+  "sha256": "7e1a7d66a60ba52a3be03e4bba70b9cf82e362c8fb69c84bd7c109828614f66b"
+}

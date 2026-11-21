@@ -1,0 +1,10 @@
+{
+  "vectorId": "REPLAY_DME",
+  "kind": "source-provenance",
+  "source": "E1 实车日志 WP0AB2983EK190083 · Cayman 981 DME KWP",
+  "sampleOnly": true,
+  "grade": "R",
+  "provable": "runtime",
+  "note": "既有五组向量的语义来源说明；原单文件 sha256 作为沿革钉住。",
+  "legacySha256": "2f1e1297cb994667e93dc3c45aef3e2e47fb145e09bb32297fa746c1e1173a6a"
+}

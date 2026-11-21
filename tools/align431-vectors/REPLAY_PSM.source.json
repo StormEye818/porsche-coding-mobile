@@ -1,0 +1,10 @@
+{
+  "vectorId": "REPLAY_PSM",
+  "kind": "source-provenance",
+  "source": "包内表生成 PSM_a2_1 UDS · DSN.BIN 识别串 + JOB.BIN 件号",
+  "sampleOnly": true,
+  "grade": "R",
+  "provable": "runtime",
+  "note": "既有五组向量的语义来源说明；原单文件 sha256 作为沿革钉住。",
+  "legacySha256": "8d1532fcbdd79c81c10070188dc384ef95fc911e33653437fd27e14a456bd7e8"
+}

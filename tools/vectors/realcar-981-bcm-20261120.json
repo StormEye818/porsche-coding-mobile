@@ -1,6 +1,10 @@
 {
   "schemaVersion": 1,
   "captureId": "REALCAR-20261120-981-BCM-HINTEN-V080",
+  "vectorId": "REPLAY_REALCAR981_BCM",
+  "normalizedVectorId": "REPLAY_REALCAR981_BCM",
+  "gateEligible": true,
+  "mustReplay": true,
   "grade": "E1",
   "sampleOnly": true,
   "provable": "runtime",

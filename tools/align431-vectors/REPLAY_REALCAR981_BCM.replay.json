@@ -1,0 +1,56 @@
+{
+  "vectorId": "REPLAY_REALCAR981_BCM",
+  "kind": "mock-replay-script",
+  "source": "E1 实车失败现场 2026-11-20 · Boxster/Cayman 981 VIN WP0AB2981FK180962 · 后端电子设备进模块失败",
+  "captureId": "REALCAR-20261120-981-BCM-HINTEN-V080",
+  "steps": [
+    {
+      "req": "221102",
+      "resp": "7E8037F2212",
+      "verdict": "nrc",
+      "note": "服务 0x22 被拒 NRC 0x12"
+    },
+    {
+      "req": "221101",
+      "resp": "7E8037F2212",
+      "verdict": "nrc",
+      "note": "服务 0x22 被拒 NRC 0x12"
+    },
+    {
+      "req": "1A90",
+      "resp": "7E810135A9000000000\r7E82100000000000000\r7E822000000000000AA",
+      "verdict": "ok-but-empty-vin",
+      "note": "应答空 VIN"
+    },
+    {
+      "req": "2151",
+      "resp": "7E8037F2112",
+      "verdict": "nrc",
+      "note": "服务 0x21 被拒 NRC 0x12"
+    },
+    {
+      "req": "210905",
+      "resp": "NO DATA",
+      "verdict": "no-data",
+      "note": "OBD 无应答"
+    },
+    {
+      "req": "0902",
+      "resp": "7E81014490201575030\r7E82141423239383146\r7E8224B313830393632",
+      "verdict": "ok",
+      "note": "OBD VIN = WP0AB2981FK180962"
+    }
+  ],
+  "observedFailure": "request-key-missing-before-probe",
+  "observedCandidates": [
+    "0x24F/0x257",
+    "0x3A0/0x3A8",
+    "0x74F/0x757",
+    "0x6DD/0x6E5",
+    "0x7C0/0x7C8",
+    "0x6E3/0x6EB",
+    "0x7BD/0x7C5",
+    "0x1A2/0x1AA"
+  ],
+  "note": "原始日志在发 22 14 09 / 探 0x070D-0x0777 之前即 fail-closed；回放不得伪造该正响应。"
+}

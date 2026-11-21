@@ -33,23 +33,51 @@ const ok = (n, c, x = '') => {
 //   注意：这里只新增机器行，不新增/改写任何既有 127 条 ok() 断言语义。
 // ─────────────────────────────────────────────────────────────────
 const VECTOR_DIR = './tools/align431-vectors';
-const VECTOR_IDS = ['REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM'];
+const VECTOR_IDS = [
+  'REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM',
+  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC',
+];
 let vectorFail = 0;
+const vectorSha = (s) => createHash('sha256').update(s, 'utf8').digest('hex');
 
+/**
+ * ★ 阶段 E：manifest 只保存路径与三份摘要；expected/replay/sourceLog 分离落盘。
+ * 这里逐字节校验后再组装成 {expected, replay}，与 tools/align431-eval.mjs 同一口径。
+ */
 function loadVector(vectorId) {
-  const v = JSON.parse(readFileSync(`${VECTOR_DIR}/${vectorId}.json`, 'utf8'));
-  if (v.vectorId !== vectorId || !Array.isArray(v.expected) || !Array.isArray(v.replay)
-      || v.sampleOnly !== true || v.grade !== 'R' || v.provable !== 'runtime') {
+  try {
+    const m = JSON.parse(readFileSync(`${VECTOR_DIR}/${vectorId}.json`, 'utf8'));
+    if (m.vectorId !== vectorId || m.sampleOnly !== true || m.grade !== 'R'
+        || m.provable !== 'runtime' || m.mustReplay !== true) {
+      throw new Error('meta');
+    }
+    const expectedText = readFileSync(m.expectedFile, 'utf8');
+    const replayText = readFileSync(m.replayFile, 'utf8');
+    const sourceText = readFileSync(m.sourceLogFile, 'utf8');
+    if (vectorSha(expectedText) !== m.expectedSha256) throw new Error('expectedSha256');
+    if (vectorSha(replayText) !== m.replaySha256) throw new Error('replaySha256');
+    if (vectorSha(sourceText) !== m.sourceLogSha256) throw new Error('sourceLogSha256');
+    const expectedDoc = JSON.parse(expectedText);
+    const replayDoc = JSON.parse(replayText);
+    if (!Array.isArray(expectedDoc.frames) || !Array.isArray(replayDoc.steps)
+        || !expectedDoc.frames.length || !replayDoc.steps.length) {
+      throw new Error('split');
+    }
+    const v = { ...m, expected: expectedDoc.frames, replay: replayDoc.steps };
+    const vDigest = vectorSha(JSON.stringify({
+      vectorId: v.vectorId,
+      expectedSha256: v.expectedSha256,
+      replaySha256: v.replaySha256,
+      sourceLogSha256: v.sourceLogSha256,
+    }));
+    if (m.sha256 !== vDigest) throw new Error('sha256');
+    return v;
+  } catch (error) {
     vectorFail++;
-    console.log(`VECTOR ${vectorId} frames=0 diff=[INVALID] reason=meta`);
+    console.log(`VECTOR ${vectorId} frames=0 diff=[INVALID] reason=${String(error?.message || 'meta')}`);
+    return { vectorId, expected: [], replay: [], failureAssertion: null,
+      sampleOnly: false, grade: '-', provable: '-' };
   }
-  const payload = JSON.stringify({ vectorId: v.vectorId, expected: v.expected, replay: v.replay });
-  const actual = createHash('sha256').update(payload, 'utf8').digest('hex');
-  if (v.sha256 !== actual) {
-    vectorFail++;
-    console.log(`VECTOR ${vectorId} frames=${v.expected.length} diff=[SHA]`);
-  }
-  return v;
 }
 
 function vectorDiff(vectorId, actualFrames) {
@@ -1010,6 +1038,46 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
   }
   ok('F13 实跑 www/index.html 的 UI bootstrap → 全量枚举 1719/2506（差集=0）',
     bootOk, bootDetail);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// [16] ★ 阶段 E：历史失败现场回放（实车 981 BCM / 模拟 991 IC）
+//   只回放日志中真实观测到的请求/应答帧；失败发生在请求键绑定处，
+//   日志从未到达 0x070D/0x0777 或 0x0714/0x077E 探测帧，禁止伪造正响应。
+// ─────────────────────────────────────────────────────────────────
+{
+  const replayScripts = {
+    REPLAY_REALCAR981_BCM: loadVector('REPLAY_REALCAR981_BCM').replay,
+    REPLAY_SIM991_IC: loadVector('REPLAY_SIM991_IC').replay,
+  };
+  for (const id of ['REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC']) {
+    const v = loadVector(id);
+    const m16 = new MockAdapter({ latencyMs: 0, replay: replayScripts[id] });
+    const e16 = new Elm327(m16, { timeoutMs: 2000 });
+    await e16.init({ protocol: 6 });
+    for (const req of v.expected) {
+      await e16.request(req, 2000).catch(() => 'NO DATA');
+    }
+    const actualFrames = m16.txLog.filter((c) => !c.startsWith('AT'));
+    vectorDiff(id, actualFrames);
+
+    // 负向断言：不得把「修复后应该成功」伪装成日志证据。
+    const norm = (s) => String(s).toLowerCase().replace(/[^0-9a-z]/g, '');
+    const emitted = norm([...v.expected, ...v.replay.map((x) => `${x.req} ${x.resp}`)].join(' '));
+    const assertion = v.failureAssertion || { mustContain: [], mustNotContain: [], observedFailure: '' };
+    const forged = (assertion.mustNotContain || []).filter((token) => emitted.includes(norm(token)));
+    const missing = (assertion.mustContain || []).filter((token) => !norm(assertion.observedFailure).includes(norm(token)));
+    // 不新增 ok() 断言（e2e 权威断言数仍为 127，见 tools/verify-u2-numbers.mjs）；
+    // 负向断言失败计入 vectorFail 并打印独立机器行，e2e 退出码与 audit live 同步转红。
+    if (forged.length) {
+      vectorFail++;
+      console.log(`REPLAY_ASSERT_FAIL ${id} forged=${JSON.stringify(forged)}`);
+    }
+    if (missing.length) {
+      vectorFail++;
+      console.log(`REPLAY_ASSERT_FAIL ${id} failureMarkerMissing=${JSON.stringify(missing)}`);
+    }
+  }
 }
 
 console.log(vectorFail

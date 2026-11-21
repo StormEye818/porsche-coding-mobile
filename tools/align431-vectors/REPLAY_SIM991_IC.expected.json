@@ -1,0 +1,23 @@
+{
+  "vectorId": "REPLAY_SIM991_IC",
+  "kind": "historical-failure-replay",
+  "source": "E1 模拟失败现场 2026-11-20 · 911(991) VIN WP0ZZZ991GS123456 · IC 进模块失败",
+  "captureId": "SIM-20261120-991-IC-V080",
+  "mode": "simulation",
+  "sourceLogFile": "docs/realcar/2026-11-20-991-IC-sim-v080.txt",
+  "frames": [
+    "1A90",
+    "221102"
+  ],
+  "observedFailure": "request-key-missing-before-probe",
+  "mustContain": [
+    "request-key-missing"
+  ],
+  "mustNotContain": [
+    "0714",
+    "077e",
+    "221409",
+    "621409"
+  ],
+  "note": "历史失败现场的逐帧观测：只证明日志中观测到的帧，不证明未观测帧成功。"
+}

@@ -119,13 +119,17 @@ export function sortedKeys(obj) {
 export const E0_ROOT = join(REAL_ROOT, '..', 'porsche-mapper', 'ref');
 /** 纳管向量目录（相对仓库根）。 */
 export const VECTOR_DIR = 'tools/align431-vectors';
+/** ★ 阶段 E：强制纳管的 7 组回放向量（mustReplay:true，缺一不可）。 */
+export const VECTOR_IDS = Object.freeze([
+  'REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM',
+  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC',
+]);
 /** 参考诊断仪证据台账（T01）。 */
 export const REGISTRY_FILE = 'data/align431-evidence-registry.json';
 /** e2e 向量纳管执行器（T04）。 */
 export const E2E_GATE = 'e2e-flow.mjs';
 
 const E0_CACHE = new Map();
-const VECTOR_CACHE = new Map();
 
 function hasOwn(obj, key) {
   return Boolean(obj) && Object.prototype.hasOwnProperty.call(obj, key);
@@ -232,9 +236,95 @@ export function evaluateE0Vector(spec, ctx) {
     detail: `${spec.evidenceId} ${r.detail}` };
 }
 
-/** 从向量 payload 计算稳定摘要（不进 sha 的字段不参与）。 */
+/**
+ * ★ 阶段 E：向量摘要分别钉住 expected / replay / sourceLog 三份文件。
+ *
+ * `expectedSha256` / `replaySha256` 是**文件字节摘要**（不是重组后的 payload 摘要），
+ * `sourceLogSha256` 钉住人工语义来源（实车原始日志或既有五组的来源说明）。
+ * 旧的单文件 `{vectorId,expected,replay}` 摘要口径已被三摘要取代：
+ * 改 expected 或 replay 任一个字节而不更新对应 sha → 本摘要与 readVector() 立即转红。
+ */
 export function vectorDigest(v) {
-  return digest(JSON.stringify({ vectorId: v.vectorId, expected: v.expected, replay: v.replay }));
+  const expectedSha256 = v.expectedSha256 || digest(JSON.stringify(v.expected || []));
+  const replaySha256 = v.replaySha256 || digest(JSON.stringify(v.replay || []));
+  const sourceLogSha256 = v.sourceLogSha256 || '';
+  return digest(JSON.stringify({
+    vectorId: v.vectorId, expectedSha256, replaySha256, sourceLogSha256,
+  }));
+}
+
+/** 路径必须在允许的目录内，防止 manifest 指向仓库外的任意文件。 */
+function allowedVectorPath(rel, id, suffix) {
+  if (typeof rel !== 'string' || !rel || /(?:^|[/\\])(?:\.\.)(?:[/\\]|$)|^(?:\/|[A-Za-z]:[\\/])/.test(rel)) {
+    return false;
+  }
+  if (suffix === 'source') {
+    return rel === `${VECTOR_DIR}/${id}.source.json`
+      || /^docs\/realcar\/[^/\\]+\.(txt|log)$/.test(rel);
+  }
+  return rel === `${VECTOR_DIR}/${id}.${suffix}.json`;
+}
+
+/**
+ * ★ 阶段 E：从磁盘（或 ctx 覆写）加载 manifest + expected + replay + sourceLog，
+ * 逐字节校验三份摘要，再组装成共享内核沿用的 `{expected, replay}` 形状。
+ * expected 与 replay 不再共存于同一份权威 JSON：manifest 只存路径与摘要。
+ */
+export function loadVectorPayload(vectorId, ctx) {
+  if (!vectorId) return { ok: false, detail: 'runtimeProbeVector 缺 vectorId' };
+  const manifestRel = `${VECTOR_DIR}/${vectorId}.json`;
+  const manifestText = readTextCtx(manifestRel, ctx);
+  if (manifestText === null) return { ok: false, detail: `向量未纳管：${manifestRel}` };
+  let m;
+  try { m = JSON.parse(manifestText); } catch { return { ok: false, detail: `向量 manifest JSON 损坏：${manifestRel}` }; }
+  const shape = validateVector(m, vectorId);
+  if (!shape.ok) return shape;
+  if (m.mustReplay !== true) {
+    return { ok: false, detail: `${vectorId} mustReplay≠true（未强制纳管）` };
+  }
+  if (!allowedVectorPath(m.expectedFile, vectorId, 'expected')
+      || !allowedVectorPath(m.replayFile, vectorId, 'replay')
+      || !allowedVectorPath(m.sourceLogFile, vectorId, 'source')) {
+    return { ok: false, detail: `${vectorId} expected/replay/sourceLog 路径非法` };
+  }
+  const expectedText = readTextCtx(m.expectedFile, ctx);
+  const replayText = readTextCtx(m.replayFile, ctx);
+  const sourceText = readTextCtx(m.sourceLogFile, ctx);
+  if (expectedText === null || replayText === null || sourceText === null) {
+    return { ok: false, detail: `${vectorId} expected/replay/sourceLog 缺文件` };
+  }
+  if (digest(expectedText) !== m.expectedSha256) {
+    return { ok: false, detail: `${vectorId} expected 字节摘要不符（改帧序未更新 expectedSha256）` };
+  }
+  if (digest(replayText) !== m.replaySha256) {
+    return { ok: false, detail: `${vectorId} replay 字节摘要不符（改应答未更新 replaySha256）` };
+  }
+  if (digest(sourceText) !== m.sourceLogSha256) {
+    return { ok: false, detail: `${vectorId} sourceLog 字节摘要不符（语义来源被改）` };
+  }
+  let expectedDoc;
+  let replayDoc;
+  try { expectedDoc = JSON.parse(expectedText); } catch { return { ok: false, detail: `${vectorId} expected JSON 损坏` }; }
+  try { replayDoc = JSON.parse(replayText); } catch { return { ok: false, detail: `${vectorId} replay JSON 损坏` }; }
+  const frames = expectedDoc?.frames;
+  const steps = replayDoc?.steps;
+  if (!Array.isArray(frames) || frames.length === 0 || !frames.every((f) => typeof f === 'string' && f.trim())) {
+    return { ok: false, detail: `${vectorId} expected.frames 非法` };
+  }
+  if (!Array.isArray(steps) || steps.length === 0
+      || !steps.every((s) => s && typeof s.req === 'string' && typeof s.resp === 'string')) {
+    return { ok: false, detail: `${vectorId} replay.steps 非法` };
+  }
+  const vector = {
+    ...m,
+    expected: frames,
+    replay: steps,
+    failureAssertion: m.failureAssertion || null,
+  };
+  if (m.sha256 && m.sha256 !== vectorDigest(vector)) {
+    return { ok: false, detail: `${vectorId} 向量总摘要不符（三份摘要与钉住值不一致）` };
+  }
+  return { ok: true, vector, expectedText, replayText, sourceText };
 }
 
 /** 读取并校验纳管向量（E1 一律 sampleOnly，禁止泛化全代）。 */
@@ -252,18 +342,7 @@ export function readVector(vectorId, ctx) {
     }
     return { ok: true, vector: v };
   }
-  const rel = `${VECTOR_DIR}/${vectorId}.json`;
-  const text = readTextCtx(rel, ctx);
-  if (text === null) return { ok: false, detail: `向量未纳管：${rel}` };
-  let v;
-  try { v = JSON.parse(text); } catch { return { ok: false, detail: `向量 JSON 损坏：${rel}` }; }
-  const shape = validateVector(v, vectorId);
-  if (!shape.ok) return shape;
-  if (v.sha256 && v.sha256 !== vectorDigest(v)) {
-    return { ok: false, detail: `${vectorId} 向量摘要不符（文件被改）` };
-  }
-  VECTOR_CACHE.set(vectorId, v);
-  return { ok: true, vector: v };
+  return loadVectorPayload(vectorId, ctx);
 }
 
 function validateVector(v, expectedId) {
@@ -271,11 +350,17 @@ function validateVector(v, expectedId) {
       || (expectedId && v.vectorId !== expectedId)) {
     return { ok: false, detail: '向量缺 vectorId 或与文件名不符' };
   }
-  if (!Array.isArray(v.expected) || v.expected.length === 0) {
-    return { ok: false, detail: `${v?.vectorId || '?'} 缺 expected 帧序` };
-  }
-  if (!Array.isArray(v.replay) || v.replay.length === 0) {
-    return { ok: false, detail: `${v?.vectorId || '?'} 缺 replay 应答` };
+  const composed = Array.isArray(v.expected) && Array.isArray(v.replay);
+  if (composed) {
+    if (v.expected.length === 0 || v.replay.length === 0) {
+      return { ok: false, detail: `${v.vectorId} expected/replay 为空` };
+    }
+  } else if (typeof v.expectedFile !== 'string' || typeof v.replayFile !== 'string'
+      || typeof v.sourceLogFile !== 'string'
+      || !/^[0-9a-f]{64}$/.test(v.expectedSha256 || '')
+      || !/^[0-9a-f]{64}$/.test(v.replaySha256 || '')
+      || !/^[0-9a-f]{64}$/.test(v.sourceLogSha256 || '')) {
+    return { ok: false, detail: `${v.vectorId} manifest 缺 expectedFile/replayFile/sourceLogFile 或三份摘要` };
   }
   if (v.sampleOnly !== true || v.grade !== 'R' || v.provable !== 'runtime') {
     return { ok: false, detail: `${v.vectorId} E1/E2 样本未标 sampleOnly+grade:R+provable:runtime` };

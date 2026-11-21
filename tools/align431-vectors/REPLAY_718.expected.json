@@ -1,0 +1,19 @@
+{
+  "vectorId": "REPLAY_718",
+  "kind": "runtime-frame-sequence",
+  "source": "合成重放 Boxster 982 UDS · 包内 §1.5④ 同构",
+  "note": "E1 单车样本：帧序来自真实日志/包内表生成；sampleOnly=true，禁止泛化全代。",
+  "frames": [
+    "1003",
+    "3E00",
+    "1A9F",
+    "22F1A2",
+    "1A87",
+    "1A84",
+    "1089",
+    "221102",
+    "1003",
+    "22F190",
+    "220000"
+  ]
+}

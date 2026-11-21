@@ -1,0 +1,10 @@
+{
+  "vectorId": "REPLAY_718",
+  "kind": "source-provenance",
+  "source": "合成重放 Boxster 982 UDS · 包内 §1.5④ 同构",
+  "sampleOnly": true,
+  "grade": "R",
+  "provable": "runtime",
+  "note": "既有五组向量的语义来源说明；原单文件 sha256 作为沿革钉住。",
+  "legacySha256": "39d16ee5a41be5255ba6d555ddd87c60dcde5b5d93e17320e3ff4207e31839ae"
+}

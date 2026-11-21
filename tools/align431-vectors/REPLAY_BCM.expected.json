@@ -1,0 +1,17 @@
+{
+  "vectorId": "REPLAY_BCM",
+  "kind": "runtime-frame-sequence",
+  "source": "包内表生成 BCM_vorne UDS · DSN.BIN 识别串",
+  "note": "E1 单车样本：帧序来自真实日志/包内表生成；sampleOnly=true，禁止泛化全代。",
+  "frames": [
+    "1003",
+    "3E00",
+    "1A9F",
+    "22F1A2",
+    "1A87",
+    "1A84",
+    "1A91",
+    "1089",
+    "2200F0"
+  ]
+}

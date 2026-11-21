@@ -1,117 +1,26 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "vectorId": "REPLAY_DME",
   "source": "E1 实车日志 WP0AB2983EK190083 · Cayman 981 DME KWP",
   "grade": "R",
   "provable": "runtime",
   "sampleOnly": true,
-  "expected": [
-    "1089",
-    "3E00",
-    "1A9F",
-    "1A87",
-    "1A84",
-    "1A91",
-    "1A92",
-    "1A93",
-    "1A94",
-    "1A95",
-    "1A97",
-    "1A9A",
-    "221102",
-    "221101",
-    "1A90",
-    "2151",
-    "21A4"
-  ],
-  "replay": [
-    {
-      "req": "1089",
-      "resp": "7E8 02 50 89"
-    },
-    {
-      "req": "3E00",
-      "resp": "7E8 02 7E 00"
-    },
-    {
-      "req": "1A9F",
-      "resp": "7E8 06 5A 9F 50 32 30 30"
-    },
-    {
-      "req": "1A87",
-      "resp": "7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35"
-    },
-    {
-      "req": "1A84",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "1A91",
-      "resp": "7E8 10 0D 5A 91 39 39 31 36\r7E8 21 31 38 36 30 32 30 33"
-    },
-    {
-      "req": "1A92",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "1A93",
-      "resp": "7E8 05 5A 93 48 30 34"
-    },
-    {
-      "req": "1A94",
-      "resp": "7E8 10 0D 5A 94 39 38 31 36\r7E8 21 31 38 36 34 30 31 35"
-    },
-    {
-      "req": "1A95",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "1A97",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "1A9A",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "221102",
-      "resp": "7E8 03 7F 22 12"
-    },
-    {
-      "req": "221101",
-      "resp": "7E8 03 7F 22 12"
-    },
-    {
-      "req": "1A90",
-      "resp": "7E810135A9057503041\r7E8214232393833454B\r7E822313930303833AA"
-    },
-    {
-      "req": "1A87",
-      "resp": "7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35"
-    },
-    {
-      "req": "1A9B",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "2150",
-      "resp": "NO DATA"
-    },
-    {
-      "req": "2151",
-      "resp": "7E8 08 61 51 43 61 79 6D 61 6E"
-    },
-    {
-      "req": "21A4",
-      "resp": "7E8 05 61 A4 11 22 33"
-    }
-  ],
+  "mustReplay": true,
+  "expectedFile": "tools/align431-vectors/REPLAY_DME.expected.json",
+  "replayFile": "tools/align431-vectors/REPLAY_DME.replay.json",
+  "sourceLogFile": "tools/align431-vectors/REPLAY_DME.source.json",
+  "sourceLogSha256": "34249cb83185f0cd0dd53def451ac1dab7040981fe777592e6ec464e7c22f49a",
+  "expectedSha256": "8f771102b5f7bd89c045abaab4454e2084a0a8f6e81fefc56ee3608a638e9cda",
+  "replaySha256": "42fda7d7e7f9ebd0af24641554c0f4fd9b8a7a1c98a6fc24f833b8088ab8b0a9",
   "diffCmd": "node e2e-flow.mjs | grep -F 'VECTOR REPLAY_DME '",
   "injection": {
+    "expectedTamper": "改 REPLAY_DME.expected.json 帧序但不更新 expectedSha256 → replay gate 必须红",
+    "replayTamper": "改 REPLAY_DME.replay.json 应答字节但不更新 replaySha256 → replay gate 必须红",
+    "sourceTamper": "改 REPLAY_DME.source.json 但不更新 sourceLogSha256 → replay gate 必须红",
     "noData": "将 REPLAY_DME.replay[].resp 全部改成 NO DATA → runtimeProbeVector 必须转红",
     "wrongRx": "改 REPLAY_DME.replay[].resp 回帧头 → e2e 帧 diff≠空",
     "e1Generalized": "把 REPLAY_DME.sampleOnly 改 false/grade S → provableTag 必须转红",
     "e2eOutside": "把 REPLAY_DME 从 e2e 执行面移除 → runtimeProbeVector 必须转红"
   },
-  "sha256": "2f1e1297cb994667e93dc3c45aef3e2e47fb145e09bb32297fa746c1e1173a6a"
+  "sha256": "356f2483c47d3a19e11306db08f4c1a0c5c2ee027c635cf2d12f1560db4db77f"
 }

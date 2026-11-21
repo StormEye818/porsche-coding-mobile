@@ -1,0 +1,25 @@
+{
+  "vectorId": "REPLAY_DME",
+  "kind": "runtime-frame-sequence",
+  "source": "E1 实车日志 WP0AB2983EK190083 · Cayman 981 DME KWP",
+  "note": "E1 单车样本：帧序来自真实日志/包内表生成；sampleOnly=true，禁止泛化全代。",
+  "frames": [
+    "1089",
+    "3E00",
+    "1A9F",
+    "1A87",
+    "1A84",
+    "1A91",
+    "1A92",
+    "1A93",
+    "1A94",
+    "1A95",
+    "1A97",
+    "1A9A",
+    "221102",
+    "221101",
+    "1A90",
+    "2151",
+    "21A4"
+  ]
+}

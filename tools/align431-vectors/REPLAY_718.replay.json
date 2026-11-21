@@ -1,0 +1,56 @@
+{
+  "vectorId": "REPLAY_718",
+  "kind": "mock-replay-script",
+  "source": "合成重放 Boxster 982 UDS · 包内 §1.5④ 同构",
+  "note": "逐条应答字节，供 MockAdapter replay 模式真执行；不得当静态真值上报。",
+  "steps": [
+    {
+      "req": "1003",
+      "resp": "7E8 02 50 03"
+    },
+    {
+      "req": "3E00",
+      "resp": "7E8 02 7E 00"
+    },
+    {
+      "req": "1A9F",
+      "resp": "7E8 06 5A 9F 50 32 30 30"
+    },
+    {
+      "req": "22F1A2",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A87",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A84",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A91",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1089",
+      "resp": "7E8 02 50 89"
+    },
+    {
+      "req": "221102",
+      "resp": "7E8 10 10 62 11 02 37 31 38\r7E8 21 20 42 6F 78 73 74 65\r7E8 22 72 20 54 AA AA AA AA"
+    },
+    {
+      "req": "1003",
+      "resp": "7E8 02 50 03"
+    },
+    {
+      "req": "22F190",
+      "resp": "7E8 10 14 62 F1 90 57 50 30\r7E8 21 5A 5A 5A 39 38 32 4A\r7E8 22 53 32 30 30 30 30 31"
+    },
+    {
+      "req": "220000",
+      "resp": "7E8 04 62 00 00 5A"
+    }
+  ]
+}

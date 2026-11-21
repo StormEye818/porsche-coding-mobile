@@ -23,17 +23,31 @@ import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   ROOT, E0_ROOT, digest, readJson, assertionIntegrity, evaluateE0Vector,
-  evaluateRuntimeVector, evaluateProvableTag, REGISTRY_FILE,
+  evaluateRuntimeVector, evaluateProvableTag, readVector, REGISTRY_FILE,
 } from './align431-eval.mjs';
 
 const REAL_ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 // .git 必须软链接进镜像：builder 的 IMPL_LANDED_NO_LOCAL_ONLY_CARRIER 要用
 // `git ls-files --error-unmatch` 验证依赖确实入库（只读操作，不改真实 .git）。
 const SKIP_TOP = new Set(['data', 'src', 'tools', 'www', 'node_modules']);
+// ★ 阶段 E：7 组 mustReplay 向量的 manifest/expected/replay + 来源文件全部钉住。
+// 任何一组字节被改（含只改 expected/replay 不改 sha）都必须在结束核对时转红。
+const VECTOR_IDS_FOR_WATCH = [
+  'REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM',
+  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC',
+];
 const WATCH_FILES = [
   'data/bind-plan.json', 'data/comm-addr-table.json', 'data/align431-evidence-registry.json',
   'tools/align431-rows.json', 'tools/verify-live-map-failclosed.mjs', 'src/live-map.js',
-  'tools/align431-vectors/REPLAY_DME.json',
+  ...VECTOR_IDS_FOR_WATCH.flatMap((id) => [
+    `tools/align431-vectors/${id}.json`,
+    `tools/align431-vectors/${id}.expected.json`,
+    `tools/align431-vectors/${id}.replay.json`,
+  ]),
+  ...['REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM']
+    .map((id) => `tools/align431-vectors/${id}.source.json`),
+  'docs/realcar/2026-11-20-981-BCM-hinten-v080.txt',
+  'docs/realcar/2026-11-20-991-IC-sim-v080.txt',
 ];
 
 /** @type {{id:string,name:string,assertion:string,red:boolean,green:boolean}[]} */
@@ -249,7 +263,10 @@ try {
 
 // ⑤ 全 NO DATA 仍标 A → 运行时应答举证必红。
 {
-  const v = JSON.parse(readFileSync(join(REAL_ROOT, 'tools/align431-vectors/REPLAY_DME.json'), 'utf8'));
+  // ★ 阶段 E：manifest 不再自带 expected/replay，须用共享内核加载分离文件后的组装视图。
+  const loaded = readVector('REPLAY_DME');
+  if (!loaded.ok) throw new Error(loaded.detail);
+  const v = loaded.vector;
   const noData = { ...v, replay: v.replay.map((x) => ({ ...x, resp: 'NO DATA' })) };
   const ctx = { vectors: { REPLAY_DME: noData }, e2eStdout: 'VECTOR REPLAY_DME frames=17 diff=[]' };
   const spec = { vectorId: 'REPLAY_DME', requireAnswer: true };

@@ -1,0 +1,48 @@
+{
+  "vectorId": "REPLAY_PSM",
+  "kind": "mock-replay-script",
+  "source": "包内表生成 PSM_a2_1 UDS · DSN.BIN 识别串 + JOB.BIN 件号",
+  "note": "逐条应答字节，供 MockAdapter replay 模式真执行；不得当静态真值上报。",
+  "steps": [
+    {
+      "req": "1003",
+      "resp": "7E8 02 50 03"
+    },
+    {
+      "req": "1089",
+      "resp": "7E8 02 50 89"
+    },
+    {
+      "req": "3E00",
+      "resp": "7E8 02 7E 00"
+    },
+    {
+      "req": "1A9F",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "22F1A2",
+      "resp": "7E8 10 09 62 F1 A2 30 30 33\r7E8 21 30 30 30"
+    },
+    {
+      "req": "1A87",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A84",
+      "resp": "7E8 10 0D 5A 84 39 39 31 33\r7E8 21 35 35 36 35 35 38 39"
+    },
+    {
+      "req": "1A91",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A92",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A93",
+      "resp": "NO DATA"
+    }
+  ]
+}

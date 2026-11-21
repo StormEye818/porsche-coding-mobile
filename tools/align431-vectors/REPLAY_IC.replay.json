@@ -1,0 +1,32 @@
+{
+  "vectorId": "REPLAY_IC",
+  "kind": "mock-replay-script",
+  "source": "E1 实车日志 IC KWP 静默识别 · 0x721/0x729",
+  "note": "逐条应答字节，供 MockAdapter replay 模式真执行；不得当静态真值上报。",
+  "steps": [
+    {
+      "req": "1089",
+      "resp": "7E8 02 50 89"
+    },
+    {
+      "req": "3E00",
+      "resp": "7E8 02 7E 00"
+    },
+    {
+      "req": "1A9F",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A87",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A84",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "2101",
+      "resp": "7E8 04 61 01 00 00"
+    }
+  ]
+}

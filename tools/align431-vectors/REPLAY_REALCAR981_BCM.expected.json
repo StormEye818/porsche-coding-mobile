@@ -1,0 +1,27 @@
+{
+  "vectorId": "REPLAY_REALCAR981_BCM",
+  "kind": "historical-failure-replay",
+  "source": "E1 实车失败现场 2026-11-20 · Boxster/Cayman 981 VIN WP0AB2981FK180962 · 后端电子设备进模块失败",
+  "captureId": "REALCAR-20261120-981-BCM-HINTEN-V080",
+  "mode": "realcar",
+  "sourceLogFile": "docs/realcar/2026-11-20-981-BCM-hinten-v080.txt",
+  "frames": [
+    "221102",
+    "221101",
+    "1A90",
+    "2151",
+    "210905",
+    "0902"
+  ],
+  "observedFailure": "request-key-missing-before-probe",
+  "mustContain": [
+    "request-key-missing"
+  ],
+  "mustNotContain": [
+    "070d",
+    "0777",
+    "221409",
+    "621409"
+  ],
+  "note": "历史失败现场的逐帧观测：只证明日志中观测到的帧，不证明未观测帧成功。"
+}

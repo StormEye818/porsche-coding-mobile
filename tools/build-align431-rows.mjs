@@ -339,7 +339,8 @@ const E0_STEPS = Object.freeze([
   { key: 'live', vectorId: 'REPLAY_DME', runtime: true,
     ids: ['E-05', 'E-20', 'E-01', 'E-06'], topics: [], categories: [],
     re: /live.?map|reportNative|fail.?closed|请求键绑定|NO_NATIVE/i },
-  { key: 'address', vectorId: 'REPLAY_DME', runtime: true,
+  // ★ 阶段 E：连接/寻址行改挂 981 实车失败现场向量（真实失败分类，不再只挂旧五组）。
+  { key: 'address', vectorId: 'REPLAY_REALCAR981_BCM', runtime: true,
     ids: ['PE-01', 'PE-02', 'E-01', 'E-02', 'E-06'], topics: ['连接', '寻址'],
     categories: ['HB2-DISPATCH'], re: /addr|probe|地址|候选|221409|ATSH|ATCRA/i },
   { key: 'session', vectorId: 'REPLAY_IC', runtime: true,
@@ -361,7 +362,8 @@ const E0_STEPS = Object.freeze([
   { key: 'special', vectorId: 'REPLAY_BCM', runtime: false,
     ids: ['PE-45', 'PE-46', 'E08'], categories: ['NORID', 'D2-NAMESPACE', 'FEATURE-SET-5'],
     re: /special|例程|特殊功能|菜单|menu|noRid|命名空间/i },
-  { key: 'failure', vectorId: 'REPLAY_IC', runtime: true,
+  // ★ 阶段 E：失败分类行改挂 991 模拟失败现场向量（请求键缺失 fail-closed 真实现场）。
+  { key: 'failure', vectorId: 'REPLAY_SIM991_IC', runtime: true,
     ids: ['PE-50', 'PE-51', 'PE-52', 'PE-53', 'PE-54', 'PE-55'],
     categories: ['BEHAVIOR-TRANSPORT'], re: /78|NRC|NO DATA|超时|timeout|回帧/i },
   { key: 'platform', vectorId: 'REPLAY_718', runtime: false,

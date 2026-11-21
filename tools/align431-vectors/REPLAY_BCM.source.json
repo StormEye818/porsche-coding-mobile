@@ -1,0 +1,10 @@
+{
+  "vectorId": "REPLAY_BCM",
+  "kind": "source-provenance",
+  "source": "包内表生成 BCM_vorne UDS · DSN.BIN 识别串",
+  "sampleOnly": true,
+  "grade": "R",
+  "provable": "runtime",
+  "note": "既有五组向量的语义来源说明；原单文件 sha256 作为沿革钉住。",
+  "legacySha256": "0298bec09bcb85cc56f2c95f21a2de1b4d669e501cdac7d46ffa0de42d92ab3f"
+}

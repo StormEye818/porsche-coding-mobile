@@ -1,0 +1,10 @@
+{
+  "vectorId": "REPLAY_IC",
+  "kind": "source-provenance",
+  "source": "E1 实车日志 IC KWP 静默识别 · 0x721/0x729",
+  "sampleOnly": true,
+  "grade": "R",
+  "provable": "runtime",
+  "note": "既有五组向量的语义来源说明；原单文件 sha256 作为沿革钉住。",
+  "legacySha256": "055b93f9f0da059a8f963b5073f767cbfc5767934dd898dfe14d822b711e3a2f"
+}

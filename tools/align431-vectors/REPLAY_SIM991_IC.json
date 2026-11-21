@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "vectorId": "REPLAY_SIM991_IC",
+  "source": "E1 模拟失败现场 2026-11-20 · 911(991) VIN WP0ZZZ991GS123456 · IC 进模块失败",
+  "grade": "R",
+  "provable": "runtime",
+  "sampleOnly": true,
+  "mustReplay": true,
+  "kind": "historical-failure-replay",
+  "captureId": "SIM-20261120-991-IC-V080",
+  "expectedFile": "tools/align431-vectors/REPLAY_SIM991_IC.expected.json",
+  "replayFile": "tools/align431-vectors/REPLAY_SIM991_IC.replay.json",
+  "sourceLogFile": "docs/realcar/2026-11-20-991-IC-sim-v080.txt",
+  "sourceLogSha256": "46c4cdbf948cbbeeeee7ef6561a3de35f76006441a0f400c7feba225a45cbbdf",
+  "expectedSha256": "3d95da5a9a437f099e83521050a1f73a07d84bc46e29632d03d927cb2aeddf92",
+  "replaySha256": "9dfd69b2b51cdfa0a7efb84e2ed994530e28b379eadcd29bfa2a5ef0dd7a11d1",
+  "diffCmd": "node e2e-flow.mjs | grep -F 'VECTOR REPLAY_SIM991_IC '",
+  "failureAssertion": {
+    "observedFailure": "request-key-missing-before-probe",
+    "mustContain": [
+      "request-key-missing"
+    ],
+    "mustNotContain": [
+      "0714",
+      "077e",
+      "221409",
+      "621409"
+    ],
+    "reason": "原始日志只观测到 VIN/车名识别帧；进 IC 在请求键绑定处 fail-closed，不得伪造 0x0714/0x077E 正响应。"
+  },
+  "injection": {
+    "expectedTamper": "改 REPLAY_SIM991_IC.expected.json 观测帧但不更新 expectedSha256 → replay gate 必须红",
+    "replayTamper": "改 REPLAY_SIM991_IC.replay.json 应答字节但不更新 replaySha256 → replay gate 必须红",
+    "fabricatedPositive": "在 REPLAY_SIM991_IC.replay.json 塞入 0x070D/0x0777 或 0x0714/0x077E 正响应 → replay gate 必须红",
+    "failureMarkerRemoved": "删掉 REPLAY_SIM991_IC.expected.json 的 request-key-missing 观测标记 → replay gate 必须红",
+    "e2eOutside": "把 REPLAY_SIM991_IC 从 e2e 执行面移除 → replay gate / runtimeProbeVector 必须红"
+  },
+  "sha256": "20b4cdd9b724ad9eb6d1bb9dbab450306654d7cd67f61dfaad3a1efa897cc954"
+}

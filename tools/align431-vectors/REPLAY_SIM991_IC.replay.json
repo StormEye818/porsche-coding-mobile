@@ -1,0 +1,25 @@
+{
+  "vectorId": "REPLAY_SIM991_IC",
+  "kind": "mock-replay-script",
+  "source": "E1 模拟失败现场 2026-11-20 · 911(991) VIN WP0ZZZ991GS123456 · IC 进模块失败",
+  "captureId": "SIM-20261120-991-IC-V080",
+  "steps": [
+    {
+      "req": "1A90",
+      "resp": "7E8 5A 90 57 50 30 5A 5A\r7E8 5A 39 39 31 47 53 31\r7E8 32 33 34 35 36",
+      "verdict": "ok",
+      "note": "VIN = WP0ZZZ991GS123456"
+    },
+    {
+      "req": "221102",
+      "resp": "7E8 62 11 02 39 31 31 28\r7E8 39 39 31 29",
+      "verdict": "ok",
+      "note": "应答名 911(991)"
+    }
+  ],
+  "observedFailure": "request-key-missing-before-probe",
+  "observedCandidates": [
+    "0x340/0x348"
+  ],
+  "note": "原始日志只观测到 VIN/车名识别帧；进 IC 在请求键绑定处 fail-closed，不得伪造 0x0714/0x077E 正响应。"
+}

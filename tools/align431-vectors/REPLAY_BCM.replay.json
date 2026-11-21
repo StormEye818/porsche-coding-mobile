@@ -1,0 +1,40 @@
+{
+  "vectorId": "REPLAY_BCM",
+  "kind": "mock-replay-script",
+  "source": "包内表生成 BCM_vorne UDS · DSN.BIN 识别串",
+  "note": "逐条应答字节，供 MockAdapter replay 模式真执行；不得当静态真值上报。",
+  "steps": [
+    {
+      "req": "1003",
+      "resp": "7E8 02 50 03"
+    },
+    {
+      "req": "1089",
+      "resp": "7E8 02 50 89"
+    },
+    {
+      "req": "3E00",
+      "resp": "7E8 02 7E 00"
+    },
+    {
+      "req": "1A9F",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "22F1A2",
+      "resp": "7E8 10 09 62 F1 A2 30 35 30\r7E8 21 30 31 38"
+    },
+    {
+      "req": "1A87",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A84",
+      "resp": "NO DATA"
+    },
+    {
+      "req": "1A91",
+      "resp": "NO DATA"
+    }
+  ]
+}
