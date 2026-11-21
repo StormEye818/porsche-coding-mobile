@@ -633,12 +633,14 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
   //   删除旧 `cands` 低 16 位当 CAN 与 `rx = tx + 8` 两处自创推导（E-11/E-18）。
   const staticRows = sweepPlan({ bindPlan,
     sysIds: [planSysId, entry?.sysId].filter(Boolean) });
-  const planRequestKeys = Array.isArray(plan?.requestKey) ? plan.requestKey : [];
-  all = staticRows.map((r, i) => ({
+  // ★ 阶段 A：requestKey 已由 bind-plan-rows 从生产 requestKeys[] 逐行带入，
+  //   不再读生产数据里不存在的 plan.requestKey 单数别名（仅 0x0f4d 四元特例有）。
+  //   无请求键的行保持 null，由下方 tryAddr 的 fail-closed 拒绝。
+  all = staticRows.map((r) => ({
     ...r,
     proto: null,
     src: 'plan',
-    requestKey: r.requestKey || planRequestKeys[i] || null,
+    requestKey: r.requestKey ?? null,
   }));
   if (!all.length) {
     // 静态四元字段缺失（T02 数据未重生）→ 只用表 A 的静态行，不把请求键当 CAN。

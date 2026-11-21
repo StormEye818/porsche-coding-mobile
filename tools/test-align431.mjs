@@ -12,6 +12,9 @@
  * ★ 2026-11-20（impl-contract-fix）：T03 删除了 rxFor 与逐地址扫描，旧断言导入即失败
  *   导致整文件 0 断言执行。本版同步新 431 真值与新运行时 API，逐条钉住防止回归，
  *   不放宽任何旧判据。
+ * ★ 2026-11-20（阶段 A）：[D] 段的 `can/requestKey` 合成 fixture 已替换为真实
+ *   data/bind-plan.json → sweepPlan/selectAddrRows 消费者测试（见 verify-bindplan-
+ *   runtime-contract.mjs）；[A]/[B]/[C]/[E] 断言全部保留。
  *
  * 跑法: node tools/test-align431.mjs
  */
@@ -128,55 +131,52 @@ console.log('\n[C] 绑定计划（data/bind-plan.json）—— T02 全代真值'
     ic && /^(22[0-9A-F]{4}|21[0-9A-F]{2}|1A[0-9A-F]{2})$/.test(ic.firstRead || ''), ic && ic.firstRead);
 }
 
-console.log('\n[D] 枚举器（src/sweep.js）—— T03 新契约：静态选行 + rx 取表');
+console.log('\n[D] 枚举器（src/sweep.js）—— 阶段 A：只测真实 bind-plan 数据消费者');
 {
-  // ★ T03：不再逐地址扫描（0x7e0..0x7e3）、不再 rxFor(tx)=tx+8 推导。
-  //   候选只来自 bindPlan 的静态 addrBlock；rx 原样取记录 C>>5（本例 +0x6A）。
-  //   用最小 in-memory fixture 真执行，避免把旧 D 级「全段枚举」写回测试。
-  const fixture = {
-    ecu: {
-      '0xaaaa': {
-        can: { tx: 0x0714, rx: 0x077e, rxRule: 'rx=tx+0x6A', provable: 'static' },
-        requestKey: ['0x003006CC'], blockOff: '21100', name: 'FIXTURE_A',
-      },
-      '0xbbbb': {
-        can: { tx: 0x0714, rx: 0x077e, rxRule: 'rx=tx+0x6A', provable: 'static' },
-        requestKey: ['0x003006CC'], blockOff: '21183', name: 'FIXTURE_B',
-      },
-      '0xcccc': {
-        can: { tx: 0x0730, rx: 0x0738, rxRule: 'rx=tx+8', provable: 'static' },
-        requestKey: ['0x003006CC'], blockOff: '21100', name: 'FIXTURE_DUP',
-      },
-      '0xdddd': {
-        can: { tx: 0x0740, rx: 0x0748, rxRule: 'rx=tx+8', provable: 'derived' },
-        requestKey: ['0x003006DD'], blockOff: '21500', name: 'FIXTURE_DERIVED',
-      },
-    },
-  };
-  const sysIds = ['0xaaaa', '0xbbbb', '0xcccc', '0xdddd'];
-  const plan = sweepPlan({ bindPlan: fixture, sysIds });
-  ok('sweepPlan 按静态 addrBlock 选行（非 0x7e0..0x7e3 逐地址枚举）',
-    plan.length === 2 && plan.some((r) => r.blockOff === '21100') && plan.some((r) => r.blockOff === '21183'),
-    JSON.stringify(plan.map((r) => ({ tx: r.tx, rx: r.rx, blockOff: r.blockOff }))));
-  ok('sweepPlan 的 rx 取自静态表 C>>5（+0x6A），不是 tx+8',
-    plan.length === 2 && plan.every((r) => r.rx === 0x077e && r.rx !== r.tx + 8),
-    JSON.stringify(plan.map((r) => ({ tx: r.tx, rx: r.rx, rxRule: r.rxRule }))));
-  ok('sweepPlan 不同 blockOff 不共用（Macan 双绑语义）',
-    plan.filter((r) => r.tx === 0x0714 && r.rx === 0x077e).length === 2
-      && new Set(plan.map((r) => r.blockOff)).size === 2);
-  ok('sweepPlan 同 blockOff + 同请求键去重',
-    plan.length === 2 && !plan.some((r) => r.tx === 0x0730),
-    JSON.stringify(plan.map((r) => r.tx)));
-  ok('sweepPlan 只收 provable=static（derived 候选被拒）',
-    !plan.some((r) => r.tx === 0x0740) && selectAddrRows(fixture, ['0xdddd']).length === 0);
-  ok('sweepPlan 保留请求键作绑定入参（不取低 16 位当 CAN）',
-    plan.length === 2 && plan.every((r) => r.requestKey === '0x003006CC' && r.tx === 0x0714),
-    JSON.stringify(plan.map((r) => r.requestKey)));
-  ok('sweepPlan 支持 skip（按 CAN tx 排除，不生成）',
-    sweepPlan({ bindPlan: fixture, sysIds, skip: [0x0714] }).length === 0
-      && sweepPlan({ bindPlan: fixture, sysIds, skip: [0x0730] }).length === 2);
+  // ★ 2026-11-20：旧 in-memory `can/requestKey` fixture 恰好命中不存在于生产的
+  //   单数形状，造成 47/0 假绿。本段改为直接读 data/bind-plan.json 调真实
+  //   sweepPlan/selectAddrRows；不复制适配逻辑、不注入合成条目。
+  const { readFileSync } = await import('node:fs');
+  const plan = JSON.parse(readFileSync(new URL('../data/bind-plan.json', import.meta.url), 'utf8'));
+  const e23 = plan.ecu['0x0e23'];
+  const plan23 = sweepPlan({ bindPlan: plan, sysIds: ['0x0e23'] });
+  ok('真实数据：0x0e23 选中本代真值行（非空，首行 0x070D/0x0777）',
+    plan23.length > 0 && plan23[0].tx === 0x070d && plan23[0].rx === 0x0777,
+    `rows=${plan23.length} first=0x${(plan23[0]?.tx ?? 0).toString(16)}/0x${(plan23[0]?.rx ?? 0).toString(16)}`);
+  ok('真实数据：rx 取 truth 的 +0x6A，不是 tx+8',
+    plan23.length > 0 && /0x6[aA]/.test(plan23[0].rxRule || '') && plan23[0].rx !== plan23[0].tx + 8,
+    plan23[0]?.rxRule);
+  ok('真实数据：requestKey 来自 requestKeys[] 完整键空间（低 16 位不当 CAN）',
+    plan23.length === e23.requestKeys.length
+      && plan23.every((r) => e23.requestKeys.includes(r.requestKey)
+        && /^0x(0030|FF60)[0-9A-Fa-f]{4}$/.test(r.requestKey)),
+    `keys=${new Set(plan23.map((r) => r.requestKey)).size}`);
+  ok('真实数据：同 blockOff + 同请求键只留真值首枚（derived 不冒充）',
+    plan23.length > 0 && plan23.every((r) => r.source === 'truth' && r.provable === 'static')
+      && new Set(plan23.map((r) => `${r.blockOff}|${r.requestKey}`)).size === plan23.length,
+    `rows=${plan23.length}`);
+  ok('真实数据：0x0e08 七枚请求键可读',
+    sweepPlan({ bindPlan: plan, sysIds: ['0x0e08'] }).length === 7
+      && plan.ecu['0x0e08'].requestKeys.length === 7);
+  ok('真实数据：0x1408 无请求键仍产出显式 fail-closed 候选行',
+    (plan.ecu['0x1408']?.requestKeys || []).length === 0
+      && selectAddrRows(plan, ['0x1408']).length === 1
+      && selectAddrRows(plan, ['0x1408'])[0].requestKey === null);
+  const macan = sweepPlan({ bindPlan: plan, sysIds: ['0x0f23', '0x0f34'] });
+  ok('真实数据：不同 blockOff 不合并（Macan 0x0f23/0x0f34 双绑）',
+    macan.some((r) => r.tx === 0x070d && r.blockOff === '76554')
+      && macan.some((r) => r.tx === 0x0723 && r.blockOff === '78214'),
+    JSON.stringify(macan.map((r) => ({ tx: r.tx, blockOff: r.blockOff }))));
+  ok('真实数据：skip 按 CAN tx 排除，不用 derived 顶替',
+    sweepPlan({ bindPlan: plan, sysIds: ['0x0e23'], skip: [0x070d] }).length === 0
+      && plan23.length === 33);
   ok('无 bindPlan/sysIds 时返回空（不默认枚举全段）',
-    sweepPlan().length === 0 && sweepPlan({ bindPlan: fixture }).length === 0);
+    sweepPlan().length === 0 && sweepPlan({ bindPlan: plan }).length === 0);
+  const f4d = selectAddrRows(plan, ['0x0f4d']);
+  ok('真实数据：0x0f4d 四元对象与 altIdentitySysIds 原样保留',
+    plan.ecu['0x0f4d']?.fourTuple?.sysId === '0x0f4d'
+      && f4d.length > 0 && f4d[0].altIdentitySysIds.join() === '0x0e5f,0x0e60',
+    JSON.stringify(f4d[0]?.altIdentitySysIds || []));
   ok('每候选仅 1 帧探针 221409（非 9 帧枚举）',
     PROBE_FRAME === '221409' && PROBE_FRAMES_PER_CANDIDATE === 1,
     `${PROBE_FRAME}/${PROBE_FRAMES_PER_CANDIDATE}`);

@@ -9,9 +9,12 @@
  *   - 每个候选仅 1 帧 `22 14 09`；n==0 跳过探针；绑定入参为**请求键**；
  *     「哪条 CAN 应答」只由 src/live-map.js 的原生上报产生，缺失即 fail-closed。
  *   - 身份按**名字串 + 件号**裁决；0x0f4d(SWA2) 与 0x0e5f(BV_*) CAN raw 相同也不合并。
+ *   - ★ 2026-11-20 阶段 A：候选行统一由 src/bind-plan-rows.js 从生产 schema
+ *     （truth/pairs/requestKeys）派生；不再读 production 中不存在的 can/requestKey 单数。
  *
  * 纯函数放这里（可单测），IO 在 app 侧。
  */
+import { bindPlanRuntimeRows } from './bind-plan-rows.js';
 
 /** 探针帧（E-01 / PE-02：0xFF001409 = 22 14 09）；不是 CAN 地址。 */
 export const PROBE_FRAME = '221409';
@@ -46,91 +49,36 @@ export function classifyProbe(cand, ids, body) {
 }
 
 /**
- * 把 bind-plan 的四元条目展开为静态候选行（E-02：addrBlock 行原样搬移）。
+ * 把真实 bind-plan 条目展开为静态候选行（E-02：addrBlock 行原样搬移）。
  *
- * 只接受带 `provable:'static'` 的 CAN（`cat=0x10` A>>5/C>>5 可离线复算）。
- * 请求键只作绑定入参，绝不取低 16 位当 CAN。
- * blockOff 相同 → 同组只取首枚；blockOff 不同 → 必须分别绑定（Macan 0x0f23/0x0f34）。
+ * 候选 CAN 与请求键统一由 `bindPlanRuntimeRows()` 从生产 schema
+ * （truth / pairs / requestKeys / blockOff / fourTuple）派生：
+ *   - truth（cat=0x10 静态真值）优先于 commCat10/static，二者优先于 derived；
+ *   - 请求键只作绑定入参，绝不取低 16 位当 CAN；
+ *   - 本函数只选候选行，不生成/推断绑定，绑定仍由原生回帧 + bindByRequestKey 产生。
+ * 去重：同 blockOff + 同请求键只保留首枚（真值先到即胜）；blockOff 不同必须分别
+ * 绑定（Macan 0x0f23/0x0f34）。
  *
  * @param {object|null} bindPlan data/bind-plan.json（T02 重生后含四元字段）
  * @param {string[]} sysIds 本菜单要选的 sysId
- * @returns {Array<{tx:number,rx:number,rxRule:string,requestKey:string,
+ * @returns {Array<{tx:number,rx:number,rxRule:string,requestKey:string|null,
  *                  sysId:string,name:string,blockOff:string|null,
- *                  altIdentitySysIds:string[],provable:'static',e0Coord:string}>}
+ *                  altIdentitySysIds:string[],provable:string,e0Coord:string,
+ *                  source:string}>} 静态候选行
  */
 export function selectAddrRows(bindPlan, sysIds = []) {
   const rows = [];
-  const seen = new Set();
   for (const rawSid of sysIds || []) {
     const sysId = String(rawSid || '').toLowerCase();
     if (!sysId) continue;
     const entry = bindPlan?.ecu?.[sysId] || bindPlan?.ecu?.[rawSid];
     if (!entry) continue;
-    const can = entry.can;
-    const requestKeys = Array.isArray(entry.requestKey) ? entry.requestKey
-      : (entry.requestKey != null ? [entry.requestKey] : []);
-    // T02 四元对象：一个 can + 一组请求键（0x0030xxxx / 0xFF60xxxx 或低 16 位）。
-    if (can && can.provable === 'static' && requestKeys.length) {
-      const tx = Number(can.tx);
-      const rx = Number(can.rx);
-      if (Number.isInteger(tx) && tx > 0 && tx <= 0x7ff
-          && Number.isInteger(rx) && rx > 0 && rx <= 0x7ff) {
-        const blockOff = String(entry.blockOff ?? '');
-        for (const rk of requestKeys) {
-          const key = typeof rk === 'number' ? `0x${rk.toString(16).padStart(4, '0')}` : String(rk);
-          const dedup = `${blockOff || ''}|${key}|${tx}|${rx}`;
-          if (seen.has(dedup)) continue;
-          seen.add(dedup);
-          rows.push({
-            tx, rx,
-            rxRule: String(can.rxRule || ''),
-            requestKey: key,
-            sysId,
-            name: String(entry.name || entry.sysName || ''),
-            blockOff: blockOff || null,
-            altIdentitySysIds: (entry.altIdentitySysIds || []).map((x) => String(x)),
-            provable: 'static',
-            e0Coord: String(entry.e0Coord || ''),
-          });
-        }
-      }
-      continue;
-    }
-    // 多块变体：entry.blocks[] / entry.addrBlocks[] 每条自带 can + requestKey。
-    const blocks = Array.isArray(entry.blocks) ? entry.blocks
-      : (Array.isArray(entry.addrBlocks) ? entry.addrBlocks : []);
-    for (const b of blocks) {
-      const bc = b.can || b;
-      const bKeys = Array.isArray(b.requestKey) ? b.requestKey : [b.requestKey];
-      if (bc.provable !== 'static') continue;
-      const tx = Number(bc.tx);
-      const rx = Number(bc.rx);
-      if (!Number.isInteger(tx) || tx <= 0 || tx > 0x7ff
-          || !Number.isInteger(rx) || rx <= 0 || rx > 0x7ff) continue;
-      for (const rk of bKeys) {
-        if (rk == null) continue;
-        const blockOff = String(b.blockOff ?? entry.blockOff ?? '');
-        const dedup = `${blockOff}|${String(rk)}|${tx}|${rx}`;
-        if (seen.has(dedup)) continue;
-        seen.add(dedup);
-        rows.push({
-          tx, rx,
-          rxRule: String(bc.rxRule || ''),
-          requestKey: typeof rk === 'number' ? `0x${rk.toString(16).padStart(4, '0')}` : String(rk),
-          sysId,
-          name: String(b.name || entry.name || ''),
-          blockOff: blockOff || null,
-          altIdentitySysIds: (entry.altIdentitySysIds || []).map((x) => String(x)),
-          provable: 'static',
-          e0Coord: String(b.e0Coord || entry.e0Coord || ''),
-        });
-      }
-    }
+    rows.push(...bindPlanRuntimeRows(entry, { sysId }));
   }
   // 同 blockOff 同请求键只保留首枚；blockOff 不同（Macan 双绑）必须分开。
   const byBlock = new Set();
   return rows.filter((r) => {
-    const dedup = `${r.blockOff ?? ''}|${r.requestKey}`;
+    const dedup = `${r.blockOff ?? ''}|${r.requestKey ?? ''}`;
     if (byBlock.has(dedup)) return false;
     byBlock.add(dedup);
     return true;
