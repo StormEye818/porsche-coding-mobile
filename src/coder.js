@@ -1505,17 +1505,23 @@ export class Coder {
           sliceUsed = true;
         }
       }
+      // ② 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU / 当身份串）。
+      //    ⚠️ 必须放在**任何**成功 return 之前（2026-11-22 实车 22F1A2 NRC31 日志根因）：
+      //    旧代码把本检查排在下面「正响应短路」之后 —— 半包首字节恰是 0x62 (=wantResp)，
+      //    于是 `777100962F1A2303530`（首帧声明 9B、实收 6B、缺连续帧）被当成功返回，
+      //    上层剥头只拿到 "050"。正确做法是**读完整多帧才裁决**，绝不拿半包当身份串。
+      //    本检查覆盖两条来源：① parseRespAuto 直接结果；② sliceFromPositiveFrame 切片后
+      //    重新解析的结果 —— 两者任一 truncated 都当场拒绝，不给下面的正响应短路机会。
+      if (p && p.kind === 'truncated') {
+        throw new CodingError(
+          `服务 ${payloadHex} 多帧应答被截断：声明 ${p.expected} 字节，实收 ${p.received} 字节。` +
+          `可能是超时 / 假提示符 / 流控异常 —— 不能拿短块继续，更不能写回。`);
+      }
       if (p.body && p.body.length && (p.body[0] & 0xff) === wantResp) {
         if (pendingRounds > 0) {
           this._trace(`  (78 挂起后第 ${pendingRounds} 轮保活收到最终正响应 —— 原帧全程只发过 1 次)`);
         }
         return { raw, ...p, pendingRounds, sliceUsed };
-      }
-      // ② 多帧截断：宁可报错也不能把短块交出去（会被写回 ECU）
-      if (p.kind === 'truncated') {
-        throw new CodingError(
-          `服务 ${payloadHex} 多帧应答被截断：声明 ${p.expected} 字节，实收 ${p.received} 字节。` +
-          `可能是超时 / 假提示符 / 流控异常 —— 不能拿短块继续，更不能写回。`);
       }
       // ③ 针对**本请求**的 NRC。保活帧自己的 `7F 3E xx` 不算（findNrcFor 按 reqSid 过滤）。
       let nrc = findNrcFor(raw, reqSid);
