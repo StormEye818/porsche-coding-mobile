@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "vectorId": "REPLAY_REALCAR981_BCM_NRC31",
+  "source": "E1 实车失败现场 2026-11-22 · Boxster/Cayman 981 VIN WP0AB2981FK180962 · 后端电子设备 221409→7F2231 被当绑定成功 → 31/31 编码块全 NRC31",
+  "grade": "R",
+  "provable": "runtime",
+  "sampleOnly": true,
+  "mustReplay": true,
+  "kind": "historical-failure-replay",
+  "captureId": "REALCAR-20261122-981-BCM-NRC31",
+  "expectedFile": "tools/align431-vectors/REPLAY_REALCAR981_BCM_NRC31.expected.json",
+  "replayFile": "tools/align431-vectors/REPLAY_REALCAR981_BCM_NRC31.replay.json",
+  "sourceLogFile": "docs/realcar/2026-11-22-981-BCM-read-NRC31.txt",
+  "sourceLogSha256": "915a9396e86358b6440d25a9ff5a76da1a46db9a1606413f6b02b458d0c61946",
+  "expectedSha256": "a44f04e2304117840a1b6be9c267c172c8c5ba971d5505d900a4332ceab91095",
+  "replaySha256": "ec0c7d46a82370563176354bf8c5b43239938cca7320940f8e81c8fdf5e43386",
+  "diffCmd": "node e2e-flow.mjs | grep -F 'VECTOR REPLAY_REALCAR981_BCM_NRC31 '",
+  "failureAssertion": {
+    "observedFailure": "nrc-negative-response-bound-as-alive-then-all-coding-dids-nrc31",
+    "mustContain": [
+      "7F2231",
+      "NRC 0x31",
+      "31/31"
+    ],
+    "mustNotContain": [
+      "621409",
+      "62 00 F0"
+    ],
+    "reason": "11-22 实车：221409 的 NRC 负响应被当绑定成功进模块，31/31 编码块全 NRC31。回放不得伪造 621409 绑定正响应或 62 00 F0 编码块正数据。"
+  },
+  "injection": {
+    "expectedTamper": "改 REPLAY_REALCAR981_BCM_NRC31.expected.json 观测帧但不更新 expectedSha256 → replay gate 必须红",
+    "replayTamper": "改 REPLAY_REALCAR981_BCM_NRC31.replay.json 应答字节但不更新 replaySha256 → replay gate 必须红",
+    "fabricatedPositive": "在 REPLAY_REALCAR981_BCM_NRC31.replay.json 塞入 621409 或 62 00 F0 正响应 → replay gate 必须红",
+    "failureMarkerRemoved": "删掉 REPLAY_REALCAR981_BCM_NRC31.expected.json 的 7F2231 / NRC 0x31 / 31/31 观测标记 → replay gate 必须红",
+    "e2eOutside": "把 REPLAY_REALCAR981_BCM_NRC31 从 e2e 执行面移除 → replay gate / runtimeProbeVector 必须红"
+  },
+  "sha256": "ff82dcc880d272c24cb6df5d6fd72fd69e8072db691ffc456854c9d8665329a3"
+}

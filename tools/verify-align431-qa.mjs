@@ -26,6 +26,8 @@
  *   Q15 audit 两次 sha256 稳定且指纹不含本机绝对路径 / Date / random / cwd
  *   Q16 rows 快照 symbolHitOnly/runtimeAnswerBacked 与 audit live 重算逐行一致
  *       （阶段 D1：Q02/Q03/Q04/Q05/Q14 均改用 live 证据，不再只读 rows 快照）
+ *   Q17 批次 C：全 NRC31 的 runtime 行 answerBacked=false 且不得标 A
+ *       （QA 独立判正响应 + 真执行 P0 gate 机器行交叉核对 + 正响应反例注入）
  *
  * 用法：
  *   node tools/verify-align431-qa.mjs
@@ -525,6 +527,51 @@ let highRiskCovered = [];
     `mismatch=${mismatched.length} sourceProof=${sourceProof ? 1 : 0}`
     + ` liveReady=${liveReady ? 1 : 0} summary=${JSON.stringify(liveAudit.summary)}`,
     mismatched.length ? mismatched.slice(0, 5).join(',') : '');
+}
+
+/* ── Q17 全 NRC31 不得算「有应答」、不得标 A（批次 C，独立实现 + 真执行交叉核对） ── */
+{
+  // QA 不 import align431-eval：这里独立实现「正响应 = body 首字节 = req SID+0x40」，
+  // NRC(0x7F) / 空 / 截断一律不算；反例注入一帧正响应必须能翻真（证明不是恒 false）。
+  const NEG_VERDICTS = new Set([
+    'nrc', 'no-data', 'truncated', 'empty', 'no-answer', 'timeout', 'silence', 'invalid',
+  ]);
+  const isPositive = (step) => {
+    if (!step || typeof step.resp !== 'string' || /\bNO\s*DATA\b/i.test(step.resp)) return false;
+    if (NEG_VERDICTS.has(String(step.verdict || '').toLowerCase())) return false;
+    const req = String(step.req || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+    if (req.length < 2) return false;
+    const sid = Number.parseInt(req.slice(0, 2), 16);
+    if (!Number.isFinite(sid)) return false;
+    const want = ((sid + 0x40) & 0xff).toString(16).toUpperCase().padStart(2, '0');
+    const body = step.resp.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+    return [0, 3, 5, 7].some((off) => body.length >= off + 2 && body.slice(off, off + 2) === want);
+  };
+
+  const replayDoc = readJson('tools/align431-vectors/REPLAY_REALCAR981_BCM_NRC31.replay.json');
+  const steps = Array.isArray(replayDoc?.steps) ? replayDoc.steps : [];
+  const nrcSteps = steps.filter((s) => s.verdict === 'nrc' && /7F2231/i.test(String(s.resp)));
+  const qaBacked = nrcSteps.length > 0 && nrcSteps.some(isPositive);
+  const injected = nrcSteps.map((s, i) => (i === 0
+    ? { ...s, verdict: 'ok', resp: '62140901' } : s));
+  const qaInjected = injected.some(isPositive);
+
+  // 生产判定真执行（P0 gate）；QA 只读机器行，不复用其实现，也不放宽 Q01-Q16。
+  const run = runNode('tools/verify-align431-p0-runtime.mjs');
+  const val = (re) => (re.exec(run.stdout) || [])[1] ?? '-';
+  const prodBacked = val(/P0_NRC31_ANSWER_BACKED=([01])/);
+  const prodInjected = val(/P0_NRC31_INJECTED_POSITIVE=([01])/);
+  const prodVectorNotA = val(/P0_NRC31_VECTOR_NOT_A=([01])/);
+  const prodRowNotA = val(/P0_NRC31_ROW_NOT_A=([01])/);
+  const pass = run.exitCode === 0 && nrcSteps.length === 32
+    && qaBacked === false && qaInjected === true
+    && prodBacked === '0' && prodInjected === '1'
+    && prodVectorNotA === '1' && prodRowNotA === '1';
+  check('Q17', 'NRC31_NEGATIVE_NOT_ANSWER_BACKED', pass,
+    '32 NRC31 frames => answerBacked=0, vector/row 非A, 正响应注入翻真',
+    `steps=${nrcSteps.length} qaBacked=${qaBacked ? 1 : 0} qaInjected=${qaInjected ? 1 : 0}`
+    + ` exit=${run.exitCode} prodBacked=${prodBacked} prodInjected=${prodInjected}`
+    + ` vectorNotA=${prodVectorNotA} rowNotA=${prodRowNotA}`);
 }
 
 /* ─────────────────────────── 汇总与退出码 ─────────────────────────── */

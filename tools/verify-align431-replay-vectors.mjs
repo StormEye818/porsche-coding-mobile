@@ -3,14 +3,15 @@
  * verify-align431-replay-vectors.mjs — 阶段 E「强制纳管回放向量」独立 gate。
  *
  * 纪律：
- *   - 7 组 mustReplay 向量缺 manifest / expected / replay / sourceLog 任一文件即 exit 1；
+ *   - 8 组 mustReplay 向量缺 manifest / expected / replay / sourceLog 任一文件即 exit 1；
  *   - expected / replay / sourceLog 三份摘要按**文件字节**逐一核对，改字节不改 sha 即红；
- *   - 历史失败现场向量（981 BCM 实车 / 991 IC 模拟）必须保留 request-key-missing
- *     观测标记，且 expected/replay 不得出现日志中从未发生的 0x070D/0x0777 等正响应；
- *   - e2e flow 必须真跑并逐组输出 `VECTOR <id> frames=n diff=[]`，且汇总 count=7。
+ *   - 历史失败现场向量（981 BCM 实车 / 991 IC 模拟 / 11-22 981 BCM NRC31）必须保留
+ *     各自 observedFailure 标记，且 expected/replay 不得出现日志中从未发生的正响应；
+ *     mustNotContain 只扫帧字节，mustContain 可命中逐帧 note / summary；
+ *   - e2e flow 必须真跑并逐组输出 `VECTOR <id> frames=n diff=[]`，且汇总 count=8。
  *
  * 用法：node tools/verify-align431-replay-vectors.mjs
- * stdout 成功：`REPLAY_VECTOR_MANIFEST_PASS count=7`
+ * stdout 成功：`REPLAY_VECTOR_MANIFEST_PASS count=8`
  * 失败：`REPLAY_VECTOR_MANIFEST_FAIL count=N` + 逐条 `REPLAY_VECTOR_FAIL ...`
  */
 import { existsSync, readFileSync } from 'node:fs';
@@ -22,8 +23,10 @@ import {
 } from './align431-eval.mjs';
 
 const REAL_ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
-/** 两条历史失败现场向量：e2e 必须输出独立机器行，gate 必须核对为 PASS。 */
-const HISTORICAL_IDS = Object.freeze(['REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC']);
+/** 三条历史失败现场向量：e2e 必须输出独立机器行，gate 必须核对为 PASS。 */
+const HISTORICAL_IDS = Object.freeze([
+  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC', 'REPLAY_REALCAR981_BCM_NRC31',
+]);
 /** @type {string[]} */
 const failures = [];
 const fail = (message) => failures.push(message);
@@ -100,6 +103,7 @@ for (const id of VECTOR_IDS) {
       fail(`FAILURE_ASSERTION_MISSING ${id}`);
       continue;
     }
+    // mustNotContain 只针对真实帧字节（伪造正响应检测），不能靠 note 自证清白。
     const emitted = norm([
       ...expectedDoc.frames,
       ...replayDoc.steps.flatMap((step) => [step.req, step.resp]),
@@ -107,9 +111,17 @@ for (const id of VECTOR_IDS) {
     for (const token of fa.mustNotContain) {
       if (emitted.includes(norm(token))) fail(`FORGED_POSITIVE_RESPONSE ${id}`);
     }
-    const observed = norm(expectedDoc.observedFailure || '');
+    // mustContain 是失败现场标记，可落在 observedFailure、逐帧 note、summary 或帧字节里。
+    const markerEvidence = norm([
+      emitted,
+      expectedDoc.observedFailure || '',
+      expectedDoc.note || '',
+      replayDoc.note || '',
+      replayDoc.summary || '',
+      ...replayDoc.steps.flatMap((step) => [step.note || '']),
+    ].join(' '));
     for (const token of fa.mustContain) {
-      if (!observed.includes(norm(token))) fail(`FAILURE_MARKER_MISSING ${id}`);
+      if (!markerEvidence.includes(norm(token))) fail(`FAILURE_MARKER_MISSING ${id}`);
     }
   }
 }

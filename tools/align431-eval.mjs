@@ -120,10 +120,10 @@ export function sortedKeys(obj) {
 export const E0_ROOT = join(REAL_ROOT, '..', 'porsche-mapper', 'ref');
 /** 纳管向量目录（相对仓库根）。 */
 export const VECTOR_DIR = 'tools/align431-vectors';
-/** ★ 阶段 E：强制纳管的 7 组回放向量（mustReplay:true，缺一不可）。 */
+/** ★ 阶段 E：强制纳管的 8 组回放向量（mustReplay:true，缺一不可；批次 C 增 11-22 NRC31 现场）。 */
 export const VECTOR_IDS = Object.freeze([
   'REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM',
-  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC',
+  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC', 'REPLAY_REALCAR981_BCM_NRC31',
 ]);
 /** 参考诊断仪证据台账（T01）。 */
 export const REGISTRY_FILE = 'data/align431-evidence-registry.json';
@@ -372,6 +372,47 @@ function validateVector(v, expectedId) {
   return { ok: true };
 }
 
+/* ── 批次 C：UDS「有应答」口径收紧（NRC / 空 / 截断一律不算应答） ───────────── */
+/** 明写为负面的 verdict：即使 body 首字节像正响应（ISO-TP 半包）也不计入应答。 */
+const NON_ANSWER_VERDICTS = Object.freeze([
+  'nrc', 'no-data', 'truncated', 'empty', 'no-answer', 'timeout', 'silence', 'invalid',
+]);
+
+/**
+ * 单步是否为 UDS 正响应：body 首字节必须 = 请求 SID + 0x40（0x62/0x61/0x5A/0x50/0x7E…）。
+ *
+ * 兼容日志里四种等价写法：
+ *   裸 body `7F2231` / `62F1A2303530`；
+ *   CAN id + body `7E8 62 11 02 …`；
+ *   CAN id + 单帧 PCI + body `7E8037F2212`；
+ *   CAN id + 首帧 PCI + body `777100962F1A2303530`。
+ * verdict 明写 nrc/truncated/no-data 的一律不计 —— 11-22 现场 `62F1A2303530` 是
+ * ISO-TP 半包「050」，首字节虽为 0x62 但**不是**一次完整正响应。
+ *
+ * @param {{req:string, resp:string, verdict?:string}} step 回放步
+ * @returns {boolean} 是否为正响应
+ */
+export function isPositiveUdsResponse(step) {
+  if (!step || typeof step.resp !== 'string') return false;
+  if (/\bNO\s*DATA\b/i.test(step.resp)) return false;
+  const verdict = String(step.verdict || '').toLowerCase();
+  if (NON_ANSWER_VERDICTS.includes(verdict)) return false;
+  const req = String(step.req || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (req.length < 2) return false;
+  const sid = Number.parseInt(req.slice(0, 2), 16);
+  if (!Number.isFinite(sid)) return false;
+  const expected = ((sid + 0x40) & 0xff).toString(16).toUpperCase().padStart(2, '0');
+  const body = step.resp.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  // body 起点按日志写法可能是 0（裸）、3（id+body）、5（id+SF PCI）、7（id+FF PCI）。
+  return [0, 3, 5, 7].some((off) => body.length >= off + 2 && body.slice(off, off + 2) === expected);
+}
+
+/** 一组 replay steps 是否至少含一条真应答：全 NRC / 空 / 截断 → false。 */
+export function answerBackedByReplay(steps) {
+  const list = Array.isArray(steps) ? steps : [];
+  return list.length > 0 && list.some((step) => isPositiveUdsResponse(step) === true);
+}
+
 /**
  * ★ 阶段 D1：应答举证只认 e2e **真执行 stdout**，不再把向量 replay JSON 文本当应答。
  *
@@ -388,7 +429,8 @@ function validateVector(v, expectedId) {
 export function vectorAnswers(v, stdout) {
   if (typeof stdout === 'string') return vectorAnswersFromStdout(v, stdout);
   // 仅 build 期生成 rows.json 快照使用；不得在审计/QA 中作为应答举证。
-  return (v?.replay || []).filter((x) => x && x.resp && String(x.resp).trim() !== 'NO DATA');
+  // 批次 C 收紧：NRC（body 首字节 0x7F）/ 空 / 截断不算应答，只有正响应才算。
+  return (v?.replay || []).filter((step) => isPositiveUdsResponse(step) === true);
 }
 
 /** 从 e2e stdout 提取某向量的 live 应答证明条目（每项含 source，便于审计自证来源）。 */
@@ -466,6 +508,12 @@ export function evaluateRuntimeVector(spec, ctx) {
   const answers = vectorAnswersFromStdout(v, stdout);
   if (spec.requireAnswer !== false && answers.length === 0) {
     return { ok: false, detail: `${v.vectorId} e2e stdout 无 live 应答举证（VECTOR/VECTOR_ANSWER 缺失或 diff≠空）` };
+  }
+  // ★ 批次 C：应答帧数 >0 还不够 —— 回放里必须至少有一条**正响应**。
+  //   NRC 负响应（0x7F）/ 空 / 截断只是「ECU 回了话」，不构成「取到数据」。
+  //   11-22 现场 31/31 全 NRC31 的向量不得据此把 runtime 行标 A。
+  if (spec.requireAnswer !== false && !answerBackedByReplay(v.replay)) {
+    return { ok: false, detail: `${v.vectorId} 回放全为 NRC/空/截断，正响应举证=0（不得标 A）` };
   }
   const line = stdout.split('\n').find((l) => l.startsWith(`VECTOR ${v.vectorId} `));
   if (!line || !/\bdiff=\[\]/.test(line) || !/\bframes=\d+/.test(line)) {

@@ -35,7 +35,7 @@ const ok = (n, c, x = '') => {
 const VECTOR_DIR = './tools/align431-vectors';
 const VECTOR_IDS = [
   'REPLAY_DME', 'REPLAY_IC', 'REPLAY_718', 'REPLAY_PSM', 'REPLAY_BCM',
-  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC',
+  'REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC', 'REPLAY_REALCAR981_BCM_NRC31',
 ];
 let vectorFail = 0;
 const vectorSha = (s) => createHash('sha256').update(s, 'utf8').digest('hex');
@@ -1041,17 +1041,20 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
 }
 
 // ─────────────────────────────────────────────────────────────────
-// [16] ★ 阶段 E：历史失败现场回放（实车 981 BCM / 模拟 991 IC）
-//   只回放日志中真实观测到的请求/应答帧；失败发生在请求键绑定处，
+// [16] ★ 阶段 E：历史失败现场回放（实车 981 BCM / 模拟 991 IC / 11-22 实车 NRC31）
+//   只回放日志中真实观测到的请求/应答帧；前两组的失败发生在请求键绑定处，
 //   日志从未到达 0x070D/0x0777 或 0x0714/0x077E 探测帧，禁止伪造正响应。
+//   第三组（11-22）失败在进模块后：221409→7F2231 被当绑定成功 → 31/31 编码块全 NRC31，
+//   只有 NRC/截断帧，不得塞入任何 621409 / 62 00 F0 正响应。
 // ─────────────────────────────────────────────────────────────────
 {
   const replayScripts = {
     REPLAY_REALCAR981_BCM: loadVector('REPLAY_REALCAR981_BCM').replay,
     REPLAY_SIM991_IC: loadVector('REPLAY_SIM991_IC').replay,
+    REPLAY_REALCAR981_BCM_NRC31: loadVector('REPLAY_REALCAR981_BCM_NRC31').replay,
   };
   const historicalStatus = Object.create(null);
-  for (const id of ['REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC']) {
+  for (const id of ['REPLAY_REALCAR981_BCM', 'REPLAY_SIM991_IC', 'REPLAY_REALCAR981_BCM_NRC31']) {
     const vectorFailBefore = vectorFail;
     const v = loadVector(id);
     const m16 = new MockAdapter({ latencyMs: 0, replay: replayScripts[id] });
@@ -1070,8 +1073,13 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
     const norm = (s) => String(s).toLowerCase().replace(/[^0-9a-z]/g, '');
     const emitted = norm([...v.expected, ...v.replay.map((x) => `${x.req} ${x.resp}`)].join(' '));
     const assertion = v.failureAssertion || { mustContain: [], mustNotContain: [], observedFailure: '' };
+    // mustNotContain 只针对真实帧字节（防伪造正响应）；
+    // mustContain 允许命中观测标记/逐帧 note（如「NRC 0x31」「31/31」），不再只扫 summary 串。
+    const markerEvidence = norm([
+      emitted, assertion.observedFailure || '', ...v.replay.map((x) => x.note || ''),
+    ].join(' '));
     const forged = (assertion.mustNotContain || []).filter((token) => emitted.includes(norm(token)));
-    const missing = (assertion.mustContain || []).filter((token) => !norm(assertion.observedFailure).includes(norm(token)));
+    const missing = (assertion.mustContain || []).filter((token) => !markerEvidence.includes(norm(token)));
     // 不新增 ok() 断言（e2e 权威断言数仍为 127，见 tools/verify-u2-numbers.mjs）；
     // 负向断言失败计入 vectorFail 并打印独立机器行，e2e 退出码与 audit live 同步转红。
     if (forged.length) {
@@ -1086,9 +1094,10 @@ console.log('\n[F13] 功能全集运行时可达（UI 入口 → 调用链 → e
     historicalStatus[id] = (vectorFail === vectorFailBefore && framesMatch
       && forged.length === 0 && missing.length === 0) ? 'PASS' : 'FAIL';
   }
-  console.log(`HISTORICAL_FAILURE_REPLAY count=2`
+  console.log(`HISTORICAL_FAILURE_REPLAY count=3`
     + ` REPLAY_REALCAR981_BCM=${historicalStatus.REPLAY_REALCAR981_BCM}`
-    + ` REPLAY_SIM991_IC=${historicalStatus.REPLAY_SIM991_IC}`);
+    + ` REPLAY_SIM991_IC=${historicalStatus.REPLAY_SIM991_IC}`
+    + ` REPLAY_REALCAR981_BCM_NRC31=${historicalStatus.REPLAY_REALCAR981_BCM_NRC31}`);
 }
 
 console.log(vectorFail
