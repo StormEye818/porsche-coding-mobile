@@ -55,6 +55,18 @@ export function identityPhaseFrames(family) {
  */
 export const IDENTITY_FORBIDDEN_UDS_FRAMES = Object.freeze(['1A9B']);
 
+/**
+ * 只有识别 DID 的应答才是身份串（E0 逐行账本 · 缺陷2）。
+ *
+ * 允许取身份文本的 SID：0x1A 族（1A9F/1A90/1A87/1A94…）、0x21、0x22 族
+ * （22F19E/22F1A2/22F189/22F1DF/22F190… 及 22 F1 40 9）。
+ * 会话（0x10）、保活（0x3E）、安全（0x27）、写（0x2E/0x3B）、例程（0x31）
+ * 的应答**一律不是身份串**：1003 的正响应 `50 03 00 32 01 F4` 剥头后会得到「2」，
+ * 旧实现把它塞进身份通道，就是真车日志「身份文本「2」」的根因。
+ * KWP 81 快初始化不进本函数（sessionless 分支），不受此白名单影响。
+ */
+export const IDENTITY_TEXT_SIDS = Object.freeze([0x1A, 0x21, 0x22]);
+
 /** 身份帧集合法性：UDS 四帧不得含 KWP 专用帧；KWP 不得发 0x22。 */
 export function validateIdentityFrames(family, frames) {
   const list = (frames || []).map((x) => String(x).replace(/[^0-9A-Fa-f]/g, '').toUpperCase());
@@ -340,7 +352,10 @@ export function identityVerdict(texts, expect, moduleIdent = null) {
  * @param {{tx:number, rx:number}} p
  * @param {'kwp'|'uds'|null} fam
  * @param {{keys:string[], twin?:boolean, note?:string}} expect
- * @param {{frames?:string[], moduleIdent?:object|null}} [opts]
+ * @param {{frames?:string[], moduleIdent?:object|null, identToVariant?:object|null,
+ *   partNumber?:string}} [opts]
+ *   identToVariant —— DSN 串精确查表（data/ident-registry.json）；命中则 verdict='match'
+ *   并带 {variant, matchedModule, dsn}；不传时 DSN 串一律不识别，绝不走名字键近似。
  */
 export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
   const supplied = Array.isArray(opts.frames) && opts.frames.length
@@ -383,6 +398,13 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
     } catch { /* 解析不出 ID 时按内容裁决 */ }
     const req = String(cmd).replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
     const sid = parseInt(req.slice(0, 2), 16) & 0xff;
+    // ★ E0 缺陷2：非识别 DID 的应答不产生身份文本。白名单放在取文本之前，
+    //   1003 的 `50 03 …` 即使留在 oemIdentityResponses 里也不会变成「2」。
+    if (!IDENTITY_TEXT_SIDS.includes(sid)) {
+      miss++;
+      if (expand1A && miss >= IDENT_1A_MAX_MISS) break;
+      continue;
+    }
     const pr = parseRespAuto(r, req, sid);
     const body = Array.from(pr.body || []);
     // NRC（7F xx nn）/ 截断 / 空应答都不是身份串（PE-08 / PE-21 / PE-54）。
@@ -415,18 +437,64 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
     texts.push(text);
     textsByCmd[req] = text;
   }
-  const verdict = identityVerdict(texts, expect, moduleIdent);
-  // PE-31 / E-14：身份按名字串 + 件号；raw 相同的 0x0f4d(SWA2) / 0x0e5f(BV_*) 不合并。
+  // ★ E0 缺陷1：身份文本分两类，判据绝不混用。
+  //   · DSN 数字串（22F1A2 应答，如 050018）→ identToVariant 精确查表；
+  //   · 名字串（P200 / 模块名 / ASAMODXFileVersi_* identName）→ 原有 identMatch 原语。
+  //   moduleIdent 的 12 个键全是名字键，拿它去比 DSN 必然 mismatch；
+  //   而「公共前缀≥4」会把 ISO-TP 半包 '050' 误配到 '050018'，是明确的错判。
+  const isDsnText = (t) => /^\d+$/.test(String(t ?? '').trim());
+  const nameTexts = [];
+  const dsnTexts = [];
+  for (const t of texts) {
+    if (isDsnText(t)) dsnTexts.push(t);
+    else nameTexts.push(t);
+  }
+  const table = (opts.identToVariant && typeof opts.identToVariant === 'object')
+    ? opts.identToVariant : null;
+  const expectNames = ((expect && expect.keys) || []).map((k) => normIdent(k));
+  let dsn = null;
+  let dsnUnresolved = false;
+  for (const t of dsnTexts) {
+    const key = String(t).trim();
+    const hit = table ? table[key] : null;     // ★ 精确查表（非前缀 / 非包含）
+    if (!hit) { dsnUnresolved = true; continue; }
+    const cands = (Array.isArray(hit) ? hit : [hit])
+      .filter((h) => h && h.module && h.variant)
+      .map((h) => ({ module: String(h.module), variant: String(h.variant) }));
+    if (!cands.length) { dsnUnresolved = true; continue; }
+    // 多候选（050018 → BCM_hinten + BCM_vorne）按期望模块名消歧，不按侧别/顺序猜。
+    const expected = cands.find((h) => expectNames.includes(normIdent(h.module)));
+    const chosen = expected || cands[0];
+    dsn = {
+      text: key,
+      module: chosen.module,
+      variant: chosen.variant,
+      candidates: cands,
+      disambiguated: Boolean(expected),
+    };
+    break;
+  }
+  const verdict = identityVerdict(nameTexts, expect, moduleIdent);
+  // PE-31 / E-14：名字串按名字 + 件号；raw 相同的 0x0f4d(SWA2) / 0x0e5f(BV_*) 不合并。
   const partNumber = opts.partNumber || expect?.partNumber
     || textsByCmd['1A84'] || textsByCmd['1A94'] || '';
-  const fourTuple = adjudicateFourTuple(texts, expect, { moduleIdent, partNumber });
+  const fourTuple = adjudicateFourTuple(nameTexts, expect, { moduleIdent, partNumber });
+  const finalVerdict = dsn ? 'match'
+    : (dsnTexts.length && !nameTexts.length) ? 'mismatch'
+      : (fourTuple.verdict === 'mismatch' ? 'mismatch' : verdict.verdict);
   return {
     ...verdict,
-    verdict: fourTuple.verdict === 'mismatch' ? 'mismatch' : verdict.verdict,
+    verdict: finalVerdict,
+    text: dsn ? dsn.text : (verdict.text || dsnTexts.join(' | ')),
     texts, frames, textsByCmd,
+    dsn, dsnTexts, nameTexts, dsnUnresolved,
+    variant: dsn ? dsn.variant : '',
+    matchedModule: dsn ? dsn.module : '',
     partNumber: String(partNumber || ''),
     rawCollision: fourTuple.rawCollision,
-    identityRule: fourTuple.identityRule,
+    identityRule: dsn
+      ? `identToVariant 精确命中 ${dsn.text} → ${dsn.module}/${dsn.variant}`
+      : fourTuple.identityRule,
   };
 }
 

@@ -607,7 +607,8 @@ function identTextMatch(text, label, variantNames, modRecs, moduleKeys) {
  *
  * 候选序 = **表行序**（cands 行序 + 变体选行收窄）→ candsAux → **DRIVELINKS 14B 记录族**
  *   （通用兜底族：entry.family；joinState=unresolved 模块扫全库族并集 —— 真车自证）。
- * 绑定判据（2026-11-10 对齐）：**帧来自该候选的 rx 且有 body**（正响应或 NRC 都算）即绑定；
+ * 绑定判据（2026-11-10 对齐 / 2026-11-22 更正）：**帧来自该候选的 rx 且有正响应 body** 即绑定；
+ *   NRC 负响应（首字节 7F）不绑定（对应 PorscheSendCommandByID 的 uxth=0 返回）；
  *   ★ 2026-11-12 修复②：绑定后读身份帧（cat=0x60 模板：22F19E=ODX 文件标识、
  *   1A9B=系统名）做身份裁决（identMatch/GetSubSysDataAddr 名字表语义），
  *   不匹配换下一候选；6 对孪生（数据互换）标注「不承诺左右」，进哪个都过。
@@ -1095,6 +1096,7 @@ const state = {
   selectedVariant: {},        // { [module]: 变体名 }
   vin: '',                    // 实测 VIN（地址缓存按车键控用，2026-11-04）
   currentAddr: null,          // 当前进入模块的地址证据
+  identityUnresolved: false,  // 身份/变体未识别 → fail-closed：不自动兜底装备变体、拒写
 };
 
 // ---------- ① 连接 ----------
@@ -3131,6 +3133,9 @@ async function enterSystem(sys) {
   //   × data/ident-registry.json 的 moduleIdent（12 键对象，Object.entries()）
   //     的 {request, identName, suffixHex}；UDS 不再发 KWP 专用 1A9B。
   //   复用进模块时逐帧留证的原始应答，不二次发帧（帧数与原厂序列严格一致）。
+  let dsnModule = '';
+  let dsnVariant = '';
+  state.identityUnresolved = false;   // 每次进模块重算，不继承上一次的 fail-closed 标记
   {
     const names = [...new Set([...(sys.modules || []), ...(varNames || []), sys.label]
       .filter(Boolean).map((x) => String(x)))];
@@ -3145,15 +3150,18 @@ async function enterSystem(sys) {
     const partNumber = String(coder.lastPartNo || (coder.lastPartTokens || [])[0] || '').trim();
     try {
       // mismatch → 换下一候选；twin-match → 接受并显式标注「不承诺左右」。
+      // ★ E0 缺陷1：DSN 数字串必须按 identToVariant 精确查表裁决，不能拿 moduleIdent 名字键比。
       const idv = await identityAdjudicate(cmdFn, { tx: addr.tx, rx: addr.rx },
-        enterFamily, expect, { frames, moduleIdent, partNumber });
+        enterFamily, expect, { frames, moduleIdent, partNumber, identToVariant: reg && reg.identToVariant });
+      if (idv.variant) { dsnModule = idv.matchedModule || ''; dsnVariant = idv.variant; }
       const fourTuple = identityFromNameAndPart(idv.text, partNumber, {
         identToVariant: reg && reg.identToVariant,
         partToModule: null,   // 件号精确表未随进模块序列加载时，只按名字串裁到模块名
       });
       log(`  · 身份裁决（进模块后）：四帧 ${frames.join('→')} · 判据源 moduleIdent ${mi.count}/12`
         + ` · 请求 ${mi.requests.join('/') || '—'} → ${idv.verdict}`
-        + ` · 件号 ${partNumber || '—'} · 规则 ${idv.identityRule || fourTuple.note || '—'}`,
+        + ` · 件号 ${partNumber || '—'} · 规则 ${idv.identityRule || fourTuple.note || '—'}`
+        + (idv.variant ? ` · DSN ${idv.matchedModule}/${idv.variant}` : ''),
       idv.verdict === 'mismatch' ? 'warn' : 'ok');
       if (idv.rawCollision) {
         log(`  · 身份四元提示：raw ${idv.rawCollision} 同值异名（SWA2 / BV_*），按名字串+件号分列，不合并`, 'info');
@@ -3185,6 +3193,15 @@ async function enterSystem(sys) {
   // RE-TRACEABILITY-20261109.md）：①识别串（DSN.BIN 注册表）②件号（JOB.BIN 会话库）
   // ③协议族 KWP/UDS 兜底 —— 家族选错则记录 SID 族错（22 00xx 全灭事故根因），此层优先。
   let active = entries.find((e) => state.selectedVariant[e.mod]) || null;
+  // ★ E0 缺陷1：DSN 精确命中带 module + variant，按 module 消歧（050018 同时指向
+  //   BCM_hinten / BCM_vorne）。用户已显式选中的模块优先，不被身份裁决覆盖。
+  if (!active && dsnModule) {
+    active = entries.find((e) => e.mod === dsnModule) || null;
+    if (active && dsnVariant && !state.selectedVariant[dsnModule]) {
+      state.selectedVariant[dsnModule] = dsnVariant;
+      log(`  · 身份 DSN 精确命中（identToVariant）→ ${dsnModule} · ${dsnVariant}`, 'ok');
+    }
+  }
   let familyPick = null;
   if (!active && entries.length) {
     const reg = await ensureIdentRegistry();
@@ -3261,12 +3278,13 @@ async function enterSystem(sys) {
             ? { name: picked.name, how: `零件号多候选（${picked.ambiguous.join(' / ')}）——按首候选落定` }
             : autoPickVariant(mi, coder.lastIdent);
           if (/未识别|无识别文本/.test(auto.how)) {
-            // ★ 2026-11-05 对齐 参考诊断仪 写政策：变体不确定用标准默认（*_BaseSys 约定）
-            //   落定并**放行写入**（备份→写→回读兜底），不再锁写 —— 参考诊断仪 从不因
-            //   变体未定拒写。错映射风险由回读校验兜住（参考诊断仪 同样只有这道兜底）。
-            const def = autoPickVariant(mi, '').name;
-            state.selectedVariant[mod] = def;
-            log(`  🧩 ${mod} 变体未识别（${auto.how}）—— 按默认变体 ${def} 落定（写入由回读校验兜底）`, 'warn');
+            // ★ E0 缺陷3：参考诊断仪 未识别 = 未编程/未编码态（无编码 LID 集的独立变体），
+            //   不是「挑一个装备变体」。旧实现 autoPickVariant(mi,'') 默认落 *_GT5 并放行写入，
+            //   21/26 个 BCM 的数据默认值恰好都是 GT5（注释却写 BaseSys）——撤销自动兜底。
+            state.identityUnresolved = true;
+            log(`  🧩 ${mod} 变体未识别（${auto.how}）—— 按 fail-closed 不加载编码块（不猜变体）`, 'warn');
+            // items 保持空 → 下方不调用 loadModuleItems → 后续读码因无 LID 自然不读；
+            // 写入闸门同样按 identityUnresolved 拒写（用户显式选变体的路径不受影响）。
           } else {
             state.selectedVariant[mod] = auto.name;
             log(`  🧩 ${mod} 变体自动：${auto.name}（${auto.how}）`, 'ok');
@@ -3274,8 +3292,11 @@ async function enterSystem(sys) {
         }
       }
     }
-    const got = await loadModuleItems(currentModel, mod);
-    items = got;
+    // ★ E0 缺陷3：未识别时绝不加载默认变体编码块 —— items 保持空，读码自然不读。
+    if (!state.identityUnresolved) {
+      const got = await loadModuleItems(currentModel, mod);
+      items = got;
+    }
   }
   items = items.filter((p) => validateParam(p).length === 0 && p.lid != null);
   coding = items;
@@ -3894,6 +3915,12 @@ async function doWrite(p, v) {
   const denied = writeDeniedReason();
   if (denied) {
     toast('err', '拒绝写入', denied);
+    return;
+  }
+  // ★ E0 缺陷3：身份/变体未识别 → fail-closed 拒写，不猜装备变体。
+  //   用户显式设置的 state.selectedVariant[p.module] 仍可用（fail-closed 只拦自动兜底）。
+  if (state.identityUnresolved && !state.selectedVariant?.[p.module]) {
+    toast('err', '拒绝写入', '变体未识别，按 fail-closed 不加载编码块（不猜变体）；请手动选择变体后再写');
     return;
   }
   // 地址证据闸门：默认关（原厂无此闸）；`setSafety({addrState:true})` 才启用（见 addrSafeForAction）。

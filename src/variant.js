@@ -50,7 +50,7 @@ export function autoPickVariant(mod, ident) {
     .sort((a, b) => a.length - b.length)[0];
   if (prefix) return { name: prefix, how: '识别串前缀命中变体' };
 
-  return { name: names.includes(def) ? def : names[0], how: '未识别，用 参考诊断仪 默认变体' };
+  return { name: names.includes(def) ? def : names[0], how: '未识别（不自动兜底）' };
 }
 
 /**
