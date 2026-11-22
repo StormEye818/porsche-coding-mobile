@@ -16,10 +16,13 @@
  *   末行 `P0_RUNTIME_PASS count=N` 或 `P0_RUNTIME_FAIL failed=N`，退出码 0/1。
  */
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync, mkdtempSync, unlinkSync, rmdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   answerBackedByReplay, evaluateProvableTag, evaluateRuntimeVector,
-  liveFactsForRow, readVector,
+  isPositiveUdsResponse, liveFactsForRow, readVector,
 } from './align431-eval.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
@@ -149,6 +152,73 @@ const lastLine = (stdout, prefix) => stdout.split('\n').find((line) => line.star
     ck('P0_NRC31_ROW_NOT_A', pt2.ok === false && /零应答举证/.test(pt2.detail || ''),
       `ok=${pt2.ok} detail=${(pt2.detail || '').slice(0, 90)}`);
     console.log(`P0_NRC31_ROW_NOT_A=${pt2.ok === false && /零应答举证/.test(pt2.detail || '') ? 1 : 0}`);
+  }
+}
+
+/* ── (e) ISO-TP 首帧截断假绿口子：无 verdict 合成帧结构自洽 + 反例注入 ─────── */
+{
+  // a) 终审构造的合成半包：777 + FF PCI `10 09`（声明 9B）+ 仅 6B 数据、无 CF、无 verdict。
+  //    旧实现 offset=7 命中 62 → 假绿；结构校验后必须 false。
+  const truncNoVerdict = { req: '22F1A2', resp: '777100962F1A2303530' };
+  ck('P0_FF_TRUNC_NO_VERDICT_FALSE', isPositiveUdsResponse(truncNoVerdict) === false,
+    `req=${truncNoVerdict.req} resp=${truncNoVerdict.resp}`);
+
+  // b) 同一识别串补上连续帧 77721303138（凑满声明的 9B），无 verdict → 必须 true。
+  const fullNoVerdict = { req: '22F1A2', resp: '777100962F1A2303530 77721303138' };
+  ck('P0_FF_COMPLETE_NO_VERDICT_TRUE', isPositiveUdsResponse(fullNoVerdict) === true,
+    `resp=${fullNoVerdict.resp}`);
+
+  // c) 旧向量真实 step 不回归：REPLAY_DME 单帧 1089→7E8 02 50 89（无 verdict）、
+  //    多帧 1A87→10 0D + 21（声明 13B 实收 13B，无 verdict）。
+  ck('P0_FF_REPLAY_DME_SF_STILL_TRUE',
+    isPositiveUdsResponse({ req: '1089', resp: '7E8 02 50 89' }) === true,
+    '1089 → 7E8 02 50 89');
+  ck('P0_FF_REPLAY_DME_MF_STILL_TRUE',
+    isPositiveUdsResponse({
+      req: '1A87',
+      resp: '7E8 10 0D 5A 87 39 38 31 36\r7E8 21 31 38 36 34 30 31 35',
+    }) === true,
+    '1A87 → 10 0D(6B) + 21(7B) = 13B');
+
+  // d) 11-22 真实 NRC31 step：verdict 明写 truncated 的半包仍 false（verdict 短路未放宽）。
+  const nrc31 = readVector('REPLAY_REALCAR981_BCM_NRC31');
+  if (nrc31.ok) {
+    const half = nrc31.vector.replay.find(
+      (s) => s.req === '22F1A2' && /777100962F1A2303530/i.test(String(s.resp)),
+    );
+    ck('P0_FF_NRC31_HALF_STILL_FALSE',
+      Boolean(half) && isPositiveUdsResponse(half) === false,
+      `verdict=${half?.verdict || '(missing)'}`);
+  } else {
+    ck('P0_FF_NRC31_HALF_STILL_FALSE', false, 'NRC31 向量加载失败');
+  }
+
+  // e) 反例注入：把结构校验从 eval 源码摘掉（临时副本，真实文件只读），
+  //    同一合成帧必须翻回 true —— 证明是新增校验在挡假绿，而不是函数恒 false。
+  const evalPath = fileURLToPath(new URL('./align431-eval.mjs', import.meta.url));
+  const src = readFileSync(evalPath, 'utf8');
+  const guardRe = /if \(off >= 4 && hasFirstFramePci\(body, off - 4\)\s*&& !isoTpPayloadComplete\(body, off - 4\)\) return false;/;
+  const guardFound = guardRe.test(src);
+  const injected = src.replace(guardRe, '/* FFGUARD INJECTED: structural check removed */');
+  ck('P0_FF_INJECTION_PATCH_APPLIED', guardFound && injected !== src,
+    `guardFound=${guardFound} changed=${injected !== src}`);
+  if (injected !== src) {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'ffguard-inj-'));
+    const tmpFile = join(tmpDir, 'align431-eval-injected.mjs');
+    try {
+      writeFileSync(tmpFile, injected, 'utf8');
+      const patched = await import(pathToFileURL(tmpFile).href);
+      const flipped = patched.isPositiveUdsResponse(truncNoVerdict);
+      ck('P0_FF_INJECTION_FLIPS_TRUE', flipped === true,
+        `isPositiveUdsResponse(injected=${flipped})`);
+    } catch (e) {
+      ck('P0_FF_INJECTION_FLIPS_TRUE', false, `注入异常 ${e?.message || e}`);
+    } finally {
+      try { unlinkSync(tmpFile); } catch { /* ignore */ }
+      try { rmdirSync(tmpDir); } catch { /* ignore */ }
+    }
+  } else {
+    ck('P0_FF_INJECTION_FLIPS_TRUE', false, '未能注入，无法证明可证伪');
   }
 }
 

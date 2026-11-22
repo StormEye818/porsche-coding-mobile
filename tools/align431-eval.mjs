@@ -379,6 +379,69 @@ const NON_ANSWER_VERDICTS = Object.freeze([
 ]);
 
 /**
+ * 纯函数：body 的 pos 处是否是一枚 ISO-TP 首帧 PCI（高半字节 = 0x1）。
+ *
+ * 不读文件、不依赖进程状态；pos 以「十六进制字符下标」计（一个字节占两位）。
+ * FF PCI 固定两字节：`1n ll`，其中 n 是声明长度高 4 位、ll 是低 8 位。
+ *
+ * @param {string} body 已归一化（去空格/非十六进制、大写）的十六进制串
+ * @param {number} pos 待检查字节的首位下标
+ * @returns {boolean} 是首帧 PCI 则 true
+ */
+function hasFirstFramePci(body, pos) {
+  if (pos < 0 || pos + 2 > body.length) return false;
+  const pci = Number.parseInt(body.slice(pos, pos + 2), 16);
+  return Number.isFinite(pci) && (pci & 0xf0) === 0x10;
+}
+
+/**
+ * 纯函数：从 ffPos 处的首帧 PCI 起，本条 body 是否收齐了首帧声明的完整载荷。
+ *
+ * 语义与 src/coder.js 的 parseResp 对齐：声明长度 = ((pci & 0x0f) << 8) | low；
+ * 首帧最多携带 6 字节数据，其后每个连续帧（PCI 高半字节 0x2）最多 7 字节。
+ * 帧边界可带 11bit(3 hex)/29bit(8 hex) CAN ID，也可不带；两种都认。
+ * 实收载荷字节数 < 声明长度 ⇒ 截断半包 ⇒ false。
+ *
+ * 这是「零假绿」的结构自洽闭合点：`777100962F1A2303530`（声明 9B、实收 6B、
+ * 无连续帧）虽然在 offset=7 处首字节恰为 0x62，但在这里必须被判为不完整。
+ *
+ * @param {string} body 已归一化的大写十六进制串
+ * @param {number} ffPos 首帧 PCI 首字节的下标（十六进制字符位）
+ * @returns {boolean} 载荷收齐（实收 ≥ 声明）为 true，截断为 false
+ */
+function isoTpPayloadComplete(body, ffPos) {
+  const high = Number.parseInt(body.slice(ffPos, ffPos + 2), 16);
+  const low = Number.parseInt(body.slice(ffPos + 2, ffPos + 4), 16);
+  if (!Number.isFinite(high) || !Number.isFinite(low)) return false;
+  const declared = (((high & 0x0f) << 8) | low) >>> 0;
+  if (declared === 0) return false;
+
+  // 首帧数据区：最多 6 字节（不足 6 字节说明首帧本身就被截断）。
+  const firstData = ffPos + 4;
+  const ffAvail = Math.floor((body.length - firstData) / 2);
+  let received = Math.min(6, Math.max(0, ffAvail));
+  let cursor = firstData + 2 * received;
+
+  // 顺序扫描后续连续帧；每个 CF 最多 7 字节数据。
+  while (cursor < body.length) {
+    let pciAt = -1;
+    for (const idLen of [0, 3, 8]) {
+      const p = cursor + idLen;
+      if (p + 2 > body.length) continue;
+      const b = Number.parseInt(body.slice(p, p + 2), 16);
+      if (Number.isFinite(b) && (b & 0xf0) === 0x20) { pciAt = p; break; }
+    }
+    if (pciAt < 0) break;
+    const dataStart = pciAt + 2;
+    const avail = Math.floor((body.length - dataStart) / 2);
+    const take = Math.min(7, Math.max(0, avail));
+    received += take;
+    cursor = dataStart + 2 * take;
+  }
+  return received >= declared;
+}
+
+/**
  * 单步是否为 UDS 正响应：body 首字节必须 = 请求 SID + 0x40（0x62/0x61/0x5A/0x50/0x7E…）。
  *
  * 兼容日志里四种等价写法：
@@ -388,6 +451,10 @@ const NON_ANSWER_VERDICTS = Object.freeze([
  *   CAN id + 首帧 PCI + body `777100962F1A2303530`。
  * verdict 明写 nrc/truncated/no-data 的一律不计 —— 11-22 现场 `62F1A2303530` 是
  * ISO-TP 半包「050」，首字节虽为 0x62 但**不是**一次完整正响应。
+ *
+ * 不带 verdict 的合成帧也必须诚实：若命中的字节紧跟在首帧 PCI 之后，
+ * 额外校验该多帧载荷是否收齐（isoTpPayloadComplete）。裸 body / CAN id+body
+ * （无 FF PCI）保持原判定不变，旧 7 组向量 56 个无 verdict step 不受影响。
  *
  * @param {{req:string, resp:string, verdict?:string}} step 回放步
  * @returns {boolean} 是否为正响应
@@ -404,7 +471,16 @@ export function isPositiveUdsResponse(step) {
   const expected = ((sid + 0x40) & 0xff).toString(16).toUpperCase().padStart(2, '0');
   const body = step.resp.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
   // body 起点按日志写法可能是 0（裸）、3（id+body）、5（id+SF PCI）、7（id+FF PCI）。
-  return [0, 3, 5, 7].some((off) => body.length >= off + 2 && body.slice(off, off + 2) === expected);
+  return [0, 3, 5, 7].some((off) => {
+    if (body.length < off + 2 || body.slice(off, off + 2) !== expected) return false;
+    // FFGUARD: 命中字节紧跟首帧 PCI 时，必须收齐首帧声明的完整载荷才算应答。
+    // 删掉本行 → 合成截断帧 777100962F1A2303530（无 verdict）在 off=7 误命中 62 →
+    // 假绿复现；保留本行 → 该帧在 isoTpPayloadComplete 判 false。反例注入见
+    // tools/verify-align431-p0-runtime.mjs 的 P0_FF_TRUNC_* 断言。
+    if (off >= 4 && hasFirstFramePci(body, off - 4)
+        && !isoTpPayloadComplete(body, off - 4)) return false;
+    return true;
+  });
 }
 
 /** 一组 replay steps 是否至少含一条真应答：全 NRC / 空 / 截断 → false。 */
