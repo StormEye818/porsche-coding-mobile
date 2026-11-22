@@ -23,7 +23,8 @@ export const LIVE_MAP_EVIDENCE_IDS = Object.freeze(['E-01', 'E-05', 'E-07', 'E-1
 /** 参考诊断仪发现循环常量（E-01 / PE-01 / PE-02；不是 CAN 地址）。 */
 export const PROBE_FRAME = '221409';
 export const PROBE_REQUEST_ID = 0xff001409;
-export const BIND_REQUEST_ID = 0x10000359;
+/** E0 原始绑定帧坐标：`movw #0x359` + `movt #0x10`（不是 0x10000359）。 */
+export const BIND_REQUEST_ID = 0x100359;
 export const BIND_COMPLETE_FRAME = '221102';
 export const BIND_UXTH_OK = 1;
 

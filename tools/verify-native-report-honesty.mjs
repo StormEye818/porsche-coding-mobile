@@ -142,9 +142,11 @@ function makeSend(src, raw, notes) {
   const note = (s) => notes.push(String(s));
   const p = { tx: ROW.tx, rx: ROW.rx, requestKey: RK };
   // eslint-disable-next-line no-new-func -- 注入依赖后真执行被测源码，不是复制实现
+  // classifyProbe 是 app.js sendFn 新增的 NRC 判据依赖，同样注入真实实现：
+  // new Function 在全局作用域编译，看不到 ESM import；不注入会让本门禁假红。
   const factory = new Function('coder', 'cmd', 'p', 'note', 'hex',
-    'frameIdsOf', 'parseRespAuto', `return (${src});`);
-  return factory(coder, '221409', p, note, hex, frameIdsOf, parseRespAuto);
+    'frameIdsOf', 'parseRespAuto', 'classifyProbe', `return (${src});`);
+  return factory(coder, '221409', p, note, hex, frameIdsOf, parseRespAuto, classifyProbe);
 }
 
 /**

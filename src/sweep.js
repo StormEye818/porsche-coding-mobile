@@ -34,17 +34,25 @@ export const RAW_IDENTITY_COLLISIONS = Object.freeze([
 ]);
 
 /**
- * 扫描结果归类：只看「回帧 ID 是否来自该候选 rx」+「有没有 body」。
- * NRC 也算有 ECU 应答（E-01 应答即绑），但 NRC 永远不是身份串。
+ * 扫描结果归类：先看回帧 ID 是否来自该候选 rx，再看 body 是不是 NRC 负响应。
  *
- * @param {{tx:number, rx:number}} cand
+ * ★ E0（逐指令级取证）：`PorscheSendCommandByID@libPORSCHE_COMM.so:0x12898` 的
+ *   `0x12902 cmp r1,#0x7f` / `0x12906 moveq r5,#0` —— 首字节 0x7F 的 NRC 负响应
+ *   被强制返回 0，于是 `DriveLinksMode_1001@LINK:0x18fc0 cmp #1` 不成立，不绑定。
+ *   旧口径「NRC 也算有 ECU 应答（应答即绑）」是假绑定根因：body 非空但以 7F 开头
+ *   只归类为 `'nrc'`，**绝不可**归类为 `'alive'`（NRC 也不是身份串）。
+ *   调用方一律用 `!== 'alive'` 判定，天然 fail-closed。
+ *
+ * @param {{tx:number, rx:number}} cand 静态候选行（仅用 rx 比对回帧来源）
  * @param {number[]} ids 应答帧 CAN ID（frameIdsOf）
- * @param {string} body 应答体 hex（剥 PCI 后）
- * @returns {'alive'|'wrong-id'|'silent'}
+ * @param {string} body 应答体 hex（剥 PCI 后；NRC 形如 `7F2231`）
+ * @returns {'alive'|'nrc'|'wrong-id'|'silent'}
  */
 export function classifyProbe(cand, ids, body) {
-  if (!Array.isArray(ids) || !ids.length) return body ? 'alive' : 'silent';
+  const isNrc = typeof body === 'string' && /^7f/i.test(body.trim());
+  if (!Array.isArray(ids) || !ids.length) return isNrc ? 'nrc' : (body ? 'alive' : 'silent');
   if (!ids.includes(cand.rx)) return 'wrong-id';
+  if (isNrc) return 'nrc';
   return body ? 'alive' : 'silent';
 }
 
