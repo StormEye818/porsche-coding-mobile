@@ -875,6 +875,20 @@ export class Coder {
         }
       } catch (e) {
         if (hard) throw e;
+        // ★ 2026-11-23 v0.8.3 批次C：flag=1 识别帧的 ISO-TP 截断不再静默吞。
+        //   把截断应答原文留证到 oemIdentityResponses（与成功路径同为 raw 字符串），
+        //   让 enterSystem 后的 identityAdjudicate 报 truncated 诊断而非 unknown；
+        //   flag=0（3E00/1003）仍按原厂 best-effort 语义静默继续，绝不扩大。
+        const key = String(f.hex).toUpperCase();
+        const isTrunc = e && (e.kind === 'truncated'
+          || /多帧应答被截断|truncated/i.test(String(e.message || '')));
+        if (f.flag === 1 && isTrunc && this.oemIdentityResponses
+            && this.oemIdentityFrames.includes(key)) {
+          this.oemIdentityResponses[key] = String(e.raw || '');
+          this._say(`  ⚠ 识别帧 ${f.hex} 应答截断（声明 ${e.expected ?? '?'}B 实收 ${e.received ?? '?'}B）`
+            + ' —— 身份裁决将判 truncated 而非 unknown（不再静默吞）');
+          continue;
+        }
         this._say(`  (${f.hex} 无正响应：${e.message} —— flag=${f.flag} 按原厂容错继续)`);
       }
     }
@@ -1513,9 +1527,16 @@ export class Coder {
       //    本检查覆盖两条来源：① parseRespAuto 直接结果；② sliceFromPositiveFrame 切片后
       //    重新解析的结果 —— 两者任一 truncated 都当场拒绝，不给下面的正响应短路机会。
       if (p && p.kind === 'truncated') {
-        throw new CodingError(
+        // ★ 2026-11-23 v0.8.3 批次C：G1 截断拒绝原样保留，只给错误挂结构化标记，
+        //   供 _enterByOemFrames 的 catch 判定「flag=1 识别帧截断」并留证（不改变拒绝行为）。
+        const terr = new CodingError(
           `服务 ${payloadHex} 多帧应答被截断：声明 ${p.expected} 字节，实收 ${p.received} 字节。` +
           `可能是超时 / 假提示符 / 流控异常 —— 不能拿短块继续，更不能写回。`);
+        terr.kind = 'truncated';
+        terr.expected = p.expected;
+        terr.received = p.received;
+        terr.raw = raw;
+        throw terr;
       }
       if (p.body && p.body.length && (p.body[0] & 0xff) === wantResp) {
         if (pendingRounds > 0) {

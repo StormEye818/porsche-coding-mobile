@@ -3144,7 +3144,10 @@ async function enterSystem(sys) {
     const reg = await ensureIdentRegistry().catch(() => null);
     const moduleIdent = (reg && reg.moduleIdent) || null;
     const mi = identityKeysFromModuleIdent(moduleIdent);
-    const frames = identityPhaseFrames(enterFamily);
+    // ★ 2026-11-23 v0.8.3 批次C：用本次进模块实发（已过滤）的识别帧集，
+    //   不再硬编码四帧（0x0e23 实发仅 3 帧 3E00/22F1A2/1003，无 22F19E）。
+    //   未走 oemSequence 路径（oemIdentityFrames 为空）时回退 identityPhaseFrames，保持健壮。
+    const frames = (Array.isArray(coder.oemIdentityFrames) && coder.oemIdentityFrames.length ? coder.oemIdentityFrames : identityPhaseFrames(enterFamily)).slice();
     const replay = coder.oemIdentityResponses || {};
     const cmdFn = async (hex) => String(replay[String(hex).toUpperCase()] ?? '');
     // E-14：身份靠名字串 + 件号（JOB.BIN memcmp 语义），不按 sysId 数值或 CAN raw 单一裁决。
@@ -3159,11 +3162,16 @@ async function enterSystem(sys) {
         identToVariant: reg && reg.identToVariant,
         partToModule: null,   // 件号精确表未随进模块序列加载时，只按名字串裁到模块名
       });
-      log(`  · 身份裁决（进模块后）：四帧 ${frames.join('→')} · 判据源 moduleIdent ${mi.count}/12`
+      log(`  · 身份裁决（进模块后）：${frames.length} 帧 ${frames.join('→')}`
+        + ` · 身份证据 ${idv.texts.length}/${frames.length} 帧（实发帧集 × 剥头正响应）`
         + ` · 请求 ${mi.requests.join('/') || '—'} → ${idv.verdict}`
         + ` · 件号 ${partNumber || '—'} · 规则 ${idv.identityRule || fourTuple.note || '—'}`
         + (idv.variant ? ` · DSN ${idv.matchedModule}/${idv.variant}` : ''),
-      idv.verdict === 'mismatch' ? 'warn' : 'ok');
+      idv.verdict === 'mismatch' || idv.verdict === 'truncated' ? 'warn' : 'ok');
+      if (idv.truncatedFrames && idv.truncatedFrames.length) {
+        log(`  · 身份识别串截断：${idv.truncatedFrames.map((f) => `${f.hex} 声明${f.expected}B/实收${f.received}B`).join('；')}`
+          + ' —— 判 truncated 而非笼统 unknown，不拿半包当身份串', 'warn');
+      }
       if (idv.rawCollision) {
         log(`  · 身份四元提示：raw ${idv.rawCollision} 同值异名（SWA2 / BV_*），按名字串+件号分列，不合并`, 'info');
       }

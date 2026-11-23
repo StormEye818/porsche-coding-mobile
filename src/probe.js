@@ -382,6 +382,7 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
   const moduleIdent = opts.moduleIdent || null;
   const texts = [];
   const textsByCmd = {};
+  const truncatedFrames = [];  // ★ 2026-11-23 v0.8.3 批次C：截断留证（不进 texts，仅用于明确诊断）
   let miss = 0;
   for (const cmd of frames) {
     let r = '';
@@ -407,6 +408,10 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
     }
     const pr = parseRespAuto(r, req, sid);
     const body = Array.from(pr.body || []);
+    // ★ 2026-11-23 v0.8.3 批次C：截断帧不进 texts，但明确留证，禁止退化成笼统 unknown。
+    if (pr.kind === 'truncated') {
+      truncatedFrames.push({ hex: req, expected: pr.expected, received: pr.received });
+    }
     // NRC（7F xx nn）/ 截断 / 空应答都不是身份串（PE-08 / PE-21 / PE-54）。
     if (!body.length || pr.kind === 'nrc' || pr.kind === 'truncated'
         || body[0] === 0x7f || body[0] !== ((sid + 0x40) & 0xff)) {
@@ -479,14 +484,17 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
   const partNumber = opts.partNumber || expect?.partNumber
     || textsByCmd['1A84'] || textsByCmd['1A94'] || '';
   const fourTuple = adjudicateFourTuple(nameTexts, expect, { moduleIdent, partNumber });
+  // ★ 2026-11-23 v0.8.3 批次C：有截断留证且无正身份时判 'truncated' 诊断，
+  //   绝不退化成笼统 unknown/mismatch（app.js 据此 log「身份识别串截断」）。
   const finalVerdict = dsn ? 'match'
     : (dsnTexts.length && !nameTexts.length) ? 'mismatch'
-      : (fourTuple.verdict === 'mismatch' ? 'mismatch' : verdict.verdict);
+      : (truncatedFrames.length ? 'truncated'
+        : (fourTuple.verdict === 'mismatch' ? 'mismatch' : verdict.verdict));
   return {
     ...verdict,
     verdict: finalVerdict,
     text: dsn ? dsn.text : (verdict.text || dsnTexts.join(' | ')),
-    texts, frames, textsByCmd,
+    texts, frames, textsByCmd, truncatedFrames,
     dsn, dsnTexts, nameTexts, dsnUnresolved,
     variant: dsn ? dsn.variant : '',
     matchedModule: dsn ? dsn.module : '',
@@ -494,7 +502,9 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
     rawCollision: fourTuple.rawCollision,
     identityRule: dsn
       ? `identToVariant 精确命中 ${dsn.text} → ${dsn.module}/${dsn.variant}`
-      : fourTuple.identityRule,
+      : truncatedFrames.length
+        ? `身份识别串截断：${truncatedFrames.map((f) => `${f.hex} 声明${f.expected}B/实收${f.received}B`).join('；')} → truncated（非 unknown）`
+        : fourTuple.identityRule,
   };
 }
 
