@@ -15,9 +15,15 @@
  * 全部 shipped 表示（coding.json / coding-v2.json / coding-by-model.json /
  * coding-models.json / data/models/**）逐个扫描；查表无匹配的键一律不动、也不判红。
  *
+ * 缺席目标的处理（v0.8.3 批次 D）：被 .gitignore 排除且本机的确没有的中间表
+ * （coding-by-model.json / coding-models.json，rebuild-all.py 本地产物）在干净
+ * clone 里天然缺席 → 记为 localOnlyAbsent 并跳过，不进 grand totals、不判红；
+ * 未被忽略却缺席的目标视为 tracked 文件丢失，必须判红。存在的文件照常全量真扫。
+ *
  * 跑法：node tools/verify-coding-did-integrity.mjs
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,6 +35,28 @@ const VIN_CHAIN = '0xA00005F0';
 const fail = (msg) => { console.log(`FAIL ${msg}`); process.exitCode = 1; };
 const read = (rel) => readFileSync(join(ROOT, rel));
 const makeKey = (f) => [f.module, f.variant, f.chain, f.byte, f.bit].join('\u0000');
+
+/**
+ * 判定一个缺席目标是否被 .gitignore 排除。只有 git 明确回答「被忽略」才返回 true；
+ * git 不可用或返回异常状态一律判红（fail-closed），绝不当成可跳过。
+ * @param {string} rel 相对 ROOT 的路径
+ * @returns {boolean} true=被忽略；false=未忽略或判定失败（调用方判红）
+ */
+function isGitIgnored(rel) {
+  const r = spawnSync('git', ['check-ignore', '-q', '--', rel], {
+    cwd: ROOT,
+    stdio: 'ignore',
+    encoding: 'utf8',
+  });
+  if (r.error || r.status === null) {
+    fail(`GIT_CHECK_IGNORE_UNAVAILABLE ${rel} error=${r.error ? r.error.message : 'no-status'}`);
+    return false;
+  }
+  if (r.status === 0) return true;
+  if (r.status === 1) return false;
+  fail(`GIT_CHECK_IGNORE_FAILED ${rel} status=${r.status}`);
+  return false;
+}
 
 /* ── 真值表：从 prefix 重算，不信任真值文件里旧的 lid 字段 ─────────── */
 const truthRows = JSON.parse(read(TRUTH_REL).toString('utf8'));
@@ -140,8 +168,19 @@ const walk = (dir, out) => {
 walk('data/models', targets);
 
 const grand = { lid: 0, sid22: 0, matched22: 0, smallSid: 0 };
+const localOnlyAbsent = [];
 let scanned = 0;
 for (const [rel, anchor] of targets) {
+  // 干净 clone 里 rebuild-all.py 本地中间表天然缺席；被忽略才允许跳过。
+  if (!existsSync(join(ROOT, rel))) {
+    if (isGitIgnored(rel)) {
+      localOnlyAbsent.push(rel);
+      continue;
+    }
+    fail(`TARGET_MISSING ${rel} (not gitignored: tracked file lost or undeclared fixture)`);
+    continue;
+  }
+  // 存在的文件（无论 tracked 还是本地）一律全量真扫，判据不变。
   const s = scan(read(rel), rel, anchor);
   grand.lid += s.lid; grand.sid22 += s.sid22;
   grand.matched22 += s.matched22; grand.smallSid += s.smallSid;
@@ -152,6 +191,7 @@ for (const [rel, anchor] of targets) {
   scanned += 1;
 }
 console.log(`SCANNED files=${scanned} lid=${grand.lid} sid22=${grand.sid22} matched22=${grand.matched22} smallSid=${grand.smallSid} violations=0`);
+console.log(`CODING_DID_INTEGRITY_LOCALONLY_ABSENT n=${localOnlyAbsent.length} rels=${localOnlyAbsent.join(',')}`);
 
 /* ── (c) 反例注入：真 0x22 条目改回低字节 → 必须转红 ──────────────── */
 const codingBuf = read('data/coding.json');
@@ -196,5 +236,6 @@ if (process.exitCode) {
 } else {
   console.log('CODING_DID_INTEGRITY_PASS'
     + ` truth_keys=${didMap.size} files=${scanned} lid=${grand.lid}`
-    + ` matched22=${grand.matched22} smallSid=${grand.smallSid} counterexamples=2`);
+    + ` matched22=${grand.matched22} smallSid=${grand.smallSid} counterexamples=2`
+    + ` localOnlyAbsent=${localOnlyAbsent.length}`);
 }
