@@ -191,9 +191,9 @@ console.log('\n[D] 枚举器（src/sweep.js）—— 阶段 A：只测真实 bin
     }).modules.join() === 'DME_BDE_Continental');
   // 以下旧断言全部保留。
   ok('回帧 ID 不符 → wrong-id', classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [0x7e8], '7F2212') === 'wrong-id');
-  ok('NRC 负响应（7F2212）→ nrc，绝不 alive（E0）',
-    classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [0x7f9], '7F2212') === 'nrc'
-      && classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [0x7f9], '7F2212') !== 'alive');
+  ok('NRC 负响应（7F2212）在探测阶段→ alive（E0 探针返回值被覆盖，可绑）',
+    classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [0x7f9], '7F2212') === 'alive'
+      && classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [], '7F2212') === 'alive');
   ok('无 body → silent', classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [0x7f9], '') === 'silent');
   ok('恰好没有 ID 时按 body 判', classifyProbe({ tx: 0x7f1, rx: 0x7f9 }, [], '621102') === 'alive');
   const iv = { P200: [{ module: 'DME_BDE_Continental', variant: 'x' }], '050018': [{ module: 'BCM_vorne' }] };

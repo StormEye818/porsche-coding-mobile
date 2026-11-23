@@ -575,23 +575,25 @@ console.log('\n[7] 实车日志重放（14 款 Cayman 981 · VIN WP0AB2983EK1900
   const c7d = new Coder(new Elm327(m7d, { timeoutMs: 2000 }), { tx: 0x7E0, rx: 0x7E8, ecuName: 'DME', family: fam718 });
   await c7d.enterSession(0x89, { family: fam718 });
   const idn718 = await c7d.readVehicleIdentity(fam718);
-  // ★ v0.8.3 DID 高字节修复后，本记录的真 DID 为 0x0600（旧数据错丢高字节成 0x0000）。
-  //   REPLAY_718 是审计 rows 钉住摘要的合成重放样本，其末帧 220000 不得随数据真值修正而改；
-  //   本段仍从记录读回完整 16 位 DID 并断言其合法，真值逐条校验交给
-  //   tools/verify-coding-did-integrity.mjs（全量 shipped 表示 + 双向反例注入）。
+  // ★ v0.8.3 DID 高字节修复：本记录真 DID = lid 0x0600（1536），prefix
+  //   `22 2e 00 00 06 00 00` 的 u32@3 低 16 位同值；e2e 发送值、回放脚本、
+  //   golden、manifest 摘要与 rows expectDigest 全部按 0x0600 一致更新。
+  //   真值逐条校验交给 tools/verify-coding-did-integrity.mjs（全量 shipped
+  //   表示 + 双向反例注入）；这里只断言 e2e 读帧用记录完整 16 位 DID。
   const did718 = it718 ? (it718.lid & 0xffff) : -1;
-  const replayDid718 = 0x0000;
+  const replayDid718 = 0x0600;
   await c7d.readBlock(replayDid718, 0x22).catch(() => null);
   const f718 = m7d.txLog.filter((c) => !c.startsWith('AT'));
   vectorDiff('REPLAY_718', f718);
-  const golden718 = ['1003', '3E00', '1A9F', '22F1A2', '1A87', '1A84', '1089', '221102', '1003', '22F190', '220000'];
+  const golden718 = ['1003', '3E00', '1A9F', '22F1A2', '1A87', '1A84', '1089', '221102', '1003', '22F190', '220600'];
   ok('UDS 车帧序逐帧逐字节一致（10 03 流）', JSON.stringify(f718) === JSON.stringify(golden718), JSON.stringify(f718));
   ok('UDS 流含 10 03（§1.3「UDS ECU 流另含」）', f718.includes('1003') && f718.includes('1089'));
   ok('22 11 02 直读成功（UDS 车应答文本）', idn718.name === '718 Boxster T', idn718.name);
   ok('22 F1 90 直读 VIN（UDS 车）', idn718.vin === 'WP0ZZZ982JS200001', idn718.vin);
-  ok('UDS 记录读帧=22 <DID16>（3 字节帧，按记录）',
-    Number.isInteger(did718) && did718 >= 0 && did718 <= 0xffff
-    && f718.includes('220000') && f718.every((f) => !/^21[0-9A-F]{2}$/.test(f)));
+  ok('UDS 记录读帧=记录完整 16 位 DID（22 06 00，不截成 00 00）',
+    did718 === replayDid718 && did718 === 0x0600
+    && f718.includes('220600') && f718.every((f) => !/^21[0-9A-F]{2}$/.test(f)),
+    `记录DID=0x${did718.toString(16).toUpperCase().padStart(4, '0')}`);
   {
     const appSrc = readFileSync('./src/app.js', 'utf8');
     const grab = (name) => {

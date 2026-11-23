@@ -7,7 +7,8 @@
  * evaluateRuntimeVector / liveFactsForRow / evaluateProvableTag），并做正响应反例注入证明可判伪。
  *
  * P0 断言：
- *   (a) 221409→7F2231 不得绑定        ← tools/verify-nrc-bind-failclosed.mjs（批次 A）
+ *   (a) 221409→7F2231 探测阶段可绑、身份/读码 NRC 不算正响应（两阶段）
+ *                                     ← tools/verify-nrc-bind-failclosed.mjs（批次 B 撤回后）
  *   (b) 未识别变体不得静默落 GT5       ← tools/verify-identity-dsn-gate.mjs（批次 B）
  *   (c) 身份 DSN「050」不得误配 GT4    ← tools/verify-identity-dsn-gate.mjs（批次 B）
  *   (d) 31/31 全 NRC31 的 runtime 行 answerBacked=false、不得标 A（批次 C）
@@ -57,14 +58,19 @@ const hasPassLine = (stdout, name) => stdout.split('\n').some(
 /** 取以 prefix 开头的末行。 */
 const lastLine = (stdout, prefix) => stdout.split('\n').find((line) => line.startsWith(prefix)) || '';
 
-/* ── (a) NRC 负响应不得绑定：真执行批次 A gate ───────────────────────── */
+/* ── (a) 探测 NRC 可绑 + 身份/读码 NRC 非正响应：真执行批次 B 撤回后的 gate ── */
 {
   const run = runGate('tools/verify-nrc-bind-failclosed.mjs');
   const summary = lastLine(run.stdout, 'NRC_BIND_FAIL_CLOSED_');
   ck('P0_NRC_BIND_GATE_EXIT_ZERO', run.exit === 0, `exit=${run.exit}`);
-  ck('P0_221409_NRC_NOT_BOUND',
+  ck('P0_221409_NRC_PROBE_BOUND_IDENTITY_NOT_POSITIVE',
     summary.startsWith('NRC_BIND_FAIL_CLOSED_PASS')
-      && hasPassLine(run.stdout, 'CLEAN_SENDFN_NRC_BIND_FAILCLOSED'),
+      && hasPassLine(run.stdout, 'CLEAN_CLASSIFY_NRC_IS_ALIVE')
+      && hasPassLine(run.stdout, 'CLEAN_SENDFN_NRC_UXTH_ONE')
+      && hasPassLine(run.stdout, 'CLEAN_SENDFN_NRC_BOUND')
+      && hasPassLine(run.stdout, 'IDENTITY_NRC_NOT_POSITIVE')
+      && hasPassLine(run.stdout, 'READ_NRC_THROWS_CODING_ERROR')
+      && hasPassLine(run.stdout, 'INJECT_NRC_ALIVE_ASSERTION_TURNS_RED'),
     `summary=${summary}`);
 }
 

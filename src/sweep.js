@@ -34,26 +34,37 @@ export const RAW_IDENTITY_COLLISIONS = Object.freeze([
 ]);
 
 /**
- * 扫描结果归类：先看回帧 ID 是否来自该候选 rx，再看 body 是不是 NRC 负响应。
+ * 扫描结果归类：只看「回帧 ID 是否来自该候选 rx」+「有没有 body」。
+ * NRC 也算有 ECU 应答（E-01 应答即绑），但 NRC 永远不是身份串。
  *
- * ★ E0（逐指令级取证）：`PorscheSendCommandByID@libPORSCHE_COMM.so:0x12898` 的
- *   `0x12902 cmp r1,#0x7f` / `0x12906 moveq r5,#0` —— 首字节 0x7F 的 NRC 负响应
- *   被强制返回 0，于是 `DriveLinksMode_1001@LINK:0x18fc0 cmp #1` 不成立，不绑定。
- *   旧口径「NRC 也算有 ECU 应答（应答即绑）」是假绑定根因：body 非空但以 7F 开头
- *   只归类为 `'nrc'`，**绝不可**归类为 `'alive'`（NRC 也不是身份串）。
- *   调用方一律用 `!== 'alive'` 判定，天然 fail-closed。
+ * ★ E0 阶段分离（逐指令级取证；11-23「进不去模块」根因的撤回依据）：
+ *   - 探针帧 `221409` 由 `DriveLinksMode_1001@LINK:0x18f8c blx` 发出，其返回值
+ *     在紧接着的 `0x18f8e ldr` 被**立即覆盖** —— 探针应答（含 `7F2231` NRC）
+ *     根本不进入 uxth 判定；探测阶段「来自候选 rx 且有 body」= ECU 在场 = alive。
+ *   - uxth 判定只针对随后的**绑定帧** `0x100359`（`0x18fc0 cmp #1`），不是探针帧。
+ *   - 实车 0x70D/0x777 对 `221409` 回 `7F2231`，同地址 3E00→7E00、
+ *     1003→5003、22F1A2→62F1A2 全正响应 = 地址明确活着、可绑。
+ *   - 身份/读码阶段的 NRC 是**另一套判据**：`src/probe.js identityAdjudicate`
+ *     不把 NRC 当身份文本，`src/coder.js parseRespAuto/uds` 把 NRC 判负并上抛。
+ *     不得把探测阶段的 alive 语义冒充身份正响应。
+ *
+ *   判据写在返回值里：NRC 在探测阶段明确归 `'alive'`（`nrcIsAliveAtProbe=true`），
+ *   反例注入把该常量改为 false 时，本门禁必须转红。
  *
  * @param {{tx:number, rx:number}} cand 静态候选行（仅用 rx 比对回帧来源）
  * @param {number[]} ids 应答帧 CAN ID（frameIdsOf）
  * @param {string} body 应答体 hex（剥 PCI 后；NRC 形如 `7F2231`）
- * @returns {'alive'|'nrc'|'wrong-id'|'silent'}
+ * @returns {'alive'|'wrong-id'|'silent'} 探测阶段裁决；NRC 不产生独立 verdict
  */
 export function classifyProbe(cand, ids, body) {
+  // ★ E0：探测 NRC = 地址在场。保留显式布尔，避免「删掉 NRC 判定」后语义丢失。
+  const nrcIsAliveAtProbe = true;
   const isNrc = typeof body === 'string' && /^7f/i.test(body.trim());
-  if (!Array.isArray(ids) || !ids.length) return isNrc ? 'nrc' : (body ? 'alive' : 'silent');
+  const hasBody = Boolean(body);
+  const alive = hasBody && (!isNrc || nrcIsAliveAtProbe);
+  if (!Array.isArray(ids) || !ids.length) return alive ? 'alive' : 'silent';
   if (!ids.includes(cand.rx)) return 'wrong-id';
-  if (isNrc) return 'nrc';
-  return body ? 'alive' : 'silent';
+  return alive ? 'alive' : 'silent';
 }
 
 /**

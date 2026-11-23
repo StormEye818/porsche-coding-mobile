@@ -10,8 +10,8 @@
   "replayFile": "tools/align431-vectors/REPLAY_718.replay.json",
   "sourceLogFile": "tools/align431-vectors/REPLAY_718.source.json",
   "sourceLogSha256": "ed48d7bc1ffb929c27201578162236cab3a67e823b486bed0a3f27c88c3e0ba0",
-  "expectedSha256": "6aee10ee98ff5c404082888e3ea89263fc4ae6293b0c12605287ec2f2180ebc8",
-  "replaySha256": "fdefacf84a77f61f5815d93f2fb10bbd8049c130eb3064be40f5a5222b18356b",
+  "expectedSha256": "c6c7908cb2f01b338c7f2ba30165cf1646e9d93ef1bf0024ba5b1d0102afa0f7",
+  "replaySha256": "49fdb0203aefe5ca94c04417d343b34b9d8fc67def0582a910238dd409aa566b",
   "diffCmd": "node e2e-flow.mjs | grep -F 'VECTOR REPLAY_718 '",
   "injection": {
     "expectedTamper": "改 REPLAY_718.expected.json 帧序但不更新 expectedSha256 → replay gate 必须红",
@@ -22,5 +22,5 @@
     "e1Generalized": "把 REPLAY_718.sampleOnly 改 false/grade S → provableTag 必须转红",
     "e2eOutside": "把 REPLAY_718 从 e2e 执行面移除 → runtimeProbeVector 必须转红"
   },
-  "sha256": "145d670df69e0bad9eb39485e5f24b7d4a0dcf37de12b1d950790a9c9cdd33e8"
+  "sha256": "1cdd2a2252c6ee8484750268873afb713cbba818b98d9cac4e699bdc2c48679a"
 }

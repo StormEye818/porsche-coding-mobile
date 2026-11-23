@@ -740,13 +740,14 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
           const body = Array.from(pr.body || [])
             .map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join('');
           if (!body) { note(`${cmd} → 无应答${raw ? `（${raw.slice(0, 16)}）` : ''}`); return { uxth: 0 }; }
-          // ★ E0：body 非空 ≠ 地址活着。`PorscheSendCommandByID@libPORSCHE_COMM.so:0x12898`
-          //   遇首字节 0x7F 的 NRC 负响应强制返回 0（0x12902 cmp r1,#0x7f / 0x12906 moveq r5,#0），
-          //   `DriveLinksMode_1001@LINK:0x18fc0 cmp #1` 不成立 → 不绑定。复用同一判据，
-          //   NRC（以及任何非 alive）一律 uxth=0，绝不把 7F2231 当地址绑定成功。
-          if (classifyProbe({ tx: p.tx, rx: p.rx }, ids, body) !== 'alive') {
-            note(`${cmd} → NRC 负响应不绑定（${body.slice(0, 24)}）`);
-            return { uxth: 0, reason: 'NRC_NEGATIVE_RESPONSE' };
+          // ★ E0 阶段分离（11-23 进不去模块根因的撤回）：探针 221409 由
+          //   `DriveLinksMode_1001@LINK:0x18f8c blx` 发出，返回值在 `0x18f8e ldr`
+          //   被立即覆盖 —— 探针应答不判 uxth；uxth 只判绑定帧 0x100359 的回执。
+          //   NRC（7F…）说明地址在场，探测阶段按 E0 可绑；身份/读码另判
+          //   （src/probe.js identityAdjudicate / src/coder.js parseRespAuto）。
+          const probeVerdict = classifyProbe({ tx: p.tx, rx: p.rx }, ids, body);
+          if (probeVerdict === 'alive' && /^7f/i.test(body.trim())) {
+            note(`${cmd} → NRC 负响应=地址在场，探测阶段按 E0 可绑；身份/读码另判（${body.slice(0, 24)}）`);
           }
           // ★ 阶段 C：即使有 body，帧 ID 也必须由 frameIdsOf(raw) 实际观测且等于候选 rx。
           //   p.rx 只用于 ATSH/ATCRA 选候选，不得作为 reportNative 的 frameId 兜底来源。
@@ -781,8 +782,8 @@ async function probeAddressFor(label, probeCmd, opts = {}) {
       showLoading(`正在探测 ${label}`, `候选 ${i + 1}/${all.length} · 0x${hex(all[i].tx)}`,
         () => { probeAbort = true; });
       const hit = await tryAddr(all[i]);
-      // 判定在 tryAddr 内：帧来自该 rx 且有正响应 body 才绑定；
-      // NRC 负响应（body 以 7F 开头）不绑定（E0），身份交给读帧裁决。
+      // 判定在 tryAddr 内：帧来自该 rx 且有 body 即绑定（含 7F 开头的 NRC）；
+      // 探测阶段 NRC=ECU 在场（E0 探针返回值被覆盖、uxth 只判绑定帧），身份交给读帧裁决。
       if (hit) return hit;
     }
     log(`  · 候选 ${all.length} 个全部无应答（来源 ${plan ? 'bind-plan' : '表 A 行'}`
