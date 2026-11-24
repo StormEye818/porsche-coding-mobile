@@ -191,7 +191,11 @@ export const NAME_TO_VARIANT = {
 
 /**
  * 按名字查变体；查不到返回 null（调用方必须拒写）。
- * 支持宽松匹配：精确 → 包含。
+ *
+ * ⚠️ v0.8.4：**只做精确匹配**（原样精确 + 大写精确），删除双向 `includes` 兜底。
+ *    名字表里一个别名可能是另一个的子串，模糊包含会把独立算法错配 → NRC 0x35 → 0x36 锁死。
+ *    未命中时由 app.js 的识别串 token 精确兜底（`ASAP1A_CCP_ComputeKeyFromSeed_<token>`），
+ *    那处同样不做模糊包含；兜底也不中就是「只读、写入被拒」。
  */
 export function variantForName(name) {
   const n = String(name ?? '').trim();
@@ -200,10 +204,6 @@ export function variantForName(name) {
   const up = n.toUpperCase();
   for (const k of Object.keys(NAME_TO_VARIANT)) {
     if (k.toUpperCase() === up) return NAME_TO_VARIANT[k];
-  }
-  for (const k of Object.keys(NAME_TO_VARIANT)) {
-    const ku = k.toUpperCase();
-    if (up.includes(ku) || ku.includes(up)) return NAME_TO_VARIANT[k];
   }
   return null;
 }

@@ -639,14 +639,15 @@ console.log('\n[7] 非 ASAP1A seed/key —— 真值对拍 真值');
 console.log('\n[8] 特殊功能安全访问');
 {
   const src = readFileSync('./src/app.js', 'utf8');
-  // 实测基准：27 09 → 31 xx（FINDINGS「关键请求」）
-  const iSec = src.indexOf('securityAccessEx({ level: 0x09');
+  // 全链路审计 E0 基准：例程安全访问 27 03 ×356 : 27 09 ×2 → showSub 走 0x03（KWP 为 0x00）。
+  // v0.8.4：旧断言写死 0x09 是错基准，按审计证据改为 kwpRoutine ? 0x00 : 0x03。
+  const iSec = src.indexOf('securityAccessEx({ level: kwpRoutine ? 0x00 : 0x03');
   const iRout = src.indexOf('coder.runRoutine(sf, id');
-  ok('特殊功能路径调用了 securityAccessEx(0x09)', iSec > 0);
+  ok('特殊功能路径调用了 securityAccessEx(0x03/0x00)', iSec > 0);
   ok('securityAccessEx 在 runRoutine **之前**', iSec > 0 && iRout > 0 && iSec < iRout);
   // 2026-11-10 修：此前写死 kwp:false → KWP 模块被发 27 09（应为 17 00）。改为按读服务判族。
   ok('特殊功能按族选安全访问（UDS 27 / KWP 17）',
-     /securityAccessEx\(\{\s*level:\s*0x09,\s*kwp:\s*kwpRoutine/.test(src)
+     /securityAccessEx\(\{\s*level:\s*kwpRoutine\s*\?\s*0x00\s*:\s*0x03,\s*kwp:\s*kwpRoutine/.test(src)
      && /kwpRoutine\s*=\s*coder\.lastReadSid\s*!=\s*null\s*&&\s*coder\.lastReadSid\s*!==\s*0x22/.test(src));
   // MES 定论（REAUDIT-20261017）：跟随服务轮询直到响应不是 21/23/24/78
   ok('例程走 runRoutine（含 31 03 跟随轮询）', iRout > 0);

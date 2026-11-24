@@ -179,13 +179,14 @@ export const VARIANT_BY_ECU = {
   '_NEW9x1BKE': { algo: 'A', seedBytes: 2, verified: false },
 };
 
-/** 按 ECU 名/家族挑变体；不认识返回 null（调用方必须拒绝写入，不要回退默认） */
 /**
- * 按 ECU 名挑 seed/key 变体。
+ * 按 ECU 名挑 seed/key 变体；不认识返回 null（调用方必须拒绝写入，不要回退默认）。
  *
  * ⚠️ **不要瞎猜**：指纹聚类显示多数变体是**独立算法**（不是换壳），
  *    用错变体 = 算错 key = NRC 0x35 → 反复重试 → **0x36 锁死**。
- *    因此：① 精确匹配优先 ② 变体名是模块名子串才认 ③ 都不中 → 返回 null，调用方必须拒写。
+ *    因此只认 ① 精确匹配 ② 显式别名；**不做「变体名是模块名子串」的模糊匹配**
+ *    （v0.8.4 删除：短名/包含关系会把独立算法错配到别的 ECU）。
+ *    都不中 → 返回 null，调用方按「只读、写入被拒」处理。
  *    `verified:false` 的变体写入前还要人工确认（见 app.js doWrite）。
  */
 const ECU_ALIAS = {
@@ -208,11 +209,7 @@ export function pickVariant(ecuName = '') {
       return { variant: k, ...VARIANT_BY_ECU[k] };
     }
   }
-  // ③ 变体名是模块名子串（要求变体名 >=3 字符，避免 'EPS' 之类短名误配）
-  for (const [k, v] of Object.entries(VARIANT_BY_ECU)) {
-    const kk = k.toUpperCase();
-    if (kk.length >= 3 && n.includes(kk)) return { variant: k, ...v };
-  }
+  // ③ 无：不做「变体名是模块名子串」模糊匹配（独立算法错配会 NRC 0x35 → 0x36 锁死）。
   return null;
 }
 

@@ -4040,7 +4040,7 @@ function showSub(s) {
         // ⚠️ 2026-11-10 修：此前写死 kwp:false → KWP 模块的例程被发 `27 09`（应为 `17 00`），
         //    必然 NRC，还白吃一次安全尝试计数。按最近一次读服务判族（22=UDS / 21,1A=KWP）。
         const kwpRoutine = coder.lastReadSid != null && coder.lastReadSid !== 0x22;
-        await coder.securityAccessEx({ level: 0x09, kwp: kwpRoutine });
+        await coder.securityAccessEx({ level: kwpRoutine ? 0x00 : 0x03, kwp: kwpRoutine });
       }
       // ⚠️ 长例程会先回 NRC 0x78（响应挂起）/ 0x21（忙），一次请求判成败会误报失败。
       //    实证定论：发跟随服务 `31 03` 轮询直到响应不是 21/23/24/78（REAUDIT-20261017）。
@@ -4944,7 +4944,11 @@ async function showSysExtra(f) {
         const r = await coder.readDtc(0x02, 0x89);
         // ⚠️ UDS（59）和 KWP（58）的应答头不同，必须分开解析（2026-10-18 审计）。
         //    此前只按 UDS `slice(3)`，readDtc 回退到 KWP 时会整体错位 → 显示垃圾码。
-        const parsed = parseDtcPayload(r.body);
+        // ★ v0.8.4：参考诊断仪 DTCF 的条长是运行时描述符；这里按**当前调用点已知参数**显式给出
+        //    descriptor（2B DTC + 1B status ⇒ entryLen=3；UDS 头 3B / KWP 头 2B）。
+        //    **不是从 ECU 动态读出的 descriptor**，只是把解析层从写死 3 改为描述符驱动。
+        const dtcHeaderLen = Array.isArray(r?.body) && r.body[0] === 0x58 ? 2 : 3;
+        const parsed = parseDtcPayload(r.body, { entryLen: 3, headerLen: dtcHeaderLen, format: 2, count: null });
         const dtcs = parsed.dtcs;
         if (parsed.protocol === 'unknown') {
           const rawHex = parsed.raw.map((x) => x.toString(16).padStart(2, '0')).join(' ');
