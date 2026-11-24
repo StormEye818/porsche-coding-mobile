@@ -237,3 +237,11 @@ analysis/ 下 91 个 py 脚本 + 56 个 JSON 产物 + x431-研究成果/X431docs
 ### 验证结论（本提交）
 - `NODE_OPTIONS='' npm test` 退出 0：QA 17/17、smoke 376、e2e 127、`AUDIT_FIXES_V084_PASS count=72`、`CODING_DID_INTEGRITY_PASS unprovableAnnotated=545`、`GENERATOR_CONTRACT_PASS 26`、243/243 A。
 - `npm run audit:align431` 两次退出 0，内部指纹 `sha256=826e8336413fecd8bca5081e4731e2b6f3cccd9fc3a5891dee8427592320e3fc`，stdout sha256 `5513e71b51ce80e8fcf5da317b0c87071cbfcbc5832dd524027716cdb971c490`（两次逐字节相同）。rows 断言摘要 `b560988bd7abf4de…` 未变；本机未入库 analysis 文档临时移出以对齐干净 clone 扫描面，验证后原位恢复。
+
+## 17. v0.8.4 收口（2026-11-24）
+- 提交链（v0.8.3=43c0bcf 后）：ebf0a62(批次1 三代码修复) → c8842f4(批次2 文档/数据/别名写闸)。均独立QA PASS。
+- 批次1：SA level 0x09→kwp?0x00:0x03；删 seedkey 两处子串/includes 模糊；DTC descriptor 驱动条长（诚实标"调用点固定descriptor非动态读"）。新 gate verify-audit-fixes-v084（批次2后 count=72）。
+- 批次2：0x10000359→0x100359 全库归零；live-map 静态CAN措辞订正（表在SYS_DATA.BIN）；coding-v2 545条标OUR_DESIGN/derived+sidPairOk=false+canWrite真阻断（unprovableAnnotated=545）；别名 includes 保留但加 variantSource:'alias'+verified:false 写闸硬拦截（真实模块名 BV_ECM_UDS等仍命中）；权威指纹 e855ef8a→826e8336（仅3行文档订正引起，QA双版本重算证明）。
+- 全量逐行/逐指令+胶水豁免证明+静态CAN表订正+0待挖，均落本契约。
+- **干净clone终验 CLEAN_CLONE_V084_PASS**：单次npm test exit0、QA17/17、REPLAY8、P020、IDENTITY_E2E16、审计fix72、DID545标注、audit 243/243A 指纹826e8336、U2 diff0、GENERATOR26；三核心修复在clone真在。
+- **待发**：v0.8.4 tag/release（构建产物后）。
