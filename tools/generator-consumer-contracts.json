@@ -411,7 +411,7 @@
       "outputArtifact": "data/function-sequences.json",
       "artifactTracking": "tracked",
       "consumerKind": "runtime-consumed",
-      "sha256": "05079506d57241e22101065ce9556a4b683bd3b2460f1df9f41b1db9a30f11db",
+      "sha256": "2792b4283e997feedb88b5326f9ca49ed1c732606101364a9a30d646b1f5a248",
       "check": {
         "module": "./src/special-catalog.js",
         "fn": "loadFeatureCatalog",

@@ -153,6 +153,8 @@ export const MODEL_SYSID_INDEX = {
   "apply": true
  }
 };
+// ★ E3：DSN 索引 type=0x11，但 comm 子表的模块 sysId 全为 0x12xx；运行时保留 gen=0x12。
+//   依据 data/platform-type-map.json:e3Note（索引层与模块映射层是两类证据，不按 DSN type 覆盖）。
 export const PLATFORM_MODULES = {
  "992": {
   "gen": "0x14",
@@ -1032,7 +1034,7 @@ export function modulesForSysId(sysId, modelLabel) {
  * 顺序与 addrEntryFor 一致：①中文菜单标签 ②模块名 ③旧表条目 sysId（兜底）。
  */
 /**
- * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.2 偏离⑧）：bind-plan 键只按
+ * ★ 2026-11-11 参考诊断仪对齐（CODE-AUDIT §4.2 偏离⑧）：bind-plan 键只按
  * ①**模块名精确查**平台映射（all-model-sysids 的精确 join）② 981 全局标签基值
  * ③旧地址表实际命中的 sysId 兜底。删除「家族低字节跨代平移」自创推断。
  * 顺序与 addrEntryFor 一致：模块名 → 中文标签（仅 981）→ 旧表条目 sysId。

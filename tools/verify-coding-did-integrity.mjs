@@ -13,7 +13,10 @@
  *   (d) 反例注入：把真 0x1A 条目的 lid 改成 16 位值，判据必须转红。
  *
  * 全部 shipped 表示（coding.json / coding-v2.json / coding-by-model.json /
- * coding-models.json / data/models/**）逐个扫描；查表无匹配的键一律不动、也不判红。
+ * coding-models.json / data/models/**）逐个扫描；查表无匹配的键不判 DID 红，
+ * 但 v0.8.4 批次2 起 coding-v2 的无 prefix 条目必须逐条标注不可证并阻断写入。
+ * ★ 门禁 PASS ≠ 全部 shipped 条目已上车验证：只表示有 7B prefix 的条目逐条复核通过，
+ *   不可证条目已标注/阻断；该口径必须在末行计数中显式可见。
  *
  * 缺席目标的处理（v0.8.3 批次 D）：被 .gitignore 排除且本机的确没有的中间表
  * （coding-by-model.json / coding-models.json，rebuild-all.py 本地产物）在干净
@@ -26,6 +29,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { canWrite } from '../src/schema.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const TRUTH_REL = 'tools/coding-did-truth.json';
@@ -231,11 +235,52 @@ if (!rec1a) {
   else fail('COUNTEREXAMPLE_1A gate stayed GREEN after widening 0x1A lid');
 }
 
+/* ── (e) coding-v2 无 7B prefix 条目：逐条标注 + 写闸真阻断 ───────── */
+const codingV2 = JSON.parse(read('data/coding-v2.json').toString('utf8'));
+const unprovable = (list) => list.filter((p) => p.readSid === 0x22
+  && Number.isFinite(p.lid) && p.lid <= 0xff && !didMap.has(makeKey(p)));
+
+/** 共享判据：真数据和反例注入都走这一条，避免「只看计数不看字段」的假绿。 */
+function unprovableBad(p) {
+  return p.provable !== 'OUR_DESIGN/derived'
+    || p.sidPairOk !== false
+    || typeof p.writeBlockedReason !== 'string'
+    || p.writeBlockedReason.trim().length === 0
+    || canWrite({ writeSid: p.writeSid, lid: p.lid,
+      sidPairOk: p.sidPairOk, writeBlockedReason: p.writeBlockedReason }) !== false;
+}
+
+const unprovableRows = unprovable(codingV2.params || []);
+const unprovableBadRows = unprovableRows.filter(unprovableBad);
+if (unprovableBadRows.length) {
+  for (const p of unprovableBadRows.slice(0, 5)) {
+    fail(`V2_UNPROVABLE_NOT_BLOCKED ${p.id} provable=${p.provable}`
+      + ` sidPairOk=${p.sidPairOk} reason=${p.writeBlockedReason}`);
+  }
+  fail(`V2_UNPROVABLE_BAD total=${unprovableBadRows.length}/${unprovableRows.length}`);
+}
+// 防止「全表误标」绕过 (a)：有 7B prefix 的条目不得标成工程派生。
+const misMarked = (codingV2.params || []).filter((p) => p.readSid === 0x22
+  && didMap.has(makeKey(p)) && p.provable === 'OUR_DESIGN/derived');
+if (misMarked.length) fail(`V2_PROVABLE_MISMARKED total=${misMarked.length}`);
+// 反例注入：撤掉一条不可证条目的 sidPairOk:false → 共享判据必须转红。
+const sample = unprovableRows[0];
+if (!sample) {
+  fail('V2_COUNTEREXAMPLE no unprovable row found');
+} else {
+  const injected = { ...sample, sidPairOk: true };
+  if (!unprovableBad(injected)) fail('V2_COUNTEREXAMPLE gate stayed GREEN after sidPairOk:true');
+  else console.log(`COUNTEREXAMPLE_V2 PASS ${sample.id} sidPairOk:false -> true`);
+}
+console.log(`V2_UNPROVABLE total=${unprovableRows.length} annotated=${unprovableRows.length - unprovableBadRows.length}`
+  + ` misMarked=${misMarked.length} writeGateBlocked=1`);
+
 if (process.exitCode) {
   console.log('CODING_DID_INTEGRITY_FAIL');
 } else {
   console.log('CODING_DID_INTEGRITY_PASS'
     + ` truth_keys=${didMap.size} files=${scanned} lid=${grand.lid}`
-    + ` matched22=${grand.matched22} smallSid=${grand.smallSid} counterexamples=2`
+    + ` matched22=${grand.matched22} smallSid=${grand.smallSid} counterexamples=3`
+    + ` unprovableAnnotated=${unprovableRows.length}`
     + ` localOnlyAbsent=${localOnlyAbsent.length}`);
 }

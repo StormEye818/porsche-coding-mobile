@@ -634,9 +634,9 @@
   },
   {
    "rowId": "GAP-INVENTORY-20261112.md:43",
-   "originalText": "| 连接 | n=0 链路绑定用 ATSH/ATCRA 回执等价（VCI `send(0x10000359,A,2)` 无 ELM 对应物） | **B** | 适配器能力差异；帧数=0 与原厂一致（矩阵 §3 #2） |",
+   "originalText": "| 连接 | n=0 链路绑定用 ATSH/ATCRA 回执等价（VCI `send(0x100359,A,2)` 无 ELM 对应物） | **B** | 适配器能力差异；帧数=0 与原厂一致（矩阵 §3 #2） |",
    "verdict": "A",
-   "evidence431": "PORSCHE_SYSP.so:0x10000359 (GAP §2 :43)",
+   "evidence431": "PORSCHE_SYSP.so:0x100359 (GAP §2 :43)",
    "codePath": "src/elm327.js:cmd",
    "diffCmd": "node tools/verify-fullchain-audit.mjs | grep -F 'FULLCHAIN_AT_LAYER'",
    "nextCarrier": "T03/T04 收口 B 类第 43 行：接进 app 主链并钉门禁断言",
@@ -2720,7 +2720,7 @@
   },
   {
    "rowId": "GAP-INVENTORY-20261112.md:71",
-   "originalText": "| seed/key | needsKey:false 生产路径不可达（modeVerified 全表 0） | **B** | 记档（安全设计，非缺口） |",
+   "originalText": "| seed/key | needsKey:false 生产路径不可达（104 条 mode 0x00 均未标 modeVerified；实跑 962/1070 条 modeVerified=true） | **B** | 记档（安全设计，非缺口） |",
    "verdict": "A",
    "evidence431": "PORSCHE_FILE.so:0x18AD0 (GAP §2 :71)",
    "codePath": "src/seedkey.js:makeProvider",

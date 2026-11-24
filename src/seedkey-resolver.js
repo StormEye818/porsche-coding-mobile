@@ -171,7 +171,11 @@ export function resolveKey(mode, seed, ctx = {}) {
   //      - 当成「key=0」→ 发出 `27 0A 00000000` → NRC 0x35 → 重试吃满 → **0x36 锁死**
   //      - 当成「无需解锁」→ ECU 回全零 seed 时直接放行；回非零 seed 时**拒写**
   //    所以这里必须带 `needsKey: false`，让调用方（securityAccessEx）能区分。
-  //    ★ 2026-11-12 复核修正：早期小样本口径已作废。按现行 data/drivelinks.json（1072 条），原厂无 case 的是 104 条 mode 0x00（9.7%）；另有 6 条（mode 0x1D ×4 + mode 缺失 ×2）明确拒写。且 makeResolverProvider 的生产调用点被 modeVerified===true 闸门挡住（全表 0 条该字段），因此 needsKey:false 生产路径不可达。
+  //    ★ 2026-11-12 复核修正（2026-11-24 订正理由，结论不变）：原厂无 case 的是 104 条 mode 0x00，
+  //      这 104 条均未标 modeVerified=true；实跑 data/drivelinks.json 为 962/1070 条 modeVerified=true。
+  //      另有 6 条（mode 0x1D ×4 + mode 缺失 ×2）明确拒写。makeResolverProvider 的生产调用点被
+  //      modeVerified===true 闸门挡住，因此 needsKey:false 生产路径不可达。
+  //      （旧注释「全表 0 条 modeVerified」是小样本口径，已作废。）
   if (mode > 0x77) {
     return { key: 0, algo: 'NO_ALGO(无 case)', mode, outlen: 0, needsKey: false };
   }

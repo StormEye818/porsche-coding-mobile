@@ -187,7 +187,10 @@ export const VARIANT_BY_ECU = {
  *    因此只认 ① 精确匹配 ② 显式别名；**不做「变体名是模块名子串」的模糊匹配**
  *    （v0.8.4 删除：短名/包含关系会把独立算法错配到别的 ECU）。
  *    都不中 → 返回 null，调用方按「只读、写入被拒」处理。
- *    `verified:false` 的变体写入前还要人工确认（见 app.js doWrite）。
+ *    v0.8.4 批次2：`ECU_ALIAS` 仍用 includes（真实模块名里别名常是复合词，
+ *    如 `BV_ECM_UDS`/`EV_EPSBOPO68X_001`，改 token 边界会漏配），因此别名命中一律带
+ *    `variantSource:'alias'`；这些别名目标全部 `verified:false`，app.js 写入闸硬拦截，
+ *    只保留只读路径（精确命中的变体不受影响）。
  */
 const ECU_ALIAS = {
   // 明确同源（模块名是变体名的组成部分，非猜测）
@@ -206,7 +209,7 @@ export function pickVariant(ecuName = '') {
   // ② 显式别名
   for (const [alias, k] of Object.entries(ECU_ALIAS)) {
     if (n.includes(alias.toUpperCase()) && VARIANT_BY_ECU[k]) {
-      return { variant: k, ...VARIANT_BY_ECU[k] };
+      return { variant: k, ...VARIANT_BY_ECU[k], variantSource: 'alias', alias };
     }
   }
   // ③ 无：不做「变体名是模块名子串」模糊匹配（独立算法错配会 NRC 0x35 → 0x36 锁死）。
@@ -222,14 +225,19 @@ export function pickVariant(ecuName = '') {
  *    **`verified` 原来写死 `true`**，会把 `VARIANT_BY_ECU` 里 `verified:false`
  *    的 58 个变体也当成已验证放行 —— 现在如实传递。
  *
- * @param {{variant?:string, algo?:'A'|'B', seedBytes?:number, verified?:boolean}} opt
- * @returns {{name:string, verified:boolean, calc(seed:number[], level:number):Uint8Array}}
+ * @param {{variant?:string, algo?:'A'|'B', seedBytes?:number, verified?:boolean,
+ *          variantSource?:'exact'|'alias', alias?:string|null}} opt
+ * @returns {{name:string, verified:boolean, variantSource:string, alias:string|null,
+ *            calc(seed:number[], level:number):Uint8Array}}
  */
-export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2, verified = true } = {}) {
+export function makeProvider({ variant = '9x7GW', algo = 'A', seedBytes = 2,
+  verified = true, variantSource = 'exact', alias = null } = {}) {
   const fn = algo === 'B' ? algoB : algoA;
   return {
     name: `Porsche-${algo}(${variant})`,
     verified,
+    variantSource,
+    alias,
     // ★ 2026-11-12：声明本 provider 实际接受的 seed 宽度（= calc 里的 seedBytes 契约），
     //   供 coder 的 seed 宽度闸门做硬校验，避免错宽度算 key 触发 NRC 0x35→0x36。
     seedWidths: [seedBytes],

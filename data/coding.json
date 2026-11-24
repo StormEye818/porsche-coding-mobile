@@ -1,5 +1,6 @@
 {
  "schemaVersion": 3,
+ "source": "反编译转写：ref/x431-porsche-v24.58/V24.58/{9X1,9X6,9X7,...}_ALLDATA.BIN 的 coding 记录（rebuild-all.py:parse_coding / data/coding-did-truth.json 7B prefix 由 tools/fix-did-highbyte.py 回填 DID 高字节）；level=source-defined，非上车验证",
  "kind": "coding",
  "count": 5837,
  "bitConvention": "byte=uf16@+9, bit=u8@+11（LSB，0 起）",

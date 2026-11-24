@@ -274,6 +274,9 @@ export const WRITE_ENABLED = true;
 export function canWrite(p) {
   if (!hasWriteService(p)) return false;            // 原厂写包装只打包 3B/2E —— 对齐，永远生效
   if (p.lid == null && p.did == null) return false; // 无 LID 无法构帧 —— 对齐，永远生效
+  // v0.8.4 批次2 数据门禁：记录自带「写服务/DID 高字节不可证」标注时一律拒写；
+  // 只有补齐 7B prefix 证据并撤掉标注后才放行（coding-v2 545 条 v2-only 项）。
+  if (p.writeBlockedReason || p.sidPairOk === false) return false;
   if (!SAFETY.level) return true;                   // 原厂：有写服务 + 有 LID 即可写（无 level 门禁）
   if (!WRITE_ENABLED) return p.level === 'write-confirmed';
   return true;

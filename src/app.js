@@ -127,7 +127,7 @@ if (typeof globalThis !== 'undefined' && !globalThis.__PORSCHE_LIVE_MAP_REPORT__
 
 /**
  * 链路边界：候选行静态选定后，每候选只发 1 帧探针。
- * 返回的 `uxth` 等价于原厂 `send(0x10000359, A, 2)` 的回执；
+ * 返回的 `uxth` 等价于原厂 `send(0x100359, A, 2)` 的回执；
  * `can/frameId` 只来自适配器实际看到的回帧，JS 不臆造。
  */
 async function nativeProbeForRow(row) {
@@ -487,7 +487,7 @@ function ecuAddrFromTable(label, sys) {
  * 依据（.so 逐指令，RE-DISCOVERY-20261110 §1）：
  *   `0x18f4c/0x18f52 movw sl,#0x1409; movt sl,#0xff00` → 发现帧 `0xFF001409`(22 14 09)；
  *   `0x18f8c blx r3` 对**每个候选只发 1 帧**（mode=1）；`0x18fa2..0x18fbc` 才是
- *   `send(0x10000359,A,2)` 绑定；`0x18fe2 movw r0,#0x1102` = 绑定失败补帧 `22 11 02`
+ *   `send(0x100359,A,2)` 绑定；`0x18fe2 movw r0,#0x1102` = 绑定失败补帧 `22 11 02`
  *   （第十阶段已按原厂实现发送：绑定返回值≠1 时补一帧，响应不作为绑定成功依据）。
  *
  * ★ 2026-11-11 原厂对齐（CODE-AUDIT §4.1 偏离②）：删除 2026-11-10 的自创扩展
@@ -3919,6 +3919,17 @@ function addrSafeForAction() {
   return false;
 }
 
+/**
+ * v0.8.4 批次2：ECU_ALIAS 的 includes 命中带 variantSource:'alias'，
+ * 且目标变体全部 verified:false —— 只作只读，写入闸硬拦截（不只日志警告）。
+ * 精确命中的变体沿用既有行为，避免误伤正常 seed/key 路径。
+ * @returns {boolean} true=当前 provider 是未验证的别名推导结果
+ */
+function seedKeyAliasUnverified() {
+  const p = coder && coder.seedKeyProvider;
+  return Boolean(p && p.variantSource === 'alias' && p.verified === false);
+}
+
 async function doWrite(p, v) {
   if (!needLink()) return;
   const denied = writeDeniedReason();
@@ -3936,6 +3947,10 @@ async function doWrite(p, v) {
   if (!addrSafeForAction()) return;
   if (!coder.seedKeyProvider) {
     toast('err', '拒绝写入', '缺口令算法变体');
+    return;
+  }
+  if (seedKeyAliasUnverified()) {
+    toast('err', '拒绝写入', 'seed/key 未逐位验证（变体来自 ECU_ALIAS 模糊匹配）：先按原厂算法对拍校验后再写');
     return;
   }
   // 原厂写入 UX（TEXT_CN 语言库实证，文案原文照抄）：写入**有**二次确认 ——
@@ -4139,6 +4154,7 @@ $('vmOk').onclick = async () => {
   $('valueModal').classList.remove('show');
   if (!coder) { log('未连接', 'err'); return; }
   if (!coder.seedKeyProvider) { log('缺口令算法，拒绝写入', 'err'); return; }
+  if (seedKeyAliasUnverified()) { log('seed/key 未逐位验证（ECU_ALIAS 推导），只读拒写', 'err'); return; }
   // 2026-10-19：值弹窗此前跳过 canWrite（只查 seedKey），与 doWrite 不同口径。
   // 对齐：同一套闸门（canWrite 总闸 + 值域），与 doWrite 完全一致。
   if (!canWrite(p)) {

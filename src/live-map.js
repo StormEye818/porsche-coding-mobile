@@ -4,10 +4,13 @@
  * ★ 关键口径（禁止回归）：
  *   - 请求键空间 `0x0030xxxx` / `0xFF60xxxx`（DRIVELINKS addrBlock 行键 A）
  *     与 CAN 空间（11-bit 请求/应答 ID）是**两个键空间**，不可互取低 16 位。
- *   - 「哪条 CAN 真的应答了、请求键最终绑到哪条 CAN」在 E0 证据包内三次负扫描 0 命中，
- *     只有 R 级原生发现上报（showAddress 族回调）能给真值。Java/JS 层不生成地址。
- *   - 拿不到原生上报 → fail-closed：带 reason + nextCarrier + R 级标注；
- *     禁止静态写死 CAN、禁止把 D 级「0x700–0x7FF / 200ms 全段枚举」当参考诊断仪做法。
+ *   - 静态 CAN 表在 PORSCHE_SYS_DATA.BIN：cat=0x10 comm 表 <<5 编码（@0x5F49=0x7E0/0x7E8）
+ *     + 全局路由表 u32 直存；请求键→CAN 的静态映射已证（旧「三次负扫描 0 命中」结论已撤销，
+ *     当时候扫的是 DRIVELINKS.BIN 且按 raw CAN 搜，见深度取证总计划 §10）。
+ *   - native showAddress（R 级上报）仅用于选**哪条候选真的应答**，不是 CAN 地址来源；
+ *     JS 只登记原生观察到的结果，不自行生成/换算地址。
+ *   - 拿不到原生上报 → fail-closed：带 reason + nextCarrier + R 级标注；不把 D 级
+ *     「0x700–0x7FF / 200ms 全段枚举」当参考诊断仪做法，也不把未观察候选当已绑定。
  *   - 绑定只认 `uxth == 1`（DriveLinksMode_1001 @LINK:0x18f00 `cmp #1`），
  *     每候选只 1 帧 `22 14 09`（`0xFF001409`），n==0 跳过探针循环；
  *     NRC / 无名应答都不算绑定成功。
@@ -23,7 +26,7 @@ export const LIVE_MAP_EVIDENCE_IDS = Object.freeze(['E-01', 'E-05', 'E-07', 'E-1
 /** 参考诊断仪发现循环常量（E-01 / PE-01 / PE-02；不是 CAN 地址）。 */
 export const PROBE_FRAME = '221409';
 export const PROBE_REQUEST_ID = 0xff001409;
-/** E0 原始绑定帧坐标：`movw #0x359` + `movt #0x10`（不是 0x10000359）。 */
+/** E0 原始绑定帧坐标：`movw #0x359` + `movt #0x10`（不是 0x100359）。 */
 export const BIND_REQUEST_ID = 0x100359;
 export const BIND_COMPLETE_FRAME = '221102';
 export const BIND_UXTH_OK = 1;
@@ -43,8 +46,9 @@ export const FAIL_CLOSED_REASON = Object.freeze({
   FRAME_ID_MISMATCH: 'LIVE_MAP_FRAME_ID_MISMATCH',
 });
 export const NEXT_CARRIER =
-  '原生诊断地址上报接口未就绪（请求键→已应答 CAN 的运行时映射）；'
-  + '请按 E-05 / E-19 / E-20 证据载体检查连接期地址发现上报';
+  '原生诊断上报接口未就绪（候选真应答选择：请求键→本次应答 CAN）；'
+  + '静态 CAN 候选见 PORSCHE_SYS_DATA.BIN comm/routing 表；'
+  + '请按 E-05 / E-19 / E-20 证据载体检查连接期上报';
 export const SCAN_COMMAND =
   "grep -n 'E-05\\|E-19\\|E-20' docs/evidence/*linkmap*.md";
 
@@ -68,8 +72,8 @@ export function failClosed(code, extra = {}) {
     provable: PROVABLE_RUNTIME,
     grade: GRADE_R,
     code: reasonCode,
-    reason: `${reasonCode}：无 R 级原生发现上报，请求键→CAN 绑定不成立；`
-      + '不静态写死 CAN、不标 A、不执行全段枚举。',
+    reason: `${reasonCode}：本模块无原生观察上报，请求键→已应答 CAN 的运行时绑定不成立`
+      + '（静态 CAN 候选见 PORSCHE_SYS_DATA.BIN）；不臆造候选、不标 A、不执行全段枚举。',
     nextCarrier: NEXT_CARRIER,
     scanCommand: SCAN_COMMAND,
     evidenceIds: LIVE_MAP_EVIDENCE_IDS,
@@ -204,7 +208,7 @@ export function lookup(requestKey) {
 }
 
 /**
- * 每候选 1 帧探针 + 请求键绑定（E-01：send(0x10000359, A, 2)，uxth==1 才绑）。
+ * 每候选 1 帧探针 + 请求键绑定（E-01：send(0x100359, A, 2)，uxth==1 才绑）。
  *
  * `sendFn` 是原生链路边界：入参只有请求键与探针帧，返回值必须带
  * `uxth`（回执码）以及原生观察到的 `{can:{tx,rx}, frameId}`；

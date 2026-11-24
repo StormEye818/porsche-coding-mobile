@@ -1,5 +1,6 @@
 {
  "schemaVersion": 1,
+ "source": "反编译转写：libPORSCHE_SPECF.so（函数→模板起点）+ tmpl-refs.json，经 tools/build-function-sequences.py 展开为完整命令序列；中文功能名来自 431 文本资源",
  "kind": "function-sequences",
  "note": "每个功能的完整命令序列（读状态/31 例程/22 读/2E 写/14 清码）。app 按序列逐条执行，不是只发一条 31。",
  "count": 687,

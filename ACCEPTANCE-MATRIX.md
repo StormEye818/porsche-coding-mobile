@@ -48,7 +48,7 @@
 | 9 | 显示串全等 | `variant.js:pickModelByName` 去括号基名 **全等**（不再 includes） | `RE-MODELID`：24 键语言表 strcmp | `verify [H]` + e2e「14款 Cayman」 |
 | 10 | 件号分词 | `coder.js` 1A84/87/94 按 0x20 分词取单词 token 入 `lastPartNo` | `checkPartNumber @ACTF:0x4e00c` 分词全等 | 代码 + e2e 件号断言 |
 | 11 | 平台限定 | `pickFamilyByEvidence` 传 `platform: platformForModel(currentModel)` | `RE-VARIANT`：变体/算法必须平台限定 | `verify [H]` |
-| 12 | n=0 不探测 | `app.js:probeAddressFor`：ATSH/ATCRA 回执 OK → 直接 bound（0 探针帧） | `DriveLinksMode_1001 @LINK:0x18f00` `cbz r1` 分支 + `send(0x10000359,A,2)` | `verify [H]` + 代码逐帧 |
+| 12 | n=0 不探测 | `app.js:probeAddressFor`：ATSH/ATCRA 回执 OK → 直接 bound（0 探针帧） | `DriveLinksMode_1001 @LINK:0x18f00` `cbz r1` 分支 + `send(0x100359,A,2)` | `verify [H]` + 代码逐帧 |
 | 13 | n>0 每候选 1 帧 | `probeChainFor`：kwp `['1A9F']`、uds/未证 `['221409']` | 同上 `0x18f8c blx r3`（每候选 1 帧 mode=1） | `smoke [族探针链]` + `verify [H]` |
 | 14 | 回帧 ID 校验 | `coder.uds` 对回帧 ID 与 `rx` 硬比对（mock 跳过） | 原厂 FilterId/SetAddress 只收该 ECU 帧 | `verify [H]` + e2e |
 | 15 | 删除 alias 回退 | `app.js` 已删 `aliasEntryFor` 与调用 | 原厂无 alias 语义（RE-DISCOVERY §3） | `verify [H]` |
@@ -114,7 +114,7 @@
 | # | 项 | 状态 | 原因 | 影响 | 补证方向 |
 |---|---|---|---|---|---|
 | 1 | OBD VIN 通道 `21 09 05` / `21 09 01` | **历史结论，已推翻（0xFBE0FD00→0x7DF/0x7E8）** | 2026-11-11 复核：`open_readVinByObd()` 零参数、走 VCI「一对多」发送；APK/.so/资源三层均无目的 CAN ID（`libReadOBDVIN` 自身用 `09 02`） | 已实现 `Coder.readVinByObd()`：标准 OBD 功能地址 `0x7DF` 广播 + 只认 `61 09 05`/`49 02` + 17 位 VIN，失败不扫描 | 盒子固件或总线抓包（包内已到边界，见 `RE-CLOSURE §2`） |
-| 2 | n=0 链路层绑定 | **能力差异** | 原厂 `send(0x10000359,A,2)` 是 VCI 链路层绑定；ELM 的等价物是 ATSH/ATCRA（已回执断言） | 已用 ATSH/ATCRA 回执 OK 作为绑定成功判据，帧数=0 与原厂一致；「绑定」语义在适配器层而非 ECU 层 | 无（适配器架构决定） |
+| 2 | n=0 链路层绑定 | **能力差异** | 原厂 `send(0x100359,A,2)` 是 VCI 链路层绑定；ELM 的等价物是 ATSH/ATCRA（已回执断言） | 已用 ATSH/ATCRA 回执 OK 作为绑定成功判据，帧数=0 与原厂一致；「绑定」语义在适配器层而非 ECU 层 | 无（适配器架构决定） |
 | 3 | 24 键车型名表 | **已收口（注：vid 非原厂返回值，匹配含归一化，见 AUDIT-20261112.md）** | 逆出 `PorscheGetVehicleNameID @SYSP:0x24DE4` → 表 `0x5E42C`：24 条 **车型名 + vehicleId**，`strcmp` 全等（不是语言表） | 已落地 `src/model-name-table.js`，`pickModelByName` 白名单全等优先、基名兜底 | 无需补证；文本随语言库变化时按模块文本表复导 |
 | 4 | 会话号数据驱动 | **历史结论，已推翻：逐 ECU 证据会话（见文件头）** | 会话类别字节在 `PORSCHE_SYS_DATA.BIN` 的**加密记录体**里，静态不可导出；`securityModel param_1` 实为 **seed 族**，不是会话号（2026-11-11 纠正） | 固定 `0x89` 与抓包主模板一致；其它服务类型由 `SESSION_FOR_SERVICE` 选择；写入仍只放开 981 DME | 解 SYS_DATA 容器加密后才可能数据驱动 |
 | 5 | 9X6/9X7/CS1/E1 平台 sysId | **历史结论，已推翻：DSN 22 项索引（见文件头）；§3.5 再收窄（RE-GAPVERIFY §1）** | 同名子系统在**每一代** comm 子表都注册 → 名字 join 天然一对多；ALLDATA 目录无代际字节；name-9 投票对已知平台即失效 | 低字节 100% 静态（DSN 模块表 29/41）；高字节=运行时 BV 域（`GetSysIdFromBv` 入参）。**共享子集收 A**（9X6 0x03 同记录+0x26/0x29 仅 echo 共 3/10；9X7 0x05↔0x06 7 条同记录含 DME+12 条仅 echo 共 19/30）——任选高字节不改通讯参数，数据级无害；**真差异子集标 B**（9X6 7 条 0x01/02/04/07/08/12/16、9X7 0x05↔0x06 11 条、0x04 参与 20/20 全异）=**运行时 BV 域语义边界**（GetSysIdFromBv 运行时入参，431 同界，非待办） | 共享子集已收 A；真差异子集无需补办（431 同界）；剩余可锤方向=逆 BV 域调用方 `blx rN` 分发注册表 / 实车 VIN 日志（记档不挂账） |

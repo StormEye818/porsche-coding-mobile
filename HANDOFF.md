@@ -2612,7 +2612,7 @@ MCR 码读写+coding file 配置），**不是通用车型变体选择器**—�
    X 逐条递增（0x0721/0722/0723… ∈ 名字键 X 集），组内 p 共享（0x143af），字段 A..G=SYS_DATA
    **内部偏移**，指向地址行族簇（簇内 `proto|02|idx|ff` 尾/计数器/偏移的行结构）。
 5. **DriveLinksMode_1000 也是探针族**（对 TOKEN+0x360FCC[] 逐元素发 0xff001409，再按
-   TOKEN+0x360FC4 状态发 0xff001102/0x10000359 族）——与 Mode_1001 同族，静态一选在数组构建层。
+   TOKEN+0x360FC4 状态发 0xff001102/0x100359 族）——与 Mode_1001 同族，静态一选在数组构建层。
 6. 交叉验证：全 29 库静态零调用点（GetSubSysDataAddr 走 GOT/Java dlsym）；SearchID 文本索引
    不在 SYS_DATA 名字记录形态里（无 2B 文本池）——它就是 GAG 族文件。
 
@@ -2756,18 +2756,18 @@ MCR 码读写+coding file 配置），**不是通用车型变体选择器**—�
    分派 0x1001/0x1002/0x1003/0x1004 族。**A 数组（0x360D68）全文零引用**。
 3. **A 数组消费端 = LINK.so DriveLinksMode 族**（0x18b9c/0x18c02/0x18c68/0x18fa2/0x191b8/0x19430/
    0x196f0/0x19922/0x19a6c/0x19e50/0x1ac78/0x1bdb4/0x1c234/0x1c386 共 16 处 movw #0xd68）：
-   模式全部同构——`r1 = TOKEN->arrA[row]`（**原值**）→ `blx 分发器(r0=0x10000359, r1=A值, r2=2)`，
+   模式全部同构——`r1 = TOKEN->arrA[row]`（**原值**）→ `blx 分发器(r0=0x100359, r1=A值, r2=2)`，
    随后按返回（uxth 低 16 位 ==0/1）分派 0xff001102/0xff001409 族。
    **从取数到入参之间无任何 and/orr/lsl/mask/查表——零换算实锤**（Mode_1000 与 Mode_1001 双点复核）。
 
 ### 结案论断（精确到卡点）
 - 「internal(0x0312 系)→表A internal(0x1C6 系)→CAN」**不是一层换算**：addrBlock 记录的 A 值是
-  **请求键**（随请求 ID `0x10000359` 直送命令分发器 = `PorscheSendCommandByID*` 族），
+  **请求键**（随请求 ID `0x100359` 直送命令分发器 = `PorscheSendCommandByID*` 族），
   键→目标（帧模板/寻址）的解析在**请求 ID 分发器实现内部**；而表A 的 0x1C6 系 internal 是
   SYS_DATA 16B 行表的一列（我方 join 用），两者是**不同键空间**，桥在分发器层。
-- **卡住的确切位置**：请求 ID `0x10000359` 的 handler 实现（ID→帧/目标解析，`PorscheSendCommandByID`
+- **卡住的确切位置**：请求 ID `0x100359` 的 handler 实现（ID→帧/目标解析，`PorscheSendCommandByID`
   dynsym 族所在；已知其翻译形态 `[len][01][idHi][idLo]`、ID 低 16 位进帧——A 值如何选目标 CAN 未读出）。
-  **需要什么才能定**：逐指令读 0x10000359 分发器（PorscheSendCommandByID 本体 + 其 SearchID 查表段），
+  **需要什么才能定**：逐指令读 0x100359 分发器（PorscheSendCommandByID 本体 + 其 SearchID 查表段），
   看 A 值→目标帧的查表；或 431 运行时内存快照（一次 hook）。除此之外无未解环。
 - 三路数组语义至此全清：A=请求键(internal|flags)、B=cmdptr(SYS_DATA 记录偏移)、C=0x1010 常量族。
   静态一选**不能在数组层实现**（无换算可抄）——现有「短名单探测+识别串终审」仍是当前唯一
@@ -2787,7 +2787,7 @@ app.js 寻址路径/seedkey/写闸门/variant 均未改（另一 agent 管辖）
   **全文无查表、无 A 值运算、无 CAN 选择**——目标由链路层既有绑定决定。
 - **`FromAddrGetCommand`（140B 全读）**：`记录读取器`——从文件偏移 r4 读 `[3B 头][第3字节=n][nB 载荷]`
   拼成命令块（头字节 0/0xFF 即止）。**是「从记录取命令字节」，不是地址解析器**（名实相符但此前被误读为寻址环节）。
-- A 值在 Mode 族里以**请求参数**身份入参（`blx 分发器(0x10000359, A值, 2)`），入帧后由链路层消费；
+- A 值在 Mode 族里以**请求参数**身份入参（`blx 分发器(0x100359, A值, 2)`），入帧后由链路层消费；
   `0xff001102/0xff001409` 族同理。**A→CAN 的桥不在请求层——在链路绑定（进模块）阶段。**
 
 ### ② 元判定（做实）：431 到底是不是「静态毫秒一选」

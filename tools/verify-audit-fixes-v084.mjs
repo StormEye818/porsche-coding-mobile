@@ -22,7 +22,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { pickVariant } from '../src/seedkey.js';
+import { pickVariant, makeProvider } from '../src/seedkey.js';
 import { variantForName, NAME_TO_VARIANT } from '../src/seedkey-name-map.js';
 import { parseDtcPayload } from '../src/dtc.js';
 
@@ -91,6 +91,44 @@ record('NAME_EXACT_KEPT', Boolean(exactName) && variantForName('ASAM_SeedKey_ESP
 record('NAME_UPPER_EXACT_KEPT', Boolean(exactName) && variantForName('asam_seedkey_esp_dl') === exactName);
 record('APP_TOKEN_FALLBACK_KEPT',
   appSrc.includes('ASAP1A_CCP_ComputeKeyFromSeed_' + '${tok}') && appSrc.includes('不做模糊包含'));
+
+/* ── ②-b ECU_ALIAS：includes 行为保留（真实模块名回归）+ verified:false 写闸硬拦 ── */
+// 真实模块名来自 data/all-model-sysids.json / data/models-catalog.json / data/bind-plan.json：
+// 别名常嵌在复合词里（BV_ECM_UDS、EV_EPSBOPO68X_001），改 token 边界会漏配，故保留 includes。
+const aliasRegression = [
+  ['BV_ECM_UDS', 'ECM_UDS'],
+  ['EV_EPSBOPO68X_001', 'EPS'],
+  ['BMS2_A1_1', 'BMS2'],
+  ['Allrad_Gen2_a1', 'Allrad_Gen1'],
+  ['BV_ThermManagUDS', 'ThermManagUDS'],
+  ['Frontkamera_0005', 'Frontkamera_1'],
+  ['BV_DriveMotorContrModulUDS', 'DriveMotorContrModul'],
+  ['BV_RealTopView2_BaseSys', 'RealTopview'],
+  ['XYZ_EPS_XYZ', 'EPS'],
+  ['BMS2_OTHER_ECU', 'BMS2'],
+];
+for (const [name, expected] of aliasRegression) {
+  const v = pickVariant(name);
+  record(`ALIAS_REGRESSION_${name}`, v?.variant === expected
+    && v?.variantSource === 'alias' && v?.verified === false,
+  `actual=${JSON.stringify(v)} expected=${expected}`);
+}
+record('ALIAS_EXACT_UNAFFECTED', pickVariant('9x7GW')?.variantSource === undefined);
+const aliasProvider = makeProvider(pickVariant('XYZ_EPS_XYZ'));
+record('ALIAS_PROVIDER_FLAGS', aliasProvider.variantSource === 'alias'
+  && aliasProvider.verified === false);
+
+/** 写闸判据：doWrite 与值弹窗两处都硬拦，且 helper 真查 alias+verified:false。 */
+function aliasWriteGuardVerdict(src) {
+  const guards = (src.match(/if \(seedKeyAliasUnverified\(\)\)/g) || []).length;
+  return guards >= 2 && /p\.variantSource === 'alias'/.test(src)
+    && /p\.verified === false/.test(src);
+}
+record('ALIAS_WRITE_GUARD_REAL_GREEN', aliasWriteGuardVerdict(appSrc));
+record('ALIAS_WRITE_GUARD_INJECT_RED', !aliasWriteGuardVerdict(
+  appSrc.split('if (seedKeyAliasUnverified())').join('if (false)')));
+record('ALIAS_GUARD_NOT_LOG_ONLY', /toast\('err', '拒绝写入'/.test(appSrc)
+  && /只读拒写/.test(appSrc));
 
 // 反例注入锚点：临时模块把删掉的模糊分支原样加回。
 const seedMarker = '  // ③ 无：不做「变体名是模块名子串」模糊匹配（独立算法错配会 NRC 0x35 → 0x36 锁死）。\n'

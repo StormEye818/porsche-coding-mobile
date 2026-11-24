@@ -65,7 +65,7 @@ const BASELINE_OVERRIDE = Object.freeze({
   // 连接
   41: { codePath: 'src/elm327.js:cmdOk', evidence431: 'PORSCHE_SYSP.so:0x24DE4', check: { kind: 'evidence', file: 'src/elm327.js', token: 'requireOk', note: 'ATSH/ATCRA 绑定命令空回执阻断（T03-h 行为）' } },
   42: { codePath: 'src/elm327.js:cmd', evidence431: 'PORSCHE_SYSP.so:0x24E02', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATSH', note: 'SetAddress/FilterId ≡ ATSH/ATCRA 实发' } },
-  43: { codePath: 'src/elm327.js:cmd', evidence431: 'PORSCHE_SYSP.so:0x10000359', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATCFC1', note: 'n=0 用 ATSH/ATCRA 回执等价（VCI send 无 ELM 对应物）' } },
+  43: { codePath: 'src/elm327.js:cmd', evidence431: 'PORSCHE_SYSP.so:0x100359', check: { kind: 'evidence', file: 'src/elm327.js', token: 'ATCFC1', note: 'n=0 用 ATSH/ATCRA 回执等价（VCI send 无 ELM 对应物）' } },
   // VIN
   44: { codePath: 'src/coder.js:readVinByObd', evidence431: 'PORSCHE_READWRITE.so:0x147C80', check: { kind: 'all', of: [{ kind: 'evidence', file: 'src/coder.js', token: 'vinCharsetFilter', note: 'D-4 两链同一字符集原语' }, { kind: 'jsonCountGte', file: 'data/vehicle-id-type-map.json', path: ['menuTexts'], min: 32 }] } },
   45: { codePath: 'src/coder.js:readVinByObd', evidence431: 'PORSCHE_READWRITE.so:0x147D10', check: { kind: 'evidence', file: 'src/coder.js', token: 'anyRx', note: '广播路径 anyRx 语义（固定响应头/内容校验兜底）' } },

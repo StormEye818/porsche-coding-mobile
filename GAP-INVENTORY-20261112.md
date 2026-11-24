@@ -40,7 +40,7 @@ drivelinks 1070 条 / mode=null 0 / 违规 0；coverage 口径 有算法 966 / �
 |---|---|---|---|
 | 连接 | ELM AT 层 + 回帧 ID 硬校验（mock 跳过）；VCI 命令族全表收口 | **A** | RE-TRACEABILITY 未决计数=0（照抄级） |
 | 连接 | 适配器目标解析=适配器内部映射（calcLinkCode 同式 7/7；SetAddress/FilterId≡ATSH/ATCRA） | **B** | 机制边界=适配器层，**431 同界**（HANDOFF 2026-11-09(6) 终态） |
-| 连接 | n=0 链路绑定用 ATSH/ATCRA 回执等价（VCI `send(0x10000359,A,2)` 无 ELM 对应物） | **B** | 适配器能力差异；帧数=0 与原厂一致（矩阵 §3 #2） |
+| 连接 | n=0 链路绑定用 ATSH/ATCRA 回执等价（VCI `send(0x100359,A,2)` 无 ELM 对应物） | **B** | 适配器能力差异；帧数=0 与原厂一致（矩阵 §3 #2） |
 | VIN | 0x7DF/0x7E8 广播 + `21 09 05`/`49 02` + ISO3779 校验；模板链 8 帧序；年款三档；VIN 分派 TBB 17 槽 | **A** | 0xFBE0FD00 解出；OBD 通道历史结论已推翻后落地 readVinByObd |
 | VIN | 广播路径回帧 ID 不校验（anyRx） | **B** | 有意：OBD 广播语义 + 固定响应头/内容校验兜底（B-TO-A #7 口径更正） |
 | VIN | VIN 字符集主链与 OBD 链口径不一 | **D** | AUDIT-20261112 §4 #7 残留；低危统一项（§3 D-4） |
@@ -68,7 +68,7 @@ drivelinks 1070 条 / mode=null 0 / 违规 0；coverage 口径 有算法 966 / �
 | seed/key | 算法面 100%（29 mode+24 变体、wordvm 9×288 点、新旧 1080 点 0 差异）；0x1D=seed+state（未装载拒写）；mode 路由=记录真值 | **A** | B-TO-A #3 + sa2 收口 |
 | seed/key | 修复③后 mode=null/越界拒写归零（1070/1070） | **A** | 本文 §1 |
 | seed/key | DRIVELINKS 无记录的 5 个 sysId（0x0e57/0x0ea5/0x0e02/0x0e58/0x0e44，981 映射中 6 行） | **B** | 包内无记录 → mode 不猜、写路径保守（431 同界：同一 DRIVELINKS 文件） |
-| seed/key | needsKey:false 生产路径不可达（modeVerified 全表 0） | **B** | 记档（安全设计，非缺口） |
+| seed/key | needsKey:false 生产路径不可达（104 条 mode 0x00 均未标 modeVerified；实跑 962/1070 条 modeVerified=true） | **B** | 记档（安全设计，非缺口） |
 | 恢复/批量/编程页 | 5 处 diagProfile 一致；3 处裸 uds 入写锁；无读服务不写；备份 sessionless 标志 | **A** | B-TO-A #6 |
 | 恢复/批量/编程页 | 例程 ID 合法性（79 条真机通信取证、252 请求） | **B** | ID 层已证；**语义层=真车确认边界** |
 | 恢复/批量/编程页 | 例程 ID→功能语义未定（routines-verified caveat；与手工索引交集仅 1） | **D** | 真车确认待办（§3 D-2） |

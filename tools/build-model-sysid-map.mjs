@@ -45,6 +45,8 @@ const body = `// ⚠️ 自动生成，勿手改。源：data/all-model-sysids.j
 // 编译：node tools/build-model-sysid-map.mjs
 // RE-CODINGADDR-20261110 §6 步骤1-3 在全量车型的落地：25 车型 / ${Object.keys(plat).length} 平台定案。
 export const MODEL_SYSID_INDEX = ${JSON.stringify(index, null, 1)};
+// ★ E3：DSN 索引 type=0x11，但 comm 子表的模块 sysId 全为 0x12xx；运行时保留 gen=0x12。
+//   依据 data/platform-type-map.json:e3Note（索引层与模块映射层是两类证据，不按 DSN type 覆盖）。
 export const PLATFORM_MODULES = ${JSON.stringify(plat, null, 1)};
 export const SYSTEM_LABEL_BASE = ${JSON.stringify(labelBase, null, 1)};
 

@@ -467,7 +467,8 @@ export async function identityAdjudicate(cmdFn, p, fam, expect, opts = {}) {
       .filter((h) => h && h.module && h.variant)
       .map((h) => ({ module: String(h.module), variant: String(h.variant) }));
     if (!cands.length) { dsnUnresolved = true; continue; }
-    // 多候选（050018 → BCM_hinten + BCM_vorne）按期望模块名消歧，不按侧别/顺序猜。
+    // 多候选（050018 → BCM_hinten + BCM_vorne）按期望模块名消歧；
+    // 无期望模块时取表序首条（E0 候选数组顺序），不是按侧别/顺序猜。
     const expected = cands.find((h) => expectNames.includes(normIdent(h.module)));
     const chosen = expected || cands[0];
     dsn = {
