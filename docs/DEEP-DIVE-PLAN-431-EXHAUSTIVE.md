@@ -245,3 +245,10 @@ analysis/ 下 91 个 py 脚本 + 56 个 JSON 产物 + x431-研究成果/X431docs
 - 全量逐行/逐指令+胶水豁免证明+静态CAN表订正+0待挖，均落本契约。
 - **干净clone终验 CLEAN_CLONE_V084_PASS**：单次npm test exit0、QA17/17、REPLAY8、P020、IDENTITY_E2E16、审计fix72、DID545标注、audit 243/243A 指纹826e8336、U2 diff0、GENERATOR26；三核心修复在clone真在。
 - **待发**：v0.8.4 tag/release（构建产物后）。
+
+## 18. v0.8.4 最终发版（2026-11-24）
+- annotated tag v0.8.4 → commit 1ee246d（tag object 0d4d5c1a），main+tag 已 push（origin/main=1ee246d）。
+- release https://github.com/StormEye818/porsche-coding-mobile/releases/tag/v0.8.4（非draft非prerelease）。
+- 产物：v0.8.4.apk 108111217B sha 8d18b514797ef538305f01a2a7c7058be35b5b83cb7c4bc3a5d09da11ed70a9d；v0.8.4.zip 51257366B sha 55fee3282719d13041dada07c88b65ff0d822c2830007ea9d4b3ab6d6ca7b238（远端digest与本地逐字节一致）。APK三重验真：mtime晚于commit、sha异于v0.8.3、内嵌bundle sha 30581f0b=本地www/app.bundle.js 且 descriptorUsed×5/variantSource×4。
+- 干净clone终验 CLEAN_CLONE_V084_PASS：全链exit0、QA17/17、REPLAY8、P020、IDENTITY_E2E16、AUDIT_FIXES72、DID545标注、audit243/243A 指纹826e8336、U2 diff0、GENERATOR26。
+- 工作树干净，main==origin/main。全部完成，0 遗留待办。
